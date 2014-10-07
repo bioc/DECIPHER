@@ -52,7 +52,7 @@ Seqs2DB <- function(seqs,
 		dbConn = dbFile
 		if (!inherits(dbConn,"SQLiteConnection")) 
 			stop("'dbFile' must be a character string or connection.")
-		if (!isIdCurrent(dbConn))
+		if (!dbIsValid(dbConn))
 			stop("The connection has expired.")
 	}
 	result <- dbListTables(dbConn)

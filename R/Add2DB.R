@@ -29,7 +29,7 @@ Add2DB <- function(myData,
 		dbConn = dbFile
 		if (!inherits(dbConn,"SQLiteConnection")) 
 			stop("'dbFile' must be a character string or SQLiteConnection.")
-		if (!isIdCurrent(dbConn))
+		if (!dbIsValid(dbConn))
 			stop("The connection has expired.")
 	}
 	
@@ -79,7 +79,7 @@ Add2DB <- function(myData,
 					clause)
 			if (verbose)
 				cat("Expression: ", expression2, "\n\n")
-			dbBeginTransaction(dbConn)
+			dbBegin(dbConn)
 			dbGetPreparedQuery(dbConn,
 				expression2,
 				bind.data=myData)
