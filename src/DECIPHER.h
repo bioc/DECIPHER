@@ -136,7 +136,7 @@ SEXP positionWeightMatrix(SEXP x, SEXP begins, SEXP ends, SEXP width);
 
 // IntDist.c
 
-SEXP intDist(SEXP x, SEXP levels, SEXP bins, SEXP maxBins, SEXP numRows, SEXP totRows);
+SEXP intDist(SEXP x, SEXP levels, SEXP bins, SEXP maxBins, SEXP numRows, SEXP totRows, SEXP power);
 
 // MeltPolymer.c
 

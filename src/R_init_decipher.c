@@ -69,7 +69,7 @@ static const R_CallMethodDef callMethods[] = { // method call, pointer, num args
 	{"matchOrderDual", (DL_FUNC) &matchOrderDual, 3},
 	{"boundedMatches", (DL_FUNC) &boundedMatches, 3},
 	{"gcContent", (DL_FUNC) &gcContent, 3},
-	{"intDist", (DL_FUNC) &intDist, 6},
+	{"intDist", (DL_FUNC) &intDist, 7},
 	{"meltPolymer", (DL_FUNC) &meltPolymer, 4},
 	{"insertGaps", (DL_FUNC) &insertGaps, 5},
 	{"intMatchOnce", (DL_FUNC) &intMatchOnce, 2},
