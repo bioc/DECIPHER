@@ -6,6 +6,7 @@ LearnTaxa <- function(train,
 	maxFraction=0.06,
 	maxIterations=10,
 	multiplier=100,
+	maxChildren=200,
 	verbose=TRUE) {
 	
 	# error checking
@@ -57,6 +58,12 @@ LearnTaxa <- function(train,
 		stop("multiplier must be a numeric.")
 	if (multiplier <= 0)
 		stop("multiplier must be greater than zero.")
+	if (!is.numeric(maxChildren))
+		stop("maxChildren must be a numeric.")
+	if (maxChildren < 1)
+		stop("maxChildren must be at least one.")
+	if (maxChildren != floor(maxChildren))
+		stop("maxChildren must be a whole number.")
 	if (!is.logical(verbose))
 		stop("verbose must be a logical.")
 	a <- vcountPattern("-", train)
@@ -195,14 +202,14 @@ LearnTaxa <- function(train,
 	nSeqs <- lengths(sequences)
 	
 	# record the most distinctive k-mers at each node in the taxonomic tree
-	createTree <- function(k) {
+	.createTree <- function(k) {
 		l <- length(children[[k]])
-		if (l > 0) {
+		if (l > 0 && l <= maxChildren) {
 			# obtain relative k-mer frequency by group
 			profile <- vector("list", l)
 			descendants <- integer(l)
 			for (i in seq_len(l)) {
-				results <- createTree(children[[k]][i])
+				results <- .createTree(children[[k]][i])
 				profile[[i]] <- results[[1]]
 				descendants[i] <- results[[2]]
 			}
@@ -242,14 +249,14 @@ LearnTaxa <- function(train,
 		} else {
 			w <- sequences[[k]]
 			
-			profile <- tabulate(unlist(kmers[sequences[[k]]]),
+			profile <- tabulate(unlist(kmers[w]),
 				nKmers)
 			profile <- profile/sum(profile) # normalize
 			invisible(list(profile, 1L))
 		}
 	}
 	decision_kmers <- vector("list", length(taxonomy))
-	createTree(1) # traverse the taxonomic tree
+	.createTree(1) # traverse the taxonomic tree
 	
 	# learn the appropriate fraction for sampling
 	fraction <- rep(maxFraction, length(taxonomy))
@@ -271,10 +278,12 @@ LearnTaxa <- function(train,
 			correct <- TRUE
 			repeat {
 				subtrees <- children[[k]]
+				n <- length(decision_kmers[[k]][[1]])
 				
-				if (length(subtrees) > 1) {
+				if (n==0) { # no decision k-mers
+					break
+				} else if (length(subtrees) > 1) {
 					# set number of k-mers to choose each bootstrap replicate
-					n <- length(decision_kmers[[k]][[1]])
 					if (is.na(fraction[k])) {
 						s <- ceiling(n*minFraction)
 					} else {

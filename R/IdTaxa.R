@@ -209,14 +209,13 @@ IdTaxa <- function(test,
 		k <- 1L
 		repeat {
 			subtrees <- children[[k]]
+			n <- length(decision_kmers[[k]][[1]])
 			
-			if (length(subtrees) > 1) {
+			if (n==0 || is.na(fraction[k])) { # use every subtree
+				w <- seq_along(subtrees)
+				break
+			} else if (length(subtrees) > 1) {
 				# set number of k-mers to choose each bootstrap replicate
-				n <- length(decision_kmers[[k]][[1]])
-				if (is.na(fraction[k])) { # use every subtree
-					w <- seq_along(subtrees)
-					break
-				}
 				s <- ceiling(n*fraction[k])
 				
 				# sample the decision k-mers

@@ -15,6 +15,7 @@ LearnTaxa(train,
           maxFraction = 0.06,
           maxIterations = 10,
           multiplier = 100,
+          maxChildren = 200,
           verbose = TRUE)
 }
 \arguments{
@@ -41,6 +42,9 @@ Integer specifying the maximum number of iterations to attempt re-classification
 }
   \item{multiplier}{
 Numeric indicating the degree to which individual sequences have control over the fraction of k-mers sampled at any edge during the initial tree descent phase of the classification algorithm.  (See details section below.)
+}
+  \item{maxChildren}{
+Integer giving the maximum number of child taxa of any taxon at which to consider further descending the taxonomic tree.  A value of \code{1} will prevent use of the tree descent algorithm altogether.  Lower values may decrease classification speed, but result in output objects that require less memory.
 }
   \item{verbose}{
 Logical indicating whether to display progress.

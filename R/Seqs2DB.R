@@ -309,10 +309,10 @@ Seqs2DB <- function(seqs,
 			newSeqs <- newSeqs + length(descriptions)
 			
 			if (replaceTbl) {
-				ft <- list(row_names="INTEGER PRIMARY KEY ASC",
+				ft <- c(row_names="INTEGER PRIMARY KEY ASC",
 					identifier="TEXT",
 					description="TEXT")
-				ft_ <- list(row_names="INTEGER PRIMARY KEY ASC",
+				ft_ <- c(row_names="INTEGER PRIMARY KEY ASC",
 					sequence="BLOB",
 					quality="BLOB")
 			} else {
@@ -457,10 +457,10 @@ Seqs2DB <- function(seqs,
 			newSeqs <- newSeqs + length(descriptions)
 			
 			if (replaceTbl) {
-				ft <- list(row_names="INTEGER PRIMARY KEY ASC",
+				ft <- c(row_names="INTEGER PRIMARY KEY ASC",
 					identifier="TEXT",
 					description="TEXT")
-				ft_ <- list(row_names="INTEGER PRIMARY KEY ASC",
+				ft_ <- c(row_names="INTEGER PRIMARY KEY ASC",
 					sequence="BLOB",
 					quality="BLOB")
 			} else {
@@ -634,7 +634,8 @@ Seqs2DB <- function(seqs,
 					function(x) return("TEXT"))
 				ft[[1]] <- "INTEGER PRIMARY KEY ASC"
 				names(ft) <- names(myData)
-				ft_ <- list(row_names="INTEGER PRIMARY KEY ASC",
+				ft <- unlist(ft)
+				ft_ <- c(row_names="INTEGER PRIMARY KEY ASC",
 					sequence="BLOB",
 					quality="BLOB")
 			} else {
@@ -706,10 +707,10 @@ Seqs2DB <- function(seqs,
 		}
 		
 		if (replaceTbl) {
-			ft <- list(row_names="INTEGER PRIMARY KEY ASC",
+			ft <- c(row_names="INTEGER PRIMARY KEY ASC",
 				identifier="TEXT",
 				description="TEXT")
-			ft_ <- list(row_names="INTEGER PRIMARY KEY ASC",
+			ft_ <- c(row_names="INTEGER PRIMARY KEY ASC",
 				sequence="BLOB",
 				quality="BLOB")
 		} else {
