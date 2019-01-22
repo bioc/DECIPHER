@@ -167,7 +167,7 @@ IdTaxa <- function(test,
 		boths)
 	O <- c(rep(0L, length(testkmers)),
 		seq_along(boths))
-	confs <- numeric(length(testkmers))
+	confs <- sims <- numeric(length(testkmers))
 	for (i in seq_along(I)) {
 		if (O[i]) { # use revkerms
 			mykmers <- revkmers[[O[i]]]
@@ -323,13 +323,14 @@ IdTaxa <- function(test,
 			selected <- w
 		}
 		if (O[i]) { # second pass
-			if (totHits[selected] <= confs[O[i]]) {
+			if (sum(hits[selected,])/davg <= sims[O[i]]) {
 				if (verbose)
 					setTxtProgressBar(pBar, i/length(I))
-				next # other strand was higher confidence
+				next # other strand was higher similarity
 			}
 		} else { # first pass (record result)
-			confs[i] <- totHits[selected]
+			confs[i] <- totHits[selected] # confidence
+			sims[i] <- sum(hits[selected,])/davg # weighted k-mer similarity
 		}
 		
 		# sum confidences up the hierarchy
