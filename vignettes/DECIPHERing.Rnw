@@ -180,13 +180,15 @@ The functions of DECIPHER can be grouped into several categories based on intend
 \subsubsection{Mac OS X}
 
 \begin{enumerate}
-\item First install Command Line Tools from Apple, which contains compliers that are required to build packages on the Mac.  Next, you must install the clang complier available \underline{\url{https://cran.r-project.org/bin/macosx/tools/}{here}}.  Then, in \R{} run:
+\item First install Command Line Tools from Apple, which contains compliers that are required to build packages on the Mac.  Then, in \R{} run:
 \begin{Schunk}
 \begin{Sinput}
 > install.packages("<<path to Mac OS X DECIPHER.tgz>>", repos=NULL)
 \end{Sinput}
 \end{Schunk}
 \end{enumerate}
+
+For parallelization on Mac OS X, extra steps are required to \underline{\url{http://mac.r-project.org/openmp/}{enable OpenMP}} before install.
 
 \subsubsection{Linux}
 In a shell enter:

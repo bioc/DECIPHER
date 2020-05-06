@@ -80,6 +80,8 @@ An \code{XStringSet} of aligned sequences.
 }
 \references{
 Wright, E. S. (2015). DECIPHER: harnessing local sequence context to improve protein multiple sequence alignment. BMC Bioinformatics, 16, 322. http://doi.org/10.1186/s12859-015-0749-z
+
+Wright, E. S. (2020). RNAconTest: comparing tools for noncoding RNA multiple sequence alignment based on structural consistency. RNA 2020, 26, 531-540.
 }
 \author{
 Erik Wright \email{eswright@pitt.edu}

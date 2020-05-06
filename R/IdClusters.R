@@ -189,10 +189,10 @@ to.dendrogram <- function(object, states=NULL) {
 		row.names=dNames)
 	w <- which(myClusters[, 7] < 0)
 	if (length(w) > 0)
-		clusters$cluster[-1*myClusters[w, 1]] <- as.integer(myClusters[w, 9])
+		clusters$cluster[-1*myClusters[w, 7]] <- as.integer(myClusters[w, 9])
 	w <- which(myClusters[, 8] < 0)
 	if (length(w) > 0)
-		clusters$cluster[-1*myClusters[w, 2]] <- as.integer(myClusters[w, 10])
+		clusters$cluster[-1*myClusters[w, 8]] <- as.integer(myClusters[w, 10])
 	
 	return(clusters)
 }
@@ -913,32 +913,43 @@ MODELS <- c("JC69",
 	return(X)
 }
 
-.midpointRoot <- function(x1) {
+.root <- function(x1, root) {
 	
-	# mid-point root the tree based on which
-	# leaf is furthest from the lowest leaf
-	# (note: columns 1:3 are not corrected)
+	# if root is zero then midpoint root the tree
+	# otherwise outgroup root based on root index
+	# (note: output columns 1:3 are uncorrected)
 	
-	# find the leaf at minimum height
-	r1 <- which(x1[, 7] < 0)
-	h1 <- x1[r1, 6] - x1[r1, 4]
-	r2 <- which(x1[, 8] < 0)
-	h2 <- x1[r2, 6] - x1[r2, 5]
-	r <- c(r1, r2) # row number of leaf
-	z <- rep(c(7L, 8L), c(length(r1), length(r2)))
-	h <- c(h1, h2) # height of leaf
-	
-	# reorder by sequence number
-	o <- order(x1[cbind(r, z)],
-		decreasing=TRUE)
-	h <- h[o]
-	minH <- which.min(h) # index of lowest leaf
-	
-	# find most distant leaf from lowest leaf
 	n <- nrow(x1)
+	if (root==0) { # midpoint root
+		# find the leaf at minimum height
+		r1 <- which(x1[, 7] < 0)
+		h1 <- x1[r1, 6] - x1[r1, 4]
+		r2 <- which(x1[, 8] < 0)
+		h2 <- x1[r2, 6] - x1[r2, 5]
+		r <- c(r1, r2) # row number of leaf
+		z <- rep(c(7L, 8L), c(length(r1), length(r2)))
+		h <- c(h1, h2) # height of leaf
+		
+		# reorder by sequence number
+		o <- order(x1[cbind(r, z)],
+			decreasing=TRUE)
+		h <- h[o]
+		minH <- which.min(h) # index of lowest leaf
+	} else { # outgroup root
+		w <- which(x1[n, 7:8]==-root)
+		if (length(w) > 0) { # already outgroup rooted
+			# extend the root node
+			x1[n, 6] <- x1[n, 6] + x1[n, 3 + w]
+			x1[n, 3 + w] <- 0
+			return(x1)
+		}
+		minH <- root # index of root
+	}
+	
+	# find most distant leaf from minH
 	longest <- numeric(n) # length of longest path
 	merged <- logical(n) # whether merged yet
-	index <- numeric(n) # column back to lowest leaf
+	index <- numeric(n) # column back to minH
 	for (i in seq_len(n)) {
 		b1 <- x1[i, 7]
 		if (b1 < 0) { # merged with leaf
@@ -974,10 +985,10 @@ MODELS <- c("JC69",
 			}
 		}
 		
-		if (is.na(b1)) { # b1 contains lowest leaf
+		if (is.na(b1)) { # b1 contains minH
 			longest[i] <- l2
 			# leave index[i] at zero
-		} else if (is.na(b2)) { # b2 contains lowest leaf
+		} else if (is.na(b2)) { # b2 contains minH
 			longest[i] <- l1
 			index[i] <- 1
 		} else if (l1 >= l2) {
@@ -989,22 +1000,27 @@ MODELS <- c("JC69",
 		}
 	}
 	
-	# determine height of the midpoint
-	w <- which(merged)
-	longest <- longest + x1[, 6] - h[minH]
-	m <- w[which.max(longest[w])]
-	midH <- longest[m]/2
-	if (isTRUE(all.equal(x1[n, 6], midH)))
-		return(x1) # already midpoint rooted
-	
-	# find the edge containing the midpoint
-	lowH <- x1[m, 6] - x1[m, 4 + index[m]]
-	while (lowH > midH) { # descend the tree
-		m <- x1[m, 7 + index[m]]
+	if (root==0) { # determine height of the midpoint
+		w <- which(merged)
+		longest <- longest + x1[, 6] - h[minH]
+		m <- w[which.max(longest[w])]
+		midH <- longest[m]/2
+		if (isTRUE(all.equal(x1[n, 6], midH)))
+			return(x1) # already midpoint rooted
+		
+		# find the edge containing the midpoint
 		lowH <- x1[m, 6] - x1[m, 4 + index[m]]
+		while (lowH > midH) { # descend the tree
+			m <- x1[m, 7 + index[m]]
+			lowH <- x1[m, 6] - x1[m, 4 + index[m]]
+		}
+	} else { # root at tip of outgroup
+		w <- which(x1[, 7:8]==-root, arr.ind=TRUE)
+		midH <- x1[w[1], 6] - x1[w[1], 3 + w[2]]
+		m <- w[1]
 	}
 	
-	# invert and lower nodes above midpoint
+	# invert and lower nodes above rotation point
 	.dropH <- function(i, delta) {
 		stack <- integer(n)
 		pos <- 1L
@@ -1027,7 +1043,7 @@ MODELS <- c("JC69",
 	w <- which(x1[, 7:8] > 0, arr.ind=TRUE)
 	up[x1[, 7:8][w]] <- w[, "row"]
 	remove <- logical(n) # replaced nodes
-	x2 <- x1 # new midpoint rooted tree
+	x2 <- x1 # new rooted tree
 	count <- n # row in x2
 	# make new root node
 	delta <- x1[m, 6] - midH
@@ -1072,6 +1088,10 @@ MODELS <- c("JC69",
 			x2[1:(count - 1), 7:8][w] <- match(x2[1:(count - 1), 7:8][w], keep)
 		w <- which(x2[n:count, 7] %in% keep)
 		x2[n:count, 7][w] <- match(x2[n:count, 7][w], keep)
+	}
+	
+	if (root > 0) {
+		x2[, 6] <- x2[, 6] - min(x2[, 6] - x2[, 4], x2[, 6] - x2[, 5])
 	}
 	
 	return(x2)
@@ -1140,6 +1160,7 @@ IdClusters <- function(myDistMatrix=NULL,
 	model=MODELS,
 	collapse=0,
 	reconstruct=FALSE,
+	root=0,
 	processors=1,
 	verbose=TRUE) {
 	
@@ -1159,26 +1180,38 @@ IdClusters <- function(myDistMatrix=NULL,
 	} else if (method==-1) {
 		stop("Ambiguous method.")
 	}
-	if (method==3 && length(model) < 1)
-		stop("No model(s) specified.")
-	if (method==3 && !is.character(model))
-		stop("model must be a character vector.")
-	w <- which(!(model %in% MODELS))
-	if (method==3 && length(w) > 0) {
-		submodels <- sub("([^+]*)(\\+G(\\d+))?", "\\1", model[w])
-		if (!all(submodels %in% sub("\\+G(\\d+)$", "", MODELS)))
-			stop(paste("Available models are:",
-				paste(MODELS, collapse=", "),
-				collapse=" "))
-		rates <- as.integer(sub("([^+]*)(\\+G(\\d+))?", "\\3", model[w]))
-		if (any(is.na(rates)) || any(floor(rates)!=rates))
-			stop("The number rates in the discrete Gamma distribution (i.e., +G4) should be an integer value.")
-		if (any(rates > 10))
-			stop("Up to 10 rates are allowed in the discrete Gamma distribution (i.e., +G10).")
-		if (any(rates < 2))
-			stop("A minimum of two rates are required for the discrete Gamma distribution (i.e., +G2).")
+	if (!is.logical(reconstruct) &&
+		!is.numeric(reconstruct))
+		stop("reconstruct must be a logical or numeric.")
+	if (is.numeric(reconstruct)) {
+		if (reconstruct <= 0)
+			stop("reconstruct must be be greater than zero.")
+		if (reconstruct > 1)
+			stop("reconstruct can be at most one.")
 	}
-	model <- unique(model)
+	if (method==3 ||
+		(type > 1 && reconstruct)) {
+		if (length(model) < 1)
+			stop("No model(s) specified.")
+		if (!is.character(model))
+			stop("model must be a character vector.")
+		w <- which(!(model %in% MODELS))
+		if (length(w) > 0) {
+			submodels <- sub("([^+]*)(\\+G(\\d+))?", "\\1", model[w])
+			if (!all(submodels %in% sub("\\+G(\\d+)$", "", MODELS)))
+				stop(paste("Available models are:",
+					paste(MODELS, collapse=", "),
+					collapse=" "))
+			rates <- as.integer(sub("([^+]*)(\\+G(\\d+))?", "\\3", model[w]))
+			if (any(is.na(rates)) || any(floor(rates)!=rates))
+				stop("The number rates in the discrete Gamma distribution (i.e., +G4) should be an integer value.")
+			if (any(rates > 10))
+				stop("Up to 10 rates are allowed in the discrete Gamma distribution (i.e., +G10).")
+			if (any(rates < 2))
+				stop("A minimum of two rates are required for the discrete Gamma distribution (i.e., +G2).")
+		}
+		model <- unique(model)
+	}
 	if (!is.numeric(cutoff))
 		stop("cutoff must be a numeric.")
 	if (is.integer(cutoff))
@@ -1211,11 +1244,6 @@ IdClusters <- function(myDistMatrix=NULL,
 	}
 	if (!is.numeric(collapse))
 		stop("collapse must be a numeric.")
-	if (!is.logical(reconstruct) &&
-		!is.numeric(reconstruct))
-		stop("reconstruct must be a logical or numeric.")
-	if (reconstruct < 0 || reconstruct > 1)
-		stop("reconstruct must be between zero and one (inclusive).")
 	if (!is.logical(verbose))
 		stop("verbose must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
@@ -1244,6 +1272,17 @@ IdClusters <- function(myDistMatrix=NULL,
 			stop("myDistMatrix is too small.")
 		if (typeof(myDistMatrix)=="integer")
 			myDistMatrix[] <- as.numeric(myDistMatrix)
+		
+		if (!is.numeric(root))
+			stop("root must be a numeric.")
+		if (length(root) != 1)
+			stop("root must be a single numeric.")
+		if (floor(root) != root)
+			stop("root must be an integer.")
+		if (root < 0)
+			stop("root must be at least 0.")
+		if (root > dim)
+			stop(paste("root cannot be greater than ", dim, ".", sep=""))
 	}
 	if (method == 3 ||
 		(reconstruct && type > 1)) {
@@ -1848,9 +1887,10 @@ IdClusters <- function(myDistMatrix=NULL,
 		}
 		
 		if (showPlot || type > 1) {
-			# midpoint root the dendrogram
-			if (method==1 || method==3)
-				myClusters <- .midpointRoot(myClusters)
+			if (method==1 ||
+				method==3 ||
+				root > 0)
+				myClusters <- .root(myClusters, root)
 			
 			# create a dendrogram object
 			myClustersList <- list()
@@ -2050,22 +2090,24 @@ IdClusters <- function(myDistMatrix=NULL,
 					METHODS[method],
 					sep="")
 				for (i in 2:length(cutoff)) {
-					if (method==2 ||
-						method==4 ||
-						method==5 ||
-						method==6)
-						myClusters <- .Call("reclusterUPGMA",
-							myClusters,
-							cutoff[i],
-							PACKAGE="DECIPHER")
 					if (method==1 ||
-						method==3)
+						method==3 ||
+						root > 0) {
 						myClusters <- .Call("reclusterNJ",
 							myClusters,
 							cutoff[i],
 							PACKAGE="DECIPHER")
+					} else { # ultrametric
+						myClusters <- .Call("reclusterUPGMA",
+							myClusters,
+							cutoff[i],
+							PACKAGE="DECIPHER")
+					}
 					x <- .organizeClustersFast(myClusters, dNames)
-					if ((method==1 || method==3) && !ASC) # ensure clusters are subsets
+					if ((method==1 ||
+						method==3 ||
+						root > 0) &&
+						!ASC) # ensure clusters are subsets
 						x[, 1] <- .splitClusters(x[, 1], c[, dim(c)[2]])
 					names(x) <- paste("cluster",
 						gsub("\\.", "_", cutoff[i]),

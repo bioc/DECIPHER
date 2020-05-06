@@ -16,6 +16,7 @@ IdClusters(myDistMatrix = NULL,
            model = MODELS,
            collapse = 0,
            reconstruct = FALSE,
+           root = 0,
            processors = 1,
            verbose = TRUE)
 }
@@ -36,16 +37,19 @@ Logical specifying whether or not to plot the resulting dendrogram.  Not applica
 Character string indicating the type of output desired.  This should be (an abbreviation of) one of \code{"clusters"}, \code{"dendrogram"}, or \code{"both"}.  Not applicable if \code{method='inexact'}.  (See value section below.)
 }
   \item{myXStringSet}{
-If \code{method} is \code{"ML"}, the \code{DNAStringSet} or \code{RNAStringSet} used in the creation of \code{myDistMatrix}.  If \code{method} is \code{"inexact"}, the \code{DNAStringSet}, \code{RNAStringSet}, or \code{AAStringSet} to cluster.  Not applicable for other methods.
+If \code{method} is \code{"ML"} or \code{reconstruct} is not \code{FALSE}, the \code{DNAStringSet} or \code{RNAStringSet} used in the creation of \code{myDistMatrix}.  If \code{method} is \code{"inexact"}, the \code{DNAStringSet}, \code{RNAStringSet}, or \code{AAStringSet} to cluster.
 }
   \item{model}{
-One or more of the available \code{MODELS} of evolution.  Only applicable if \code{method} is \code{"ML"} or \code{reconstruct} is \code{TRUE}.
+One or more of the available \code{MODELS} of evolution.  Only applicable if \code{method} is \code{"ML"} or \code{reconstruct} is not \code{FALSE}.
 }
   \item{collapse}{
 Numeric controlling which internal edges of the tree are removed by collapsing their nodes.  If \code{collapse} is zero (the default) then nodes at the same height will be collapsed to a single node, resulting in a multifurcating tree.  When \code{collapse} is greater than zero, nodes that are within \code{collapse} difference in height are made into a single node.  A value of \code{collapse} less than zero will ensure that the \code{dendrogram} is purely bifurcating.  Note that \code{collapse} has no effect on cluster numbers or \code{cutoff}.
 }
   \item{reconstruct}{
-Logical or numeric determining whether to perform ancestral state reconstruction. If \code{TRUE}, maximum likelihood character states are determined at internal nodes of the \code{dendrogram} and provided as the \code{"state"} attribute.  A numeric value between zero and one (exclusive) can be provided, in which case that fraction of the likelihood for a state must be greater than the likelihood of all alternative states.  Requires specification of a \code{DNAStringSet} or \code{RNAStringSet} via \code{myXStringSet}. Only applicable if \code{type} is \code{"dendrogram"} or \code{"both"}.
+Logical or numeric determining whether to perform ancestral state reconstruction. If \code{TRUE}, maximum likelihood character states are determined at internal nodes of the \code{dendrogram} and provided as the \code{"state"} attribute.  A numeric value between zero and one (exclusive) can be provided, in which case that fraction of the likelihood for a state must be greater than the likelihood of all alternative states, otherwise a more ambiguous degeneracy code is used.  Requires specification of a \code{DNAStringSet} or \code{RNAStringSet} via \code{myXStringSet}. Only applicable if \code{type} is \code{"dendrogram"} or \code{"both"}.
+}
+  \item{root}{
+Integer specifying the index of the outgroup in \code{myDistMatrix}, or \code{0} (the default) to midpoint root the dendrogram.
 }
   \item{processors}{
 The number of processors to use, or \code{NULL} to automatically detect and use all available processors.
@@ -55,7 +59,7 @@ Logical indicating whether to display progress.
 }
 }
 \details{
-\code{IdClusters} groups the input sequences into clusters using a set of dissimilarities representing the distance between \eqn{N} sequences.  In most cases, a phylogenetic tree is formed using the specified \code{method}.  Then each leaf (sequence) of the tree is assigned to a cluster based on its edge lengths to the other sequences.  The available clustering methods are described as follows:
+\code{IdClusters} groups the input sequences into clusters using a set of dissimilarities representing the distance between \eqn{N} sequences.  For all \code{method}s except \code{"inexact"}, a phylogenetic tree is formed and each leaf (sequence) of the tree is assigned to a cluster based on its edge lengths to the other sequences.  The available clustering methods are described as follows:
 
 Ultrametric methods:  The method \code{complete} assigns clusters using complete-linkage so that sequences in the same cluster are no more than \code{cutoff} distance apart.  The method \code{single} assigns clusters using single-linkage so that sequences in the same cluster are within \code{cutoff} of at least one other sequence in the same cluster.  \code{UPGMA} (the default) or \code{WPGMA} assign clusters using average-linkage which is a compromise between the sensitivity of complete-linkage clustering to outliers and the tendency of single-linkage clustering to connect distant relatives that do not appear to be closely related.  \code{UPGMA} produces an unweighted tree, where each leaf contributes equally to the average edge lengths, whereas \code{WPGMA} produces a weighted result.
 
@@ -63,7 +67,7 @@ Additive methods:  \code{NJ} uses the Neighbor-Joining method proposed by Saitou
 
 Sequence-only method:  \code{inexact} uses a heuristic algorithm to directly assign sequences to clusters without a distance matrix.  First the sequences are ordered by length and the longest sequence becomes the first cluster seed.  If the second sequence is less than \code{cutoff} percent distance then it is added to the cluster, otherwise it becomes a new cluster representative.  The remaining sequences are matched to cluster representatives based on their k-mer distribution and then aligned to find the closest sequence.  This approach is repeated until all sequences belong to a cluster.  In the vast majority of cases, this process results in clusters with members separated by less than \code{cutoff} distance, where distance is defined as the percent dissimilarity between the overlapping region of a ``glocal'' alignment.
 
-For all \code{method}s, multiple cutoffs may be provided in sorted order.  If the \code{cutoff}s are provided in \emph{descending} order then clustering at each new value of \code{cutoff} is continued within the prior \code{cutoff}'s clusters.  In this way clusters at lower values of \code{cutoff} are completely contained within their umbrella clusters at higher values of \code{cutoff}.  This is useful for defining taxonomy, where groups need to be hierarchically nested.  If multiple cutoffs are provided in \emph{ascending} order then clustering at each level of \code{cutoff} is independent of the prior level.  This may result in fewer high-level clusters for \code{NJ} and \code{ML} methods, but will have no impact on ultrametric methods.
+For all \code{method}s, multiple cutoffs may be provided in sorted order.  If the \code{cutoff}s are provided in \emph{descending} order then clustering at each new value of \code{cutoff} is continued within the prior \code{cutoff}'s clusters.  In this way clusters at lower values of \code{cutoff} are completely contained within their umbrella clusters at higher values of \code{cutoff}.  This is useful for defining taxonomy, where groups need to be hierarchically nested.  If multiple cutoffs are provided in \emph{ascending} order then clustering at each level of \code{cutoff} is independent of the prior level.  This may result in fewer high-level clusters for \code{NJ} and \code{ML} methods, but will have no impact on ultrametric methods unless \code{root} is greater than zero (i.e., outgroup rooted).
 }
 \value{
 If \code{type} is \code{"clusters"} (the default), then a data.frame is returned with a column for each cutoff specified.  This data.frame has dimensions \eqn{N*M}, where each one of \eqn{N} sequences is assigned to a cluster at the \eqn{M}-level of cutoff.  The row.names of the data.frame correspond to the dimnames of \code{myDistMatrix}.

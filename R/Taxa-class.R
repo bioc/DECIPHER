@@ -423,7 +423,7 @@ plot.Taxa <- function(x, y=NULL, showRanks=TRUE, n=NULL, ...) {
 			}
 			attr(z, "height") <- 1 - (x$levels[I] - 1)/m
 			if (x$taxonomy[I] %in% x$problemGroups)
-				attr(z, "edgePar") <- list(col="red")
+				attr(z, "edgePar") <- list(col="magenta")
 			
 			return(z)
 		}
@@ -433,7 +433,7 @@ plot.Taxa <- function(x, y=NULL, showRanks=TRUE, n=NULL, ...) {
 		attr(tree, "height") <- 1
 		attr(tree, "members") <- sum(sapply(tree, attr, "members"))
 		if (x$taxonomy[1] %in% x$problemGroups)
-			attr(tree, "edgePar") <- list(col="red")
+			attr(tree, "edgePar") <- list(col="magenta")
 		tree <- .applyMidpoints(tree, length(x$levels))
 		# edgePar for edge.root is disregarded, so add parent node
 		tree <- list(tree)
@@ -462,12 +462,12 @@ plot.Taxa <- function(x, y=NULL, showRanks=TRUE, n=NULL, ...) {
 			main="",
 			leaflab="none",
 			yaxt="n")
-		mtext(expression(bold("Taxonomic tree (problem groups in "*phantom("red")*")")),
+		mtext(expression(bold("Taxonomic tree (problem groups in "*phantom("magenta")*")")),
 			col="black",
 			cex=0.8,
 			line=0.4)
-		mtext(expression(bold(phantom("Taxonomic tree (problem groups in ")*"red"*phantom(")"))),
-			col="red",
+		mtext(expression(bold(phantom("Taxonomic tree (problem groups in ")*"magenta"*phantom(")"))),
+			col="magenta",
 			cex=0.8,
 			line=0.4)
 		
