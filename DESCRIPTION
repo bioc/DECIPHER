@@ -1,13 +1,8 @@
 Package: DECIPHER
 Type: Package
 Title: Tools for curating, analyzing, and manipulating biological sequences
-<<<<<<< HEAD
-Version: 2.16.0
-Date: 2020-04-25
-=======
-Version: 2.17.1
+Version: 2.16.1
 Date: 2020-05-06
->>>>>>> b2ea653... Adding root argument to IdClusters.
 Author: Erik Wright
 Maintainer: Erik Wright <eswright@pitt.edu>
 biocViews: Clustering, Genetics, Sequencing, DataImport, Visualization, Microarray, QualityControl, qPCR, Alignment, WholeGenome, Microbiome, ImmunoOncology
