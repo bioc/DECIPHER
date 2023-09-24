@@ -3,7 +3,7 @@
 	rs.class <- data.class(obj)
 	rs.mode <- storage.mode(obj)
 	switch(rs.class,
-		numeric = if (rs.mode=="integer") "INTEGER" else "REAL",
+		numeric = if (rs.mode == "integer") "INTEGER" else "REAL",
 		character = "TEXT",
 		logical = "INTEGER",
 		factor = "TEXT",
@@ -43,7 +43,7 @@ Add2DB <- function(myData,
 		stop("clause must be a character string.")
 	if (!is.logical(verbose))
 		stop("verbose must be a logical.")
-	if (ncol(myData)==0)
+	if (ncol(myData) == 0)
 		stop("myData contains no columns.")
 	if (any(grepl(".", names(myData), fixed=TRUE)))
 		stop("Column names cannot contain periods.")
@@ -62,8 +62,8 @@ Add2DB <- function(myData,
 	}
 	
 	result  <- dbListTables(dbConn)
-	w <- which(result==tblName)
-	if (length(w)==0) { # need to make the table
+	w <- which(result == tblName)
+	if (length(w) == 0) { # need to make the table
 		dbWriteTable(dbConn,
 			tblName,
 			myData,
@@ -117,7 +117,7 @@ Add2DB <- function(myData,
 				colName,
 				" where row_names = :row_names",
 				sep="")
-			if (clause!="")
+			if (clause != "")
 				expression2 <- paste(expression2,
 					" and ",
 					clause,

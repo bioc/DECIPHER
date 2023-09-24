@@ -15,7 +15,7 @@ ReadDendrogram <- function(file,
 	w <- which(nchar(r) > 0)
 	if (length(w) > 1) {
 		r <- paste(r[w], collapse="")
-	} else if (length(w)==0) {
+	} else if (length(w) == 0) {
 		stop("file is empty.")
 	} else {
 		r <- r[w]
@@ -25,16 +25,16 @@ ReadDendrogram <- function(file,
 		'(?=[\\[\\](),:;])(?=([^"]*"[^"]*")*[^"]*$)',
 		perl=TRUE)[[1]]
 	r <- gsub("^\\s+|\\s+$", "", r)
-	w <- which(r=="")
+	w <- which(r == "")
 	if (length(w) > 0)
 		r <- r[-w]
 	
 	getLab <- function(LAB) {
 		# convert underscores to spaces in unquoted labels
 		lab <- gsub("^\"(.*)\"$", "\\1", LAB)
-		if (convertBlanks && nchar(lab)==nchar(LAB))
+		if (convertBlanks && nchar(lab) == nchar(LAB))
 			lab <- gsub("_", " ", lab, fixed=TRUE)
-		if (nchar(lab)!=nchar(LAB))
+		if (nchar(lab) != nchar(LAB))
 			lab <- gsub("''", "'", lab, fixed=TRUE)
 		return(lab)
 	}
@@ -45,28 +45,28 @@ ReadDendrogram <- function(file,
 		x <- vector("list")
 		j <- 0L
 		while (i <= length(r) && r[i] != ";") {
-			if (r[i]=="[") { # comment
+			if (r[i] == "[") { # comment
 				count <- 1L
 				i <<- i + 1L
 				while (count > 0) {
 					if (i > length(r))
 						stop("Improperly formatted comment.")
-					if (r[i]=="]") {
+					if (r[i] == "]") {
 						count <- count - 1L
-					} else if (r[i]=="[") {
+					} else if (r[i] == "[") {
 						count <- count + 1L
 					}
 					i <<- i + 1L
 				}
-			} else if (r[i]==")") {
+			} else if (r[i] == ")") {
 				i <<- i + 1L
-				if (i <= length(r) && r[i]==":") {
+				if (i <= length(r) && r[i] == ":") {
 					# internal node
 					i <<- i + 1L
 					if (i <= length(r))
 						attr(x, "height") <- as.numeric(r[i])
 					i <<- i + 1L
-				} else if (i < length(r) && r[i + 1L]==":") {
+				} else if (i < length(r) && r[i + 1L] == ":") {
 					# labeled internal node
 					if (internalLabels)
 						attr(x, "edgetext") <- getLab(r[i])
@@ -74,17 +74,17 @@ ReadDendrogram <- function(file,
 					if (i <= length(r))
 						attr(x, "height") <- as.numeric(r[i])
 					i <<- i + 1L
-				} else if (i < length(r) && r[i + 1L]==";") {
+				} else if (i < length(r) && r[i + 1L] == ";") {
 					i <<- i + 1L
 				} else if (i <= length(r) && r[i] != ";") {
 					stop("Unsupported file formatting.")
 				}
 				break
-			} else if (r[i]=="(") {
+			} else if (r[i] == "(") {
 				j <- j + 1L
 				i <<- i + 1L
 				x[[j]] <- .newick2list()
-			} else if (r[i]==",") {
+			} else if (r[i] == ",") {
 				i <<- i + 1L
 			} else if ((i + 2L) <= length(r) && r[i + 1L] == ":") {
 				j <- j + 1L
@@ -106,7 +106,7 @@ ReadDendrogram <- function(file,
 				attr(x[[j]], "height") <- as.numeric(r[i + 1L])
 				attr(x[[j]], "members") <- 1L
 				i <<- i + 2L
-			} else if (r[i]==" ") {
+			} else if (r[i] == " ") {
 				i <<- i + 1L
 			} else {
 				stop("Unsupported file formatting.")

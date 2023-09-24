@@ -11,23 +11,23 @@ MeltDNA <- function(myDNAStringSet,
 	}
 	if (min(width(myDNAStringSet)) < 3)
 		stop("All sequences in myDNAStringSet must be at least 3 nucleotides long.")
-	if (length(type)==0)
+	if (length(type) == 0)
 		stop("No type specified.")
 	TYPES <- c("positional probabilities", "melt curves", "derivative curves")
 	type <- pmatch(type, TYPES)
 	if (is.na(type))
 		stop("Invalid type.")
-	if (type==-1)
+	if (type == -1)
 		stop("Ambiguous type.")
 	if (!is.numeric(temps))
 		stop("temps must be a numeric.")
-	if (length(temps)==0)
+	if (length(temps) == 0)
 		stop("temps cannot be length 0.")
-	if (!all(temps==cummax(temps)))
+	if (!all(temps == cummax(temps)))
 		stop("temps must be monotonically increasing.")
-	if (length(unique(temps))!=length(temps))
+	if (length(unique(temps)) != length(temps))
 		stop("temps cannot repeat.")
-	if (type==3 && length(temps) < 3)
+	if (type == 3 && length(temps) < 3)
 		stop("At least three temperatures must be specified for a derivative curve.")
 	if (!is.numeric(ions))
 		step("ions must be a numeric.")
@@ -42,9 +42,9 @@ MeltDNA <- function(myDNAStringSet,
 		type,
 		PACKAGE="DECIPHER")
 	
-	if (length(u)!=length(myDNAStringSet)) {
+	if (length(u) != length(myDNAStringSet)) {
 		m <- match(myDNAStringSet, u)
-		if (type==1L) {
+		if (type == 1L) {
 			x <- x[m]
 		} else {
 			x <- x[, m, drop=FALSE]

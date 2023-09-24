@@ -11,7 +11,7 @@ BrowseSeqs <- function(myXStringSet,
 	# error checking
 	if (!is(myXStringSet, "XStringSet"))
 		stop("myXStringSet must be an XStringSet.")
-	if (length(myXStringSet)==0)
+	if (length(myXStringSet) == 0)
 		stop("No sequence information to display.")
 	if (is(patterns, "DNAStringSet")) {
 		if (!is(myXStringSet, "DNAStringSet"))
@@ -32,7 +32,7 @@ BrowseSeqs <- function(myXStringSet,
 	}
 	if (type > 0L) {
 		patterns <- as.character(patterns)
-		if (type==1L) { # DNAStringSet
+		if (type == 1L) { # DNAStringSet
 			patterns <- gsub("M",
 				"[ACM]",
 				patterns,
@@ -77,7 +77,7 @@ BrowseSeqs <- function(myXStringSet,
 				"[ACGTMRWSYKVHDBN]",
 				patterns,
 				fixed=TRUE)
-		} else if (type==2L) { # RNAStringSet
+		} else if (type == 2L) { # RNAStringSet
 			patterns <- gsub("M",
 				"[ACM]",
 				patterns,
@@ -144,13 +144,13 @@ BrowseSeqs <- function(myXStringSet,
 				patterns,
 				fixed=TRUE)
 		}
-	} else if (type==0) { # character vector
+	} else if (type == 0) { # character vector
 		if (!is.null(patterns) && !is.character(patterns))
 			stop("patterns must be a character vector.")
 		if (any(grepl("=|\"|<|>|[1-9]|[a-z]", patterns)))
 			stop("patterns cannot contain numbers, lower case characters, or the characters (=, <, >, \").")
 	}
-	if (any(patterns==""))
+	if (any(patterns == ""))
 		stop("patterns cannot be empty (i.e., '').")
 	if (type < 0) {
 		if (length(myXStringSet) != length(patterns))
@@ -265,7 +265,7 @@ BrowseSeqs <- function(myXStringSet,
 	}
 	
 	if (!is.na(highlight)) { # highlight a sequence
-		if (highlight==0) {
+		if (highlight == 0) {
 			highlight <- length(html)
 			index <- 1:(length(html) - 1L)
 		} else {
@@ -274,7 +274,7 @@ BrowseSeqs <- function(myXStringSet,
 		html <- sapply(html, strsplit, split="", fixed=TRUE)
 		for (i in index) {
 			L <- min(length(html[[highlight]]), length(html[[i]]))
-			w <- which(html[[i]][1:L]==html[[highlight]][1:L])
+			w <- which(html[[i]][1:L] == html[[highlight]][1:L])
 			if (length(w) > 0)
 				html[[i]][w] <- "\u00B7"
 		}
@@ -283,7 +283,7 @@ BrowseSeqs <- function(myXStringSet,
 	
 	# pad shorter sequences with spaces
 	maxW <- max(width(myXStringSet))
-	if (maxW==0)
+	if (maxW == 0)
 		stop("No sequence information to display.")
 	if (colWidth > maxW)
 		colWidth <- maxW
@@ -366,7 +366,7 @@ BrowseSeqs <- function(myXStringSet,
 		} else {
 			patterns <- paste("(",
 				patterns,
-				ifelse(nchar(patterns)==1, "+)", ")"),
+				ifelse(nchar(patterns) == 1, "+)", ")"),
 				sep="")
 			classes <- paste("<span class=\"_",
 				seq_along(patterns),
@@ -381,7 +381,7 @@ BrowseSeqs <- function(myXStringSet,
 							classes[j],
 							htmi)
 					}
-					end <- ifelse(i==(length(colorPatterns) - 1),
+					end <- ifelse(i == (length(colorPatterns) - 1),
 						max(nchar(html)),
 						colorPatterns[i + 2] - 1)
 					

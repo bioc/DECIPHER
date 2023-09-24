@@ -58,12 +58,12 @@ set.seed(123)
 \tableofcontents
 
 %------------------------------------------------------------
-\section{Introduction}
+\section{Introduction to supersize clustering}
 %------------------------------------------------------------
 
 You may have found yourself in a familiar predicament for many bioinformaticians: you have a lot of sequences and you need to downs\emph{ize} before you can get going. You may also theor\emph{ize} that this must be an easy problem to solve \textemdash given sequences, output clusters. But what can you util\emph{ize} to solve this problem? This vignette will familiar\emph{ize} you with the \Rfunction{Clusterize} function in the \Rpackage{DECIPHER} package. Clusterize will revolution\emph{ize} all your clustering needs!
-\\
-Why \Rfunction{Clusterize}?
+\par
+Why \Rfunction{Clusterize}?:
 \begin{itemize}
   \item Scalability - \Rfunction{Clusterize} will linear\emph{ize} the search space so that many sequences can be clustered in a reasonable amount of time.
   \item Simplicity - Although you can individual\emph{ize} \Rfunction{Clusterize}, the defaults are straightforward and should meet most of your needs.
@@ -73,7 +73,7 @@ Why \Rfunction{Clusterize}?
 This vignette will summar\emph{ize} the use of \Rfunction{Clusterize} to cluster DNA, RNA, or protein sequences.
 
 %------------------------------------------------------------
-\section{Getting Started}
+\section{Getting started with Clusterize}
 %------------------------------------------------------------
 
 \newlength\tindent
@@ -120,11 +120,21 @@ The \Rfunction{Clusterize} algorithm will general\emph{ize} to nucleotide or pro
 aa <- translate(dna)
 aa
 seqs <- aa # could also cluster the nucleotides
+length(seqs)
 @
 
 Now you can choose how to parameter\emph{ize} the function, with the main arguments being \Rfunarg{myXStringSet} and \Rfunarg{cutoff}. In this case, we will initial\emph{ize} \Rfunarg{cutoff} at \code{seq(0.5, 0, -0.1)} to cluster sequences from 50\% to 100\% similarity by 10\%'s. It is important to recogn\emph{ize} that \Rfunarg{cutoff}s can be provided in \emph{ascending} or \emph{descending} order and, when \emph{descending}, groups at each \Rfunarg{cutoff} will be nested within the previous \Rfunarg{cutoff}'s groups.
 
-We must also choose whether to custom\emph{ize} the calculation of distance. The defaults will penal\emph{ize} gaps as single events, such that each consecutive set of gaps (i.e., insertion or deletion) is considered equivalent to one mismatch. If you want to standard\emph{ize} the definition of distance to be the same as most other clustering programs then set: \Rfunarg{penalizeGapLetterMatches} to \code{TRUE} (i.e., every gap position is a mismatch), \Rfunarg{method} to \code{"shortest"}, \Rfunarg{minCoverage} to \code{0}, and \Rfunarg{includeTerminalGaps} to \code{TRUE}. It is possible to rational\emph{ize} many different measures of distance -- see the \Rfunction{DistanceMatrix} function for more information about alternative parameterizations.
+We must also choose whether to custom\emph{ize} the calculation of distance. The defaults will penal\emph{ize} gaps as single events, such that each consecutive set of gaps (i.e., insertion or deletion) is considered equivalent to one mismatch. If you want to standard\emph{ize} the definition of distance to be the same as most other clustering programs then set: \Rfunarg{penalizeGapLetterMatches} to \code{TRUE} (i.e., every gap position is a mismatch), \Rfunarg{method} to \code{"shortest"}, \Rfunarg{minCoverage} to \code{0}, and \Rfunarg{includeTerminalGaps} to \code{TRUE}. It is possible to rational\emph{ize} many different measures of distance -- see the \Rfunction{DistanceMatrix} function for more information about alternative distance parameterizations.
+
+\begin{figure}
+\begin{center}
+\includegraphics[height=0.6\textheight,keepaspectratio]{ClusteringParameters}
+\end{center}
+\caption{\label{f0} The most important parameters (in \textbf{bold}) to custom\emph{ize} your use of \Rfunction{Clusterize}.}
+\end{figure}
+
+\clearpage
 
 We can further personal\emph{ize} the inputs as desired. The main function argument to emphas\emph{ize} is \Rfunarg{processors}, which controls whether the function is parallelized on multiple computer threads (if \Rpackage{DECIPHER}) was built with OpenMP enabled). Setting \Rfunarg{processors} to a value greater than \code{1} will speed up clustering considerably, especially for large s\emph{ize} clustering problems. Once we are ready, it's time to run \Rfunction{Clusterize} and wait for the output to material\emph{ize}!
 
@@ -134,6 +144,7 @@ class(clusters)
 colnames(clusters)
 str(clusters)
 apply(clusters, 2, max) # number of clusters per cutoff
+apply(clusters, 2, function(x) which.max(table(x))) # max sizes
 @
 
 Notice that \Rfunction{Clusterize} will character\emph{ize} the clustering based on how many clustered pairs came from relatedness sorting versus rare k-mers, and \Rfunction{Clusterize} will predict the effectiveness of clustering. Depending on the input sequences, the percentage of clusters originating from relatedness sorting will equal\emph{ize} with the number originating from rare k-mers, but more commonly clusters will originate from one source or the other. The clustering effectiveness formal\emph{ize}s the concept of ``inexact'' clustering by approximating the fraction of possible sequence pairs that were correctly clustered together. You can incentiv\emph{ize} a higher clustering effectiveness by increasing \Rfunarg{maxPhase3} at the expense of (proportionally) longer run times.
@@ -189,7 +200,7 @@ w <- which(c1 < 0 & !duplicated(c1))
 dna[w] # select cluster representatives (negative cluster numbers)
 @
 
-By default, \Rfunction{Clusterize} will cluster sequences with linkage to the representative sequence in each group, but it is also possible to tell \Rfunction{Clusterize} to minim\emph{ize} the number of clusters by establishing linkage to any sequence in the cluster (i.e., single-linkage):
+By default, \Rfunction{Clusterize} will cluster sequences with linkage to the representative sequence in each group, but it is also possible to tell \Rfunction{Clusterize} to minim\emph{ize} the number of clusters by establishing linkage to any sequence in the cluster (i.e., single-linkage). This is often how we conceptual\emph{ize} natural groupings and, therefore, may better match alternative classification systems such as taxonomy:
 
 <<expr8,eval=TRUE>>=
 c2 <- Clusterize(dna, cutoff=0.2, singleLinkage=TRUE, processors=1)
@@ -211,24 +222,46 @@ heatmap(sqrt(t), scale="none", Rowv=NA, col=hcl.colors(100))
 \clearpage
 
 %------------------------------------------------------------
+\section{Resize to fit within less memory}
+%------------------------------------------------------------
+
+What should you do if you have more sequences than you can cluster on your mids\emph{ize} computer? If there are far fewer clusters than sequences (e.g., \Rfunarg{cutoff} is high) then it is likely possible to res\emph{ize} the clustering problem. This is accomplished by processing the sequences in batches that miniatur\emph{ize} the memory footprint and are at least as large as the final number of clusters. The number of sequences processed per batch is critical to atom\emph{ize} the problem appropriately while limiting redundant computations. Although not ideal from a speed perspective, the results will not jeopard\emph{ize} accuracy relative to as if there was sufficient memory available to process all sequences in one batch.
+
+<<expr10,eval=TRUE>>=
+batchSize <- 2e2 # normally a large number (e.g., 1e6 or 1e7)
+o <- order(width(seqs), decreasing=TRUE) # process largest to smallest
+c3 <- integer(length(seqs)) # cluster numbers
+repeat {
+	m <- which(c3 < 0) # existing cluster representatives
+	m <- m[!duplicated(c3[m])] # remove redundant sequences
+	if (length(m) >= batchSize)
+		stop("batchSize is too small")
+	w <- head(c(m, o[c3[o] == 0L]), batchSize)
+	if (!any(c3[w] == 0L)) {
+		if (any(c3[-w] == 0L))
+			stop("batchSize is too small")
+		break # done
+	}
+	m <- m[match(abs(c3[-w]), abs(c3[m]))]
+	c3[w] <- Clusterize(seqs[w], cutoff=0.05, invertCenters=TRUE)[[1]]
+	c3[-w] <- ifelse(is.na(c3[m]), 0L, abs(c3[m]))
+}
+table(abs(c3)) # cluster sizes
+@
+
+%------------------------------------------------------------
 \section{Finalize your use of Clusterize}
 %------------------------------------------------------------
 
 Notably, \Rfunction{Clusterize} is a stochastic algorithm, meaning it will random\emph{ize} which sequences are selected during pre-sorting. Even though the clusters will typically stabil\emph{ize} with enough iterations, you can set the random number seed (before every run) to guarantee reproducibility of the clusters:
 
-<<expr10,eval=TRUE>>=
+<<expr11,eval=TRUE>>=
 set.seed(123) # initialize the random number generator
 clusters <- Clusterize(seqs, cutoff=0.1, processors=1)
 set.seed(NULL) # reset the seed
 @
 
-Now you know how to util\emph{ize} \Rfunction{Clusterize} to cluster sequences.
-
-%------------------------------------------------------------
-\section{Session Information}
-%------------------------------------------------------------
-
-All of the output in this vignette was produced under the following conditions:
+Now you know how to util\emph{ize} \Rfunction{Clusterize} to cluster sequences. To public\emph{ize} your results for others to reproduce, make sure to provide your random number seed and version number:
 
 <<sessinfo,echo=FALSE,results=tex>>=
 toLatex(sessionInfo(), locale=FALSE)

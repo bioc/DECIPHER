@@ -23,18 +23,18 @@ BrowseDB <- function(dbFile,
 	if (!is.character(orderBy))
 		stop("orderBy must be a character string.")
 	if (is.numeric(limit)) {
-		if (floor(limit)!=limit)
+		if (floor(limit) != limit)
 				stop("limit must be a whole number or two comma-separated whole numbers specifying offset,limit.")
 	} else {
 		if (!grepl("[0-9],[0-9]", limit, perl=TRUE)) {
 			limit <- as.numeric(limit)
-			if (floor(limit)!=limit)
+			if (floor(limit) != limit)
 				stop("limit must be a whole number or two comma-separated whole numbers specifying offset,limit.")
 		}
 	}
 	if (!is.numeric(maxChars))
 		stop("maxChars must be a numeric.")
-	if (floor(maxChars)!=maxChars)
+	if (floor(maxChars) != maxChars)
 		stop("maxChars must be a whole number.")
 	if (maxChars <= 0)
 		stop("maxChars must be greater than zero.")
@@ -58,18 +58,18 @@ BrowseDB <- function(dbFile,
 	searchExpression <- paste('select count(*) from ',
 		tblName,
 		sep="")
-	if (identifier!="")
+	if (identifier != "")
 		searchExpression <- paste(searchExpression,
 			' where identifier is "',
 			identifier,
 			'"',
 			sep="")
-	if (clause!="")
+	if (clause != "")
 		searchExpression <- paste(searchExpression,
-			ifelse(identifier=="", " where ", " and "),
+			ifelse(identifier == "", " where ", " and "),
 			clause,
 			sep="")
-	if (orderBy!="row_names") # default ordering is row_names
+	if (orderBy != "row_names") # default ordering is row_names
 		searchExpression <- paste(searchExpression,
 			'order by',
 			orderBy)
@@ -92,7 +92,7 @@ BrowseDB <- function(dbFile,
 	
 	# gives the table rows alternating colors
 	for (j in 1:count) {
-		if ((j %% 2)==1) {
+		if ((j %% 2) == 1) {
 			html[j] <- "<tr class=\"row1\">"
 		} else {
 			html[j] <- "<tr class=\"row2\">"
@@ -105,7 +105,7 @@ BrowseDB <- function(dbFile,
 	tds <- ""
 	tableWidth <- 0L
 	for (i in 1:length(f)) {
-		if (f[i]=="sequence")
+		if (f[i] == "sequence")
 			next # skip sequence because it is compressed
 		
 		w <- width(f[i])
@@ -119,18 +119,18 @@ BrowseDB <- function(dbFile,
 			') from ',
 			tblName,
 			sep="")
-		if (identifier!="")
+		if (identifier != "")
 			searchExpression <- paste(searchExpression,
 				' where identifier is "',
 				identifier,
 				'"',
 				sep="")
-		if (clause!="")
+		if (clause != "")
 			searchExpression <- paste(searchExpression,
-				ifelse(identifier=="", " where ", " and "),
+				ifelse(identifier == "", " where ", " and "),
 				clause,
 				sep="")
-		if (orderBy!="row_names") # default ordering is row_names
+		if (orderBy != "row_names") # default ordering is row_names
 			searchExpression <- paste(searchExpression,
 				'order by',
 				orderBy)
@@ -148,7 +148,7 @@ BrowseDB <- function(dbFile,
 		searchResult[is.na(searchResult)] <- "NULL"
 		
 		# replace newlines with html breaks
-		searchResult[, 1] <- gsub("\n", "<br>", searchResult[, 1], useBytes=TRUE, fixed=TRUE)
+		searchResult[, 1] <- gsub("\n", "<br>", searchResult[, 1], fixed=TRUE)
 		
 		if (max(width(searchResult[,1])) > w)
 			w <- max(width(searchResult[,1]))

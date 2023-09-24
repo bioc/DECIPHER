@@ -109,11 +109,11 @@ int nextCount(int c, int tot, int *orfs, int minL, double *scores)
 {
 	if (c > 0) { // go to next ORF
 		while (c < tot && // current in bounds
-			((orfs[c + 3*tot]==orfs[c + 3*tot - 1] && // same end
-			orfs[c + tot]==0) || // forward strand
-			(orfs[c + 2*tot]==orfs[c + 2*tot - 1] && // same begin
-			orfs[c + tot]==1)) && // reverse strand
-			orfs[c]==orfs[c - 1]) // same index
+			((orfs[c + 3*tot] == orfs[c + 3*tot - 1] && // same end
+			orfs[c + tot] == 0) || // forward strand
+			(orfs[c + 2*tot] == orfs[c + 2*tot - 1] && // same begin
+			orfs[c + tot] == 1)) && // reverse strand
+			orfs[c] == orfs[c - 1]) // same index
 			c++;
 	}
 	
@@ -124,17 +124,17 @@ int nextCount(int c, int tot, int *orfs, int minL, double *scores)
 	
 	int max = c;
 	while ((c + 1) < tot && // next in bounds
-		((orfs[c + 3*tot]==orfs[c + 3*tot + 1] && // same end
-		orfs[c + tot]==0) || // forward strand
-		(orfs[c + 2*tot]==orfs[c + 2*tot + 1] && // same begin
-		orfs[c + tot]==1)) && // reverse strand
-		orfs[c]==orfs[c + 1]) { // same index
+		((orfs[c + 3*tot] == orfs[c + 3*tot + 1] && // same end
+		orfs[c + tot] == 0) || // forward strand
+		(orfs[c + 2*tot] == orfs[c + 2*tot + 1] && // same begin
+		orfs[c + tot] == 1)) && // reverse strand
+		orfs[c] == orfs[c + 1]) { // same index
 		c++;
 		if (scores[max] < scores[c])
 			max = c;
 	}
 	
-	if (max==tot)
+	if (max == tot)
 		max--;
 	
 	return max;
@@ -187,16 +187,16 @@ SEXP getORFs(SEXP x, SEXP start_codons, SEXP stop_codons, SEXP min_gene_length, 
 					}
 					
 					for (k = 0; k < lstops; k++) {
-						if (val==stops[k]) {
+						if (val == stops[k]) {
 							lastStop = j;
 							break;
 						}
 					}
-					if (lastStop==j) // current position is a stop
+					if (lastStop == j) // current position is a stop
 						continue;
 					
 					for (k = 0; k < lstarts; k++) {
-						if ((val==starts[k] || // current position is a start
+						if ((val == starts[k] || // current position is a start
 							(allow && j <= 1)) &&
 							(lastStop - j + 3) >= minL) {
 							if (count >= size) {
@@ -287,14 +287,14 @@ SEXP codonModel(SEXP x, SEXP orftable, SEXP stop_codons, SEXP min_orf_length, SE
 					
 					if (inside) { // look for beg
 						if (s) { // negative strand
-							if ((x_i.length - j - 1)==orfs[count + 3*tot]) {
+							if ((x_i.length - j - 1) == orfs[count + 3*tot]) {
 								inside = 0;
 								count = nextCount(++count, tot, orfs, minL, scores);
 							} else if (val < 64) {
 								freq[val]++;
 							}
 						} else { // positive strand
-							if ((j + 2)==orfs[count + 2*tot]) {
+							if ((j + 2) == orfs[count + 2*tot]) {
 								inside = 0;
 								count = nextCount(++count, tot, orfs, minL, scores);
 							} else if (val < 64) {
@@ -303,13 +303,13 @@ SEXP codonModel(SEXP x, SEXP orftable, SEXP stop_codons, SEXP min_orf_length, SE
 						}
 					} else { // look for end
 						if (s) { // negative strand
-							if ((x_i.length - j - 3)==orfs[count + 2*tot]) {
+							if ((x_i.length - j - 3) == orfs[count + 2*tot]) {
 								inside = 1;
 							} else if (val < 64) {
 								bg[val]++;
 							}
 						} else { // positive strand
-							if ((j + 4)==orfs[count + 3*tot]) {
+							if ((j + 4) == orfs[count + 3*tot]) {
 								inside = 1;
 							} else if (val < 64) {
 								bg[val]++;
@@ -328,7 +328,7 @@ SEXP codonModel(SEXP x, SEXP orftable, SEXP stop_codons, SEXP min_orf_length, SE
 	for (i = 0; i < 64; i++) {
 		notstop = 1;
 		for (k = 0; k < lstops; k++) {
-			if (i==stops[k]) {
+			if (i == stops[k]) {
 				notstop = 0;
 				break;
 			}
@@ -346,7 +346,7 @@ SEXP codonModel(SEXP x, SEXP orftable, SEXP stop_codons, SEXP min_orf_length, SE
 	for (i = 0; i < 64; i++) {
 		notstop = 1;
 		for (k = 0; k < lstops; k++) {
-			if (i==stops[k]) {
+			if (i == stops[k]) {
 				notstop = 0;
 				break;
 			}
@@ -372,9 +372,9 @@ SEXP scoreCodonModel(SEXP x, SEXP orftable, SEXP codon_scores)
 	int tot = length(orftable)/4; // number of rows
 	int *orfs = INTEGER(orftable);
 	double *codons = REAL(codon_scores);
-	if (length(codon_scores)==64) {
+	if (length(codon_scores) == 64) {
 		dicodon = 0;
-	} else if (length(codon_scores)==4096) {
+	} else if (length(codon_scores) == 4096) {
 		dicodon = 1;
 	} else {
 		error("codon_scores is the wrong length.");
@@ -436,7 +436,7 @@ SEXP scoreCodonModel(SEXP x, SEXP orftable, SEXP codon_scores)
 					score += codons[val];
 			}
 			
-			if (j==fin) {
+			if (j == fin) {
 				// record the score
 				rans[i] = score;
 				//if (score > max_score) {
@@ -448,9 +448,9 @@ SEXP scoreCodonModel(SEXP x, SEXP orftable, SEXP codon_scores)
 				// check whether still within bounds
 				if (s) { // negative strand
 					if (i != tot &&
-						orfs[i + 2*tot]==orfs[i + 2*tot - 1] &&
-						s==orfs[i + tot] &&
-						curr_i==orfs[i]) {
+						orfs[i + 2*tot] == orfs[i + 2*tot - 1] &&
+						s == orfs[i + tot] &&
+						curr_i == orfs[i]) {
 						// continue scoring
 						fin = orfs[i + 3*tot] - 3;
 					} else {
@@ -458,9 +458,9 @@ SEXP scoreCodonModel(SEXP x, SEXP orftable, SEXP codon_scores)
 					}
 				} else { // positive strand
 					if (i != tot &&
-						orfs[i + 3*tot]==orfs[i + 3*tot - 1] &&
-						s==orfs[i + tot] &&
-						curr_i==orfs[i]) {
+						orfs[i + 3*tot] == orfs[i + 3*tot - 1] &&
+						s == orfs[i + tot] &&
+						curr_i == orfs[i]) {
 						// continue scoring
 						fin = orfs[i + 2*tot] + 1;
 					} else {
@@ -520,7 +520,7 @@ SEXP dicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 					
 					if (inside) { // look for beg
 						if (s) { // negative strand
-							if ((x_i.length - j - 1)==(orfs[count + 3*tot])) {
+							if ((x_i.length - j - 1) == (orfs[count + 3*tot])) {
 								inside = 0;
 								lastVal = 100000;
 								count++;
@@ -528,7 +528,7 @@ SEXP dicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 								freq[lastVal*64 + val]++;
 							}
 						} else { // positive strand
-							if ((j + 2)==(orfs[count + 2*tot])) {
+							if ((j + 2) == (orfs[count + 2*tot])) {
 								inside = 0;
 								lastVal = 100000;
 								count++;
@@ -538,14 +538,14 @@ SEXP dicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 						}
 					} else { // look for end
 						if (s) { // negative strand
-							if ((x_i.length - j - 3)==orfs[count + 2*tot]) {
+							if ((x_i.length - j - 3) == orfs[count + 2*tot]) {
 								inside = 1;
 								lastVal = 100000;
 							} else if (val < 64 && lastVal < 64) {
 								bg[lastVal*64 + val]++;
 							}
 						} else { // positive strand
-							if ((j + 4)==orfs[count + 3*tot]) {
+							if ((j + 4) == orfs[count + 3*tot]) {
 								inside = 1;
 								lastVal = 100000;
 							} else if (val < 64 && lastVal < 64) {
@@ -567,7 +567,7 @@ SEXP dicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 	for (i = 0; i < 64; i++) {
 		notstop = 1;
 		for (k = 0; k < lstops; k++) {
-			if (i==stops[k]) {
+			if (i == stops[k]) {
 				notstop = 0;
 				break;
 			}
@@ -576,15 +576,15 @@ SEXP dicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 			for (j = 0; j < 64; j++) {
 				notstop = 1;
 				for (k = 0; k < lstops; k++) {
-					if (j==stops[k]) {
+					if (j == stops[k]) {
 						notstop = 0;
 						break;
 					}
 				}
 				if (notstop) {
-					if (freq[i*64 + j]==0) // add pseudocount
+					if (freq[i*64 + j] == 0) // add pseudocount
 						freq[i*64 + j] = 1;
-					if (bg[i*64 + j]==0) // add pseudocount
+					if (bg[i*64 + j] == 0) // add pseudocount
 						bg[i*64 + j] = 1;
 					sumfreq += freq[i*64 + j];
 					sumbg += bg[i*64 + j];
@@ -600,7 +600,7 @@ SEXP dicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 	for (i = 0; i < 64; i++) {
 		notstop = 1;
 		for (k = 0; k < lstops; k++) {
-			if (i==stops[k]) {
+			if (i == stops[k]) {
 				notstop = 0;
 				break;
 			}
@@ -609,7 +609,7 @@ SEXP dicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 			for (j = 0; j < 64; j++) {
 				notstop = 1;
 				for (k = 0; k < lstops; k++) {
-					if (j==stops[k]) {
+					if (j == stops[k]) {
 						notstop = 0;
 						break;
 					}
@@ -673,14 +673,14 @@ SEXP unicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 					
 					if (inside) { // look for beg
 						if (s) { // negative strand
-							if ((x_i.length - j - 1)==(orfs[count + 3*tot])) {
+							if ((x_i.length - j - 1) == (orfs[count + 3*tot])) {
 								inside = 0;
 								count++;
 							} else if (val < 64) {
 								freq[val]++;
 							}
 						} else { // positive strand
-							if ((j + 2)==(orfs[count + 2*tot])) {
+							if ((j + 2) == (orfs[count + 2*tot])) {
 								inside = 0;
 								count++;
 							} else if (val < 64) {
@@ -689,13 +689,13 @@ SEXP unicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 						}
 					} else { // look for end
 						if (s) { // negative strand
-							if ((x_i.length - j - 3)==orfs[count + 2*tot]) {
+							if ((x_i.length - j - 3) == orfs[count + 2*tot]) {
 								inside = 1;
 							} else if (val < 64) {
 								bg[val]++;
 							}
 						} else { // positive strand
-							if ((j + 4)==orfs[count + 3*tot]) {
+							if ((j + 4) == orfs[count + 3*tot]) {
 								inside = 1;
 							} else if (val < 64) {
 								bg[val]++;
@@ -714,7 +714,7 @@ SEXP unicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 	for (i = 0; i < 64; i++) {
 		notstop = 1;
 		for (k = 0; k < lstops; k++) {
-			if (i==stops[k]) {
+			if (i == stops[k]) {
 				notstop = 0;
 				break;
 			}
@@ -732,7 +732,7 @@ SEXP unicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 	for (i = 0; i < 64; i++) {
 		notstop = 1;
 		for (k = 0; k < lstops; k++) {
-			if (i==stops[k]) {
+			if (i == stops[k]) {
 				notstop = 0;
 				break;
 			}
@@ -798,7 +798,7 @@ SEXP startCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP start_codons)
 		}
 		
 		if (count < l &&
-			(i + 1)==index[count]) {
+			(i + 1) == index[count]) {
 			count++;
 			if (val < 64)
 				freq[val]++;
@@ -814,15 +814,15 @@ SEXP startCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP start_codons)
 	for (i = 0; i < 64; i++) {
 		isstart = 0;
 		for (k = 0; k < lstarts; k++) {
-			if (i==starts[k]) {
+			if (i == starts[k]) {
 				isstart = 1;
 				break;
 			}
 		}
 		if (isstart) {
-			if (freq[i]==0)
+			if (freq[i] == 0)
 				freq[i] = 0.01; // add pseudocount
-			if (bg[i]==0)
+			if (bg[i] == 0)
 				bg[i] = 0.01; // add pseudocount
 			sumfreq += freq[i];
 			sumbg += bg[i];
@@ -836,7 +836,7 @@ SEXP startCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP start_codons)
 	for (i = 0; i < 64; i++) {
 		isstart = 0;
 		for (k = 0; k < lstarts; k++) {
-			if (i==starts[k]) {
+			if (i == starts[k]) {
 				isstart = 1;
 				break;
 			}
@@ -1001,7 +1001,7 @@ SEXP initialCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP initial_codons)
 	
 	for (k = 0; k < ini; k++) {
 		for (i = 0; i < 64; i++) {
-			if (freq[64*k + i]==0 || bg[i]==0) {
+			if (freq[64*k + i] == 0 || bg[i] == 0) {
 				rans[64*k + i] = 0;
 			} else {
 				rans[64*k + i] = log(((double)freq[64*k + i]/(double)sumfreq[k])/((double)bg[i]/(double)sumbg));
@@ -1159,7 +1159,7 @@ SEXP terminationCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP terminal_co
 	
 	for (k = 0; k < ter; k++) {
 		for (i = 0; i < 64; i++) {
-			if (freq[64*k + i]==0 || bg[i]==0) {
+			if (freq[64*k + i] == 0 || bg[i] == 0) {
 				rans[64*k + i] = 0;
 			} else {
 				rans[64*k + i] = log(((double)freq[64*k + i]/(double)sumfreq[k])/((double)bg[i]/(double)sumbg));
@@ -1282,8 +1282,8 @@ SEXP getRegion(SEXP x, SEXP orftable, SEXP width, SEXP offset, SEXP toStart)
 				}
 			}
 			
-			if ((s==1 && j < x_i.length && j - w + 1 >= 0) ||
-				(s==0 && j >= 0 && j + w <= x_i.length)) {
+			if ((s == 1 && j < x_i.length && j - w + 1 >= 0) ||
+				(s == 0 && j >= 0 && j + w <= x_i.length)) {
 				for (k = 0; k < w; k++) {
 					if (s) { // negative strand
 						seq[k] = getBaseLetterRC(x_i.ptr[j--]);
@@ -1309,8 +1309,8 @@ SEXP getRegion(SEXP x, SEXP orftable, SEXP width, SEXP offset, SEXP toStart)
 				}
 			}
 			
-			if ((s==1 && j < x_i.length && j - w + 1 >= 0) ||
-				(s==0 && j >= 0 && j + w <= x_i.length)) {
+			if ((s == 1 && j < x_i.length && j - w + 1 >= 0) ||
+				(s == 0 && j >= 0 && j + w <= x_i.length)) {
 				for (k = 0; k < w; k++) {
 					if (s) { // negative strand
 						seq[k] = getBaseLetterRC(x_i.ptr[j--]);
@@ -1398,7 +1398,7 @@ SEXP autocorrelationModel(SEXP x, SEXP orftable, SEXP indices, SEXP aatable)
 				pos[AAs[val]] = j;
 			}
 			
-			if (j==fin)
+			if (j == fin)
 				break;
 		}
 	}
@@ -1426,7 +1426,7 @@ SEXP autocorrelationModel(SEXP x, SEXP orftable, SEXP indices, SEXP aatable)
 	
 	for (i = 0; i < 64; i++) {
 		for (j = 0; j < 64; j++) {
-			if (freq[64*j + i]==0 || colSums[j]==0 || rowSums[i]==0) {
+			if (freq[64*j + i] == 0 || colSums[j] == 0 || rowSums[i] == 0) {
 				rans[64*j + i] = 0;
 			} else {
 				rans[64*j + i] = log(((double)freq[64*j + i]/(double)rowSums[i])/((double)colSums[j]/(double)AAsums[AAs[j]]));
@@ -1515,7 +1515,7 @@ SEXP scoreAutocorrelationModel(SEXP x, SEXP orftable, SEXP codon_scores, SEXP aa
 				pos[AAs[val]] = j;
 			}
 			
-			if (j==fin) {
+			if (j == fin) {
 				// record the score
 				rans[i] = score;
 				i++;
@@ -1523,9 +1523,9 @@ SEXP scoreAutocorrelationModel(SEXP x, SEXP orftable, SEXP codon_scores, SEXP aa
 				// check whether still within bounds
 				if (s) { // negative strand
 					if (i != tot &&
-						orfs[i + 2*tot]==orfs[i + 2*tot - 1] &&
-						s==orfs[i + tot] &&
-						curr_i==orfs[i]) {
+						orfs[i + 2*tot] == orfs[i + 2*tot - 1] &&
+						s == orfs[i + tot] &&
+						curr_i == orfs[i]) {
 						// continue scoring
 						fin = orfs[i + 3*tot] - 3;
 					} else {
@@ -1533,9 +1533,9 @@ SEXP scoreAutocorrelationModel(SEXP x, SEXP orftable, SEXP codon_scores, SEXP aa
 					}
 				} else { // positive strand
 					if (i != tot &&
-						orfs[i + 3*tot]==orfs[i + 3*tot - 1] &&
-						s==orfs[i + tot] &&
-						curr_i==orfs[i]) {
+						orfs[i + 3*tot] == orfs[i + 3*tot - 1] &&
+						s == orfs[i + tot] &&
+						curr_i == orfs[i]) {
 						// continue scoring
 						fin = orfs[i + 2*tot] + 1;
 					} else {
@@ -1619,7 +1619,7 @@ SEXP couplingModel(SEXP x, SEXP orftable, SEXP indices, SEXP aatable, SEXP maxDi
 				count = 0;
 			}
 			
-			if (j==fin)
+			if (j == fin)
 				break;
 		}
 	}
@@ -1628,7 +1628,7 @@ SEXP couplingModel(SEXP x, SEXP orftable, SEXP indices, SEXP aatable, SEXP maxDi
 	
 	count = 0;
 	for (i = 0; i < 20; i++) {
-		if (counts[i]==0)
+		if (counts[i] == 0)
 			counts[i] = 1; // add pseudocount
 		count += counts[i];
 	}
@@ -1646,7 +1646,7 @@ SEXP couplingModel(SEXP x, SEXP orftable, SEXP indices, SEXP aatable, SEXP maxDi
 	for (j = 0; j < maxD; j++) {
 		for (i = 0; i < 20; i++) {
 			for (k = 0; k < 20; k++) {
-				if (freq[j*400 + i*20 + k]==0 || colSums[j]==0) {
+				if (freq[j*400 + i*20 + k] == 0 || colSums[j] == 0) {
 					rans[j*400 + i*20 + k] = 0;
 				} else {
 					rans[j*400 + i*20 + k] = log(((double)freq[j*400 + i*20 + k]/(double)colSums[j])/(((double)counts[i]/(double)count)*((double)counts[k]/(double)count)));
@@ -1732,7 +1732,7 @@ SEXP scoreCouplingModel(SEXP x, SEXP orftable, SEXP coupling_scores, SEXP aatabl
 				count = 0;
 			}
 			
-			if (j==fin) {
+			if (j == fin) {
 				// record the score
 				rans[i] = score;
 				i++;
@@ -1740,9 +1740,9 @@ SEXP scoreCouplingModel(SEXP x, SEXP orftable, SEXP coupling_scores, SEXP aatabl
 				// check whether still within bounds
 				if (s) { // negative strand
 					if (i != tot &&
-						orfs[i + 2*tot]==orfs[i + 2*tot - 1] &&
-						s==orfs[i + tot] &&
-						curr_i==orfs[i]) {
+						orfs[i + 2*tot] == orfs[i + 2*tot - 1] &&
+						s == orfs[i + tot] &&
+						curr_i == orfs[i]) {
 						// continue scoring
 						fin = orfs[i + 3*tot] - 3;
 					} else {
@@ -1750,9 +1750,9 @@ SEXP scoreCouplingModel(SEXP x, SEXP orftable, SEXP coupling_scores, SEXP aatabl
 					}
 				} else { // positive strand
 					if (i != tot &&
-						orfs[i + 3*tot]==orfs[i + 3*tot - 1] &&
-						s==orfs[i + tot] &&
-						curr_i==orfs[i]) {
+						orfs[i + 3*tot] == orfs[i + 3*tot - 1] &&
+						s == orfs[i + tot] &&
+						curr_i == orfs[i]) {
 						// continue scoring
 						fin = orfs[i + 2*tot] + 1;
 					} else {
@@ -1797,7 +1797,7 @@ SEXP nucleotideBiasModel(SEXP x, SEXP orftable, SEXP indices, SEXP positions)
 		}
 		
 		if (count < l &&
-			(i + 1)==index[count]) {
+			(i + 1) == index[count]) {
 			gene = 1;
 		} else {
 			gene = 0;
@@ -1850,9 +1850,9 @@ SEXP nucleotideBiasModel(SEXP x, SEXP orftable, SEXP indices, SEXP positions)
 		sumfreq = 0;
 		sumbg = 0;
 		for (i = 0; i < 4; i++) {
-			if (freq[p*4 + i]==0)
+			if (freq[p*4 + i] == 0)
 				freq[p*4 + i] = 1; // add pseudocount
-			if (bg[p*4 + i]==0)
+			if (bg[p*4 + i] == 0)
 				bg[p*4 + i] = 1; // add pseudocount
 			sumfreq += freq[p*4 + i];
 			sumbg += bg[p*4 + i];
@@ -1959,7 +1959,7 @@ SEXP upstreamMotifModel(SEXP x, SEXP orftable, SEXP indices, SEXP begin, SEXP di
 		}
 		
 		if (count < l &&
-			(i + 1)==index[count]) {
+			(i + 1) == index[count]) {
 			gene = 1;
 		} else {
 			gene = 0;
@@ -2018,9 +2018,9 @@ SEXP upstreamMotifModel(SEXP x, SEXP orftable, SEXP indices, SEXP begin, SEXP di
 	// normalize the frequencies
 	int sumfreq = 0, sumbg = 0;
 	for (i = 0; i < n; i++) {
-		if (freq[i]==0)
+		if (freq[i] == 0)
 			freq[i] = 1; // add pseudocount
-		if (bg[i]==0)
+		if (bg[i] == 0)
 			bg[i] = 1; // add pseudocount
 		sumfreq += freq[i];
 		sumbg += bg[i];
@@ -2138,7 +2138,7 @@ SEXP runLengthModel(SEXP x, SEXP orftable, SEXP codon_scores)
 	int tot = length(orftable)/4; // number of rows
 	int *orfs = INTEGER(orftable);
 	double *codons = REAL(codon_scores);
-	int dicodon = (length(codon_scores)==64) ? 0 : 1;
+	int dicodon = (length(codon_scores) == 64) ? 0 : 1;
 	int inside = 0;
 	int runLength;
 	
@@ -2174,7 +2174,7 @@ SEXP runLengthModel(SEXP x, SEXP orftable, SEXP codon_scores)
 					
 					if (inside) { // look for beg
 						if (s) { // negative strand
-							if ((x_i.length - j - 1)==(orfs[count + 3*tot])) {
+							if ((x_i.length - j - 1) == (orfs[count + 3*tot])) {
 								inside = 0;
 								lastVal = 100000;
 								count++;
@@ -2187,7 +2187,7 @@ SEXP runLengthModel(SEXP x, SEXP orftable, SEXP codon_scores)
 								}
 							}
 						} else { // positive strand
-							if ((j + 2)==(orfs[count + 2*tot])) {
+							if ((j + 2) == (orfs[count + 2*tot])) {
 								inside = 0;
 								lastVal = 100000;
 								count++;
@@ -2202,7 +2202,7 @@ SEXP runLengthModel(SEXP x, SEXP orftable, SEXP codon_scores)
 						}
 					} else { // look for end
 						if (s) { // negative strand
-							if ((x_i.length - j - 3)==orfs[count + 2*tot]) {
+							if ((x_i.length - j - 3) == orfs[count + 2*tot]) {
 								inside = 1;
 								lastVal = 100000;
 								runLength = 0;
@@ -2214,7 +2214,7 @@ SEXP runLengthModel(SEXP x, SEXP orftable, SEXP codon_scores)
 								}
 							}
 						} else { // positive strand
-							if ((j + 4)==orfs[count + 3*tot]) {
+							if ((j + 4) == orfs[count + 3*tot]) {
 								inside = 1;
 								lastVal = 100000;
 								runLength = 0;
@@ -2238,9 +2238,9 @@ SEXP runLengthModel(SEXP x, SEXP orftable, SEXP codon_scores)
 	int sumfreq = 0;
 	int sumbg = 0;
 	for (i = 0; i < 20; i++) {
-		if (freq[i]==0)
+		if (freq[i] == 0)
 			freq[i] = 1; // add pseudocounts
-		if (bg[i]==0)
+		if (bg[i] == 0)
 			bg[i] = 1; // add pseudocounts
 		sumfreq += freq[i];
 		sumbg += bg[i];
@@ -2336,7 +2336,7 @@ SEXP scoreRunLengthModel(SEXP x, SEXP orftable, SEXP codon_scores, SEXP run_scor
 			}
 			lastVal = val;
 			
-			if (j==fin) {
+			if (j == fin) {
 				// record the score
 				rans[i] = score;
 				// include score for any remaining runs
@@ -2352,9 +2352,9 @@ SEXP scoreRunLengthModel(SEXP x, SEXP orftable, SEXP codon_scores, SEXP run_scor
 				// check whether still within bounds
 				if (s) { // negative strand
 					if (i != tot &&
-						orfs[i + 2*tot]==orfs[i + 2*tot - 1] &&
-						s==orfs[i + tot] &&
-						curr_i==orfs[i]) {
+						orfs[i + 2*tot] == orfs[i + 2*tot - 1] &&
+						s == orfs[i + tot] &&
+						curr_i == orfs[i]) {
 						// continue scoring
 						fin = orfs[i + 3*tot] - 3;
 					} else {
@@ -2362,9 +2362,9 @@ SEXP scoreRunLengthModel(SEXP x, SEXP orftable, SEXP codon_scores, SEXP run_scor
 					}
 				} else { // positive strand
 					if (i != tot &&
-						orfs[i + 3*tot]==orfs[i + 3*tot - 1] &&
-						s==orfs[i + tot] &&
-						curr_i==orfs[i]) {
+						orfs[i + 3*tot] == orfs[i + 3*tot - 1] &&
+						s == orfs[i + tot] &&
+						curr_i == orfs[i]) {
 						// continue scoring
 						fin = orfs[i + 2*tot] + 1;
 					} else {
@@ -2426,7 +2426,7 @@ SEXP stopCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP stop_codons)
 		}
 		
 		if (count < l &&
-			(i + 1)==index[count]) {
+			(i + 1) == index[count]) {
 			count++;
 			if (val < 64)
 				freq[val]++;
@@ -2442,15 +2442,15 @@ SEXP stopCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP stop_codons)
 	for (i = 0; i < 64; i++) {
 		isstop = 0;
 		for (k = 0; k < lstops; k++) {
-			if (i==stops[k]) {
+			if (i == stops[k]) {
 				isstop = 1;
 				break;
 			}
 		}
 		if (isstop) {
-			if (freq[i]==0)
+			if (freq[i] == 0)
 				freq[i] = 1; // add pseudocount
-			if (bg[i]==0)
+			if (bg[i] == 0)
 				bg[i] = 1; // add pseudocount
 			sumfreq += freq[i];
 			sumbg += bg[i];
@@ -2464,7 +2464,7 @@ SEXP stopCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP stop_codons)
 	for (i = 0; i < 64; i++) {
 		isstop = 0;
 		for (k = 0; k < lstops; k++) {
-			if (i==stops[k]) {
+			if (i == stops[k]) {
 				isstop = 1;
 				break;
 			}
@@ -2617,7 +2617,7 @@ SEXP chainGenes(SEXP orftable, SEXP topScore, SEXP topLength, SEXP scoreIntergen
 {
 	int i, j;
 	int tot = length(orftable)/4; // number of rows
-	if (tot==0)
+	if (tot == 0)
 		return NEW_INTEGER(0);
 	int *orfs = INTEGER(orftable);
 	int *topL = INTEGER(topLength);
@@ -2735,7 +2735,7 @@ SEXP chainGenes(SEXP orftable, SEXP topScore, SEXP topLength, SEXP scoreIntergen
 						counter = j - 1;
 					}
 				}
-			} else if (firstCouldNotChain==-1) {
+			} else if (firstCouldNotChain == -1) {
 				firstCouldNotChain = j;
 			}
 			j++;
@@ -2890,48 +2890,6 @@ SEXP getIndex(SEXP start1, SEXP start2, SEXP len, SEXP score)
 				count = s2[j];
 			}
 		}
-	}
-	
-	UNPROTECT(1);
-	
-	return ans;
-}
-
-SEXP inBounds(SEXP vec1, SEXP vec3, SEXP lo1, SEXP hi1, SEXP hi3)
-{
-	int i = 0, j, count = 0;
-	int l = length(vec1);
-	int *v1 = INTEGER(vec1);
-	double *v3 = REAL(vec3);
-	
-	int l1 = asInteger(lo1);
-	int h1 = asInteger(hi1);
-	double h3 = asReal(hi3);
-	
-	while (i < l) {
-		if (v1[i] >= l1) {
-			j = i;
-			while (j < l && v1[j] <= h1) {
-				if (v3[j] <= h3)
-					count++;
-				j++;
-			}
-			break;
-		}
-		i++;
-	}
-	
-	SEXP ans;
-	PROTECT(ans = allocVector(INTSXP, count));
-	int *rans = INTEGER(ans);
-	
-	j = 0;
-	while (j < count) {
-		if (v1[i] >= l1 &&
-			v1[i] <= h1 &&
-			v3[i] <= h3)
-			rans[j++] = i + 1;
-		i++;
 	}
 	
 	UNPROTECT(1);

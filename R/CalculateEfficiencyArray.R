@@ -47,9 +47,9 @@ CalculateEfficiencyArray <- function(probe,
 	}
 	
 	l <- length(probe)
-	if (l==0)
+	if (l == 0)
 		stop("No probe specified.")
-	if (l!=length(target))
+	if (l != length(target))
 		stop("probe is not the same length as target.")
 	
 	dG <- dGini + .Call("calculateDeltaG", probe, target, deltaGrules, PACKAGE="DECIPHER")

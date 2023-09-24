@@ -34,7 +34,7 @@ Seqs2DB <- function(seqs,
 		stop("taxa is a reserved tblName.")
 	if (!is.numeric(chunkSize))
 		stop("chunkSize must be a numeric.")
-	if (floor(chunkSize)!=chunkSize)
+	if (floor(chunkSize) != chunkSize)
 		stop("chunkSize must be a whole number.")
 	if (chunkSize <= 0)
 		stop("chunkSize must be greater than zero.")
@@ -44,7 +44,7 @@ Seqs2DB <- function(seqs,
 		stop("verbose must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -243,9 +243,9 @@ Seqs2DB <- function(seqs,
 			if (buffer != "")
 				r <- paste(buffer, r, sep=ifelse(newline, "\n", ""))
 			newline <- substr(r, nchar(r), nchar(r))=="\n"
-			r <- gsub("\r\n", "\n", r, useBytes=TRUE, fixed=TRUE)
-			r <- gsub("\r", "\n", r, useBytes=TRUE, fixed=TRUE)
-			r <- strsplit(r, "\n", useBytes=TRUE, fixed=TRUE)[[1]]
+			r <- gsub("\r\n", "\n", r, fixed=TRUE)
+			r <- gsub("\r", "\n", r, fixed=TRUE)
+			r <- strsplit(r, "\n", fixed=TRUE)[[1]]
 			
 			# descriptions contains the line index of each sequence
 			descriptions <- which(substr(r, 1L, 1L)==">")
@@ -284,7 +284,7 @@ Seqs2DB <- function(seqs,
 				dp[seq_len(numF)],
 				end[seq_len(numF)],
 				PACKAGE="DECIPHER")
-			sequence <- gsub(" ", "", sequence, useBytes=TRUE, fixed=TRUE)
+			sequence <- gsub(" ", "", sequence, fixed=TRUE)
 			myData_ <- data.frame(row_names=seq(from=(numSeq + 1),
 					to=(numSeq + length(descriptions))),
 				sequence=I(Codec(sequence,
@@ -401,9 +401,9 @@ Seqs2DB <- function(seqs,
 			if (buffer != "")
 				r <- paste(buffer, r, sep=ifelse(newline, "\n", ""))
 			newline <- substr(r, nchar(r), nchar(r))=="\n"
-			r <- gsub("\r\n", "\n", r, useBytes=TRUE, fixed=TRUE)
-			r <- gsub("\r", "\n", r, useBytes=TRUE, fixed=TRUE)
-			r <- strsplit(r, "\n", useBytes=TRUE, fixed=TRUE)[[1]]
+			r <- gsub("\r\n", "\n", r, fixed=TRUE)
+			r <- gsub("\r", "\n", r, fixed=TRUE)
+			r <- strsplit(r, "\n", fixed=TRUE)[[1]]
 			
 			# descriptions contains the line index of each sequence
 			descriptions <- which(substr(r, 1L, 1L)=="@")
@@ -550,9 +550,9 @@ Seqs2DB <- function(seqs,
 			if (buffer != "")
 				r <- paste(buffer, r, sep=ifelse(newline, "\n", ""))
 			newline <- substr(r, nchar(r), nchar(r))=="\n"
-			r <- gsub("\r\n", "\n", r, useBytes=TRUE, fixed=TRUE)
-			r <- gsub("\r", "\n", r, useBytes=TRUE, fixed=TRUE)
-			r <- strsplit(r, "\n", useBytes=TRUE, fixed=TRUE)[[1]]
+			r <- gsub("\r\n", "\n", r, fixed=TRUE)
+			r <- gsub("\r", "\n", r, fixed=TRUE)
+			r <- strsplit(r, "\n", fixed=TRUE)[[1]]
 			
 			# descriptions contains the line index of each sequence
 			descriptions <- which(substr(r, 1L, 5L)=="LOCUS")
@@ -606,7 +606,7 @@ Seqs2DB <- function(seqs,
 				seq_start[seq_len(numF)],
 				seq_end[seq_len(numF)],
 				PACKAGE="DECIPHER")
-			sequence <- gsub(" ", "", sequence, useBytes=TRUE, fixed=TRUE)
+			sequence <- gsub(" ", "", sequence, fixed=TRUE)
 			
 			myData_ <- data.frame(row_names=seq(from=(numSeq + 1),
 					to=(numSeq + length(descriptions))),
@@ -742,7 +742,7 @@ Seqs2DB <- function(seqs,
 	if (verbose) { # print the elapsed time to import
 		time.2 <- Sys.time()
 		cat("\n")
-		if (newSeqs!=numSeq)
+		if (newSeqs != numSeq)
 			cat("\nAdded ",
 				newSeqs,
 				" new sequence",

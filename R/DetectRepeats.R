@@ -12,7 +12,7 @@ DetectRepeats <- function(myXStringSet,
 	...) {
 	
 	# error checking
-	if (length(type)==0)
+	if (length(type) == 0)
 		stop("No type specified.")
 	if (length(type) > 1)
 		stop("Only one type may be specified.")
@@ -20,7 +20,7 @@ DetectRepeats <- function(myXStringSet,
 	type <- pmatch(type, TYPES)
 	if (is.na(type))
 		stop("Invalid type.")
-	if (type==-1)
+	if (type == -1)
 		stop("Ambiguous type.")
 	if (length(myXStringSet) == 0)
 		stop("myXStringSet must contain at least one sequence.")
@@ -35,7 +35,7 @@ DetectRepeats <- function(myXStringSet,
 		
 		if (!is.character(alphabet))
 			stop("alphabet must be a character vector.")
-		if (any(alphabet==""))
+		if (any(alphabet == ""))
 			stop("No elements of alphabet can be empty.")
 		r <- strsplit(alphabet, "", fixed=TRUE)
 		alphabet <- setNames(rep(0L, 20),
@@ -53,7 +53,7 @@ DetectRepeats <- function(myXStringSet,
 					".")
 			alphabet[r[[i]]] <- i
 		}
-		w <- which(alphabet==0L)
+		w <- which(alphabet == 0L)
 		if (length(w) > 0)
 			stop("Standard amino acids missing from alphabet:  ",
 				paste(names(w), collapse=", "),
@@ -103,7 +103,7 @@ DetectRepeats <- function(myXStringSet,
 		stop("Unknown characters ('.') are not allowed in myXStringSet.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -236,6 +236,7 @@ DetectRepeats <- function(myXStringSet,
 				K,
 				alphabet,
 				FALSE, # mask repeats
+				processors,
 				PACKAGE="DECIPHER")
 		} else {
 			if (K > 16L)
@@ -244,6 +245,7 @@ DetectRepeats <- function(myXStringSet,
 				myXStringSet,
 				K,
 				FALSE, # mask repeats
+				processors,
 				PACKAGE="DECIPHER")
 		}
 		

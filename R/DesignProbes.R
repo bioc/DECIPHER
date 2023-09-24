@@ -37,8 +37,8 @@
 		
 		if (is.na(w)) {
 			# complete template with last tile
-			last <- which(tiles$start==tiles$start[dim(tiles)[1]])[1]
-			if (tiles$end[last]==begin)
+			last <- which(tiles$start == tiles$start[dim(tiles)[1]])[1]
+			if (tiles$end[last] == begin)
 				break
 			template <- paste(template,
 				substr(tiles$target_site[last],
@@ -103,7 +103,7 @@
 		stop("FA must be a numeric.")
 	if (!is.numeric(batchSize))
 		stop("batchSize must be a numeric.")
-	if (floor(batchSize)!=batchSize)
+	if (floor(batchSize) != batchSize)
 		stop("batchSize must be a whole number.")
 	if (batchSize <= 0)
 		stop("batchSize must be greater than zero.")
@@ -134,13 +134,13 @@
 	l <- length(probe)
 	n <- nchar(probe)
 	
-	if (l==0)
+	if (l == 0)
 		stop("No probe specified.")
-	if (l!=length(template))
+	if (l != length(template))
 		stop("probe is not the same length as template.")
-	if (l!=length(fivePrimeEnd))
+	if (l != length(fivePrimeEnd))
 		stop("probe is not the same length as fivePrimeEnd.")
-	if (l!=length(threePrimeEnd))
+	if (l != length(threePrimeEnd))
 		stop("threePrimeEnd is not the same length as fivePrimeEnd.")
 	target <- substr(template, fivePrimeEnd, threePrimeEnd)
 	
@@ -321,14 +321,14 @@
 	K2a <- exp(-(dG2a + 0.1*FA)/RT)
 	
 	# target folding
-	if (type=="SSU") {
+	if (type == "SSU") {
 		mapping <- matrix(0, nrow=16, ncol=16)
 		dimnames(mapping) <- list(c(names(IUPAC_CODE_MAP), "-"), c(names(IUPAC_CODE_MAP), "-"))
 		mapping["A",c("A","M","R","W","V","H","D","N")] <- 1
 		mapping["G",c("G","R","S","K","V","D","D","N")] <- 1
 		mapping["C",c("C","M","S","Y","V","H","B","N")] <- 1
 		mapping["T",c("T","W","Y","K","H","D","B","N")] <- 1
-		w <- which(mapping==0)
+		w <- which(mapping == 0)
 		mapping[w] <- .1
 		mapping[,"-"] <- 0
 		ecoli <- "AAATTGAAGAGTTTGATCATGGCTCAGATTGAACGCTGGCGGCAGGCCTAACACATGCAAGTCGAACGGTAACAGGAAGAAGCTTGCTTCTTTGCTGACGAGTGGCGGACGGGTGAGTAATGTCTGGGAAACTGCCTGATGGAGGGGGATAACTACTGGAAACGGTAGCTAATACCGCATAACGTCGCAAGACCAAAGAGGGGGACCTTCGGGCCTCTTGCCATCGGATGTGCCCAGATGGGATTAGCTAGTAGGTGGGGTAACGGCTCACCTAGGCGACGATCCCTAGCTGGTCTGAGAGGATGACCAGCCACACTGGAACTGAGACACGGTCCAGACTCCTACGGGAGGCAGCAGTGGGGAATATTGCACAATGGGCGCAAGCCTGATGCAGCCATGCCGCGTGTATGAAGAAGGCCTTCGGGTTGTAAAGTACTTTCAGCGGGGAGGAAGGGAGTAAAGTTAATACCTTTGCTCATTGACGTTACCCGCAGAAGAAGCACCGGCTAACTCCGTGCCAGCAGCCGCGGTAATACGGAGGGTGCAAGCGTTAATCGGAATTACTGGGCGTAAAGCGCACGCAGGCGGTTTGTTAAGTCAGATGTGAAATCCCCGGGCTCAACCTGGGAACTGCATCTGATACTGGCAAGCTTGAGTCTCGTAGAGGGGGGTAGAATTCCAGGTGTAGCGGTGAAATGCGTAGAGATCTGGAGGAATACCGGTGGCGAAGGCGGCCCCCTGGACGAAGACTGACGCTCAGGTGCGAAAGCGTGGGGAGCAAACAGGATTAGATACCCTGGTAGTCCACGCCGTAAACGATGTCGACTTGGAGGTTGTGCCCTTGAGGCGTGGCTTCCGGAGCTAACGCGTTAAGTCGACCGCCTGGGGAGTACGGCCGCAAGGTTAAAACTCAAATGAATTGACGGGGGCCCGCACAAGCGGTGGAGCATGTGGTTTAATTCGATGCAACGCGAAGAACCTTACCTGGTCTTGACATCCACGGAAGTTTTCAGAGATGAGAATGTGCCTTCGGGAACCGTGAGACAGGTGCTGCATGGCTGTCGTCAGCTCGTGTTGTGAAATGTTGGGTTAAGTCCCGCAACGAGCGCAACCCTTATCCTTTGTTGCCAGCGGTCCGGCCGGGAACTCAAAGGAGACTGCCAGTGATAAACTGGAGGAAGGTGGGGATGACGTCAAGTCATCATGGCCCTTACGACCAGGGCTACACACGTGCTACAATGGCGCATACAAAGAGAAGCGACCTCGCGAGAGCAAGCGGACCTCATAAAGTGCGTCGTAGTCCGGATTGGAGTCTGCAACTCGACTCCATGAAGTCGGAATCGCTAGTAATCGTGGATCAGAATGCCACGGTGAATACGTTCCCGGGCCTTGTACACACCGCCCGTCACACCATGGGAGTGGGTTGCAAAAGAAGTAGGTAGCTTAACCTTCGGGAGGGCGCTTACCACTTTGTGATTCATGACTGGGGTGAAGTCGTAACAAGGTAACCGTAGGGGAACCTGCGGTTGGATCACCTCCTTA"
@@ -388,7 +388,7 @@
 		ls <- length(p)
 		for (j in 1:ls) {
 			d <- del[[j]]
-			if (length(d)==0)
+			if (length(d) == 0)
 				next
 			w <- which((d@start + startsPattern[j]) <= starts[j])
 			if (length(w) > 0)
@@ -417,7 +417,7 @@
 		# determine positioning in the original sequence
 		for (j in 1:ls) {
 			d <- del[[j]]
-			if (length(d)==0)
+			if (length(d) == 0)
 				next
 			w <- which((d@start + startsPattern[j] + cumsum(d@width) - d@width) <= domainStarts[j])
 			if (length(w) > 0)
@@ -430,14 +430,14 @@
 		batchSize <- floor(batchSize*max(n)/max(domainEnds - domainStarts))
 		if (batchSize < 1)
 			batchSize <- 1
-	} else if (type=="LSU") {
+	} else if (type == "LSU") {
 		mapping <- matrix(0, nrow=16, ncol=16)
 		dimnames(mapping) <- list(c(names(IUPAC_CODE_MAP), "-"), c(names(IUPAC_CODE_MAP), "-"))
 		mapping["A",c("A","M","R","W","V","H","D","N")] <- 1
 		mapping["G",c("G","R","S","K","V","D","D","N")] <- 1
 		mapping["C",c("C","M","S","Y","V","H","B","N")] <- 1
 		mapping["T",c("T","W","Y","K","H","D","B","N")] <- 1
-		w <- which(mapping==0)
+		w <- which(mapping == 0)
 		mapping[w] <- .1
 		mapping[,"-"] <- 0
 		ecoli <- "GGTTAAGCGACTAAGCGTACACGGTGGATGCCCTGGCAGTCAGAGGCGATGAAGGACGTGCTAATCTGCGATAAGCGTCGGTAAGGTGATATGAACCGTTATAACCGGCGATTTCCGAATGGGGAAACCCAGTGTGATTCGTCACACTATCATTAACTGAATCCATAGGTTAATGAGGCGAACCGGGGGAACTGAAACATCTAAGTACCCCGAGGAAAAGAAATCAACCGAGATTCCCCCAGTAGCGGCGAGCGAACGGGGAGGAGCCCAGAGCCTGAATCAGTGTGTGTGTTAGTGGAAGCGTCTGGAAAGGCGCGCGATACAGGGTGACAGCCCCGTACACAAAAATGCACATACTGTGAGCTCGATGAGTAGGGCGGGACACGTGGTATCCTGTCTGAATATGGGGGGACCATCCTCCAAGGCTAAATACTCCTGACTGACCGATAGTGAACCAGTACCGTGAGGGAAAGGCGAAAAGAACCCCGGCGAGGGGAGTGAAAAAGAACCTGAAACCGTGTACGTACAAGCAGTGGGAGCCTCTTTTATGGGGTGACTGCGTACCTTTTGTATAATGGGTCAGCGACTTATATTCTGTAGCAAGGTTAACCGAATAGGGGAGCCGAAGGGAAACCGAGTCTTAACCGGGCGTTAAGTTGCAGGGTATAGACCCGAAACCCGGTGATCTAGCCATGGGCAGGTTGAAGGTTGGGTAACACTAACTGGAGGACCGAACCGACTAATGTTGAAAAATTAGCGGATGACTTGTGGCTGGGGGTGAAAGGCCAATCAAACCGGGAGATAGCTGGTTCTCCCCGAAAGCTATTTAGGTAGCGCCTCGTGAATTCATCTCCGGGGGTAGAGCACTGTTTCGGCAAGGGGGTCATCCCGACTTACCAACCCGATGCAAACTGCGAATACCGGAGAATGTTATCACGGGAGACATACGGCGGGTGCTAACGTCCGTCGTGAAGAGGGAAACAACCCAGACCGCCAGCTAAGGTCCCAAAGTCATGGTTAAGTGGGAAACGATGTGGGAAGGCCCAGACAGCCAGGATGTTGGCTTAGAAGCAGCCATCATTTAAAGAAAGCGTAATAGCTCACTGGTCGAGTCGGCCTGCGCGGAAGATGTAACGGGGCTAAACCATGCACCGAAGCTGCGGCAGCGACACTGTGTGTTGTTGGGTAGGGGAGCGTTCTGTAAGCCTGTGAAGGTGTACTGTGAGGTATGCTGGAGGTATCAGAAGTGCGAATGCTGACATAAGTAACGATAAAGCGGGTGAAAAGCCCGCTCGCCGGAAGACCAAGGGTTCCTGTCCAACGTTAATCGGGGCAGGGTGAGTCGACCCCTAAGGCGAGGCCGAAAGGCGTAGTCGATGGGAAACAGGTTAATATTCCTGTACTTGGTGTTACTGCGAAGGGGGGACGGAGAAGGCTATGTTGGCCGGGCGACGGTTGTCCCGGTTTAAGCGTGTAGGCTGGTTTTCCAGGCAAATCCGGAAAATCAAGGCTGAGGCGTGATGACGAGGCACTACGGTGCTGAAGCAACAAATGCCCTGCTTCCAGGAAAAGCCTCTAAGCATCAGGTAACATCAAATCGTACCCCAAACCGACACAGGTGGTCAGGTAGAGAATACCAAGGCGCTTGAGAGAACTCGGGTGAAGGAACTAGGCAAAATGGTGCCGTAACTTCGGGAGAAGGCACGCTGATATGTAGGTGAAGTCCCTCGCGGATGGAGCTGAAATCAGTCGAAGATACCAGCTGGCTGCAACTGTTTATTAAAAACACAGCACTGTGCAAACACGAAAGTGGACGTATACGGTGTGACGCCTGCCCGGTGCCGGAAGGTTAATTGATGGGGTCAGCGCAAGCGAAGCTCTTGATCGAAGCCCCGGTAAACGGCGGCCGTAACTATAACGGTCCTAAGGTAGCGAAATTCCTTGTCGGGTAAGTTCCGACCTGCACGAATGGCGTAATGATGGCCAGGCTGTCTCCACCCGAGACTCAGTGAAATTGAACTCGCTGTGAAGATGCAGTGTACCCGCGGCAAGACGGAAAGACCCCGTGAACCTTTACTATAGCTTGACACTGAACATTGAGCCTTGATGTGTAGGATAGGTGGGAGGCTTTGAAGTGTGGACGCCAGTCTGCATGGAGCCGACCTTGAAATACCACCCTTTAATGTTTGATGTTCTAACGTGGACCCGTGATCCGGGTTGCGGACAGTGTCTGGTGGGTAGTTTGACTGGGGCGGTCTCCTCCTAAAGAGTAACGGAGGAGCACGAAGGTTGGCTAATCCTGGTCGGACATCAGGAGGTTAGTGCAATGGCATAAGCCAGCTTGACTGCGAGCGTGACGGCGCGAGCAGGTGCGAAAGCAGGTCATAGTGATCCGGTGGTTCTGAATGGAAGGGCCATCGCTCAACGGATAAAAGGTACTCCGGGGATAACAGGCTGATACCGCCCAAGAGTTCATATCGACGGCGGTGTTTGGCACCTCGATGTCGGCTCATCACATCCTGGGGCTGAAGTAGGTCCCAAGGGTATGGCTGTTCGCCATTTAAAGTGGTACGCGAGCTGGGTTTAGAACGTCGTGAGACAGTTCGGTCCCTATCTGCCGTGGGCGCTGGAGAACTGAGGGGGGCTGCTCCTAGTACGAGAGGACCGGAGTGGACGCATCACTGGTGTTCGGGTTGTCATGCCAATGGCACTGCCCGGTAGCTAAATGCGGAAGAGATAAGTGCTGAAAGCATCTAAGCACGAAACTTGCCCCGAGATGAGTTCTCCCTGACCCTTTAAGGGTCCTGAAGGAACGTTGAAGACGACGACGTTGATAGGCCGGGTGTGTAAGCGCAGCGATGCGTTGAGCTAACCGGTACTAATGAACCGTGAGGCTTAACCTT"
@@ -523,7 +523,7 @@
 		ls <- length(p)
 		for (j in 1:ls) {
 			d <- del[[j]]
-			if (length(d)==0)
+			if (length(d) == 0)
 				next
 			w <- which((d@start + startsPattern[j]) <= starts[j])
 			if (length(w) > 0)
@@ -554,7 +554,7 @@
 		# determine positioning in the original sequence
 		for (j in 1:ls) {
 			d <- del[[j]]
-			if (length(d)==0)
+			if (length(d) == 0)
 				next
 			w <- which((d@start + startsPattern[j] + cumsum(d@width) - d@width) <= domainStarts[j])
 			if (length(w) > 0)
@@ -706,7 +706,7 @@ DesignProbes <- function(tiles,
 	if (minLength > maxLength)
 		stop("minLength must be less or equal to maxLength.")
 	ids <- unique(tiles$id)
-	if (length(ids)==0)
+	if (length(ids) == 0)
 		stop("No identifiers found in tiles.")
 	if (any(grepl("mol,", ids, fixed=TRUE)))
 		stop("Identifiers in tiles cannot include 'mol,'.")
@@ -744,19 +744,19 @@ DesignProbes <- function(tiles,
 		stop("worstScore must be less than or equal to zero.")
 	if (!is.numeric(batchSize))
 		stop("batchSize must be a numeric.")
-	if (floor(batchSize)!=batchSize)
+	if (floor(batchSize) != batchSize)
 		stop("batchSize must be a whole number.")
 	if (batchSize <= 0)
 		stop("batchSize must be greater than zero.")
 	if (!is.numeric(numProbeSets))
 		stop("numProbeSets must be a numeric.")
-	if (floor(numProbeSets)!=numProbeSets)
+	if (floor(numProbeSets) != numProbeSets)
 		stop("numProbeSets must be a whole number.")
 	if (numProbeSets < 0)
 		stop("numProbeSets must be greater than or equal to zero.")
 	if (!is.numeric(maxPermutations))
 		stop("maxPermutations must be a numeric.")
-	if (floor(maxPermutations)!=maxPermutations)
+	if (floor(maxPermutations) != maxPermutations)
 		stop("maxPermutations must be a whole number.")
 	if (maxPermutations <= 0)
 		stop("maxPermutations must be greater than zero.")
@@ -768,7 +768,7 @@ DesignProbes <- function(tiles,
 		stop("end must be a numeric or NULL.")
 	if (start < 1)
 		stop("start must be greater than zero.")
-	if (floor(start)!=start)
+	if (floor(start) != start)
 		stop("start must be a whole number.")
 	if (!is.numeric(minCoverage))
 		stop("minCoverage must be a numeric.")
@@ -781,10 +781,10 @@ DesignProbes <- function(tiles,
 	if (!is.null(end)) {
 		if (end < start)
 			stop("end must be greater than start.")
-		if (floor(end)!=end)
+		if (floor(end) != end)
 			stop("end must be a whole number.")
 	}
-	if (identifier[1]=="") {
+	if (identifier[1] == "") {
 		identifier <- ids
 	} else {
 		w <- which(!(identifier %in% ids))
@@ -845,9 +845,9 @@ DesignProbes <- function(tiles,
 			flush.console()
 		}
 		
-		w <- which(tiles$id==id)
+		w <- which(tiles$id == id)
 		
-		if (length(w)==0) {
+		if (length(w) == 0) {
 			warning("No target sites met the specified constraints: ", id)
 			next
 		}
@@ -856,14 +856,14 @@ DesignProbes <- function(tiles,
 		template <- .tiledTemplate(target)
 		
 		if (is.null(end)) {
-			w <- which(tiles$id==id &
+			w <- which(tiles$id == id &
 				tiles$start_aligned >= start)
 		} else {
-			w <- which(tiles$id==id &
+			w <- which(tiles$id == id &
 				tiles$start_aligned >= start &
 				tiles$end_aligned <= end)
 		}
-		if (length(w)==0) {
+		if (length(w) == 0) {
 			warning("No target sites met the specified constraints: ", id)
 			next
 		}
@@ -932,8 +932,8 @@ DesignProbes <- function(tiles,
 			probes$start[i] <- target$start[w[1]]
 		}
 		
-		w <- which(probes$permutations==0)
-		if (length(w)==dim(probes)[1]) {
+		w <- which(probes$permutations == 0)
+		if (length(w) == dim(probes)[1]) {
 			warning("All target sites have too many permutations: ", id)
 			next
 		}
@@ -950,11 +950,11 @@ DesignProbes <- function(tiles,
 		for (j in 1:(maxLength - minLength + 1)) {
 			if (length(empty) > 0) {
 				empty <- c((1:(l*maxPermutations))[w],
-					which(targets[,,j]==""),
+					which(targets[,,j] == ""),
 					empty)
 			} else {
 				empty <- c((1:(l*maxPermutations))[w],
-					which(targets[,,j]==""))
+					which(targets[,,j] == ""))
 			}
 			t <- targets[,,j]
 			if (length(empty) > 0) {
@@ -962,7 +962,7 @@ DesignProbes <- function(tiles,
 			} else {
 				t <- as.vector(t)
 			}
-			if (length(t)==0)
+			if (length(t) == 0)
 				break
 			
 			# calculate hybridization efficiency
@@ -976,7 +976,7 @@ DesignProbes <- function(tiles,
 				FA,
 				batchSize)
 			w <- which(eff[, "HybEff"] >= minEfficiency)
-			if (length(w)==0)
+			if (length(w) == 0)
 				next
 			
 			if (length(empty) > 0) {
@@ -1006,14 +1006,14 @@ DesignProbes <- function(tiles,
 		
 		w <- integer()
 		for (i in 1:l) {
-			if (probes$start_aligned[i]==0) {
+			if (probes$start_aligned[i] == 0) {
 				w <- c(w,i) # empty probe
 				next
 			}
 			p <- probes$permutations[i]
 			
 			numPerms <- Inf
-			full <- which(probes$probe[i,]!="")
+			full <- which(probes$probe[i,] != "")
 			if (length(full) != 0) {
 				c <- suppressWarnings(ConsensusSequence(DNAStringSet(probes$probe[i, full]),
 					threshold=0.01))
@@ -1021,7 +1021,7 @@ DesignProbes <- function(tiles,
 				numPerms <- sum(2*a[1, 5:10], 3*a[1, 11:14], 4*a[1, 15])
 			}
 			
-			if (numPerms > probes$permutations[i] || p != length(which(probes$probe[i,]!=""))) {
+			if (numPerms > probes$permutations[i] || p != length(which(probes$probe[i,] != ""))) {
 				w <- c(w,i)
 				probes$permutations[i] <- 0
 				probes$probe[i,] <- NA
@@ -1032,7 +1032,7 @@ DesignProbes <- function(tiles,
 				l <- length(which(d))
 				if (l > 0) {
 					for (j in which(d)) {
-						w1 <- which(probes$probe[i,1:(j - 1)]==probes$probe[i,j])[1]
+						w1 <- which(probes$probe[i,1:(j - 1)] == probes$probe[i,j])[1]
 						probes$coverage[i,w1] <- probes$coverage[i,w1] + probes$coverage[i,j]
 						probes$coverage[i,j] <- NA
 					}
@@ -1052,7 +1052,7 @@ DesignProbes <- function(tiles,
 		if (length(w) > 0)
 			probes <- probes[-w,]
 		d <- dim(probes)[1]
-		if (d==0) {
+		if (d == 0) {
 			warning("No probes met the specified constraints: ", id)
 			next
 		}
@@ -1085,7 +1085,7 @@ DesignProbes <- function(tiles,
 			w <- w[which(eff[w, "FAm"] < 70 &
 				eff[w, "FAm"] > (FA - 15) &
 				eff[w, "dG2"] > -3)]
-		if (length(w)==0) {
+		if (length(w) == 0) {
 			w <- 1:(dim(probes)[1])
 		} else {
 			w <- unique(index[-w])
@@ -1094,13 +1094,13 @@ DesignProbes <- function(tiles,
 		if (length(w) > 0)
 			probes <- probes[-w,]
 		d <- dim(probes)[1]
-		if (d==0) {
+		if (d == 0) {
 			warning("No probes met the specified constraints: ", id)
 			next
 		}
 		
 		if (verbose) {
-			cat(" (", d, " candidate probe", ifelse(d==1, "", "s"), "):\n", sep="")
+			cat(" (", d, " candidate probe", ifelse(d == 1, "", "s"), "):\n", sep="")
 			flush.console()
 			pBar <- txtProgressBar(min=0, max=100, initial=0, style=ifelse(interactive(), 3, 1))
 		}
@@ -1109,7 +1109,7 @@ DesignProbes <- function(tiles,
 			if (ids[k] == id)
 				next
 			
-			w <- which(tiles$id==ids[k])
+			w <- which(tiles$id == ids[k])
 			target <- tiles[w,]
 			
 			if (any(uw != unique(target$width)))
@@ -1125,14 +1125,14 @@ DesignProbes <- function(tiles,
 				# find all non-target_sites
 				w <- .Call("multiMatchUpper", target$start_aligned, probes$start_aligned[i], begin, PACKAGE="DECIPHER")
 				
-				if (length(w)==0) # target does not overlap nontarget
+				if (length(w) == 0) # target does not overlap nontarget
 					break
 				
 				begin <- w[1]
 				target_site <- target$target_site[w]
 				
 				j <- length(target_site)
-				if (j==0) # no nontarget
+				if (j == 0) # no nontarget
 					next
 				
 				w <- .Call("multiMatchCharNotNA", probes$probe[i,], PACKAGE="DECIPHER")
@@ -1151,7 +1151,7 @@ DesignProbes <- function(tiles,
 				}
 			}
 			
-			if (count==1) # sites do not overlap
+			if (count == 1) # sites do not overlap
 				next
 			
 #			p <- pairwiseAlignment(nontargets[1:(count - 1)],
@@ -1192,7 +1192,7 @@ DesignProbes <- function(tiles,
 			
 			w <- which(dFAms >= -20)
 			
-			if (length(w)==0)
+			if (length(w) == 0)
 				next
 			
 			s1 <- targets[index[w]]
@@ -1249,7 +1249,7 @@ DesignProbes <- function(tiles,
 				if (length(w) > 0)
 					probes <- probes[-w,]
 				d <- dim(probes)[1]
-				if (d==0) {
+				if (d == 0) {
 					warning("All probes were below the worstScore: ", id)
 					next
 				}
@@ -1261,7 +1261,7 @@ DesignProbes <- function(tiles,
 		}
 		
 		if (numProbeSets > 0) {
-			if (d==1) {
+			if (d == 1) {
 				warning("Not enough probes to design a probe set:", id)
 				break
 			}
@@ -1317,15 +1317,15 @@ DesignProbes <- function(tiles,
 				dimnames=list(f[o][1:s],
 					f[o][1:s]))
 			for (i in 1:(s - 1)) {
-				w1 <- which(index==i)
-				if (length(w1)==0) {
+				w1 <- which(index == i)
+				if (length(w1) == 0) {
 					n[i, (i + 1):s] <- 0
 					m[i, (i + 1):s] <- 0
 					next
 				}
 				for (j in (i + 1):s) {
-					w2 <- which(index==j)
-					if (length(w2)==0) {
+					w2 <- which(index == j)
+					if (length(w2) == 0) {
 						n[i, j] <- 0
 						m[i, j] <- 0
 						next
@@ -1345,12 +1345,12 @@ DesignProbes <- function(tiles,
 			
 			# choose the best probe sets
 			d <- dimnames(m)
-			w <- which(pSets$identifier==id)
+			w <- which(pSets$identifier == id)
 			p <- outer(probes$permutations[f[o][1:s]],
 				probes$permutations[f[o][1:s]],
 				FUN="+")
 			c <- -1*outer(rowSums(as.matrix(probes$coverage[f[o][1:s],]), na.rm=TRUE),
-				ifelse(rep(s, s)==1,
+				ifelse(rep(s, s) == 1,
 					sum(probes$coverage[f[o][1:s],], na.rm=TRUE),
 					rowSums(as.matrix(probes$coverage[f[o][1:s],]), na.rm=TRUE)),
 				FUN="*")
@@ -1398,11 +1398,11 @@ DesignProbes <- function(tiles,
 					pSets$mismatches_one[w[k]] <- probes$mismatches[f]
 					pSets$mismatches_two[w[k]] <- probes$mismatches[r]
 					
-					w_F <- which(index==w_o[1])
-					w_R <- which(index==w_o[2])
+					w_F <- which(index == w_o[1])
+					w_R <- which(index == w_o[2])
 					overlap_MMs <- match(MMs[w_F], MMs[w_R])
 					w_S <- which(!is.na(overlap_MMs))
-					if (length(w_S)==0)
+					if (length(w_S) == 0)
 						next
 					EFFs <- tapply(c(effs[w_F[w_S]], effs[w_R[overlap_MMs[w_S]]]),
 							rep(1:length(w_S), 2),
@@ -1442,12 +1442,12 @@ DesignProbes <- function(tiles,
 	}
 	
 	if (numProbeSets > 0) {
-		w <- which(pSets$start==0)
+		w <- which(pSets$start == 0)
 		if (length(w) > 0)
 			pSets <- pSets[-w,]
 		return(pSets)
 	} else {
-		w <- which(probes_all$start==0)
+		w <- which(probes_all$start == 0)
 		if (length(w) > 0)
 			probes_all <- probes_all[-w,]
 		return(probes_all)

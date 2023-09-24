@@ -13,7 +13,7 @@ Array2Matrix <- function(probes,
 	hyb_effs <- list()
 	l <- length(MMs)
 	for (i in 1:l) {
-		if (length(MMs[[i]])==0)
+		if (length(MMs[[i]]) == 0)
 			next
 		
 		MMs[[i]] <- unlist(strsplit(MMs[[i]], " ", fixed=TRUE))

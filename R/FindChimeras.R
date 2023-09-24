@@ -74,7 +74,7 @@ FindChimeras <- function(dbFile,
 		stop("minGroupSize must be an integer.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -278,7 +278,7 @@ FindChimeras <- function(dbFile,
 			# first 5 nucleotide trusted-band
 			w <- which(rowSums(alphabetFrequency(subseq(temp_fragments,
 				1,
-				2*tb.width))[,5:15])==0)
+				2*tb.width))[,5:15]) == 0)
 			if (length(w) > 0)
 				temp_fragments <- temp_fragments[w]
 			
@@ -286,7 +286,7 @@ FindChimeras <- function(dbFile,
 				# remove fragments with a middle containing Ns
 				w <- which(alphabetFrequency(subseq(temp_fragments,
 					2*tb.width + 1,
-					30))[,15]==0)
+					30))[,15] == 0)
 				if (length(w) > 0)
 					temp_fragments <- temp_fragments[w]
 			}
@@ -396,7 +396,7 @@ FindChimeras <- function(dbFile,
 				counts <- unlist(counts)
 				
 				# tabulate counts
-				if (length(counts)==0) { # no hits
+				if (length(counts) == 0) { # no hits
 					w <- integer() # should never occurr
 				} else { # hits
 					t <- tabulate(counts)
@@ -428,7 +428,7 @@ FindChimeras <- function(dbFile,
 				
 				remove <- character()
 				for (i in unique_name) {
-					w1 <- which(name==i)
+					w1 <- which(name == i)
 					
 					if (length(w1) < minSuspectFragments) {
 						remove <- c(remove, i)
@@ -461,8 +461,8 @@ FindChimeras <- function(dbFile,
 			
 			# keep adding fragments until above minimum
 			if (length(unique(fragments)) < minNumFragments &&
-				(!(j==batches[length(batches)] && group==myGroups[length(myGroups)])
-				|| length(fragments)==0)) # and not the last batch
+				(!(j == batches[length(batches)] && group == myGroups[length(myGroups)])
+				|| length(fragments) == 0)) # and not the last batch
 				next
 			
 			# search through other groups for fragments
@@ -494,7 +494,7 @@ FindChimeras <- function(dbFile,
 				origin_other <- origins[match(other, groups)]
 				g2 <- grepl("unclassified", other, fixed=TRUE)
 				for (g in uGroupsOfOrigin) {
-					if (other==g) {
+					if (other == g) {
 						uGroupsOfOrigin <- uGroupsOfOrigin[-match(g, uGroupsOfOrigin)]
 					} else if (g2 ||
 						grepl("unclassified", g, fixed=TRUE)) {
@@ -508,7 +508,7 @@ FindChimeras <- function(dbFile,
 				
 				# do not search the group of origin
 				h <- which(groupsOfOrigin %in% uGroupsOfOrigin)
-				if (length(h)==0)
+				if (length(h) == 0)
 					next
 				
 				u_fragments <- unique(fragments[h])
@@ -550,7 +550,7 @@ FindChimeras <- function(dbFile,
 				counts <- unlist(counts)
 				
 				# tabulate counts
-				if (length(counts)==0) # no hits
+				if (length(counts) == 0) # no hits
 					next
 				t <- tabulate(counts)
 				if (length(t) < length(u_fragments))
@@ -581,7 +581,7 @@ FindChimeras <- function(dbFile,
 					widths <- as.numeric(name.position.width[seq(4, l, 4)])
 					
 					for (i in unique_name) {
-						w1 <- which(name==i)
+						w1 <- which(name == i)
 						
 						if (length(w1) < minSuspectFragments)
 							next # chimeras need at least minSuspectFragments fragments
@@ -618,7 +618,7 @@ FindChimeras <- function(dbFile,
 						index <- match(i,row.names(result))
 						
 						# append this group to the result
-						w2 <- which(result$chimera[index]=="")
+						w2 <- which(result$chimera[index] == "")
 						if (length(w2) > 0) {
 							result$chimera[index[w2]] <- other
 							
@@ -661,7 +661,7 @@ FindChimeras <- function(dbFile,
 			all_hits_in <- integer()
 			
 			# update the result in the database
-			result <- subset(result, result$chimera!="")
+			result <- subset(result, result$chimera != "")
 			if (dim(result)[1] > 0) {
 				if (is.null(all_results))
 					all_results <- result

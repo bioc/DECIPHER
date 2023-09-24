@@ -13,21 +13,21 @@ DistanceMatrix <- function(myXStringSet,
 	type <- pmatch(type[1], TYPES)
 	if (is.na(type))
 		stop("Invalid type.")
-	if (type==-1)
+	if (type == -1)
 		stop("Ambiguous type.")
 	METHODS <- c("overlap", "shortest", "longest")
 	method <- pmatch(method[1], METHODS)
 	if (is.na(method))
 		stop("Invalid method.")
-	if (method==-1)
+	if (method == -1)
 		stop("Ambiguous method.")
 	CORRECTIONS <- c("none", "Jukes-Cantor", "JC", "JC69", "F81")
 	correction <- pmatch(correction, CORRECTIONS)
 	if (is.na(correction))
 		stop("Invalid distance correction method.")
-	if (correction==-1)
+	if (correction == -1)
 		stop("Ambiguous distance correction method.")
-	if (correction==3 || correction==4)
+	if (correction == 3 || correction == 4)
 		correction <- 2
 	if (!is.logical(includeTerminalGaps))
 		stop("includeTerminalGaps must be a logical.")
@@ -35,10 +35,10 @@ DistanceMatrix <- function(myXStringSet,
 		stop("penalizeGapLetterMatches must be a logical.")
 	if (!is.numeric(minCoverage))
 		stop("maxCoverage must be a numeric.")
-	if (minCoverage < 0)
-		stop("minCoverage must be at least zero.")
+	if (minCoverage < -1)
+		stop("minCoverage must be at least -1.")
 	if (minCoverage > 1)
-		stop("minCoverage can be at most one.")
+		stop("minCoverage can be at most 1.")
 	if (!is.logical(verbose))
 		stop("verbose must be a logical.")
 	if (!is(myXStringSet, "XStringSet"))
@@ -47,7 +47,7 @@ DistanceMatrix <- function(myXStringSet,
 		stop("myXStringSet cannot be a BStringSet.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -58,7 +58,7 @@ DistanceMatrix <- function(myXStringSet,
 	}
 	
 	maxW <- unique(width(myXStringSet))
-	if (length(maxW)!=1) {
+	if (length(maxW) != 1) {
 		warning("\n",
 			length(maxW),
 			" different sequence lengths.\n",
@@ -127,7 +127,7 @@ DistanceMatrix <- function(myXStringSet,
 		pBar,
 		processors,
 		PACKAGE="DECIPHER")
-	if (type==1) { # matrix
+	if (type == 1) { # matrix
 		dimnames(distMatrix) <- list(names(myXStringSet),
 			names(myXStringSet))
 	} else { # dist

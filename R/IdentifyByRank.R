@@ -49,7 +49,7 @@ IdentifyByRank <- function(dbFile,
 	}
 	
 	z <- x
-	if (level==0) {
+	if (level == 0) {
 		x <- strsplit(x$rank, "\n", fixed=TRUE)
 		z$origin <- unlist(lapply(x,
 			function (x) {

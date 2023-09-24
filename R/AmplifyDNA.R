@@ -13,13 +13,13 @@ AmplifyDNA <- function(primers,
 		primers <- DNAStringSet(primers)
 	if (!is(primers, "DNAStringSet"))
 		stop("primers must be a DNAStringSet.")
-	if (any(primers==""))
+	if (any(primers == ""))
 		stop("primers cannot contain 0 character elements.")
 	if (is.character(myDNAStringSet))
 		myDNAStringSet <- DNAStringSet(myDNAStringSet)
 	if (!is(myDNAStringSet, "DNAStringSet"))
 		stop("myDNAStringSet must be a DNAStringSet.")
-	if (length(myDNAStringSet)==0)
+	if (length(myDNAStringSet) == 0)
 		stop("myDNAStringSet is empty.")
 	if (!is.numeric(ions))
 		stop("ions must be a numeric.")
@@ -79,7 +79,7 @@ AmplifyDNA <- function(primers,
 		fp <- c(fp, rep(i, length(temp)))
 	}
 	f <- Views(myDNAStringSet, start(f), end(f))
-	if (length(f)==0)
+	if (length(f) == 0)
 		return(DNAStringSet())
 	
 	r <- IRanges()
@@ -94,7 +94,7 @@ AmplifyDNA <- function(primers,
 		rp <- c(rp, rep(i, length(temp)))
 	}
 	r <- Views(myDNAStringSet, start(r), end(r))
-	if (length(r)==0)
+	if (length(r) == 0)
 		return(DNAStringSet())
 	
 	ends <- end(r)
@@ -109,7 +109,7 @@ AmplifyDNA <- function(primers,
 		reverseComplement(targets),
 		annealingTemp, P, ions, ...)
 	fw <- which(fe >= minEfficiency)
-	if (length(fw)==0)
+	if (length(fw) == 0)
 		return(DNAStringSet())
 	
 	targets <- extractAt(myDNAStringSet,
@@ -119,7 +119,7 @@ AmplifyDNA <- function(primers,
 		targets,
 		annealingTemp, P, ions, ...)
 	rw <- which(re >= minEfficiency)
-	if (length(rw)==0)
+	if (length(rw) == 0)
 		return(DNAStringSet())
 	
 	sf <- start(f)[fw]

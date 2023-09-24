@@ -11,18 +11,18 @@ OrientNucleotides <- function(myXStringSet,
 		is(myXStringSet, "RNAStringSet")))
 		stop("myXStringSet must be a DNAStringSet or RNAStringSet.")
 	l <- length(myXStringSet)
-	if (l==0)
+	if (l == 0)
 		stop("myXStringSet does not contain any sequences.")
-	if (all(width(myXStringSet)==0L))
+	if (all(width(myXStringSet) == 0L))
 		stop("All sequences in myXStringSet are zero width.")
 	reference <- unique(reference)
-	if (length(reference)==0)
+	if (length(reference) == 0)
 		stop("reference must be at least one number.")
 	if (any(reference < 1))
 		stop("reference must be at least one.")
 	if (any(reference > l))
 		stop("reference greater than the length of myXStringSet.")
-	if (!all(reference==floor(reference)))
+	if (!all(reference == floor(reference)))
 		stop("reference must be a whole number.")
 	if (l <= length(reference))
 		stop("myXStringSet must contain non-reference sequences.")
@@ -46,7 +46,7 @@ OrientNucleotides <- function(myXStringSet,
 		stop("threshold cannot be greater than 1.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -98,6 +98,7 @@ OrientNucleotides <- function(myXStringSet,
 		myXStringSet,
 		wordSize,
 		FALSE, # mask repeats
+		processors,
 		PACKAGE="DECIPHER")
 	v <- lapply(v, sort)
 	X <- v[reference]
@@ -128,6 +129,7 @@ OrientNucleotides <- function(myXStringSet,
 			seqs,
 			wordSize,
 			FALSE, # mask repeats
+			processors,
 			PACKAGE="DECIPHER")
 		v <- lapply(v, sort.int)
 		
@@ -141,9 +143,9 @@ OrientNucleotides <- function(myXStringSet,
 		
 		s <- which(v + threshold <= org[w])
 		if (length(s) > 0) {
-			if (type==2L || type==3L)
+			if (type == 2L || type == 3L)
 				result[w[s]] <- "rc"
-			if (type==1L || type==3L)
+			if (type == 1L || type == 3L)
 				myXStringSet[w[s]] <- seqs[s]
 			w <- w[-s]
 		}
@@ -151,12 +153,13 @@ OrientNucleotides <- function(myXStringSet,
 	
 	if (length(w) > 0 &&
 		(1L %in% orientation || 3L %in% orientation)) {
-		w <- which(result=="")
+		w <- which(result == "")
 		seqs <- reverse(myXStringSet[w])
 		v <- .Call("enumerateSequence",
 			seqs,
 			wordSize,
 			FALSE, # mask repeats
+			processors,
 			PACKAGE="DECIPHER")
 		v <- lapply(v, sort.int)
 		
@@ -170,9 +173,9 @@ OrientNucleotides <- function(myXStringSet,
 		
 		s <- which(v + threshold <= org[w])
 		if (length(s) > 0) {
-			if (type==2L || type==3L)
+			if (type == 2L || type == 3L)
 				result[w[s]] <- "r"
-			if (type==1L || type==3L)
+			if (type == 1L || type == 3L)
 				myXStringSet[w[s]] <- seqs[s]
 			w <- w[-s]
 		}
@@ -180,12 +183,13 @@ OrientNucleotides <- function(myXStringSet,
 	
 	if (length(w) > 0 &&
 		(1L %in% orientation || 4L %in% orientation)) {
-		w <- which(result=="")
+		w <- which(result == "")
 		seqs <- complement(myXStringSet[w])
 		v <- .Call("enumerateSequence",
 			seqs,
 			wordSize,
 			FALSE, # mask repeats
+			processors,
 			PACKAGE="DECIPHER")
 		v <- lapply(v, sort.int)
 		
@@ -199,9 +203,9 @@ OrientNucleotides <- function(myXStringSet,
 		
 		s <- which(v + threshold <= org[w])
 		if (length(s) > 0) {
-			if (type==2L || type==3L)
+			if (type == 2L || type == 3L)
 				result[w[s]] <- "c"
-			if (type==1L || type==3L)
+			if (type == 1L || type == 3L)
 				myXStringSet[w[s]] <- seqs[s]
 		}
 	}
@@ -217,11 +221,11 @@ OrientNucleotides <- function(myXStringSet,
 			digits=2))
 	}
 	
-	if (type==1L) {
+	if (type == 1L) {
 		return(myXStringSet)
-	} else if (type==2L) {
+	} else if (type == 2L) {
 		return(result)
-	} else { # type==3L
+	} else { # type == 3L
 		return(list(result,
 			myXStringSet))
 	}

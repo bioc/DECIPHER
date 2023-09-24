@@ -108,7 +108,7 @@ FormGroups <- function(dbFile,
 	o <- order(searchResult$count,
 		lengths(lineages),
 		decreasing=TRUE)
-	for (i in seq_along(o)) {		if (searchResult$identifier[o[i]]=="") {			lineage <- lineages[[o[i]]]
+	for (i in seq_along(o)) {		if (searchResult$identifier[o[i]] == "") {			lineage <- lineages[[o[i]]]
 			for (j in rev(seq_along(lineage))) {
 				w <- startsWith(rank,
 					paste(lineage[seq_len(j)],
@@ -139,7 +139,7 @@ FormGroups <- function(dbFile,
 					if (id %in% searchResult$identifier[-w])
 						id <- paste(id, o[i], sep="_")
 					searchResult$identifier[w] <- id
-					break				} else if (j==1) { # create singleton group
+					break				} else if (j == 1) { # create singleton group
 					searchResult$origin[o[i]] <- ""
 					id <- .change(lineage[j])
 					if (id %in% searchResult$identifier[-o[i]])

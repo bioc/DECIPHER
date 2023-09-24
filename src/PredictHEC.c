@@ -47,7 +47,7 @@ SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC
 	int x_length = get_length_from_XStringSet_holder(&x_set);
 	
 	SEXP ret, ans;
-	if (o==1) { // return a character vector
+	if (o == 1) { // return a character vector
 		PROTECT(ret = allocVector(STRSXP, x_length));
 	} else { // return a list of matrices (x_i.length x 3)
 		PROTECT(ret = allocVector(VECSXP, x_length));

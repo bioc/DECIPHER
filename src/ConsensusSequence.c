@@ -121,7 +121,7 @@ static void alphabetFrequency(const Chars_holder *P, double *bits, int seqLength
 		j < (P->length - end);
 		j++, p++)
 	{
-		if (degeneracy==1) { // include degeneracy codes
+		if (degeneracy == 1) { // include degeneracy codes
 			// another base counted
 			*(bits + 6*seqLength + j) += weight;
 			
@@ -173,21 +173,21 @@ static void alphabetFrequency(const Chars_holder *P, double *bits, int seqLength
 					*(bits + 0*seqLength + j) += .25*weight; *(bits + 1*seqLength + j) += .25*weight; *(bits + 2*seqLength + j) += .25*weight; *(bits + 3*seqLength + j) += .25*weight; // ACGT
 					break;
 				case 16: // -
-					if (ignore==1) { // don't include gaps
+					if (ignore == 1) { // don't include gaps
 						*(bits + 6*seqLength + j) -= weight;
 					} else { // include gaps
 						*(bits + 4*seqLength + j) += weight;
 					}
 					break;
 				case 32: // +
-					if (ignore==1) { // don't include masks
+					if (ignore == 1) { // don't include masks
 						*(bits + 6*seqLength + j) -= weight;
 					} else { // include masks
 						*(bits + 5*seqLength + j) += weight;
 					}
 					break;
 				case 64: // . treated as -
-					if (ignore==1) { // don't include gaps
+					if (ignore == 1) { // don't include gaps
 						*(bits + 6*seqLength + j) -= weight;
 					} else { // include gaps
 						*(bits + 4*seqLength + j) += weight;
@@ -328,7 +328,7 @@ static void alphabetFrequencyAA(const Chars_holder *P, double *bits, int seqLeng
 				*(bits + 21*seqLength + j) += weight;
 				break;
 			case 66: // B = N or D
-				if (degeneracy==1) { // include degeneracy codes
+				if (degeneracy == 1) { // include degeneracy codes
 					*(bits + 2*seqLength + j) += 0.5*weight;
 					*(bits + 3*seqLength + j) += 0.5*weight;
 				} else { // don't include degeneracy codes
@@ -336,7 +336,7 @@ static void alphabetFrequencyAA(const Chars_holder *P, double *bits, int seqLeng
 				}
 				break;
 			case 90: // Z = Q or E
-				if (degeneracy==1) { // include degeneracy codes
+				if (degeneracy == 1) { // include degeneracy codes
 					*(bits + 5*seqLength + j) += 0.5*weight;
 					*(bits + 6*seqLength + j) += 0.5*weight;
 				} else { // don't include degeneracy codes
@@ -344,7 +344,7 @@ static void alphabetFrequencyAA(const Chars_holder *P, double *bits, int seqLeng
 				}
 				break;
 			case 74: // J = I or L
-				if (degeneracy==1) { // include degeneracy codes
+				if (degeneracy == 1) { // include degeneracy codes
 					*(bits + 9*seqLength + j) += 0.5*weight;
 					*(bits + 10*seqLength + j) += 0.5*weight;
 				} else { // don't include degeneracy codes
@@ -352,7 +352,7 @@ static void alphabetFrequencyAA(const Chars_holder *P, double *bits, int seqLeng
 				}
 				break;
 			case 88: // X = any letter
-				if (degeneracy==1) { // include degeneracy codes
+				if (degeneracy == 1) { // include degeneracy codes
 					for (i = 0; i < 20; i++) {
 						// split between the 20 canonical amino acids
 						*(bits + i*seqLength + j) += weight/20;
@@ -365,21 +365,21 @@ static void alphabetFrequencyAA(const Chars_holder *P, double *bits, int seqLeng
 				*(bits + 22*seqLength + j) += weight;
 				break;
 			case 45: // -
-				if (ignore==1) { // don't include gaps
+				if (ignore == 1) { // don't include gaps
 					*(bits + 25*seqLength + j) -= weight;
 				} else { // include gaps
 					*(bits + 23*seqLength + j) += weight;
 				}
 				break;
 			case 43: // +
-				if (ignore==1) { // don't include masks
+				if (ignore == 1) { // don't include masks
 					*(bits + 25*seqLength + j) -= weight;
 				} else { // include masks
 					*(bits + 24*seqLength + j) += weight;
 				}
 				break;
 			case 46: // . treated as -
-				if (ignore==1) { // don't include gaps
+				if (ignore == 1) { // don't include gaps
 					*(bits + 25*seqLength + j) -= weight;
 				} else { // include gaps
 					*(bits + 23*seqLength + j) += weight;
@@ -447,13 +447,13 @@ static void runsAA(const Chars_holder *P, double *runs, int seqLength, int start
 				break;
 		}
 		
-		if (temp==value) { // run
-			if (s==-1) { // run of length 2
+		if (temp == value) { // run
+			if (s == -1) { // run of length 2
 				s = lastPos;
 				length = 2;
 				if (lastGap < (s - 2)) // ensure continuity before the run
 					*(runs + s) += weight;
-			} else if (length==2) { // run of length 3
+			} else if (length == 2) { // run of length 3
 				length = 3;
 				if (lastGap < (s - 2)) { // ensure continuity before the run
 					*(runs + s) -= weight;
@@ -470,7 +470,7 @@ static void runsAA(const Chars_holder *P, double *runs, int seqLength, int start
 
 static void adjustFrequency(const char p, double *bits, int seqLength, int degeneracy, int ignore, int j, double weight)
 {
-	if (degeneracy==1) { // include degeneracy codes
+	if (degeneracy == 1) { // include degeneracy codes
 		// another base counted
 		*(bits + 6*seqLength + j) += weight;
 		
@@ -522,21 +522,21 @@ static void adjustFrequency(const char p, double *bits, int seqLength, int degen
 				*(bits + 0*seqLength + j) += .25*weight; *(bits + 1*seqLength + j) += .25*weight; *(bits + 2*seqLength + j) += .25*weight; *(bits + 3*seqLength + j) += .25*weight; // ACGT
 				break;
 			case 16: // -
-				if (ignore==1) { // don't include gaps
+				if (ignore == 1) { // don't include gaps
 					*(bits + 6*seqLength + j) -= weight;
 				} else { // include gaps
 					*(bits + 4*seqLength + j) += weight;
 				}
 				break;
 			case 32: // +
-				if (ignore==1) { // don't include masks
+				if (ignore == 1) { // don't include masks
 					*(bits + 6*seqLength + j) -= weight;
 				} else { // include masks
 					*(bits + 5*seqLength + j) += weight;
 				}
 				break;
 			case 64: // . treated as -
-				if (ignore==1) { // don't include gaps
+				if (ignore == 1) { // don't include gaps
 					*(bits + 6*seqLength + j) -= weight;
 				} else { // include gaps
 					*(bits + 4*seqLength + j) += weight;
@@ -671,7 +671,7 @@ static void adjustFrequencyAA(const char p, double *bits, int seqLength, int deg
 			*(bits + 21*seqLength + j) += weight;
 			break;
 		case 66: // B = N or D
-			if (degeneracy==1) { // include degeneracy codes
+			if (degeneracy == 1) { // include degeneracy codes
 				*(bits + 2*seqLength + j) += 0.5*weight;
 				*(bits + 3*seqLength + j) += 0.5*weight;
 			} else { // don't include degeneracy codes
@@ -679,7 +679,7 @@ static void adjustFrequencyAA(const char p, double *bits, int seqLength, int deg
 			}
 			break;
 		case 90: // Z = Q or E
-			if (degeneracy==1) { // include degeneracy codes
+			if (degeneracy == 1) { // include degeneracy codes
 				*(bits + 5*seqLength + j) += 0.5*weight;
 				*(bits + 6*seqLength + j) += 0.5*weight;
 			} else { // don't include degeneracy codes
@@ -687,7 +687,7 @@ static void adjustFrequencyAA(const char p, double *bits, int seqLength, int deg
 			}
 			break;
 		case 74: // J = I or L
-			if (degeneracy==1) { // include degeneracy codes
+			if (degeneracy == 1) { // include degeneracy codes
 				*(bits + 9*seqLength + j) += 0.5*weight;
 				*(bits + 10*seqLength + j) += 0.5*weight;
 			} else { // don't include degeneracy codes
@@ -695,7 +695,7 @@ static void adjustFrequencyAA(const char p, double *bits, int seqLength, int deg
 			}
 			break;
 		case 88: // X = any letter
-			if (degeneracy==1) { // include degeneracy codes
+			if (degeneracy == 1) { // include degeneracy codes
 				for (i = 0; i < 20; i++) {
 					// split between the 20 canonical amino acids
 					*(bits + i*seqLength + j) += weight/20;
@@ -708,21 +708,21 @@ static void adjustFrequencyAA(const char p, double *bits, int seqLength, int deg
 			*(bits + 22*seqLength + j) += weight;
 			break;
 		case 45: // -
-			if (ignore==1) { // don't include gaps
+			if (ignore == 1) { // don't include gaps
 				*(bits + 25*seqLength + j) -= weight;
 			} else { // include gaps
 				*(bits + 23*seqLength + j) += weight;
 			}
 			break;
 		case 43: // +
-			if (ignore==1) { // don't include masks
+			if (ignore == 1) { // don't include masks
 				*(bits + 25*seqLength + j) -= weight;
 			} else { // include masks
 				*(bits + 24*seqLength + j) += weight;
 			}
 			break;
 		case 46: // . treated as -
-			if (ignore==1) { // don't include gaps
+			if (ignore == 1) { // don't include gaps
 				*(bits + 25*seqLength + j) -= weight;
 			} else { // include gaps
 				*(bits + 23*seqLength + j) += weight;
@@ -741,7 +741,7 @@ static void makeConsensus(double *bits, char *seq, int seqLength, int x_length, 
 	double information;
 	
 	for (j = 0; j < seqLength; j++) {
-		if (!tGaps && (*(bits + 6*seqLength + j)==0)) {
+		if (!tGaps && (*(bits + 6*seqLength + j) == 0)) {
 			*(seq + j) = '-';
 			continue;
 		}
@@ -989,7 +989,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 	
 	for (j = 0; j < seqLength; j++) {
 		
-		if (!tGaps && (*(bits + 25*seqLength + j)==0)) {
+		if (!tGaps && (*(bits + 25*seqLength + j) == 0)) {
 			*(seq + j) = '-';
 			continue;
 		}
@@ -1005,7 +1005,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 			if (AAs[i] > AAs[M]) {
 				tied = 1;
 				M = i;
-			} else if (AAs[i]==AAs[M]) {
+			} else if (AAs[i] == AAs[M]) {
 				tied++;
 			}
 		}
@@ -1014,7 +1014,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 		information = 0;
 		
 		// determine the most common base over the threshold percentage
-		if (M==0 && tied==1 && AAs[0] >= threshold) {
+		if (M == 0 && tied == 1 && AAs[0] >= threshold) {
 			if (AAs[0] >= percentGap &&
 				AAs[0] >= percentMask) {
 				*(seq + j) = 'A';
@@ -1028,7 +1028,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==1 && tied==1 && AAs[1] >= threshold) {
+		} else if (M == 1 && tied == 1 && AAs[1] >= threshold) {
 			if (AAs[1] >= percentGap &&
 				AAs[1] >= percentMask) {
 				*(seq + j) = 'R';
@@ -1042,7 +1042,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==2 && tied==1 && AAs[2] >= threshold) {
+		} else if (M == 2 && tied == 1 && AAs[2] >= threshold) {
 			if (AAs[2] >= percentGap &&
 				AAs[2] >= percentMask) {
 				*(seq + j) = 'N';
@@ -1056,7 +1056,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==3 && tied==1 && AAs[3] >= threshold) {
+		} else if (M == 3 && tied == 1 && AAs[3] >= threshold) {
 			if (AAs[3] >= percentGap &&
 				AAs[3] >= percentMask) {
 				*(seq + j) = 'D';
@@ -1070,7 +1070,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==4 && tied==1 && AAs[4] >= threshold) {
+		} else if (M == 4 && tied == 1 && AAs[4] >= threshold) {
 			if (AAs[4] >= percentGap &&
 				AAs[4] >= percentMask) {
 				*(seq + j) = 'C';
@@ -1084,7 +1084,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==5 && tied==1 && AAs[5] >= threshold) {
+		} else if (M == 5 && tied == 1 && AAs[5] >= threshold) {
 			if (AAs[5] >= percentGap &&
 				AAs[5] >= percentMask) {
 				*(seq + j) = 'Q';
@@ -1098,7 +1098,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==6 && tied==1 && AAs[6] >= threshold) {
+		} else if (M == 6 && tied == 1 && AAs[6] >= threshold) {
 			if (AAs[6] >= percentGap &&
 				AAs[6] >= percentMask) {
 				*(seq + j) = 'E';
@@ -1112,7 +1112,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==7 && tied==1 && AAs[7] >= threshold) {
+		} else if (M == 7 && tied == 1 && AAs[7] >= threshold) {
 			if (AAs[7] >= percentGap &&
 				AAs[7] >= percentMask) {
 				*(seq + j) = 'G';
@@ -1126,7 +1126,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==8 && tied==1 && AAs[8] >= threshold) {
+		} else if (M == 8 && tied == 1 && AAs[8] >= threshold) {
 			if (AAs[8] >= percentGap &&
 				AAs[8] >= percentMask) {
 				*(seq + j) = 'H';
@@ -1140,7 +1140,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==9 && tied==1 && AAs[9] >= threshold) {
+		} else if (M == 9 && tied == 1 && AAs[9] >= threshold) {
 			if (AAs[9] >= percentGap &&
 				AAs[9] >= percentMask) {
 				*(seq + j) = 'I';
@@ -1154,7 +1154,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==10 && tied==1 && AAs[10] >= threshold) {
+		} else if (M == 10 && tied == 1 && AAs[10] >= threshold) {
 			if (AAs[10] >= percentGap &&
 				AAs[10] >= percentMask) {
 				*(seq + j) = 'L';
@@ -1168,7 +1168,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==11 && tied==1 && AAs[11] >= threshold) {
+		} else if (M == 11 && tied == 1 && AAs[11] >= threshold) {
 			if (AAs[11] >= percentGap &&
 				AAs[11] >= percentMask) {
 				*(seq + j) = 'K';
@@ -1182,7 +1182,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==12 && tied==1 && AAs[12] >= threshold) {
+		} else if (M == 12 && tied == 1 && AAs[12] >= threshold) {
 			if (AAs[12] >= percentGap &&
 				AAs[12] >= percentMask) {
 				*(seq + j) = 'M';
@@ -1196,7 +1196,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==13 && tied==1 && AAs[13] >= threshold) {
+		} else if (M == 13 && tied == 1 && AAs[13] >= threshold) {
 			if (AAs[13] >= percentGap &&
 				AAs[13] >= percentMask) {
 				*(seq + j) = 'F';
@@ -1210,7 +1210,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==14 && tied==1 && AAs[14] >= threshold) {
+		} else if (M == 14 && tied == 1 && AAs[14] >= threshold) {
 			if (AAs[14] >= percentGap &&
 				AAs[14] >= percentMask) {
 				*(seq + j) = 'P';
@@ -1224,7 +1224,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==15 && tied==1 && AAs[15] >= threshold) {
+		} else if (M == 15 && tied == 1 && AAs[15] >= threshold) {
 			if (AAs[15] >= percentGap &&
 				AAs[15] >= percentMask) {
 				*(seq + j) = 'S';
@@ -1238,7 +1238,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==16 && tied==1 && AAs[16] >= threshold) {
+		} else if (M == 16 && tied == 1 && AAs[16] >= threshold) {
 			if (AAs[16] >= percentGap &&
 				AAs[16] >= percentMask) {
 				*(seq + j) = 'T';
@@ -1252,7 +1252,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==17 && tied==1 && AAs[17] >= threshold) {
+		} else if (M == 17 && tied == 1 && AAs[17] >= threshold) {
 			if (AAs[17] >= percentGap &&
 				AAs[17] >= percentMask) {
 				*(seq + j) = 'W';
@@ -1266,7 +1266,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==18 && tied==1 && AAs[18] >= threshold) {
+		} else if (M == 18 && tied == 1 && AAs[18] >= threshold) {
 			if (AAs[18] >= percentGap &&
 				AAs[18] >= percentMask) {
 				*(seq + j) = 'Y';
@@ -1280,7 +1280,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==19 && tied==1 && AAs[19] >= threshold) {
+		} else if (M == 19 && tied == 1 && AAs[19] >= threshold) {
 			if (AAs[19] >= percentGap &&
 				AAs[19] >= percentMask) {
 				*(seq + j) = 'V';
@@ -1294,7 +1294,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==20 && tied==1 && AAs[20] >= threshold) {
+		} else if (M == 20 && tied == 1 && AAs[20] >= threshold) {
 			if (AAs[20] >= percentGap &&
 				AAs[20] >= percentMask) {
 				*(seq + j) = 'U';
@@ -1308,7 +1308,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==21 && tied==1 && AAs[21] >= threshold) {
+		} else if (M == 21 && tied == 1 && AAs[21] >= threshold) {
 			if (AAs[21] >= percentGap &&
 				AAs[21] >= percentMask) {
 				*(seq + j) = 'O';
@@ -1322,7 +1322,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==22 && tied==1 && AAs[22] >= threshold) {
+		} else if (M == 22 && tied == 1 && AAs[22] >= threshold) {
 			if (AAs[22] >= percentGap &&
 				AAs[22] >= percentMask) {
 				*(seq + j) = '*';
@@ -1336,7 +1336,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==2 && ((tied==2 && AAs[2]==AAs[3]) || tied==1) && (AAs[2] + AAs[3]) >= threshold) {
+		} else if (M == 2 && ((tied == 2 && AAs[2] == AAs[3]) || tied == 1) && (AAs[2] + AAs[3]) >= threshold) {
 			if ((AAs[2] + AAs[3]) >= percentGap &&
 				(AAs[2] + AAs[3]) >= percentMask) {
 				*(seq + j) = 'B'; // B = N (2) or D (3)
@@ -1350,7 +1350,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==5 && ((tied==2 && AAs[5]==AAs[6]) || tied==1) && (AAs[5] + AAs[6]) >= threshold) {
+		} else if (M == 5 && ((tied == 2 && AAs[5] == AAs[6]) || tied == 1) && (AAs[5] + AAs[6]) >= threshold) {
 			if ((AAs[5] + AAs[6]) >= percentGap &&
 				(AAs[5] + AAs[6]) >= percentMask) {
 				*(seq + j) = 'Z'; // Z = Q (5) or E (6)
@@ -1364,7 +1364,7 @@ static void makeConsensusAA(double *bits, char *seq, int seqLength, int x_length
 					information = percentMask;
 				}
 			}
-		} else if (M==9 && ((tied==2 && AAs[9]==AAs[10]) || tied==1) && (AAs[9] + AAs[10]) >= threshold) {
+		} else if (M == 9 && ((tied == 2 && AAs[9] == AAs[10]) || tied == 1) && (AAs[9] + AAs[10]) >= threshold) {
 			if ((AAs[9] + AAs[10]) >= percentGap &&
 				(AAs[9] + AAs[10]) >= percentMask) {
 				*(seq + j) = 'J'; // J = I (9) or L (10)
@@ -1577,7 +1577,7 @@ SEXP consensusProfile(SEXP x, SEXP weight, SEXP structs)
 	// initialize an array of DBN counts
 	double *DBN, *s;
 	int do_DBN, n, l, d, size = 8;
-	if (length(structs)==x_length) {
+	if (length(structs) == x_length) {
 		do_DBN = 1;
 		elmt = VECTOR_ELT(structs, 0);
 		PROTECT(dims = GET_DIM(elmt));
@@ -1626,7 +1626,7 @@ SEXP consensusProfile(SEXP x, SEXP weight, SEXP structs)
 	
 	// loop through each sequence in the DNAStringSet
 	for (i = 0; i < x_length; i++) {
-		if (w[i]==0)
+		if (w[i] == 0)
 			continue;
 		
 		// extract each ith DNAString from the DNAStringSet
@@ -1634,7 +1634,7 @@ SEXP consensusProfile(SEXP x, SEXP weight, SEXP structs)
 		
 		// update the alphabet for this string
 		gapLengths[i*2] = frontTerminalGaps(&x_i);
-		if (gapLengths[i*2]==x_i.length) // all gaps
+		if (gapLengths[i*2] == x_i.length) // all gaps
 			continue;
 		gapLengths[i*2 + 1] = endTerminalGaps(&x_i);
 		alphabetFrequency(&x_i, bases, seqLength, 1, 0, gapLengths[i*2], gapLengths[i*2 + 1], w[i]);
@@ -1699,7 +1699,7 @@ SEXP consensusProfile(SEXP x, SEXP weight, SEXP structs)
 	
 	for (i = 0; i < seqLength; i++) {
 		tot += totW[i];
-		if (tot==0) {
+		if (tot == 0) {
 			for (j = 0; j < size; j++)
 				*(rans + i*size + j) = 0;
 		} else {
@@ -1770,7 +1770,7 @@ SEXP consensusProfileAA(SEXP x, SEXP weight, SEXP structs)
 	// initialize an array of HEC counts
 	double *HEC, *s;
 	int do_HEC, n, l, d, size = 29;
-	if (length(structs)==x_length) {
+	if (length(structs) == x_length) {
 		do_HEC = 1;
 		elmt = VECTOR_ELT(structs, 0);
 		PROTECT(dims = GET_DIM(elmt));
@@ -1821,7 +1821,7 @@ SEXP consensusProfileAA(SEXP x, SEXP weight, SEXP structs)
 	
 	// loop through each sequence in the AAStringSet
 	for (i = 0; i < x_length; i++) {
-		if (w[i]==0)
+		if (w[i] == 0)
 			continue;
 		
 		// extract each ith AAString from the AAStringSet
@@ -1829,7 +1829,7 @@ SEXP consensusProfileAA(SEXP x, SEXP weight, SEXP structs)
 		
 		// update the alphabet for this string
 		gapLengths[i*2] = frontTerminalGapsAA(&x_i);
-		if (gapLengths[i*2]==x_i.length) // all gaps
+		if (gapLengths[i*2] == x_i.length) // all gaps
 			continue;
 		gapLengths[i*2 + 1] = endTerminalGapsAA(&x_i);
 		alphabetFrequencyAA(&x_i, bases, seqLength, 1, 0, gapLengths[i*2], gapLengths[i*2 + 1], w[i]);
@@ -1869,7 +1869,7 @@ SEXP consensusProfileAA(SEXP x, SEXP weight, SEXP structs)
 	for (i = 0; i < seqLength; i++) {
 		tot += totW[i];
 		
-		if (tot==0) {
+		if (tot == 0) {
 			for (j = 0; j < size; j++)
 				*(rans + i*size + j) = 0;
 		} else {
@@ -1938,7 +1938,7 @@ SEXP colScores(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP
 	double *DBN, *s;
 	int do_DBN, n, l, d;
 	double *dbnM = REAL(dbnMatrix);
-	if (length(structs)==x_length) {
+	if (length(structs) == x_length) {
 		do_DBN = 1;
 		elmt = VECTOR_ELT(structs, 0);
 		PROTECT(dims = GET_DIM(elmt));
@@ -1960,7 +1960,7 @@ SEXP colScores(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP
 		
 		// update the alphabet for this string
 		gapLengths[i*2] = frontTerminalGaps(&x_i);
-		if (gapLengths[i*2]==x_i.length) // all gaps
+		if (gapLengths[i*2] == x_i.length) // all gaps
 			continue;
 		gapLengths[i*2 + 1] = endTerminalGaps(&x_i);
 		if (tGaps) {
@@ -1997,8 +1997,8 @@ SEXP colScores(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP
 		for (i = 0; i < 4; i++) {
 			total += bases[i*seqLength + k];
 			for (j = i; j < 4; j++) {
-				weight = (i==j) ? 0.5 : 1;
-				weight *= bases[j*seqLength + k] - ((i==j) ? 1 : 0);
+				weight = (i == j) ? 0.5 : 1;
+				weight *= bases[j*seqLength + k] - ((i == j) ? 1 : 0);
 				weight *= bases[i*seqLength + k];
 				if (weight > 0)
 					*(rans + k) += *(subM + i*4 + j)*weight;
@@ -2009,8 +2009,8 @@ SEXP colScores(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP
 			if (do_DBN) {
 				for (i = 0; i < d; i++) {
 					for (j = i; j < d; j++) {
-						weight = (i==j) ? 0.5 : 1;
-						weight *= DBN[j*seqLength + k];// - ((i==j) ? 1 : 0);
+						weight = (i == j) ? 0.5 : 1;
+						weight *= DBN[j*seqLength + k];// - ((i == j) ? 1 : 0);
 						weight *= DBN[i*seqLength + k];
 						if (weight > 0)
 							*(rans + k) += *(dbnM + i*d + j)*weight;
@@ -2075,7 +2075,7 @@ SEXP colScoresAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SE
 	double *HEC, *s;
 	int do_HEC, n, l, d;
 	double *hecM = REAL(hecMatrix);
-	if (length(structs)==x_length) {
+	if (length(structs) == x_length) {
 		do_HEC = 1;
 		elmt = VECTOR_ELT(structs, 0);
 		PROTECT(dims = GET_DIM(elmt));
@@ -2097,7 +2097,7 @@ SEXP colScoresAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SE
 		
 		// update the alphabet for this string
 		gapLengths[i*2] = frontTerminalGapsAA(&x_i);
-		if (gapLengths[i*2]==x_i.length) // all gaps
+		if (gapLengths[i*2] == x_i.length) // all gaps
 			continue;
 		gapLengths[i*2 + 1] = endTerminalGapsAA(&x_i);
 		if (tGaps) {
@@ -2134,8 +2134,8 @@ SEXP colScoresAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SE
 		for (i = 0; i < 20; i++) {
 			total += bases[i*seqLength + k];
 			for (j = i; j < 20; j++) {
-				weight = (i==j) ? 0.5 : 1;
-				weight *= bases[j*seqLength + k] - ((i==j) ? 1 : 0);
+				weight = (i == j) ? 0.5 : 1;
+				weight *= bases[j*seqLength + k] - ((i == j) ? 1 : 0);
 				weight *= bases[i*seqLength + k];
 				if (weight > 0)
 					*(rans + k) += *(subM + i*21 + j)*weight;
@@ -2146,8 +2146,8 @@ SEXP colScoresAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SE
 			if (do_HEC) {
 				for (i = 0; i < d; i++) {
 					for (j = i; j < d; j++) {
-						weight = (i==j) ? 0.5 : 1;
-						weight *= HEC[j*seqLength + k];// - ((i==j) ? 1 : 0);
+						weight = (i == j) ? 0.5 : 1;
+						weight *= HEC[j*seqLength + k];// - ((i == j) ? 1 : 0);
 						weight *= HEC[i*seqLength + k];
 						if (weight > 0)
 							*(rans + k) += *(hecM + i*d + j)*weight;
@@ -2232,7 +2232,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 		
 		// update the alphabet for this string
 		gapLengths[i*2] = frontTerminalGaps(&x_i);
-		if (gapLengths[i*2]==x_i.length) // all gaps
+		if (gapLengths[i*2] == x_i.length) // all gaps
 			continue;
 		gapLengths[i*2 + 1] = endTerminalGaps(&x_i);
 		alphabetFrequency(&x_i, bases, seqLength, 1, 0, gapLengths[i*2], gapLengths[i*2 + 1], w[i]);
@@ -2241,7 +2241,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 		// 1's for each length of gap closing at that position
 		pos = 0;
 		for (j = gapLengths[i*2] + 1; j < seqLength - gapLengths[i*2 + 1] - 1; j++) {
-			if (pos==0 && // not inside a gap - check for opening
+			if (pos == 0 && // not inside a gap - check for opening
 				!(x_i.ptr[j - 1] & 0x10 || x_i.ptr[j - 1] & 0x40) && (x_i.ptr[j] & 0x10 || x_i.ptr[j] & 0x40)) {
 				pos = j; // gap opening
 			}
@@ -2265,8 +2265,8 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 		for (i = 0; i < 4; i++) {
 			total += bases[i*seqLength + k];
 			for (j = i; j < 4; j++) {
-				sum = (i==j) ? 1 : 2;
-				sum *= (bases[j*seqLength + k] - ((i==j) ? 1 : 0));
+				sum = (i == j) ? 1 : 2;
+				sum *= (bases[j*seqLength + k] - ((i == j) ? 1 : 0));
 				sum *= bases[i*seqLength + k];
 				if (sum > 0)
 					scores[k] += *(subM + i*4 + j)*sum;
@@ -2287,7 +2287,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 			weight = 0; // length of gap
 			temp = gaps[k]; // gets zeroed-out
 			while (temp > 0 && weight <= maxSize) {
-				if ((temp & 1)==1) {
+				if ((temp & 1) == 1) {
 					scores[k] += weight*GE + GO;
 					gapCount[weight]++;
 				}
@@ -2299,7 +2299,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 	
 	// ALGORITHM:
 	// for each gap size 1 -> maxSize
-	//  continue if gapCount[size]==0 (no gaps)
+	//  continue if gapCount[size] == 0 (no gaps)
 	//  for each sequence
 	//   record the number of sequences with a gap of that size at that position:
 	//    for each position with a gap of that size
@@ -2317,11 +2317,11 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 	//    if gaps were merged then increment gaps and gapCount
 	//    if gaps remained the same length then do nothing
 	//   gapCount[size]--
-	//   break when gapCount[size]==0
+	//   break when gapCount[size] == 0
 	
 	int count, correct, size, min, left, right;
 	for (size = 1; size <= maxSize; size++) { // each gap size
-		if (gapCount[size]==0) // no gaps of this size
+		if (gapCount[size] == 0) // no gaps of this size
 			continue;
 		
 		// initialize a vector of gap counts of each length
@@ -2353,7 +2353,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 				position[count] = j;
 				count++;
 				
-				if (count==gapCount[size]) // reached the expected number of gaps
+				if (count == gapCount[size]) // reached the expected number of gaps
 					break;
 			}
 		}
@@ -2364,7 +2364,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 			for (j = 1; j < gapCount[size]; j++)
 				if (gapNumber[j] < gapNumber[min])
 					min = j;
-			if (gapNumber[min]==0) // no gap events found
+			if (gapNumber[min] == 0) // no gap events found
 				break;
 			
 			// find all sequences with this gap event
@@ -2470,7 +2470,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 				// past gap closing is (subset - j) in gapsSubset
 				// new gap closing is (subset - j - 1) in gapsSubset
 				
-				if (j==1) { // clear the original gap of size
+				if (j == 1) { // clear the original gap of size
 					gapsSubset[subset - j] &= ~((unsigned long long int)1 << size);
 				} else { // restore the original gaps
 					gapsSubset[subset - j] = gaps[position[min] - j + 1];
@@ -2538,7 +2538,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 							
 							if (confirmed) { // at least one gap ending at the adjacent gap position
 								for (k = 0; k < countConfirm; k++) {
-									if (confirm[k]==confirmed) { // this gap size was confirmed
+									if (confirm[k] == confirmed) { // this gap size was confirmed
 										for (pos = k; pos < countConfirm; pos++)
 											confirm[pos] = confirm[pos + 1]; // shift confirm left
 										countConfirm--;
@@ -2547,7 +2547,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 								}
 							}
 							
-							if (countConfirm==0) // no more gap events to confirm
+							if (countConfirm == 0) // no more gap events to confirm
 								break;
 						}
 						
@@ -2563,10 +2563,10 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 				
 				// re-compute score in the changed positions
 				for (pos = 0; pos < subset; pos++) {
-					if (!(pos==(subset - j) ||
-						  pos==(subset - j - 1) ||
-						  pos==(subset - j - size) ||
-						  pos==(subset - j - 1 - size)))
+					if (!(pos == (subset - j) ||
+						  pos == (subset - j - 1) ||
+						  pos == (subset - j - size) ||
+						  pos == (subset - j - 1 - size)))
 						continue; // nothing changed in this position
 					
 					scoresSubset[pos] = 0; // reset the score in this column
@@ -2574,8 +2574,8 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 					for (i = 0; i < 4; i++) {
 						total += basesSubset[i*subset + pos];
 						for (k = i; k < 4; k++) {
-							sum = (i==k) ? 1 : 2;
-							sum *= (basesSubset[k*subset + pos] - ((i==k) ? 1 : 0));
+							sum = (i == k) ? 1 : 2;
+							sum *= (basesSubset[k*subset + pos] - ((i == k) ? 1 : 0));
 							sum *= basesSubset[i*subset + pos];
 							if (sum > 0)
 								scoresSubset[pos] += *(subM + i*4 + k)*sum;
@@ -2596,7 +2596,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 						weight = 0; // length of gap
 						temp = gapsSubset[pos]; // gets zeroed-out
 						while (temp > 0 && weight <= maxSize) {
-							if ((temp & 1)==1) {
+							if ((temp & 1) == 1) {
 								scoresSubset[pos] += weight*GE + GO;
 							}
 							temp >>= 1;
@@ -2675,7 +2675,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 				// past gap closing is (j - 1 + size) in gapsSubset
 				// new gap closing is (j + size) in gapsSubset
 				
-				if (j==1) { // clear the original gap of size
+				if (j == 1) { // clear the original gap of size
 					gapsSubset[j - 1 + size] &= ~((unsigned long long int)1 << size);
 				} else { // restore the original gaps
 					gapsSubset[j - 1 + size] = gaps[position[min] + j - 1];
@@ -2744,7 +2744,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 							
 							if (confirmed) { // at least one gap ending at the adjacent gap position
 								for (k = 0; k < countConfirm; k++) {
-									if (confirm[k]==confirmed) { // this gap size was confirmed
+									if (confirm[k] == confirmed) { // this gap size was confirmed
 										for (pos = k; pos < countConfirm; pos++)
 											confirm[pos] = confirm[pos + 1]; // shift confirm left
 										countConfirm--;
@@ -2753,7 +2753,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 								}
 							}
 							
-							if (countConfirm==0) // no more gap events to confirm
+							if (countConfirm == 0) // no more gap events to confirm
 								break;
 						}
 						
@@ -2770,9 +2770,9 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 				// re-compute score in the changed positions
 				for (pos = 0; pos < subset; pos++) {
 					if (!((j == right && pos > j) ||
-						  pos==j ||
-						  pos==(j + size) ||
-						  pos==(j - 1 + size)))
+						  pos == j ||
+						  pos == (j + size) ||
+						  pos == (j - 1 + size)))
 						continue; // nothing changed in this position
 					
 					scoresSubset[pos] = 0; // reset the score in this column
@@ -2780,8 +2780,8 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 					for (i = 0; i < 4; i++) {
 						total += basesSubset[i*subset + pos];
 						for (k = i; k < 4; k++) {
-							sum = (i==k) ? 1 : 2;
-							sum *= (basesSubset[k*subset + pos] - ((i==k) ? 1 : 0));
+							sum = (i == k) ? 1 : 2;
+							sum *= (basesSubset[k*subset + pos] - ((i == k) ? 1 : 0));
 							sum *= basesSubset[i*subset + pos];
 							if (sum > 0)
 								scoresSubset[pos] += *(subM + i*4 + k)*sum;
@@ -2802,7 +2802,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 						weight = 0; // length of gap
 						temp = gapsSubset[pos]; // gets zeroed-out
 						while (temp > 0 && weight <= maxSize) {
-							if ((temp & 1)==1) {
+							if ((temp & 1) == 1) {
 								scoresSubset[pos] += weight*GE + GO;
 							}
 							temp >>= 1;
@@ -2864,8 +2864,8 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 							weight = size + 1; // size of gap event
 							temp >>= weight;
 							while (temp > 0 && weight <= maxSize) {
-								if ((temp & 1)==1) {
-									if (((gaps[end] >> weight) & 1)==1) { // originally there was a gap event
+								if ((temp & 1) == 1) {
+									if (((gaps[end] >> weight) & 1) == 1) { // originally there was a gap event
 										gapCount[weight]--;
 									} else { // there is a new gap event of weight size
 										gapCount[weight]++;
@@ -2909,8 +2909,8 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 							weight = size + 1; // size of gap event
 							temp >>= weight;
 							while (temp > 0 && weight <= maxSize) {
-								if ((temp & 1)==1) {
-									if (((gaps[end] >> weight) & 1)==1) { // originally there was a gap event
+								if ((temp & 1) == 1) {
+									if (((gaps[end] >> weight) & 1) == 1) { // originally there was a gap event
 										gapCount[weight]--;
 									} else { // there is a new gap event of weight size
 										gapCount[weight]++;
@@ -3003,7 +3003,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 		
 		// update the alphabet for this string
 		gapLengths[i*2] = frontTerminalGapsAA(&x_i);
-		if (gapLengths[i*2]==x_i.length) // all gaps
+		if (gapLengths[i*2] == x_i.length) // all gaps
 			continue;
 		gapLengths[i*2 + 1] = endTerminalGapsAA(&x_i);
 		alphabetFrequencyAA(&x_i, bases, seqLength, 1, 0, gapLengths[i*2], gapLengths[i*2 + 1], w[i]);
@@ -3012,7 +3012,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 		// 1's for each length of gap closing at that position
 		pos = 0;
 		for (j = gapLengths[i*2] + 1; j < seqLength - gapLengths[i*2 + 1] - 1; j++) {
-			if (pos==0 && // not inside a gap - check for opening
+			if (pos == 0 && // not inside a gap - check for opening
 				(x_i.ptr[j - 1] ^ 0x2D && x_i.ptr[j - 1] ^ 0x2E) && (!(x_i.ptr[j] ^ 0x2D) || !(x_i.ptr[j] ^ 0x2E))) {
 				pos = j; // gap opening
 			}
@@ -3036,8 +3036,8 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 		for (i = 0; i < 20; i++) {
 			total += bases[i*seqLength + k];
 			for (j = i; j < 20; j++) {
-				sum = (i==j) ? 1 : 2;
-				sum *= (bases[j*seqLength + k] - ((i==j) ? 1 : 0));
+				sum = (i == j) ? 1 : 2;
+				sum *= (bases[j*seqLength + k] - ((i == j) ? 1 : 0));
 				sum *= bases[i*seqLength + k];
 				if (sum > 0)
 					scores[k] += *(subM + i*21 + j)*sum;
@@ -3059,7 +3059,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 			weight = 0; // length of gap
 			temp = gaps[k]; // gets zeroed-out
 			while (temp > 0 && weight <= maxSize) {
-				if ((temp & 1)==1) {
+				if ((temp & 1) == 1) {
 					scores[k] += weight*GE + GO;
 					gapCount[weight]++;
 				}
@@ -3078,7 +3078,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 	
 	// ALGORITHM:
 	// for each gap size 1 -> maxSize
-	//  continue if gapCount[size]==0 (no gaps)
+	//  continue if gapCount[size] == 0 (no gaps)
 	//  for each sequence
 	//   record the number of sequences with a gap of that size at that position:
 	//    for each position with a gap of that size
@@ -3096,11 +3096,11 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 	//    if gaps were merged then increment gaps and gapCount
 	//    if gaps remained the same length then do nothing
 	//   gapCount[size]--
-	//   break when gapCount[size]==0
+	//   break when gapCount[size] == 0
 	
 	int count, correct, size, min, left, right;
 	for (size = 1; size <= maxSize; size++) { // each gap size
-		if (gapCount[size]==0) // no gaps of this size
+		if (gapCount[size] == 0) // no gaps of this size
 			continue;
 //		Rprintf("\n\nSize = %d", size);
 		
@@ -3137,7 +3137,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 				position[count] = j;
 				count++;
 				
-				if (count==gapCount[size]) // reached the expected number of gaps
+				if (count == gapCount[size]) // reached the expected number of gaps
 					break;
 			}
 		}
@@ -3150,7 +3150,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 			for (j = 1; j < gapCount[size]; j++)
 				if (gapNumber[j] < gapNumber[min])
 					min = j;
-			if (gapNumber[min]==0) // no gap events found
+			if (gapNumber[min] == 0) // no gap events found
 				break;
 			
 //			Rprintf("\n\nSize = %d Position = %d\n", size, position[min]);
@@ -3274,7 +3274,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 				// past gap closing is (subset - j) in gapsSubset
 				// new gap closing is (subset - j - 1) in gapsSubset
 				
-				if (j==1) { // clear the original gap of size
+				if (j == 1) { // clear the original gap of size
 					gapsSubset[subset - j] &= ~((unsigned long long int)1 << size);
 				} else { // restore the original gaps
 					gapsSubset[subset - j] = gaps[position[min] - j + 1];
@@ -3349,7 +3349,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 							
 							if (confirmed) { // at least one gap ending at the adjacent gap position
 								for (k = 0; k < countConfirm; k++) {
-									if (confirm[k]==confirmed) { // this gap size was confirmed
+									if (confirm[k] == confirmed) { // this gap size was confirmed
 										for (pos = k; pos < countConfirm; pos++)
 											confirm[pos] = confirm[pos + 1]; // shift confirm left
 										countConfirm--;
@@ -3358,7 +3358,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 								}
 							}
 							
-							if (countConfirm==0) // no more gap events to confirm
+							if (countConfirm == 0) // no more gap events to confirm
 								break;
 						}
 						
@@ -3378,10 +3378,10 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 				
 				// re-compute score in the changed positions
 				for (pos = 0; pos < subset; pos++) {
-					if (!(pos==(subset - j) ||
-						pos==(subset - j - 1) ||
-						pos==(subset - j - size) ||
-						pos==(subset - j - 1 - size)))
+					if (!(pos == (subset - j) ||
+						pos == (subset - j - 1) ||
+						pos == (subset - j - size) ||
+						pos == (subset - j - 1 - size)))
 						continue; // nothing changed in this position
 					
 					scoresSubset[pos] = 0; // reset the score in this column
@@ -3391,8 +3391,8 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 //						Rprintf("%1.2f ", basesSubset[i*subset + pos]);
 						total += basesSubset[i*subset + pos];
 						for (k = i; k < 20; k++) {
-							sum = (i==k) ? 1 : 2;
-							sum *= (basesSubset[k*subset + pos] - ((i==k) ? 1 : 0));
+							sum = (i == k) ? 1 : 2;
+							sum *= (basesSubset[k*subset + pos] - ((i == k) ? 1 : 0));
 							sum *= basesSubset[i*subset + pos];
 							if (sum > 0)
 								scoresSubset[pos] += *(subM + i*21 + k)*sum;
@@ -3413,7 +3413,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 						weight = 0; // length of gap
 						temp = gapsSubset[pos]; // gets zeroed-out
 						while (temp > 0 && weight <= maxSize) {
-							if ((temp & 1)==1) {
+							if ((temp & 1) == 1) {
 								scoresSubset[pos] += weight*GE + GO;
 							}
 							temp >>= 1;
@@ -3502,7 +3502,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 				// past gap closing is (j - 1 + size) in gapsSubset
 				// new gap closing is (j + size) in gapsSubset
 				
-				if (j==1) { // clear the original gap of size
+				if (j == 1) { // clear the original gap of size
 					gapsSubset[j - 1 + size] &= ~((unsigned long long int)1 << size);
 				} else { // restore the original gaps
 					gapsSubset[j - 1 + size] = gaps[position[min] + j - 1];
@@ -3577,7 +3577,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 							
 							if (confirmed) { // at least one gap ending at the adjacent gap position
 								for (k = 0; k < countConfirm; k++) {
-									if (confirm[k]==confirmed) { // this gap size was confirmed
+									if (confirm[k] == confirmed) { // this gap size was confirmed
 										for (pos = k; pos < countConfirm; pos++)
 											confirm[pos] = confirm[pos + 1]; // shift confirm left
 										countConfirm--;
@@ -3586,7 +3586,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 								}
 							}
 							
-							if (countConfirm==0) // no more gap events to confirm
+							if (countConfirm == 0) // no more gap events to confirm
 								break;
 						}
 						
@@ -3607,9 +3607,9 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 				// re-compute score in the changed positions
 				for (pos = 0; pos < subset; pos++) {
 					if (!((j == right && pos > j) ||
-						pos==j ||
-						pos==(j + size) ||
-						pos==(j - 1 + size)))
+						pos == j ||
+						pos == (j + size) ||
+						pos == (j - 1 + size)))
 						continue; // nothing changed in this position
 					
 					scoresSubset[pos] = 0; // reset the score in this column
@@ -3619,8 +3619,8 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 //						Rprintf("%1.2f ", basesSubset[i*subset + pos]);
 						total += basesSubset[i*subset + pos];
 						for (k = i; k < 20; k++) {
-							sum = (i==k) ? 1 : 2;
-							sum *= (basesSubset[k*subset + pos] - ((i==k) ? 1 : 0));
+							sum = (i == k) ? 1 : 2;
+							sum *= (basesSubset[k*subset + pos] - ((i == k) ? 1 : 0));
 							sum *= basesSubset[i*subset + pos];
 							if (sum > 0)
 								scoresSubset[pos] += *(subM + i*21 + k)*sum;
@@ -3641,7 +3641,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 						weight = 0; // length of gap
 						temp = gapsSubset[pos]; // gets zeroed-out
 						while (temp > 0 && weight <= maxSize) {
-							if ((temp & 1)==1) {
+							if ((temp & 1) == 1) {
 								scoresSubset[pos] += weight*GE + GO;
 							}
 							temp >>= 1;
@@ -3710,8 +3710,8 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 							weight = size + 1; // size of gap event
 							temp >>= weight;
 							while (temp > 0 && weight <= maxSize) {
-								if ((temp & 1)==1) {
-									if (((gaps[end] >> weight) & 1)==1) { // originally there was a gap event
+								if ((temp & 1) == 1) {
+									if (((gaps[end] >> weight) & 1) == 1) { // originally there was a gap event
 										gapCount[weight]--;
 //										Rprintf("\nGap of size %d lost in position %d", weight, end);
 									} else { // there is a new gap event of weight size
@@ -3759,8 +3759,8 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 							weight = size + 1; // size of gap event
 							temp >>= weight;
 							while (temp > 0 && weight <= maxSize) {
-								if ((temp & 1)==1) {
-									if (((gaps[end] >> weight) & 1)==1) { // originally there was a gap event
+								if ((temp & 1) == 1) {
+									if (((gaps[end] >> weight) & 1) == 1) { // originally there was a gap event
 										gapCount[weight]--;
 //										Rprintf("\nGap of size %d lost in position %d", weight, end);
 									} else { // there is a new gap event of weight size

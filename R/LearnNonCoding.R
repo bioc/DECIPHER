@@ -11,7 +11,7 @@ LearnNonCoding <- function(myXStringSet,
 	if (!is(myXStringSet, "DNAStringSet") && !is(myXStringSet, "RNAStringSet"))
 		stop("myXStringSet must be a DNAStringSet or RNAStringSet.")
 	l <- length(myXStringSet)
-	if (l==0)
+	if (l == 0)
 		stop("myXStringSet must contain sequences.")
 	uw <- unique(width(myXStringSet))
 	if (length(uw) != 1)
@@ -64,7 +64,7 @@ LearnNonCoding <- function(myXStringSet,
 	}
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")

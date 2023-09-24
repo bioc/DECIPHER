@@ -12,7 +12,7 @@ DigestDNA <- function(sites,
 		myDNAStringSet <- DNAStringSet(myDNAStringSet)
 	if (!is(myDNAStringSet, "DNAStringSet"))
 		stop("myDNAStringSet must be a DNAStringSet.")
-	if (length(myDNAStringSet)==0)
+	if (length(myDNAStringSet) == 0)
 		stop("myDNAStringSet is empty.")
 	TYPES <- c("fragments", "positions")
 	type <- pmatch(type[1], TYPES)
@@ -35,14 +35,14 @@ DigestDNA <- function(sites,
 	rc_sites <- character(length(sites))
 	for (i in seq_along(s)) {
 		site <- s[[i]]
-		w <- which(site=="/")
-		if (length(w)==1) {
-			if (site[length(site)]==")") {
+		w <- which(site == "/")
+		if (length(w) == 1) {
+			if (site[length(site)] == ")") {
 				bot <- as.integer(paste(site[(w + 1):(length(site) - 1)],
 					collapse=""))
 				if (is.na(bot))
 					stop("Improperly formatted site:  ", s[[i]])
-				top <- which(site=="(")
+				top <- which(site == "(")
 				if (length(top) != 1L)
 					stop("Improperly formatted site:  ", s[[i]])
 				if (!all(site[1:(top - 1)] %in% DNA_LOOKUP))
@@ -121,12 +121,12 @@ DigestDNA <- function(sites,
 	}
 	
 	# initialize a list of cut positions
-	if (strand==1L) {
+	if (strand == 1L) {
 		value <- list(top=integer(0),
 			bottom=integer(0))
-	} else if (strand==2L) {
+	} else if (strand == 2L) {
 		value <- list(top=integer(0))
-	} else { # strand==3L
+	} else { # strand == 3L
 		value <- list(bottom=integer(0))
 	}
 	cuts <- lapply(seq_along(myDNAStringSet),
@@ -136,40 +136,40 @@ DigestDNA <- function(sites,
 	names(cuts) <- seq_along(myDNAStringSet)
 	
 	# record cut positions in top strand
-	if (strand==1 || strand==2) {
+	if (strand == 1 || strand == 2) {
 		m <- match(names(cuts_top),
 			seq_along(myDNAStringSet))
 		names(cuts_top) <- NULL
 		for (i in unique(m)) {
-			w <- which(m==i)
+			w <- which(m == i)
 			cuts[as.character(i)][[1]][[1]] <- sort(unique(cuts_top[w]))
 		}
 	}
 	
 	# record cut positions in bottom strand
-	if (strand==1 || strand==3) {
+	if (strand == 1 || strand == 3) {
 		m <- match(names(cuts_bot),
 			seq_along(myDNAStringSet))
 		names(cuts_bot) <- NULL
 		for (i in unique(m)) {
-			w <- which(m==i)
-			cuts[as.character(i)][[1]][[ifelse(strand==1, 2, 1)]] <- sort(unique(ws[i] - cuts_bot[w] + 2))
+			w <- which(m == i)
+			cuts[as.character(i)][[1]][[ifelse(strand == 1, 2, 1)]] <- sort(unique(ws[i] - cuts_bot[w] + 2))
 		}
 	}
 	
 	# return cut positions
-	if (type==2) {
+	if (type == 2) {
 		if (!is.null(ns))
 			names(cuts) <- ns
 		return(cuts)
 	}
 	
 	# cut myDNAStringSet into fragments
-	if (strand==1 || strand==3)
+	if (strand == 1 || strand == 3)
 		rc <- reverseComplement(myDNAStringSet)
 	fragments <- list()
 	for (i in seq_along(myDNAStringSet)) {
-		if (strand==1 || strand==2) {
+		if (strand == 1 || strand == 2) {
 			cut <- cuts[[i]]$top
 			if (length(cut) > 0) {
 				top <- extractAt(myDNAStringSet[[i]],
@@ -181,7 +181,7 @@ DigestDNA <- function(sites,
 		} else {
 			top <- DNAStringSet()
 		}
-		if (strand==1 || strand==3) {
+		if (strand == 1 || strand == 3) {
 			cut <- cuts[[i]]$bottom
 			if (length(cut) > 0) {
 				bot <- extractAt(rc[[i]],

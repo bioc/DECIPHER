@@ -83,7 +83,7 @@ void FollowBranch(double *rans, int i, double *branchLength, int length) {
 			rans[7*(length - 1) + i] < 0) { // second fork is a leaf
 			// add the longest one to branch length
 			if (rans[3*(length - 1) + i] < rans[4*(length - 1) + i] && // second leaf is longest and
-				rans[9*(length - 1) + i]==0) { // second leaf is not assigned to a cluster
+				rans[9*(length - 1) + i] == 0) { // second leaf is not assigned to a cluster
 				// add second leaf to branch length
 				*branchLength += rans[4*(length - 1) + i];
 			} else {
@@ -342,7 +342,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 		}
 	}
 	
-	if (met==1) { // NJ method
+	if (met == 1) { // NJ method
 		nDiv = (double *) R_alloc(size, sizeof(double));
 		
 		for (i = 0; i < size; i++)
@@ -363,8 +363,8 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 		minRow = 0;
 		minCol = 0;
 		minHeight = 1e50;
-		if (nthreads==1) {
-			if (met==1) { // NJ method
+		if (nthreads == 1) {
+			if (met == 1) { // NJ method
 				for (i = (size - 2); i >= 0; i--) {
 					minH = 1e50;
 					for (j = i; j >= 0; j--) {
@@ -402,7 +402,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 				}
 			}
 		} else { // nthreads > 1
-			if (met==1) { // NJ method
+			if (met == 1) { // NJ method
 				double *minHs = Calloc(size - 1, double); // initialized to zero
 				int *minCs = Calloc(size - 1, int); // initialized to zero
 				#pragma omp parallel for private(i,j,minC,minH) schedule(guided) num_threads(nthreads)
@@ -470,8 +470,8 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 			clusterNum++;
 			rans[2*(length - 1) + k] = clusterNum; // cluster formed
 			// calculate both branch lengths
-			if (met==1) { // NJ method
-				if ((size - 2)==0) { // case of (0/0 == NaN)
+			if (met == 1) { // NJ method
+				if ((size - 2) == 0) { // case of (0/0 == NaN)
 					rans[4*(length - 1) + k] = dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]]/2; // col
 					rans[3*(length - 1) + k] = rans[4*(length - 1) + k]; // row
 				} else {
@@ -490,7 +490,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 					rans[4*(length - 1) + k] += -1*rans[3*(length - 1) + k]; // add difference to other branch
 					rans[3*(length - 1) + k] = 0;
 				}
-			} else if (met==8) { // UPGMH
+			} else if (met == 8) { // UPGMH
 				rans[4*(length - 1) + k] = exp(dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]])/2; // col
 				rans[3*(length - 1) + k] = rans[4*(length - 1) + k]; // row
 			} else {
@@ -500,7 +500,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 			
 			// add longest path to cumulative height
 			if ((rans[0*(length - 1) + k] < 0) && (rans[1*(length - 1) + k] < 0)) {
-				if (met==1) { // NJ method
+				if (met == 1) { // NJ method
 					if (rans[4*(length - 1) + k] > rans[3*(length - 1) + k]) {
 						cumHeight[clusterNum - 1] = rans[4*(length - 1) + k];
 					} else {
@@ -514,7 +514,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 				rans[6*(length - 1) + k] = rans[0*(length - 1) + k];
 				rans[7*(length - 1) + k] = rans[1*(length - 1) + k];
 			} else {
-				if (met==1) { // NJ method
+				if (met == 1) { // NJ method
 					if ((cumHeight[(int)rans[0*(length - 1) + k] - 1] + rans[3*(length - 1) + k]) >
 						(cumHeight[(int)rans[1*(length - 1) + k] - 1] + rans[4*(length - 1) + k])) {
 						cumHeight[clusterNum - 1] = cumHeight[(int)rans[0*(length - 1) + k] - 1] + rans[3*(length - 1) + k];
@@ -537,8 +537,8 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 			// row is a cluster from before
 			rans[2*(length - 1) + k] = rans[0*(length - 1) + k]; // merge with previous cluster
 			// calculate both branch lengths
-			if (met==1) { // NJ method
-				if ((size - 2)==0) { // case of (0/0 == NaN)
+			if (met == 1) { // NJ method
+				if ((size - 2) == 0) { // case of (0/0 == NaN)
 					rans[4*(length - 1) + k] = dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]]; // col
 					rans[3*(length - 1) + k] = 0; // row
 				} else {
@@ -557,7 +557,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 					rans[4*(length - 1) + k] += -1*rans[3*(length - 1) + k]; // add difference to other branch
 					rans[3*(length - 1) + k] = 0;
 				}
-			} else if (met==8) { // UPGMH
+			} else if (met == 8) { // UPGMH
 				rans[4*(length - 1) + k] = exp(dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]])/2; // col
 				rans[3*(length - 1) + k] = exp(dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]])/2 - cumHeight[(int)rans[0*(length - 1) + k] - 1]; // row
 			} else {
@@ -579,8 +579,8 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 		} else if (rans[1*(length - 1) + k] > 0) {
 			rans[2*(length - 1) + k] = rans[1*(length - 1) + k]; // merge with previous cluster
 			// calculate both branch lengths
-			if (met==1) { // NJ method
-				if ((size - 2)==0) { // case of (0/0 == NaN)
+			if (met == 1) { // NJ method
+				if ((size - 2) == 0) { // case of (0/0 == NaN)
 					// unclear what to do in this case - splitting branch (edge) lengths as compromise
 					rans[4*(length - 1) + k] = 0; // col
 					rans[3*(length - 1) + k] = dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]]; // row
@@ -600,7 +600,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 					rans[4*(length - 1) + k] += -1*rans[3*(length - 1) + k]; // add difference to other branch
 					rans[3*(length - 1) + k] = 0;
 				}
-			} else if (met==8) { // UPGMH
+			} else if (met == 8) { // UPGMH
 				rans[4*(length - 1) + k] = exp(dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]])/2 - cumHeight[(int)rans[1*(length - 1) + k] - 1]; // col
 				rans[3*(length - 1) + k] = exp(dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]])/2; // row
 			} else {
@@ -623,9 +623,9 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 		
 		// calculate distances to the new node/cluster
 		index = 0;
-		if (met==4) { // complete
+		if (met == 4) { // complete
 			for (i = -1; i < (size - 1); i++) {
-				if (!(i==minRow) && !(i==minCol - 1)) {
+				if (!(i == minRow) && !(i == minCol - 1)) {
 					dTemp[index] = 0;
 					// calculate distance from the new node
 					if (minRow >= i) {
@@ -646,9 +646,9 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 					index++;
 				}
 			}
-		} else if (met==5) { // single
+		} else if (met == 5) { // single
 			for (i = -1; i < (size - 1); i++) {
-				if (!(i==minRow) && !(i==minCol - 1)) {
+				if (!(i == minRow) && !(i == minCol - 1)) {
 					dTemp[index] = 0;
 					// calculate distance from the new node
 					if (minRow >= i) {
@@ -669,7 +669,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 					index++;
 				}
 			}
-		} else if (met==2) { // UPGMA
+		} else if (met == 2) { // UPGMA
 			int weight1, weight2;
 			if (*(rowNums + rowIndices[minRow]) < 0) {
 				weight1 = 1;
@@ -682,7 +682,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 				weight2 = 2;
 			}
 			for (i = -1; i < (size - 1); i++) {
-				if (!(i==minRow) && !(i==minCol - 1)) {
+				if (!(i == minRow) && !(i == minCol - 1)) {
 					dTemp[index] = 0;
 					// calculate distance from the new node
 					if (minRow >= i) {
@@ -699,9 +699,9 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 					index++;
 				}
 			}
-		} else if (met==6) { // WPGMA
+		} else if (met == 6) { // WPGMA
 			for (i = -1; i < (size - 1); i++) {
-				if (!(i==minRow) && !(i==minCol - 1)) {
+				if (!(i == minRow) && !(i == minCol - 1)) {
 					dTemp[index] = 0;
 					// calculate distance from the new node
 					if (minRow >= i) {
@@ -718,7 +718,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 					index++;
 				}
 			}
-		} else if (met==8) { // UPGMH
+		} else if (met == 8) { // UPGMH
 			int weight1, weight2;
 			if (*(rowNums + rowIndices[minRow]) < 0) {
 				weight1 = 1;
@@ -731,7 +731,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 				weight2 = 2;
 			}
 			for (i = -1; i < (size - 1); i++) {
-				if (!(i==minRow) && !(i==minCol - 1)) {
+				if (!(i == minRow) && !(i == minCol - 1)) {
 					dTemp[index] = 0;
 					// calculate distance from the new node
 					if (minRow >= i) {
@@ -748,9 +748,9 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 					index++;
 				}
 			}
-		} else { // NJ (met==1)
+		} else { // NJ (met == 1)
 			for (i = -1; i < (size - 1); i++) {
-				if (!(i==minRow) && !(i==minCol - 1)) {
+				if (!(i == minRow) && !(i == minCol - 1)) {
 					dTemp[index] = 0;
 					// calculate distance from the new node
 					if (minRow >= i) {
@@ -771,7 +771,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 		}
 		
 		// subtract net divergence of removed row
-		if (met==1) { // NJ method
+		if (met == 1) { // NJ method
 			// i = minRow
 			for (j = 0; j <= minRow; j++) {
 				nDiv[j] -= dMatrix2[length*colIndices[j] - colIndices[j]*(colIndices[j] + 1)/2 + rowIndices[minRow] - colIndices[j]]; // col sums
@@ -789,11 +789,11 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 			if (i > minRow + 1)
 				colIndices[i - 1] = colIndices[i];
 			
-			if (met==1) { // NJ method
+			if (met == 1) { // NJ method
 				nDiv[i] = nDiv[i + 1];
 			} else {
 				// shift pointers left after minRow + 1
-				if (minCols[rowIndices[i]]==(minRow + 1)) {
+				if (minCols[rowIndices[i]] == (minRow + 1)) {
 					minCols[rowIndices[i]] = -1; // eliminate
 				} else if (minCols[rowIndices[i]] > (minRow + 1)) {
 					minCols[rowIndices[i]]--; // shift left
@@ -815,31 +815,31 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 		// put new distances into the new cluster at minCol
 		for (j = 0; j < (size - 1); j++) {
 			if (j < minCol) {
-				if (met==1) { // NJ method
+				if (met == 1) { // NJ method
 					// remove original value
 					nDiv[j] -= dMatrix2[length*colIndices[j] - colIndices[j]*(colIndices[j] + 1)/2 + rowIndices[(minCol - 1)] - colIndices[j]]; // col sums
 					nDiv[minCol] -= dMatrix2[length*colIndices[j] - colIndices[j]*(colIndices[j] + 1)/2 + rowIndices[(minCol - 1)] - colIndices[j]]; // row sums
 				}
 				dMatrix2[length*colIndices[j] - colIndices[j]*(colIndices[j] + 1)/2 + rowIndices[(minCol - 1)] - colIndices[j]] = dTemp[j];
-				if (met==1) { // NJ method
+				if (met == 1) { // NJ method
 					// add new value
 					nDiv[j] += dTemp[j]; // col sums
 					nDiv[minCol] += dTemp[j]; // row sums
 				}
 			} else {
-				if (met==1) { // NJ method
+				if (met == 1) { // NJ method
 					// remove original value
 					nDiv[minCol] -= dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[j] - colIndices[minCol]]; // col sums
 					nDiv[j + 1] -= dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[j] - colIndices[minCol]]; // row sums
 				}
 				dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[j] - colIndices[minCol]] = dTemp[j];
-				if (met==1) { // NJ method
+				if (met == 1) { // NJ method
 					// add new value
 					nDiv[minCol] += dTemp[j]; // col sums
 					nDiv[j + 1] += dTemp[j]; // row sums
 				} else {
 					if (minCols[rowIndices[j]] >= 0) {
-						if (minCols[rowIndices[j]]==minCol) { // replacing self value
+						if (minCols[rowIndices[j]] == minCol) { // replacing self value
 							minCols[rowIndices[j]] = -1; // re-evaluate row
 						} else if (dTemp[j] < dMatrix2[length*colIndices[minCols[rowIndices[j]]] - colIndices[minCols[rowIndices[j]]]*(colIndices[minCols[rowIndices[j]]] + 1)/2 + rowIndices[j] - colIndices[minCols[rowIndices[j]]]]) {
 							minCols[rowIndices[j]] = minCol;
@@ -867,7 +867,7 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 	// bin sequences
 	// assign cluster numbers to nodes within cutoff percent different
 	int clusterNumber = 1;
-	if (met==1) { // NJ method
+	if (met == 1) { // NJ method
 		// insure that nodes are at the correct heights
 		double offset;
 		for (i = 0; i < length - 1; i++) {

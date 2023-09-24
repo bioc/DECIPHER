@@ -160,7 +160,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 	while (i < l || j < (l - 1)) {
 		if (i < l &&
 			xs[i] <= xe[xo[j + 1]] &&
-			xi[i]==xi[xo[j + 1]]) {
+			xi[i] == xi[xo[j + 1]]) {
 			// use i, left of rectangle
 			if (i > 0 &&
 				xi[i] != xi[i - 1])
@@ -198,19 +198,19 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 					continue;
 				
 				// add cost for shifting reading frames
-				if (xf[i]==xf[xok] &&
-					(xf[i]==0 || (dx % 3)==0)) {
+				if (xf[i] == xf[xok] &&
+					(xf[i] == 0 || (dx % 3) == 0)) {
 					temp = 0;
 				} else {
-					if (xf[i]==0 || xf[xok]==0) {
+					if (xf[i] == 0 || xf[xok] == 0) {
 						temp = codC;
 					} else {
 						temp = shiC;
 					}
 				}
-				if (!(yf[i]==yf[xok] &&
-					(yf[i]==0 || (dy % 3)==0))) {
-					if (yf[i]==0 || yf[xok]==0) {
+				if (!(yf[i] == yf[xok] &&
+					(yf[i] == 0 || (dy % 3) == 0))) {
+					if (yf[i] == 0 || yf[xok] == 0) {
 						temp = codC;
 					} else {
 						temp = shiC;
@@ -228,7 +228,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 				//} else if (gap > 0) {
 				//	temp -= log((double)gap);
 				//}
-				if (xf[xok]==0) { // nucleotide hit
+				if (xf[xok] == 0) { // nucleotide hit
 					temp -= log((double)(sep + gap + 1)/(xe[xok] - xs[xok] + 1)*totW);
 				} else {
 					temp -= log((double)(sep + gap + 1)/(xe[xok] - xs[xok] + 1)*totW/3);
@@ -280,8 +280,8 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 					xok = xo[k];
 					if (ye[xok] >= ye[xoj] &&
 						S[xok] < S[xoj] &&
-						yi[xok]==yi[xoj] &&
-						O[xok]==O[xoj])
+						yi[xok] == yi[xoj] &&
+						O[xok] == O[xoj])
 						A[xok] = 0; // deactivate
 				}
 			}
@@ -328,11 +328,11 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 		// with the same origin as max
 		// and passing through max score
 		for (i = l - 1; i >= O[max]; i--) {
-			if (O[i]==O[max] &&
-				A[i]==1) {
+			if (O[i] == O[max] &&
+				A[i] == 1) {
 				n = 1;
 				k = i;
-				if (S[k]==score) {
+				if (S[k] == score) {
 					overlap = 1;
 				} else {
 					overlap = 0;
@@ -342,11 +342,11 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 					k = R[k];
 					if (A[k] != 0)
 						A[k] = 0; // deactivate
-					if (S[k]==score)
+					if (S[k] == score)
 						overlap = 1;
 					n++;
 				}
-				if (overlap==1 &&
+				if (overlap == 1 &&
 					n > j) {
 					max = i;
 					j = n;
@@ -366,8 +366,8 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 				max >= O[max]) {
 				overlap = 0;
 				for (i = 0; i < count; i++) {
-					if (xi[max]==rectXI[i] &&
-						yi[max]==rectYI[i] &&
+					if (xi[max] == rectXI[i] &&
+						yi[max] == rectYI[i] &&
 						xe[max] >= rectXS[i] &&
 						xe[max] <= rectXE[i] &&
 						ye[max] >= rectYS[i] &&
@@ -376,7 +376,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 						break;
 					}
 				}
-				if (overlap==0)
+				if (overlap == 0)
 					break;
 				max = R[max];
 			}
@@ -385,8 +385,8 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 				max >= O[max]) {
 				overlap = 0;
 				for (i = 0; i < count; i++) {
-					if (xi[max]==rectXI[i] &&
-						yi[max]==rectYI[i] &&
+					if (xi[max] == rectXI[i] &&
+						yi[max] == rectYI[i] &&
 						((xe[max] >= rectXS[i] &&
 						xe[max] <= rectXE[i]) ||
 						(ye[max] >= rectYS[i] &&
@@ -395,13 +395,13 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 						break;
 					}
 				}
-				if (overlap==0)
+				if (overlap == 0)
 					break;
 				max = R[max];
 			}
 		}
 		
-		if (max==-1) // no chain
+		if (max == -1) // no chain
 			continue;
 		
 		// pull back overlapping start
@@ -412,8 +412,8 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 			while (n >= O[max]) {
 				overlap = 0;
 				for (i = 0; i < count; i++) {
-					if (xi[n]==rectXI[i] &&
-						yi[n]==rectYI[i] &&
+					if (xi[n] == rectXI[i] &&
+						yi[n] == rectYI[i] &&
 						xs[n] >= rectXS[i] &&
 						xs[n] <= rectXE[i] &&
 						ys[n] >= rectYS[i] &&
@@ -422,7 +422,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 						break;
 					}
 				}
-				if (overlap==1)
+				if (overlap == 1)
 					break;
 				j++;
 				min = n; // prior value of min
@@ -432,8 +432,8 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 			while (n >= O[max]) {
 				overlap = 0;
 				for (i = 0; i < count; i++) {
-					if (xi[n]==rectXI[i] &&
-						yi[n]==rectYI[i] &&
+					if (xi[n] == rectXI[i] &&
+						yi[n] == rectYI[i] &&
 						((xs[n] >= rectXS[i] &&
 						xs[n] <= rectXE[i]) ||
 						(ys[n] >= rectYS[i] &&
@@ -442,7 +442,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 						break;
 					}
 				}
-				if (overlap==1)
+				if (overlap == 1)
 					break;
 				j++;
 				min = n; // prior value of min
@@ -450,7 +450,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 			}
 		}
 		
-		if (j==0)
+		if (j == 0)
 			continue; // fully overlapping
 		
 		// shorten to reach minScore
@@ -465,8 +465,8 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 			// find the nearest rectangle
 			int minDx = 2e9, minDy = 2e9, minX = -1, minY = -2, merge = 0, upX, upY;
 			for (i = 0; i < count; i++) {
-				if (xi[max]==rectXI[i] &&
-					yi[max]==rectYI[i]) {
+				if (xi[max] == rectXI[i] &&
+					yi[max] == rectYI[i]) {
 					dx = xs[min] - rectXE[i];
 					if (dx < 0) {
 						dx = rectXS[i] - xe[max];
@@ -508,8 +508,8 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 				if (gap <= maxG && sep <= maxS) {
 					temp = scores[minX] + score + sepC*sep + gapC*gap;
 					if (temp >= minS &&
-						minDx >= 0 &&
-						minDy >= 0)
+						minDx > 0 &&
+						minDy > 0)
 						merge = 1;
 				}
 			}
@@ -677,12 +677,12 @@ int extend(const Chars_holder *S1, const Chars_holder *S2, int *s1_start, int *s
 			}
 		}
 		
-		if (v1==v2) { // perfect match
+		if (v1 == v2) { // perfect match
 			score += 1; // score increases by about +1 per nucleotide
-		} else if ((v1==0 && v2==2) || // A/G
-			(v1==2 && v2==0) || // G/A
-			(v1==1 && v2==3) || // C/T
-			(v1==3 && v2==1)) { // T/C
+		} else if ((v1 == 0 && v2 == 2) || // A/G
+			(v1 == 2 && v2 == 0) || // G/A
+			(v1 == 1 && v2 == 3) || // C/T
+			(v1 == 3 && v2 == 1)) { // T/C
 			score -= 2; // allow ~33% transitions
 		} else {
 			score -= 3; // allow ~25% transversions
@@ -737,16 +737,16 @@ SEXP extendSegments(SEXP X, SEXP W1, SEXP W2, SEXP S1, SEXP S2, SEXP O1P, SEXP O
 		strand = x[2*n + s[j]];
 		
 		// extend left of start1
-		if (o1p[j]==NA_INTEGER) {
+		if (o1p[j] == NA_INTEGER) {
 			b1 = x[4*n + s[j]] - 1; // start1 - 1
 		} else {
 			b1 = x[4*n + s[j]] - x[6*n + s[o1p[j]]] - 1; // start - end - 1
 		}
-		if (strand) { // strand==1
+		if (strand) { // strand == 1
 			d = 1;
 			begin = x + 7*n + s[j];
 			// extend right of end2
-			if (o2n[j]==NA_INTEGER) {
+			if (o2n[j] == NA_INTEGER) {
 				b2 = w2[x[n + s[j]] - 1] - *begin; // width - end
 			} else {
 				b2 = x[5*n + s[o2n[j]]] - *begin - 1; // start - end - 1
@@ -755,7 +755,7 @@ SEXP extendSegments(SEXP X, SEXP W1, SEXP W2, SEXP S1, SEXP S2, SEXP O1P, SEXP O
 			d = -1;
 			begin = x + 5*n + s[j];
 			// extend left of start2
-			if (o2p[j]==NA_INTEGER) {
+			if (o2p[j] == NA_INTEGER) {
 				b2 = *begin - 1; // start - 1
 			} else {
 				b2 = *begin - x[7*n + s[o2p[j]]] - 1; // start - end - 1
@@ -769,16 +769,16 @@ SEXP extendSegments(SEXP X, SEXP W1, SEXP W2, SEXP S1, SEXP S2, SEXP O1P, SEXP O
 		//Rprintf("\nj = %d b1 = %d b2 = %d start1 = %d start2 = %d", j, b1, b2, x[4*n + s[j]], *begin);
 		
 		// extend right of end1
-		if (o1n[j]==NA_INTEGER) {
+		if (o1n[j] == NA_INTEGER) {
 			b1 = w1[x[s[j]] - 1] - x[6*n + s[j]]; // width - end
 		} else {
 			b1 = x[4*n + s[o1n[j]]] - x[6*n + s[j]] - 1; // start - end - 1
 		}
-		if (strand) { // strand==1
+		if (strand) { // strand == 1
 			d = -1;
 			begin = x + 5*n + s[j];
 			// extend left of end2
-			if (o2p[j]==NA_INTEGER) {
+			if (o2p[j] == NA_INTEGER) {
 				b2 = *begin - 1; // start - 1
 			} else {
 				b2 = *begin - x[7*n + s[o2p[j]]] - 1; // start - end - 1
@@ -787,7 +787,7 @@ SEXP extendSegments(SEXP X, SEXP W1, SEXP W2, SEXP S1, SEXP S2, SEXP O1P, SEXP O
 			d = 1;
 			begin = x + 7*n + s[j];
 			// extend right of start2
-			if (o2n[j]==NA_INTEGER) {
+			if (o2n[j] == NA_INTEGER) {
 				b2 = w2[x[n + s[j]] - 1] - *begin; // width - end
 			} else {
 				b2 = x[5*n + s[o2n[j]]] - *begin - 1; // start - end - 1

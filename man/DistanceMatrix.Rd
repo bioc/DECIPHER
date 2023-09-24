@@ -34,7 +34,7 @@ Logical specifying whether or not to include terminal gaps ("-" or "." character
 Logical specifying whether or not to consider gap-to-letter matches as mismatches.  If \code{FALSE}, then gap-to-letter matches are not included in the total length used to calculate distance.  The default (\code{TRUE}) is to penalize gap-to-letter mismatches the same as letter-to-letter mismatches.  If \code{NA} then gap-to-letter mismatches are only penalized once per insertion or deletion, i.e., when changing to gap-to-letter or letter-to-gap.
 }
   \item{minCoverage}{
-Numeric between zero and one giving the minimum fraction of sequence positions (not gap or mask) in the shortest sequence that must be overlapping with the longer sequence in each pair.  Sequences below \code{minCoverage} will be assigned \code{NA} distances.  Note that non-overlapping sequences are always given \code{NA} distances, regardless of \code{minCoverage}, unless \code{includeTerminalGaps} is \code{TRUE} (distance = 100\%).
+Numeric giving the minimum fraction of sequence positions (not gap or mask) that must be overlapping in each pair.  If positive then coverage is relative to the shortest sequence.  If negative then coverage is relative to both sequences.  Sequences failing to meet \code{minCoverage} will be assigned \code{NA} distances.  Note that completely non-overlapping sequences are always given \code{NA} distances, regardless of \code{minCoverage}, unless \code{includeTerminalGaps} is \code{TRUE} (i.e., distance = 100\%).
 }
   \item{correction}{
 The substitution model used for distance correction.  This should be (an abbreviation of) either \code{"none"}, \code{"Jukes-Cantor"} (i.e., \code{"JC69"}), or \code{"F81"}.  For \code{"F81"} letter frequencies are derived from \code{myXStringSet}.
@@ -111,8 +111,6 @@ d
 dna <- DNAStringSet(c("--ACTG", "TGAGT-"))
 dna
 DistanceMatrix(dna, method="overlap") # 1/3
-DistanceMatrix(dna, method="overlap",
-               minCoverage=1) # NA (only 3/4 overlapping)
 DistanceMatrix(dna, method="shortest",
                includeTerminalGaps=FALSE) # 1/3
 DistanceMatrix(dna, method="shortest",
@@ -127,6 +125,12 @@ DistanceMatrix(dna, method="longest",
 DistanceMatrix(dna, method="longest",
                includeTerminalGaps=TRUE,
                penalizeGapLetterMatches=FALSE) # 1/3
+DistanceMatrix(dna, method="overlap",
+               minCoverage=1) # NA (insufficient overlap)
+DistanceMatrix(dna, method="overlap",
+               minCoverage=0.75) # 3/4 sites covered in shorter
+DistanceMatrix(dna, method="overlap",
+               minCoverage=-0.75) # 3/5 sites covered in longer
 
 # neither internal nor external gap/gap matches are considered:
 dna <- DNAStringSet(c("--A-CTA", "-AG-C--"))

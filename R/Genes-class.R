@@ -118,7 +118,7 @@ print.Genes <- function(x, ...) {
 			print(as.data.frame(round(head(x[, seq_len(ncol(x)), drop=FALSE]), 2)))
 		}
 		
-		if (N==7) {
+		if (N == 7) {
 			cat("... with 1 more row.\n")
 		} else if (N > 6) {
 			cat("... with ",

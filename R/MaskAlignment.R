@@ -40,7 +40,7 @@ MaskAlignment <- function(myXStringSet,
 		stop("Ambiguous type.")
 	if (!is.numeric(windowSize))
 		stop("windowSize must be a numeric.")
-	if (floor(windowSize)!=windowSize)
+	if (floor(windowSize) != windowSize)
 		stop("windowSize must be a whole number.")
 	if (windowSize < 1)
 		stop("windowSize must be greater than zero.")
@@ -125,7 +125,7 @@ MaskAlignment <- function(myXStringSet,
 	}
 	
 	W <- which(c < threshold)
-	if (type==3L) { # "values"
+	if (type == 3L) { # "values"
 		mask <- logical(length(a))
 		if (length(W) > 0) {
 			if (length(gaps) > 0) {
@@ -192,7 +192,7 @@ MaskAlignment <- function(myXStringSet,
 			ends <- NULL
 		}
 		
-		if (type==1L) {
+		if (type == 1L) {
 			if (is(myXStringSet, "DNAStringSet")) {
 				result <- DNAMultipleAlignment(myXStringSet,
 					rowmask=as(IRanges(), "NormalIRanges"),
@@ -206,7 +206,7 @@ MaskAlignment <- function(myXStringSet,
 					rowmask=as(IRanges(), "NormalIRanges"),
 					colmask=as(IRanges(starts, ends), "NormalIRanges"))
 			}
-		} else if (type==2L) {
+		} else if (type == 2L) {
 			result <- IRanges(starts, ends)
 		}
 	}

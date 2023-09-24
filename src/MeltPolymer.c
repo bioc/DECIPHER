@@ -52,7 +52,7 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 	
 	SEXP ret, ans;
 	double *rans;
-	if (o==1) {
+	if (o == 1) {
 		// list element for each sequence
 		// row for each temperature
 		// column for each sequence position
@@ -100,7 +100,7 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 	double ratio = pow(7, -alpha)/LEP;
 	int rescale_i, seq_length, exp1;
 	
-	// variables for interpolating plateaus when o!=1
+	// variables for interpolating plateaus when o != 1
 	double slope;
 	
 	for (s = 0; s < x_length; s++) {
@@ -163,27 +163,27 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 		
 		int *stack = Calloc(l, int); // initialized to zero
 		
-		if (o==1) {
+		if (o == 1) {
 			PROTECT(ans = allocMatrix(REALSXP, l, seq_length)); // [temp][pos]
 			rans = REAL(ans);
 		}
 		
 		int pos = 2, k = 0, it = 0;
 		while (pos > 1) { // each temperature
-			if (o==1) {
-				if (k==l)
+			if (o == 1) {
+				if (k == l)
 					break;
 			} else { // stack-based iteration
 				if (it < 2) { // initialize values
-					if (it!=0) { // second temp
-						if (l==1) // only one temp
+					if (it != 0) { // second temp
+						if (l == 1) // only one temp
 							break;
 						k = l - 1; // last temp
 					}
 					it++;
 				} else {
-					if (it==2) {
-						if (l==2) // only two temps
+					if (it == 2) {
+						if (l == 2) // only two temps
 							break;
 						
 						// initialize values
@@ -193,7 +193,7 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 					}
 					
 					stack[pos] = (stack[pos - 1] - stack[0])/2 + stack[0];
-					if (stack[pos]==stack[0]) {
+					if (stack[pos] == stack[0]) {
 						stack[0] = stack[pos - 1];
 						pos = pos - 1;
 						continue;
@@ -313,7 +313,7 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 				V_10_RL[i + 1] = s_010[seq[seq_length - i - 1]]*U_01_RL[i] + s_end[seq[seq_length - i - 1]]*U_11_RL[i];
 				
 				// rescale at the opposite indicies as LR
-				if (rescale[seq_length - i - 1]!=rescale[seq_length - i]) {
+				if (rescale[seq_length - i - 1] != rescale[seq_length - i]) {
 					V_10_RL[i + 1] *= rescale_F;
 					U_01_RL[i] *= rescale_F;
 					U_11_RL[i] *= rescale_F;
@@ -323,7 +323,7 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 			
 			// calculate p(i) = closed
 			// (Tøstesen, 2003) Eq. 11
-			if (o==1) {
+			if (o == 1) {
 				for (i = 1; i < seq_length - 1; i++) {
 					*(rans + k + i*l) = (U_01_LR[i]*s_010[seq[i]]*U_01_RL[seq_length - i - 1] + U_01_LR[i]*s_end[seq[i]]*U_11_RL[seq_length - i - 1] + U_11_LR[i]*s_end[seq[i]]*U_01_RL[seq_length - i - 1] + U_11_LR[i]*U_11_RL[seq_length - i - 1])/(Beta*Q_tot);
 					
@@ -378,7 +378,7 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 						stack[0] = stack[pos];
 						
 						stack[0] = stack[pos];
-						while ((stack[pos - 1] + 1L)==stack[pos]) {
+						while ((stack[pos - 1] + 1L) == stack[pos]) {
 							stack[0] = stack[pos - 1];
 							pos--;
 						}
@@ -402,10 +402,10 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 		Free(seq);
 		Free(stack);
 		
-		if (o==1) {
+		if (o == 1) {
 			SET_VECTOR_ELT(ret, s, ans);
 			UNPROTECT(1); // ans
-		} else if (o==3) { // negative derivative
+		} else if (o == 3) { // negative derivative
 			// cubic spline interpolation
 			double a_11, a_12, a_22, a_23, a_33;
 			double b_1, b_2, b_3;
@@ -421,12 +421,12 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 				b_2 = b_1 + b_3;
 				
 				k1 = (a_33*(a_11*b_2 - a_12*b_1) - b_3*a_23*a_11)/(a_33*(a_11*a_22 - a_12*a_12) - a_23*a_11*a_23);
-				if (k==1) {
+				if (k == 1) {
 					*(rans + k - 1 + l*s) = -1*(b_1 - a_12*k1)/a_11; // -k0
 				} else {
 					*(rans + k - 1 + l*s) = -1*temp; // previous -k1
 				}
-				if (k==(l - 2)) {
+				if (k == (l - 2)) {
 					*(rans + k + l*s) = -1*k1; // current -k1
 					*(rans + k + 1 + l*s) = -1*(b_3 - a_23*k1)/a_33; // -k2
 					if (*(rans + k + 1 + l*s) < 0) // sometimes k2 is positive

@@ -379,7 +379,7 @@ SEXP designProbes(SEXP x, SEXP max_pl, SEXP min_pl, SEXP max_c, SEXP numMMs, SEX
 							} else {
 								pers[p][k] = p % 3;
 							}
-							if (pers[p][k]==2)
+							if (pers[p][k] == 2)
 								pers[p][k]++;
 						}
 						break;
@@ -426,11 +426,11 @@ SEXP designProbes(SEXP x, SEXP max_pl, SEXP min_pl, SEXP max_c, SEXP numMMs, SEX
 				
 				c = 0;
 				for (p = 0; p < maxCombos; p++) {
-					if (k==0) {
+					if (k == 0) {
 						FAms[p] = -27.9943679147442;
 						lengths[p] = 0;
 					} else {
-						if (lengths[p]==0) {
+						if (lengths[p] == 0) {
 							FAms[p] -= NN[pers[p][k - 1]][pers[p][k]];
 							if (FAms[p] > min_fam) {
 								lengths[p] = k;
@@ -442,7 +442,7 @@ SEXP designProbes(SEXP x, SEXP max_pl, SEXP min_pl, SEXP max_c, SEXP numMMs, SEX
 					}
 				}
 				
-				if (c==maxCombos) // all FAms > min_fam
+				if (c == maxCombos) // all FAms > min_fam
 					break;
 			}
 			
@@ -474,7 +474,7 @@ SEXP designProbes(SEXP x, SEXP max_pl, SEXP min_pl, SEXP max_c, SEXP numMMs, SEX
 			for (n = 0; n < combos; n++) { // for each permutation
 				score = 100; // score for this permutation
 				for (l = 0; l < x_length; l++) { // for each sequence
-					if (i==l)
+					if (i == l)
 						continue;
 					x_l = get_elt_from_XStringSet_holder(&x_set, l);
 					MM = 0; // number of mismatches
@@ -629,9 +629,9 @@ SEXP designProbes(SEXP x, SEXP max_pl, SEXP min_pl, SEXP max_c, SEXP numMMs, SEX
 							if (dGmin > dG)
 								dGmin = dG;
 							
-							//if (i==0)
-							//	if (l==1)
-							//		if (pos[j][0]==2059)
+							//if (i == 0)
+							//	if (l == 1)
+							//		if (pos[j][0] == 2059)
 							//			Rprintf("\n%d\t%d\t%d",(int)(100*dG),I[0],I[1]);
 							
 							// rotate positions

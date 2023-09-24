@@ -37,7 +37,7 @@ CalculateEfficiencyFISH <- function(probe,
 		stop("FA must be a numeric.")
 	if (!is.numeric(batchSize))
 		stop("batchSize must be a numeric.")
-	if (floor(batchSize)!=batchSize)
+	if (floor(batchSize) != batchSize)
 		stop("batchSize must be a whole number.")
 	if (batchSize <= 0)
 		stop("batchSize must be greater than zero.")
@@ -48,9 +48,9 @@ CalculateEfficiencyFISH <- function(probe,
 	l <- length(probe)
 	n <- nchar(probe)
 	
-	if (l==0)
+	if (l == 0)
 		stop("No probe specified.")
-	if (l!=length(target))
+	if (l != length(target))
 		stop("probe is not the same length as target.")
 	
 	# align probe and target

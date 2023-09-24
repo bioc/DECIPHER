@@ -8,16 +8,16 @@ ExtractGenes <- function(x,
 	if (!is(myDNAStringSet, "DNAStringSet"))
 		stop("myDNAStringSet must be a DNAStringSet.")
 	TYPES <- c("DNAStringSet", "RNAStringSet", "AAStringSet")
-	if (length(type)==0)
+	if (length(type) == 0)
 		stop("No type specified.")
 	type <- pmatch(type, TYPES)
 	if (is.na(type))
 		stop("Invalid type.")
-	if (type==-1)
+	if (type == -1)
 		stop("Ambiguous type.")
-	if (type==3 && any(1/x[, "Gene"] < 0))
+	if (type == 3 && any(1/x[, "Gene"] < 0))
 		stop("Only open reading frames in x can be translated when type is 'AAStringSet'.")
-	if (!all(attr(x, "widths")==width(myDNAStringSet)))
+	if (!all(attr(x, "widths") == width(myDNAStringSet)))
 		stop("Mismatch between x and myDNAStringSet.")
 	
 	y <- rep(list(IRanges()),
@@ -31,13 +31,13 @@ ExtractGenes <- function(x,
 	}
 	y <- IRangesList(y)
 	z <- unlist(extractAt(myDNAStringSet, y))
-	w <-  which(x[, "Strand"]==1)
+	w <-  which(x[, "Strand"] == 1)
 	if (length(w) > 0)
 		z[w] <- reverseComplement(z[w])
 	
-	if (type==2L) {
+	if (type == 2L) {
 		z <- RNAStringSet(z)
-	} else if (type==3L) {
+	} else if (type == 3L) {
 		z <- translate(z,
 			genetic.code=attr(x, "geneticCode"),
 			...)

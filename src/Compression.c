@@ -362,43 +362,43 @@ int revcompDiff(const char curr, const char last)
 {
 	switch (curr) {
 		case 'A':
-			if (last!='T')
+			if (last != 'T')
 				return 1;
 			break;
 		case 'C':
-			if (last!='G')
+			if (last != 'G')
 				return 1;
 			break;
 		case 'G':
-			if (last!='C')
+			if (last != 'C')
 				return 1;
 			break;
 		case 'T':
-			if (last!='A')
+			if (last != 'A')
 				return 1;
 			break;
 		case 'U':
-			if (last!='A')
+			if (last != 'A')
 				return 1;
 			break;
 		case 'a':
-			if (last!='t')
+			if (last != 't')
 				return 1;
 			break;
 		case 'c':
-			if (last!='g')
+			if (last != 'g')
 				return 1;
 			break;
 		case 'g':
-			if (last!='c')
+			if (last != 'c')
 				return 1;
 			break;
 		case 't':
-			if (last!='a')
+			if (last != 'a')
 				return 1;
 			break;
 		case 'u':
-			if (last!='a')
+			if (last != 'a')
 				return 1;
 			break;
 		default:
@@ -541,7 +541,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 		// initialize the dictionary
 		unsigned int *dict, word, count, lastHit, currHit, lastPos = 0;
 		int lastTemp, currTemp, rev, len, len2, thresh = 1;
-		if (cR==1) {
+		if (cR == 1) {
 			if (l[i] <= 5120) { // 20*2^8 = 5120 (~5% chance of an 8-mer occurring only once)
 				dict = (unsigned int *) calloc(256, sizeof(unsigned int)); // initialized to zero (thread-safe on Windows)
 			} else {
@@ -567,9 +567,9 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 		// set 3-bit (leave as 0 if includes T)
 		int DNA = 1;
 		for (j = 0; j < l[i]; j++) {
-			if (s[j]=='T' || s[j]=='t') {
+			if (s[j] == 'T' || s[j] == 't') {
 				break; // assume DNA
-			} else if (s[j]=='U' || s[j]=='u') {
+			} else if (s[j] == 'U' || s[j] == 'u') {
 				DNA = 0;
 				p[0] |= 4; // assume RNA
 				break;
@@ -642,41 +642,41 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 						break;
 				}
 				if (k > 12) {
-					if (s[j]=='+' ||
-						s[j]=='.' ||
-						s[j]=='-' ||
-						s[j]=='N' ||
-						s[j]=='n') {
+					if (s[j] == '+' ||
+						s[j] == '.' ||
+						s[j] == '-' ||
+						s[j] == 'N' ||
+						s[j] == 'n') {
 						// look for extended run
 						for (pos = j + k; (pos < l[i]) && (k < 65536); k++, pos++) {
 							if (s[j] != s[pos])
 								break;
 						}
 					}
-					if (pair==0) {
+					if (pair == 0) {
 						run = 1;
 					} else {
-						if (threeBit==0) {
-							if (pair==2) {
+						if (threeBit == 0) {
+							if (pair == 2) {
 								pos = j + 3;
-							} else if (pair==4) {
+							} else if (pair == 4) {
 								pos = j + 2;
-							} else { // pair==6
+							} else { // pair == 6
 								pos = j; // check next iteration
 							}
 						} else {
-							if (pair==1) {
+							if (pair == 1) {
 								pos = j + 2;
-							} else { // pair==2
+							} else { // pair == 2
 								pos = j; // check next iteration
 							}
 						}
 					}
-				} else if (threeBit==0 && k==1 && s[j]=='-') {
+				} else if (threeBit == 0 && k == 1 && s[j] == '-') {
 					// look ahead for the next gap
 					run = 1; // isolated gap
 					for (int h = j + 1; (h < l[i]) && (h <= j + 20); h++) {
-						if (s[h]=='-') {
+						if (s[h] == '-') {
 							run = 0; // start 3-bit encoding
 							break;
 						}
@@ -684,120 +684,120 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 				}
 			}
 			
-			if (s[j]=='A' && run==0) {
-				if (lower==1)
+			if (s[j] == 'A' && run == 0) {
+				if (lower == 1)
 					goto switchCase;
-				if (threeBit==1) {
+				if (threeBit == 1) {
 					pair++;
 				} else {
 					pair += 2;
 				}
-			} else if (s[j]=='a' && run==0) {
-				if (lower==0)
+			} else if (s[j] == 'a' && run == 0) {
+				if (lower == 0)
 					goto switchCase;
-				if (threeBit==1) {
+				if (threeBit == 1) {
 					pair++;
 				} else {
 					pair += 2;
 				}
-			} else if (s[j]=='C' && run==0) {
-				if (lower==1)
+			} else if (s[j] == 'C' && run == 0) {
+				if (lower == 1)
 					goto switchCase;
-				if (threeBit==1) {
-					byte += (pair==0) ? 25 : ((pair==1) ? 5:1);
-					pair++;
-				} else {
-					byte |= 1 << pair;
-					pair += 2;
-				}
-			} else if (s[j]=='c' && run==0) {
-				if (lower==0)
-					goto switchCase;
-				if (threeBit==1) {
-					byte += (pair==0) ? 25 : ((pair==1) ? 5:1);
+				if (threeBit == 1) {
+					byte += (pair == 0) ? 25 : ((pair == 1) ? 5:1);
 					pair++;
 				} else {
 					byte |= 1 << pair;
 					pair += 2;
 				}
-			} else if (s[j]=='G' && run==0) {
-				if (lower==1)
+			} else if (s[j] == 'c' && run == 0) {
+				if (lower == 0)
 					goto switchCase;
-				if (threeBit==1) {
-					byte += (pair==0) ? 50 : ((pair==1) ? 10:2);
+				if (threeBit == 1) {
+					byte += (pair == 0) ? 25 : ((pair == 1) ? 5:1);
+					pair++;
+				} else {
+					byte |= 1 << pair;
+					pair += 2;
+				}
+			} else if (s[j] == 'G' && run == 0) {
+				if (lower == 1)
+					goto switchCase;
+				if (threeBit == 1) {
+					byte += (pair == 0) ? 50 : ((pair == 1) ? 10:2);
 					pair++;
 				} else {
 					byte |= 2 << pair;
 					pair += 2;
 				}
-			} else if (s[j]=='g' && run==0) {
-				if (lower==0)
+			} else if (s[j] == 'g' && run == 0) {
+				if (lower == 0)
 					goto switchCase;
-				if (threeBit==1) {
-					byte += (pair==0) ? 50 : ((pair==1) ? 10:2);
+				if (threeBit == 1) {
+					byte += (pair == 0) ? 50 : ((pair == 1) ? 10:2);
 					pair++;
 				} else {
 					byte |= 2 << pair;
 					pair += 2;
 				}
-			} else if (s[j]=='T' && run==0) {
-				if (lower==1)
+			} else if (s[j] == 'T' && run == 0) {
+				if (lower == 1)
 					goto switchCase;
-				if (DNA==0) {
+				if (DNA == 0) {
 					success = 0;
 					break;
 				}
-				if (threeBit==1) {
-					byte += (pair==0) ? 75 : ((pair==1) ? 15:3);
+				if (threeBit == 1) {
+					byte += (pair == 0) ? 75 : ((pair == 1) ? 15:3);
 					pair++;
 				} else {
 					byte |= 3 << pair;
 					pair += 2;
 				}
-			} else if (s[j]=='t' && run==0) {
-				if (lower==0)
+			} else if (s[j] == 't' && run == 0) {
+				if (lower == 0)
 					goto switchCase;
-				if (DNA==0) {
+				if (DNA == 0) {
 					success = 0;
 					break;
 				}
-				if (threeBit==1) {
-					byte += (pair==0) ? 75 : ((pair==1) ? 15:3);
+				if (threeBit == 1) {
+					byte += (pair == 0) ? 75 : ((pair == 1) ? 15:3);
 					pair++;
 				} else {
 					byte |= 3 << pair;
 					pair += 2;
 				}
-			} else if (s[j]=='U' && run==0) {
-				if (lower==1)
+			} else if (s[j] == 'U' && run == 0) {
+				if (lower == 1)
 					goto switchCase;
-				if (DNA==1) {
+				if (DNA == 1) {
 					success = 0;
 					break;
 				}
-				if (threeBit==1) {
-					byte += (pair==0) ? 75 : ((pair==1) ? 15:3);
+				if (threeBit == 1) {
+					byte += (pair == 0) ? 75 : ((pair == 1) ? 15:3);
 					pair++;
 				} else {
 					byte |= 3 << pair;
 					pair += 2;
 				}
-			} else if (s[j]=='u' && run==0) {
-				if (lower==0)
+			} else if (s[j] == 'u' && run == 0) {
+				if (lower == 0)
 					goto switchCase;
-				if (DNA==1) {
+				if (DNA == 1) {
 					success = 0;
 					break;
 				}
-				if (threeBit==1) {
-					byte += (pair==0) ? 75 : ((pair==1) ? 15:3);
+				if (threeBit == 1) {
+					byte += (pair == 0) ? 75 : ((pair == 1) ? 15:3);
 					pair++;
 				} else {
 					byte |= 3 << pair;
 					pair += 2;
 				}
-			} else if (s[j]=='-' && run==0) {
-				if (threeBit==0) {
+			} else if (s[j] == '-' && run == 0) {
+				if (threeBit == 0) {
 					threeBit = 1;
 					if ((c + 1) >= l[i]) {
 						success = 0; // compression failed
@@ -807,10 +807,10 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 					p[c] = 0;
 					c++;
 					threeBitBegin = c;
-					if (pair!=0) { // current position
+					if (pair != 0) { // current position
 						// unable to reverse in 3-bit encoding
 						// retract and switch coding
-						j -= (pair==2) ? 1 : ((pair==4) ? 2 : 3);
+						j -= (pair == 2) ? 1 : ((pair == 4) ? 2 : 3);
 						pair = 0;
 						continue;
 					}
@@ -818,27 +818,27 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 					lastGap = c;
 				}
 				
-				byte += (pair==0) ? 100 : ((pair==1) ? 20:4);
+				byte += (pair == 0) ? 100 : ((pair == 1) ? 20:4);
 				pair++;
 			} else { // use control code (0)
 				// special character or run
 				// 3 bytes (nul char/code reps)
 				// bit 8 is 0 for runs
 				if (s[j] >= 'A' && s[j] <= 'Z') {
-					if (lower==1)
+					if (lower == 1)
 						goto switchCase;
 				} else if (s[j] >= 'a' && s[j] <= 'z') {
-					if (lower==0)
+					if (lower == 0)
 						goto switchCase;
 				}
 				
-				if (pair==0) { // current position
+				if (pair == 0) { // current position
 					if ((c + 3) >= l[i]) {
 						success = 0; // compression failed
 						break;
 					}
 					p[c] = 0;
-					// pair==0 (start from current position)
+					// pair == 0 (start from current position)
 					byte = 0;
 					c++;
 				} else { // first record previous positions
@@ -846,24 +846,24 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 						success = 0; // compression failed
 						break;
 					}
-					if (byte==0) // force non-zero byte
+					if (byte == 0) // force non-zero byte
 						byte |= 1 << 6; // AAAC
 					p[c++] = byte;
 					p[c++] = 0;
 					
 					// record starting position
-					if (threeBit==0) {
-						if (pair==2) { // current - 3
+					if (threeBit == 0) {
+						if (pair == 2) { // current - 3
 							pair = 96;
-						} else if (pair==4) { // current - 2
+						} else if (pair == 4) { // current - 2
 							pair = 64;
-						} else if (pair==6) { // current - 1
+						} else if (pair == 6) { // current - 1
 							pair = 32;
 						}
 					} else {
-						if (pair==1) { // current - 2
+						if (pair == 1) { // current - 2
 							pair = 64;
-						} else if (pair==2) { // current - 1
+						} else if (pair == 2) { // current - 1
 							pair = 32;
 						}
 					}
@@ -888,7 +888,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 						break;
 					case 'T':
 					case 't':
-						if (DNA==0) {
+						if (DNA == 0) {
 							success = 0;
 							break;
 						}
@@ -896,7 +896,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 						break;
 					case 'U':
 					case 'u':
-						if (DNA==1) {
+						if (DNA == 1) {
 							success = 0;
 							break;
 						}
@@ -960,10 +960,10 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 						break;
 				}
 				
-				if (success==0)
+				if (success == 0)
 					break;
 				
-				if (k==1 && letter >= 11) {
+				if (k == 1 && letter >= 11) {
 					letter += 8;
 					byte |= letter;
 					p[c] = byte;
@@ -985,7 +985,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 					c++;
 				}
 				
-				if (threeBit==0) {
+				if (threeBit == 0) {
 					byte = 0;
 				} else {
 					byte = 129; // 10000001
@@ -995,9 +995,9 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 				continue;
 			}
 			
-			if ((pair==8 || j==(l[i] - 1)) && threeBit==0) {
+			if ((pair == 8 || j == (l[i] - 1)) && threeBit == 0) {
 				len = 0;
-				if (cR==1) {
+				if (cR == 1) {
 					// find previous occurrences of a large region
 					// record non-overlapping k-mers in dict
 					// look for extendable k-mers in dict
@@ -1020,19 +1020,19 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 							thresh = 16; // 4 bytes
 						}
 						
-						if (l[i] <= 5120 && count==2) { // use single byte indices
+						if (l[i] <= 5120 && count == 2) { // use single byte indices
 							// look for repeats in dictionary
 							for (k = 0; k < 8; k += 2) {
 								currHit = j - 3 - (k >> 1); // start of byte
 								
 								// exact repeats
 								lastHit = dict[(word >> k) & 0xFF];
-								if (lastHit!=0) {
+								if (lastHit != 0) {
 									lastHit -= 3; // start of lastHit
 									// extend hit
 									len = 4;
 									for (lastTemp = lastHit + len, currTemp = currHit + len; currTemp < l[i]; len++, lastTemp++, currTemp++) {
-										if (s[lastTemp]!=s[currTemp])
+										if (s[lastTemp] != s[currTemp])
 											break;
 									}
 									len -= k >> 1;
@@ -1040,7 +1040,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 									if (len >= thresh) {
 										// check that 4-mer's case matches
 										for (len2 = 1, lastTemp = lastHit + 1; len2 < 4; len2++, lastTemp++) {
-											if (s[currHit + len2]!=s[lastTemp]) {
+											if (s[currHit + len2] != s[lastTemp]) {
 												len = 0;
 												break;
 											}
@@ -1055,7 +1055,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 								
 								// revcomp repeats
 								lastHit = dict[revcomp((word >> k) & 0xFF)]; // end of lastHit
-								if (lastHit!=0) {
+								if (lastHit != 0) {
 									// extend hit
 									len = 4;
 									for (lastTemp = lastHit - len, currTemp = currHit + len; lastTemp >= 0; len++, lastTemp--, currTemp++) {
@@ -1085,19 +1085,19 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 							word = word & 0xFF;
 							dict[word] = j;
 							count = 1;
-						} else if (l[i] > 5120 && count==4) { // use double byte indices
+						} else if (l[i] > 5120 && count == 4) { // use double byte indices
 							// look for repeats in dictionary
 							for (k = 0; k < 16; k += 2) {
 								currHit = j - 3 - (k >> 1); // start of byte
 								
 								// exact repeats
 								lastHit = dict[(word >> k) & 0xFFFF];
-								if (lastHit!=0) {
+								if (lastHit != 0) {
 									lastHit -= 3; // start of lastHit
 									// extend hit
 									len = 4;
 									for (lastTemp = lastHit + len, currTemp = currHit + len; currTemp < l[i]; len++, lastTemp++, currTemp++) {
-										if (s[lastTemp]!=s[currTemp])
+										if (s[lastTemp] != s[currTemp])
 											break;
 									}
 									len -= k >> 1;
@@ -1105,7 +1105,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 									if (len >= thresh) {
 										// check that 4-mer's case matches
 										for (len2 = 1, lastTemp = lastHit + 1; len2 < 4; len2++, lastTemp++) {
-											if (s[currHit + len2]!=s[lastTemp]) {
+											if (s[currHit + len2] != s[lastTemp]) {
 												len = 0;
 												break;
 											}
@@ -1120,7 +1120,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 								
 								// revcomp repeats
 								lastHit = dict[revcomp2((word >> k) & 0xFFFF)]; // end of lastHit
-								if (lastHit!=0) {
+								if (lastHit != 0) {
 									// extend hit
 									len = 4;
 									for (lastTemp = lastHit - len - 4, currTemp = currHit + len; lastTemp >= 0; len++, lastTemp--, currTemp++) {
@@ -1164,7 +1164,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 							break;
 						}
 						p[c++] = 0;
-						p[c++] = rev==0 ? 254 : 255;
+						p[c++] = rev == 0 ? 254 : 255;
 						p[c++] = (unsigned char)(lastHit >> 24);
 						p[c++] = (unsigned char)(lastHit >> 16);
 						p[c++] = (unsigned char)(lastHit >> 8);
@@ -1181,7 +1181,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 						if (len > 16777215)
 							len = 16777215;
 						p[c++] = 0;
-						p[c++] = rev==0 ? 254 : 255;
+						p[c++] = rev == 0 ? 254 : 255;
 						p[c++] = (unsigned char)(lastHit >> 16);
 						p[c++] = (unsigned char)(lastHit >> 8);
 						p[c++] = (unsigned char)lastHit;
@@ -1196,7 +1196,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 						if (len > 65535)
 							len = 65535;
 						p[c++] = 0;
-						p[c++] = rev==0 ? 254 : 255;
+						p[c++] = rev == 0 ? 254 : 255;
 						p[c++] = (unsigned char)(lastHit >> 8);
 						p[c++] = (unsigned char)lastHit;
 						p[c++] = (unsigned char)(len >> 8);
@@ -1209,7 +1209,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 						if (len > 255)
 							len = 255;
 						p[c++] = 0;
-						p[c++] = rev==0 ? 254 : 255;
+						p[c++] = rev == 0 ? 254 : 255;
 						p[c++] = (unsigned char)lastHit;
 						p[c++] = (unsigned char)len;
 					}
@@ -1217,7 +1217,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 					j += len - 1;
 					byte = 0;
 					pair = 0;
-				} else if (byte==0) { // AAAA
+				} else if (byte == 0) { // AAAA
 					if ((c + 1) >= l[i]) {
 						success = 0; // compression failed
 						break;
@@ -1235,7 +1235,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 					byte = 0;
 				}
 				pair = 0;
-			} else if (pair==3 || j==(l[i] - 1)) {
+			} else if (pair == 3 || j == (l[i] - 1)) {
 				if (threeBitEnd > threeBitBegin && (j - lastTriplet) > 20) {
 					// re-encode using 2-bit encoding because it is
 					// more efficient (20/3 ~= 20/4 + 1 + partial byte)
@@ -1253,7 +1253,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 					success = 0; // compression failed
 					break;
 				}
-				if (c==lastGap) {
+				if (c == lastGap) {
 					threeBitEnd = c;
 					lastTriplet = j;
 					lastCase = lower;
@@ -1269,13 +1269,13 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 			continue;
 			
 			switchCase:
-			if (lower==0) {
+			if (lower == 0) {
 				lower = 1;
 			} else {
 				lower = 0;
 			}
 			
-			if (pair==0) {
+			if (pair == 0) {
 				if ((c + 2) >= l[i]) {
 					success = 0; // compression failed
 					break;
@@ -1289,18 +1289,18 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 					break;
 				}
 				
-				if (threeBit==0) {
-					if (byte==0) // force non-zero byte
+				if (threeBit == 0) {
+					if (byte == 0) // force non-zero byte
 						byte |= 1 << 6; // AAAC
 					p[c++] = byte;
 					byte = 0;
 					p[c++] = 0;
 					
-					if (pair==2) { // current - 3
+					if (pair == 2) { // current - 3
 						p[c] = 127;
-					} else if (pair==4) { // current - 2
+					} else if (pair == 4) { // current - 2
 						p[c] = 95;
-					} else if (pair==6) { // current - 1
+					} else if (pair == 6) { // current - 1
 						p[c] = 63;
 					}
 				} else {
@@ -1308,9 +1308,9 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 					byte = 129; // 10000001
 					p[c++] = 0;
 					
-					if (pair==1) { // current - 2
+					if (pair == 1) { // current - 2
 						p[c] = 95;
-					} else if (pair==2) { // current - 1
+					} else if (pair == 2) { // current - 1
 						p[c] = 63;
 					}
 				}
@@ -1321,10 +1321,10 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 			c++;
 		}
 		
-		if (cR==1)
+		if (cR == 1)
 			free(dict);
 		
-		if (success==0) {
+		if (success == 0) {
 			l[i] = 0;
 			p[0] &= 247; // zero the 4-bit
 		} else {
@@ -1339,8 +1339,8 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 	
 	for (i = 0; i < n; i++) {
 		p = ptrs[i];
-		if (l[i]==0) { // compression failed
-			if (ascii==1) { // keep as ascii
+		if (l[i] == 0) { // compression failed
+			if (ascii == 1) { // keep as ascii
 				l[i] = length(STRING_ELT(x, i));
 				PROTECT(ans = allocVector(RAWSXP, l[i] + 1));
 				// copy header byte
@@ -1644,13 +1644,13 @@ SEXP qbit(SEXP x, SEXP y, SEXP nThreads)
 		
 		free(t);
 		
-		if (success==0) {
+		if (success == 0) {
 			l[i] = 0;
 			p[0] |= 64; // make the 7-bit one
 			p[0] &= 223; // make the 6-bit zero
 		} else {
 			// set the new length
-			if (b==0) {
+			if (b == 0) {
 				l[i] = c;
 			} else {
 				l[i] = c + 1;
@@ -1665,8 +1665,8 @@ SEXP qbit(SEXP x, SEXP y, SEXP nThreads)
 	
 	for (i = 0; i < n; i++) {
 		p = ptrs[i];
-		if (l[i]==0) { // compression failed
-			if (ascii==1) { // keep as ascii
+		if (l[i] == 0) { // compression failed
+			if (ascii == 1) { // keep as ascii
 				l[i] = length(STRING_ELT(x, i));
 				PROTECT(ans = allocVector(RAWSXP, l[i] + 1));
 				// copy header byte
@@ -1727,7 +1727,7 @@ SEXP decompress(SEXP x, SEXP nThreads)
 	for (i = 0; i < n; i++) {
 		ptrs[i] = RAW(VECTOR_ELT(x, i));
 		l[i] = length(VECTOR_ELT(x, i));
-		if (l[i]==0)
+		if (l[i] == 0)
 			error("x contains an empty raw vector.");
 	}
 	
@@ -1741,26 +1741,26 @@ SEXP decompress(SEXP x, SEXP nThreads)
 		
 		type = (p[0] & 224);
 		
-		if (type==192 || type==160) { // nbit or qbit compression
-			if (type==192 && (p[0] & 8)==0) { // ascii
+		if (type == 192 || type == 160) { // nbit or qbit compression
+			if (type == 192 && (p[0] & 8) == 0) { // ascii
 				s = (char *) calloc(l[i], sizeof(char)); // initialized to zero (thread-safe on Windows)
 				memcpy(s, p + 1, l[i] - 1);
 				strs[i] = s; // each sequence
 				continue;
 			} else {
 				len = 0;
-				if ((p[0] & 3)==3) {
+				if ((p[0] & 3) == 3) {
 					len |= p[1];
 					len |= p[2] << 8;
 					len |= p[3] << 16;
 					len |= p[4] << 24;
 					j = 9;
-				} else if ((p[0] & 3)==2) {
+				} else if ((p[0] & 3) == 2) {
 					len |= p[1];
 					len |= p[2] << 8;
 					len |= p[3] << 16;
 					j = 7;
-				} else if ((p[0] & 3)==1) {
+				} else if ((p[0] & 3) == 1) {
 					len |= p[1];
 					len |= p[2] << 8;
 					j = 5;
@@ -1769,7 +1769,7 @@ SEXP decompress(SEXP x, SEXP nThreads)
 					j = 3;
 				}
 			}
-			if (type==192) { // nbit compression
+			if (type == 192) { // nbit compression
 				if ((p[0] & 4) > 0) {
 					TU = 'U';
 					tu = 'u';
@@ -1779,7 +1779,7 @@ SEXP decompress(SEXP x, SEXP nThreads)
 				}
 				
 				lower = p[0] & 16; // > 0 if lower
-				if (lower==0) {
+				if (lower == 0) {
 					A = 'A';
 					C = 'C';
 					G = 'G';
@@ -1803,24 +1803,24 @@ SEXP decompress(SEXP x, SEXP nThreads)
 		strs[i] = s; // each sequence
 		
 		// decompress the payload
-		if (type==192) { // nbit compression
+		if (type == 192) { // nbit compression
 			int run;
 			char letter;
 			int byte;
 			int c = 0;
 			int threeBit = 0;
 			while (j < l[i]) {
-				if (p[j]==0) { // control code
+				if (p[j] == 0) { // control code
 					j++;
-					if (j==l[i])
+					if (j == l[i])
 						error("Corrupted encoding.");
-					if (p[j]==0) { // AAAA
+					if (p[j] == 0) { // AAAA
 						s[c++] = A;
 						s[c++] = A;
 						s[c++] = A;
 						s[c++] = A;
-					} else if (p[j]==254 || p[j]==255) { // repeat
-						int rev = (p[j]==254) ? 0 : 1;
+					} else if (p[j] == 254 || p[j] == 255) { // repeat
+						int rev = (p[j] == 254) ? 0 : 1;
 						unsigned int start = 0;
 						unsigned int replen = 0;
 						j++;
@@ -1851,7 +1851,7 @@ SEXP decompress(SEXP x, SEXP nThreads)
 							replen |= p[j];
 						}
 						
-						if (rev==0) { // exact repeat
+						if (rev == 0) { // exact repeat
 							for (k = 0; k < replen; k++, start++, c++)
 								s[c] = s[start];
 						} else { // revcomp repeat
@@ -1890,66 +1890,66 @@ SEXP decompress(SEXP x, SEXP nThreads)
 								}
 							}
 						}
-					} else if (p[j]==31) {
+					} else if (p[j] == 31) {
 						goto switchCase;
-					} else if (p[j]==63) {
+					} else if (p[j] == 63) {
 						c--;
 						goto switchCase;
-					} else if (p[j]==95) {
+					} else if (p[j] == 95) {
 						c -= 2;
 						goto switchCase;
-					} else if (p[j]==127) {
+					} else if (p[j] == 127) {
 						c -= 3;
 						goto switchCase;
-					} else if ((p[j] >> 7)==0) { // run
+					} else if ((p[j] >> 7) == 0) { // run
 						c -= p[j] >> 5;
 						byte = (p[j] & 31);
 						if (byte > 18 && byte < 27) {
 							switch (byte) {
 								case 21:
-									if (lower==0) {
+									if (lower == 0) {
 										s[c] = 'M';
 									} else {
 										s[c] = 'm';
 									}
 									break;
 								case 22:
-									if (lower==0) {
+									if (lower == 0) {
 										s[c] = 'R';
 									} else {
 										s[c] = 'r';
 									}
 									break;
 								case 23:
-									if (lower==0) {
+									if (lower == 0) {
 										s[c] = 'W';
 									} else {
 										s[c] = 'w';
 									}
 									break;
 								case 24:
-									if (lower==0) {
+									if (lower == 0) {
 										s[c] = 'S';
 									} else {
 										s[c] = 's';
 									}
 									break;
 								case 25:
-									if (lower==0) {
+									if (lower == 0) {
 										s[c] = 'Y';
 									} else {
 										s[c] = 'y';
 									}
 									break;
 								case 26:
-									if (lower==0) {
+									if (lower == 0) {
 										s[c] = 'K';
 									} else {
 										s[c] = 'k';
 									}
 									break;
 								case 19:
-									if (lower==0) {
+									if (lower == 0) {
 										s[c] = 'N';
 									} else {
 										s[c] = 'n';
@@ -1972,7 +1972,7 @@ SEXP decompress(SEXP x, SEXP nThreads)
 									letter = '.';
 									break;
 								case 29:
-									if (lower==0) {
+									if (lower == 0) {
 										letter = 'N';
 									} else {
 										letter = 'n';
@@ -1986,11 +1986,11 @@ SEXP decompress(SEXP x, SEXP nThreads)
 									break;
 							}
 							j++;
-							if (j==l[i])
+							if (j == l[i])
 								error("Corrupted encoding.");
 							run = p[j] << 8;
 							j++;
-							if (j==l[i])
+							if (j == l[i])
 								error("Corrupted encoding.");
 							run |= p[j];
 							for (k = 0; k <= run; k++, c++) {
@@ -2017,77 +2017,77 @@ SEXP decompress(SEXP x, SEXP nThreads)
 									letter = '.';
 									break;
 								case 13:
-									if (lower==0) {
+									if (lower == 0) {
 										letter = 'M';
 									} else {
 										letter = 'm';
 									}
 									break;
 								case 14:
-									if (lower==0) {
+									if (lower == 0) {
 										letter = 'R';
 									} else {
 										letter = 'r';
 									}
 									break;
 								case 15:
-									if (lower==0) {
+									if (lower == 0) {
 										letter = 'W';
 									} else {
 										letter = 'w';
 									}
 									break;
 								case 16:
-									if (lower==0) {
+									if (lower == 0) {
 										letter = 'S';
 									} else {
 										letter = 's';
 									}
 									break;
 								case 17:
-									if (lower==0) {
+									if (lower == 0) {
 										letter = 'Y';
 									} else {
 										letter = 'y';
 									}
 									break;
 								case 18:
-									if (lower==0) {
+									if (lower == 0) {
 										letter = 'K';
 									} else {
 										letter = 'k';
 									}
 									break;
 								case 5:
-									if (lower==0) {
+									if (lower == 0) {
 										letter = 'V';
 									} else {
 										letter = 'v';
 									}
 									break;
 								case 6:
-									if (lower==0) {
+									if (lower == 0) {
 										letter = 'H';
 									} else {
 										letter = 'h';
 									}
 									break;
 								case 7:
-									if (lower==0) {
+									if (lower == 0) {
 										letter = 'D';
 									} else {
 										letter = 'd';
 									}
 									break;
 								case 8:
-									if (lower==0) {
+									if (lower == 0) {
 										letter = 'B';
 									} else {
 										letter = 'b';
 									}
 									break;
 								case 11:
-									if (lower==0) {
+									if (lower == 0) {
 										letter = 'N';
 									} else {
 										letter = 'n';
@@ -2101,7 +2101,7 @@ SEXP decompress(SEXP x, SEXP nThreads)
 									break;
 							}
 							j++;
-							if (j==l[i])
+							if (j == l[i])
 								error("Corrupted encoding.");
 							run = p[j];
 							for (k = 0; k <= run; k++, c++) {
@@ -2113,7 +2113,7 @@ SEXP decompress(SEXP x, SEXP nThreads)
 						continue; // don't increment j
 					}
 				} else if (threeBit) { // 3-bit encoding
-					if ((p[j] & 128)==0) {
+					if ((p[j] & 128) == 0) {
 						threeBit = 0; // next byte is not 3-bit encoding
 						byte = p[j];
 					} else {
@@ -2150,13 +2150,13 @@ SEXP decompress(SEXP x, SEXP nThreads)
 					} else {
 						s[c++] = A;
 					}
-					if (byte==5) {
+					if (byte == 5) {
 						s[c++] = '-';
-					} else if (byte==4) {
+					} else if (byte == 4) {
 						s[c++] = T;
-					} else if (byte==3) {
+					} else if (byte == 3) {
 						s[c++] = G;
-					} else if (byte==2) {
+					} else if (byte == 2) {
 						s[c++] = C;
 					} else {
 						s[c++] = A;
@@ -2224,7 +2224,7 @@ SEXP decompress(SEXP x, SEXP nThreads)
 				continue;
 				
 				switchCase:
-				if (lower==0) {
+				if (lower == 0) {
 					lower = 1;
 					A = 'a';
 					C = 'c';
@@ -2258,14 +2258,14 @@ SEXP decompress(SEXP x, SEXP nThreads)
 						if ((b + zeros) > 8) { // straddles bytes
 							byte = (unsigned char)(p[j] << b) >> (8 - zeros);
 							j++;
-							if (j==l[i])
+							if (j == l[i])
 								error("Corrupted encoding.");
 							b += zeros - 8;
 							byte |= p[j] >> (8 - b);
 						} else {
 							byte = (unsigned char)(p[j] << b) >> (8 - zeros);
 							b += zeros;
-							if (b==8) {
+							if (b == 8) {
 								b = 0;
 								j++;
 							}
@@ -2274,35 +2274,35 @@ SEXP decompress(SEXP x, SEXP nThreads)
 						zeros = 0;
 					} else {
 						t[c++] = 1;
-						if (b==7) {
+						if (b == 7) {
 							b = 0;
 							j++;
 						} else {
 							b++;
 						}
 						ones++;
-						if (ones==8) {
+						if (ones == 8) {
 							// run of ones
-							if (j==l[i])
+							if (j == l[i])
 								error("Corrupted encoding.");
 							byte = (unsigned char)(p[j] << b);
 							j++;
 							if (b > 0) {
-								if (j==l[i])
+								if (j == l[i])
 									error("Corrupted encoding.");
 								byte |= p[j] >> (8 - b);
 							}
-							if (byte==255) {
+							if (byte == 255) {
 								byte = (unsigned char)(p[j] << b);
 								j++;
-								if (j==l[i])
+								if (j == l[i])
 									error("Corrupted encoding.");
 								byte |= p[j] >> (8 - b);
 								byte <<= 8;
 								byte |= (unsigned char)(p[j] << b);
 								j++;
 								if (b > 0) {
-									if (j==l[i])
+									if (j == l[i])
 										error("Corrupted encoding.");
 									byte |= p[j] >> (8 - b);
 								}
@@ -2316,7 +2316,7 @@ SEXP decompress(SEXP x, SEXP nThreads)
 					zeros++;
 					if (ones)
 						ones = 0;
-					if (b==7) {
+					if (b == 7) {
 						b = 0;
 						j++;
 					} else {
@@ -2340,7 +2340,7 @@ SEXP decompress(SEXP x, SEXP nThreads)
 		s[len] = '\0'; // null-terminate
 		
 		// Cyclic Redundancy Check
-		if ((p[0] & 3)==3) {
+		if ((p[0] & 3) == 3) {
 			crc_t crc = 0xffffffff;
 			crc = crc_update32(crc, s, len);
 			if (p[8] != (unsigned char)((crc >> 24) & 0xFF) ||
@@ -2348,14 +2348,14 @@ SEXP decompress(SEXP x, SEXP nThreads)
 				p[6] != (unsigned char)((crc >> 8) & 0xFF) ||
 				p[5] != (unsigned char)(crc & 0xFF))
 				l[i] = -1;
-		} else if ((p[0] & 3)==2) {
+		} else if ((p[0] & 3) == 2) {
 			crc_t crc = 0xb704ce;
 			crc = crc_update24(crc, s, len);
 			if (p[6] != (unsigned char)((crc >> 16) & 0xFF) ||
 				p[5] != (unsigned char)((crc >> 8) & 0xFF) ||
 				p[4] != (unsigned char)(crc & 0xFF))
 				l[i] = -1;
-		} else if ((p[0] & 3)==1) {
+		} else if ((p[0] & 3) == 1) {
 			crc_t16 crc = 0x0000;
 			crc = crc_update16(crc, s, len);
 			if (p[4] != (unsigned char)((crc >> 8) & 0xFF) ||
@@ -2375,7 +2375,7 @@ SEXP decompress(SEXP x, SEXP nThreads)
 	for (i = 0; i < n; i++) {
 		if (l[i] < 0) {
 			error("Data corruption in x[[%d]]", i + 1);
-		} else if (l[i]==0) { // not decompressed
+		} else if (l[i] == 0) { // not decompressed
 			SET_STRING_ELT(seqs, i, NA_STRING);
 		} else { // decompressed
 			s = strs[i];

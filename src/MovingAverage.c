@@ -61,7 +61,7 @@ SEXP movAvg(SEXP x, SEXP type, SEXP alpha, SEXP thresh, SEXP maxAvg, SEXP start,
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
 		
 		m = x_i.length;
-		if (m==0)
+		if (m == 0)
 			continue;
 		
 		// initialize array of error probabilities
@@ -71,10 +71,10 @@ SEXP movAvg(SEXP x, SEXP type, SEXP alpha, SEXP thresh, SEXP maxAvg, SEXP start,
 		double *s1 = Calloc(m, double); // initialized to zero
 		double *s2 = Calloc(m, double); // initialized to zero
 		
-		if (k==1) { // Phred
+		if (k == 1) { // Phred
 			for (j = 0; j < m; j++)
 				p[j] = pow(10, ((double)x_i.ptr[j] - 33)/-10);
-		} else if (k==2) { // Solexa
+		} else if (k == 2) { // Solexa
 			for (j = 0; j < m; j++)
 				p[j] = 1 - 1/(1 + pow(10, ((double)x_i.ptr[j] - 64)/-10));
 		} else { // Illumina
@@ -105,7 +105,7 @@ SEXP movAvg(SEXP x, SEXP type, SEXP alpha, SEXP thresh, SEXP maxAvg, SEXP start,
 		int bestEnd = -2;
 		for (j = left[i] - 1; j < right[i]; j++) {
 			if (s1[j] <= t) {
-				if (temp==0)
+				if (temp == 0)
 					lastStart = j + 1;
 				temp++;
 				if (temp > longest) {
@@ -121,7 +121,7 @@ SEXP movAvg(SEXP x, SEXP type, SEXP alpha, SEXP thresh, SEXP maxAvg, SEXP start,
 		Free(s1);
 		
 		right[i] = bestEnd + 1;
-		if (longest==0) {
+		if (longest == 0) {
 			left[i] = 0;
 		} else {
 			double avgError = 0;

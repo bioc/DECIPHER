@@ -20,25 +20,25 @@ CreateChimeras <- function(myDNAStringSet,
 		stop("myDNAStringSet must be a DNAStringSet.")
 	if (!is.numeric(numChimeras))
 		stop("numChimeras must be a numeric.")
-	if (floor(numChimeras)!=numChimeras)
+	if (floor(numChimeras) != numChimeras)
 		stop("numChimeras must be a whole number.")
 	if (floor(numChimeras) < 1)
 		stop("numChimeras must be greater than zero.")
 	if (!is.numeric(numParts))
 		stop("numParts must be a numeric.")
-	if (floor(numParts)!=numParts)
+	if (floor(numParts) != numParts)
 		stop("numChimeras must be a whole number.")
 	if (floor(numParts) < 2)
 		stop("numParts must be greater than one.")
 	if (!is.numeric(minLength))
 		stop("minLength must be a numeric.")
-	if (floor(minLength)!=minLength)
+	if (floor(minLength) != minLength)
 		stop("minLength must be a whole number.")
 	if (minLength < 0)
 		stop("minLength must be greater than or equal to zero.")
 	if (!is.numeric(minChimericRegionLength))
 		stop("minChimericRegionLength must be a numeric.")
-	if (floor(minChimericRegionLength)!=minChimericRegionLength)
+	if (floor(minChimericRegionLength) != minChimericRegionLength)
 		stop("minChimericRegionLength must be a whole number.")
 	if (minChimericRegionLength < 0)
 		stop("minChimericRegionLength must be greater than or equal to zero.")
@@ -50,7 +50,7 @@ CreateChimeras <- function(myDNAStringSet,
 		stop("maxLength must be greater than or equal to zero.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -202,7 +202,7 @@ CreateChimeras <- function(myDNAStringSet,
 			next
 		
 		for (p in 1:numParts) {
-			if (d[numParts + 1, p]==0) {
+			if (d[numParts + 1, p] == 0) {
 				add2set <- FALSE
 				break
 			}
@@ -214,9 +214,9 @@ CreateChimeras <- function(myDNAStringSet,
 				"]]",
 				sep="")
 			eval(parse(text=expr1))
-			if (p==1) {
+			if (p == 1) {
 				start <- ifelse(randomLengths,
-					ifelse(l1==0, 1, l1), 1)
+					ifelse(l1 == 0, 1, l1), 1)
 				end <- bp[p + 1] - 1
 				if (start > end) {
 					add2set <- FALSE
@@ -233,7 +233,7 @@ CreateChimeras <- function(myDNAStringSet,
 				
 				myNames <- paste(myName,
 					" [",
-					ifelse(randomLengths, ifelse(l1==0, 1, l1), bp[p]),
+					ifelse(randomLengths, ifelse(l1 == 0, 1, l1), bp[p]),
 					"-",
 					bp[p + 1] - 1,
 					",",
@@ -244,7 +244,7 @@ CreateChimeras <- function(myDNAStringSet,
 					sep="")
 			} else {
 				start <- bp[p]
-				end <- ifelse((p==numParts) && randomLengths,
+				end <- ifelse((p == numParts) && randomLengths,
 					l2, bp[p + 1] - 1)
 				if (start > end) {
 					add2set <- FALSE
@@ -265,7 +265,7 @@ CreateChimeras <- function(myDNAStringSet,
 					" [",
 					bp[p],
 					"-",
-					ifelse((p==numParts) && randomLengths,
+					ifelse((p == numParts) && randomLengths,
 						l2, bp[p + 1] - 1),
 					",",
 					regionLength,

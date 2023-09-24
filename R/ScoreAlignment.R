@@ -30,7 +30,7 @@ ScoreAlignment <- function(myXStringSet,
 	method <- pmatch(method[1], METHODS)
 	if (is.na(method))
 		stop("Invalid method.")
-	if (method==-1)
+	if (method == -1)
 		stop("Ambiguous method.")
 	if (!is.numeric(perfectMatch))
 		stop("perfectMatch must be a numeric.")
@@ -52,16 +52,16 @@ ScoreAlignment <- function(myXStringSet,
 		stop("includeTerminalGaps must be a logical.")
 	if (!is.numeric(weight))
 		stop("weight must be a numeric.")
-	if (length(weight)!=1 && length(weight)!=length(myXStringSet))
+	if (length(weight) != 1 && length(weight) != length(myXStringSet))
 		stop("Length of weight must equal one or the length of the myXStringSet.")
-	if (length(weight)==1) {
+	if (length(weight) == 1) {
 		weight <- rep(1, length(myXStringSet))
 	} else {
 		if (!isTRUE(all.equal(1, mean(weight))))
 			stop("The mean of weight must be 1.")
 	}
 	
-	if (type==3L) { # AAStringSet
+	if (type == 3L) { # AAStringSet
 		AAs <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I",
 			"L", "K", "M", "F", "P", "S", "T", "W", "Y", "V", "*")
 		if (is.null(substitutionMatrix)) {
@@ -80,7 +80,7 @@ ScoreAlignment <- function(myXStringSet,
 				stop("substitutionMatrix is incomplete.")
 			subMatrix <- substitutionMatrix
 		} else {
-			subMatrix <- eval(parse(text=data(list=substitutionMatrix, envir=environment(), package=ifelse(substitutionMatrix=="MIQS", "DECIPHER", "Biostrings"))))
+			subMatrix <- eval(parse(text=data(list=substitutionMatrix, envir=environment(), package=ifelse(substitutionMatrix == "MIQS", "DECIPHER", "Biostrings"))))
 		}
 		subMatrix <- subMatrix[AAs, AAs]
 		mode(subMatrix) <- "numeric"

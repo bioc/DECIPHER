@@ -18,7 +18,7 @@ StaggerAlignment <- function(myXStringSet,
 	if (length(myXStringSet) < 3)
 		return(myXStringSet)
 	u <- unique(width(myXStringSet))
-	if (length(u)!=1)
+	if (length(u) != 1)
 		stop("Sequences in myXStringSet must be the same width (aligned).")
 	if (u < 1) # no changes can be made
 		return(myXStringSet)
@@ -44,12 +44,12 @@ StaggerAlignment <- function(myXStringSet,
 		}
 		if (length(full$left)==1L) {
 			full$left <- rep(full$left, length(myXStringSet))
-		} else if (length(full$left)!=length(myXStringSet)) {
+		} else if (length(full$left) != length(myXStringSet)) {
 			stop("'left' component of fullLength is not length 1 or the same length as myXStringSet.")
 		}
 		if (length(full$right)==1L) {
 			full$right <- rep(full$right, length(myXStringSet))
-		} else if (length(full$right)!=length(myXStringSet)) {
+		} else if (length(full$right) != length(myXStringSet)) {
 			stop("'right' component of fullLength is not length 1 or the same length as myXStringSet.")
 		}
 	} else {
@@ -68,7 +68,7 @@ StaggerAlignment <- function(myXStringSet,
 		stop("verbose must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")

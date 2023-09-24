@@ -361,15 +361,21 @@ to.dendrogram <- function(object, states=NULL, p=NULL, s=NULL) {
 			vals <- c(vals[-12], 1, 1)
 		}
 		
+		tree <- myClusters[, 4:5]
+		u_lengths <- unique(tree)
+		tree <- matrix(c(match(tree, u_lengths),
+				as.integer(myClusters[, 7:8])),
+			ncol=4L)
 		LnL <- .Call("clusterML",
-			myClusters,
+			tree,
 			myDNAStringSet,
 			vals,
 			integer(),
-			numeric(),
+			integer(),
 			0,
 			1L,
 			weights,
+			u_lengths,
 			processors,
 			PACKAGE="DECIPHER")
 		
@@ -483,15 +489,21 @@ to.dendrogram <- function(object, states=NULL, p=NULL, s=NULL) {
 			vals <- c(vals[-213], 1, 1)
 		}
 		
+		tree <- myClusters[, 4:5]
+		u_lengths <- unique(tree)
+		tree <- matrix(c(match(tree, u_lengths),
+				as.integer(myClusters[, 7:8])),
+			ncol=4L)
 		LnL <- .Call("clusterML",
-			myClusters,
+			tree,
 			myAAStringSet,
 			vals,
 			integer(),
-			numeric(),
+			integer(),
 			0,
 			3L,
 			weights,
+			u_lengths,
 			processors,
 			PACKAGE="DECIPHER")
 		
@@ -526,7 +538,7 @@ to.dendrogram <- function(object, states=NULL, p=NULL, s=NULL) {
 	if (empirical)
 		var[211] <- defaults[211]
 	if (!indels)
-		var[211:212] <- 0
+		var[211:212] <- NA_real_
 	
 	LnL <- o$value
 	K <- 2*dim(myClusters)[1] - 1 + tot
@@ -543,12 +555,13 @@ to.dendrogram <- function(object, states=NULL, p=NULL, s=NULL) {
 .globalBranches <- function(f, # function to minimize
 	x, # initial guesses
 	W=seq_along(x), # indices of branches to optimize
-	h=0.5, # starting neighborhood around center point
-	epsilon=1e-4, # convergence precision
-	tol=0.001, # accuracy of x values
-	coef=0.7, # damping on x to prevent oscillations (0, 1]
-	minIterations=5,
-	maxIterations=10,
+	h=1, # starting neighborhood around center point
+	epsilon=1e-4, # convergence precision in x values
+	tol=0.001, # accuracy of f(x) value
+	coef=0.8, # damping on x to prevent oscillations (0, 1]
+	maxShift=2, # maximum change in branch length per iteration
+	minIterations=3,
+	maxIterations=60,
 	lower=1e-8) {
 	# optimize global branch lengths on whole tree
 	x[x < lower] <- lower
@@ -571,7 +584,7 @@ to.dendrogram <- function(object, states=NULL, p=NULL, s=NULL) {
 		change <- prev - fu
 		prev <- fu
 		
-		# only record likeihood improvements
+		# only record likelihood improvements
 		if (fu < best) {
 			X <- x
 			best <- prev
@@ -583,20 +596,22 @@ to.dendrogram <- function(object, states=NULL, p=NULL, s=NULL) {
 		
 		delta <- abs(df/ddf)
 		delta[ddf == 0] <- H
-		delta[delta > 1] <- 1
+		delta[delta > maxShift] <- maxShift
 		delta[df > 0] <- -delta[df > 0]
 		# dampen dependency among x with exponential smoothing
-		delta <- coef*delta + (1 - coef)*prev_delta[W]
-		prev_delta[W] <- delta
-		x[W] <- x[W] + delta
+		w <- (prev_delta[W] > 0 & delta < 0) |
+			(prev_delta[W] < 0 & delta > 0)
+		prev_delta[W[w]] <- coef*delta[w] + (1 - coef)*prev_delta[W[w]]
+		w <- !w
+		prev_delta[W[w]] <- delta[w]
+		x[W] <- x[W] + prev_delta[W]
 		x[W][x[W] < log_lower] <- log_lower
 		
 		# `change` is positive when converging
 		if (count < minIterations) {
-			cont <- df <= -epsilon | df >= epsilon
-			W <- W[cont | abs(change) > tol]
+			W <- W[abs(change) > tol]
 		} else if (count < maxIterations) {
-			W <- W[abs(change) > tol] # prevent oscillations
+			W <- W[abs(change) > tol & abs(delta) > epsilon] # prevent oscillations
 		} else { # must continue converging
 			W <- W[change > tol] # prevent oscillations
 		}
@@ -947,13 +962,6 @@ MODELS <- list(Nucleotide=c("JC69",
 		w <- which(x2[n:count, 7] %in% keep)
 		x2[n:count, 7][w] <- match(x2[n:count, 7][w], keep)
 	}
-	
-#	w <- which(x2[, 7] > 0)
-#	if (length(w) > 0)
-#		x2[w, 4] <- x2[w, 6] - x2[x2[w, 7], 6]
-#	w <- which(x2[, 8] > 0)
-#	if (length(w) > 0)
-#		x2[w, 5] <- x2[w, 6] - x2[x2[w, 8], 6]
 	
 	if (root > 0)
 		x2[, 6] <- x2[, 6] - min(x2[, 6] - x2[, 4], x2[, 6] - x2[, 5])
@@ -1323,10 +1331,6 @@ MODELS <- list(Nucleotide=c("JC69",
 	if (is.double(C))
 		mode(C) <- "integer"
 	
-	c <- nrow(S)
-	l <- ncol(z)
-	n <- nrow(C)
-	
 	result <- .Call("clusterMP",
 		C,
 		z,
@@ -1364,6 +1368,7 @@ MODELS <- list(Nucleotide=c("JC69",
 	S, # substitution matrix
 	seed, # order of addition
 	NNIs=10, # how often to attempt NNIs
+	stochastic=FALSE, # use random addition
 	weights,
 	processors) {
 	l <- nrow(z)
@@ -1441,7 +1446,14 @@ MODELS <- list(Nucleotide=c("JC69",
 			seed[i + 2],
 			processors)
 		
-		w <- which.min(res[-1])
+		res <- res[-1L]
+		if (stochastic) {
+			w <- sample(length(res),
+				1L,
+				prob=exp(min(res) - res))
+		} else {
+			w <- which.min(res)
+		}
 		if (w > i) {
 			w <- c(w - i, 2L)
 		} else {
@@ -1537,13 +1549,15 @@ MODELS <- list(Nucleotide=c("JC69",
 	model_params,
 	weights_ML,
 	processors,
+	W=NULL, # indices of branches to optimize
 	h=0.1, # starting neighborhood around center point
-	epsilon=1e-5, # convergence precision
-	tol=0.001, # convergence tolerance on likelihood
-	absTol=0.1, # only converge when within absTol of LnL or better
-	minIterations=5,
-	maxIterations=20,
-	lower=1e-6) {
+	epsilon=1e-4, # convergence precision
+	tol=0.01, # convergence tolerance on likelihood
+	absTol=0.01, # only converge when within absTol of LnL or better
+	maxShift=2, # maximum change in branch length per iteration
+	minIterations=2,
+	maxIterations=10,
+	lower=1e-8) {
 	# optimize local branch lengths for all possible NNIs
 	n <- nrow(myClusters)
 	w <- which(myClusters[, 7:8] > 0, arr.ind=TRUE)
@@ -1552,6 +1566,8 @@ MODELS <- list(Nucleotide=c("JC69",
 	Up <- integer(n)
 	Up[myClusters[, 7:8][w]] <- w[, 1L]
 	
+	if (!is.null(W))
+		w <- W
 	if (any(myClusters[nrow(myClusters), 7:8] < 0))
 		w <- w[w[, 1L] != nrow(myClusters),, drop=FALSE] # trifurcation at root
 	w <- rbind(cbind(w, 1L), cbind(w, -1L)) # row, col, flip
@@ -1598,41 +1614,41 @@ MODELS <- list(Nucleotide=c("JC69",
 		}
 	}
 	
-	# initialize branch lengths at mean expected value per quartet
+	# initialize branch lengths at expected value per quartet
 	x <- matrix(myClusters[, 4:5][as.vector(ind)],
 		nrow=5,
 		ncol=nrow(w))
-	coefs1 <- matrix(c(-0.01, 0.22, 0.64, 0.2, 0.61,
-			0.07, -0.09, 1.02, -0.13, 0.1,
-			0.02, 1.07, -0.12, 0.17, -0.17,
-			0.05, 0.14, -0.17, 1.03, -0.11,
-			-0.01, -0.13, 0.17, -0.07, 1.06),
+	x[x < lower] <- lower # impose non-zero starting conditions
+	x <- log(x) # enforce positive lengths during optimization
+	coefs1 <- matrix(c(0.316, 0.113, 0.155, 0.138, 0.25,
+			0.438, 0.002, 0.513, -0.029, 0.101,
+			0.349, 0.537, -0.014, 0.107, -0.061,
+			0.346, 0.062, -0.034, 0.527, -0.009,
+			0.347, 0.008, 0.065, 0.016, 0.44),
 		nrow=5,
 		ncol=5)
-	coefs2 <- matrix(c(-0.04, 0.22, 0.27, 0.61, 0.58,
-			0.05, -0.08, -0.14, 1.04, 0.12,
-			0.04, 1.05, 0.17, -0.14, -0.19,
-			0.05, 0.13, 1.03, -0.15, -0.1,
-			0.02, -0.14, -0.09, 0.16, 1.05),
+	coefs2 <- matrix(c(0.292, 0.135, 0.121, 0.155, 0.247,
+			0.447, -0.009, -0.013, 0.515, 0.11,
+			0.303, 0.524, 0.065, -0.01, -0.045,
+			0.437, 0.101, 0.538, -0.033, -0.029,
+			0.374, 0.002, 0.016, 0.061, 0.438),
 		nrow=5,
 		ncol=5)
 	W <- w[, 3L] > 0
 	x[, W] <- coefs1 %*% x[, W, drop=FALSE]
 	W <- w[, 3L] < 0
 	x[, W] <- coefs2 %*% x[, W, drop=FALSE]
-	# impose reasonable starting conditions
-	x[x < 0.001] <- 0.001
-	x[x > 1] <- 1
-	x <- X <- log(x) # enforce positive lengths during optimization
-	
 	log_lower <- log(lower)
+	x[x < log_lower] <- log_lower
+	X <- x # `X` maintains the best observed score
+	
 	W <- seq_len(nrow(w))
 	res <- rep(Inf, nrow(w))
 	count <- 0L
 	while (length(W) > 0) {
 		count <- count + 1L
 		H <- h/count # adaptively shrink h
-		# apply a mask at around point (x +/- h)
+		# apply a mask around point (x +/- h)
 		mask <- c(0, 0, 0, 0, 0,
 			H, 0, 0, 0, 0,
 			0, H, 0, 0, 0,
@@ -1648,15 +1664,23 @@ MODELS <- list(Nucleotide=c("JC69",
 		lengths <- x[, reps] + mask
 		branches <- rep(ind[1L, W]*w[W, 3L], each=11)
 		
+		exp_lengths <- exp(lengths) # prevents negative lengths
+		tree <- myClusters[, 4:5]
+		u_lengths <- unique(c(tree, exp_lengths))
+		tree <- matrix(c(match(tree, u_lengths),
+				as.integer(myClusters[, 7:8])),
+			ncol=4L)
+		exp_lengths <- match(exp_lengths, u_lengths)
 		LnL <- .Call("clusterML",
-			myClusters,
+			tree,
 			myXStringSet,
 			model_params,
 			branches,
-			exp(lengths), # prevents negative lengths
+			exp_lengths, # prevents negative lengths
 			0,
 			ifelse(is(myXStringSet, "AAStringSet"), 3L, 1L),
 			weights_ML,
+			u_lengths,
 			processors,
 			PACKAGE="DECIPHER")
 		
@@ -1680,7 +1704,7 @@ MODELS <- list(Nucleotide=c("JC69",
 		
 		delta <- abs(df/ddf)
 		delta[ddf == 0] <- H
-		delta[delta > 1] <- 1
+		delta[delta > maxShift] <- maxShift
 		delta[df > 0] <- -delta[df > 0]
 		x[, W] <- x[, W] + delta
 		x[, W][x[, W] < log_lower] <- log_lower
@@ -2266,7 +2290,11 @@ TreeLine <- function(myXStringSet=NULL,
 			}
 			if (method == 3 && indels)
 				states <- c(states, "-")
-			weights_ML <- tabulate(selfmatch(as.data.frame(Z)), ncol(Z))
+			weights_ML <- .Call("transposeXStringSet",
+				myXStringSet,
+				typeX,
+				PACKAGE="DECIPHER")
+			weights_ML <- tabulate(selfmatch(weights_ML), length(weights_ML))
 			if (quadrature) {
 				.rates <- .rates1 # use Laguerre quadrature
 			} else {
@@ -2301,8 +2329,14 @@ TreeLine <- function(myXStringSet=NULL,
 				.minimize <- function(x, branches=integer(), lengths=numeric()) {
 					# given branch lengths return -LnL
 					myClusters[, 4:5] <- x
+					tree <- myClusters[, 4:5]
+					u_lengths <- unique(c(tree, lengths))
+					tree <- matrix(c(match(tree, u_lengths),
+							as.integer(myClusters[, 7:8])),
+						ncol=4L)
+					lengths <- match(lengths, u_lengths)
 					.Call("clusterML",
-						myClusters,
+						tree,
 						myXStringSet,
 						model_params,
 						branches,
@@ -2310,6 +2344,7 @@ TreeLine <- function(myXStringSet=NULL,
 						0,
 						typeX,
 						weights_ML,
+						u_lengths,
 						processors,
 						PACKAGE="DECIPHER")
 				}
@@ -2454,8 +2489,14 @@ TreeLine <- function(myXStringSet=NULL,
 				.minimize <- function(x, branches=integer(), lengths=numeric()) {
 					# given branch lengths return -LnL
 					myClusters[, 4:5] <- x
+					tree <- myClusters[, 4:5]
+					u_lengths <- unique(c(tree, lengths))
+					tree <- matrix(c(match(tree, u_lengths),
+							as.integer(myClusters[, 7:8])),
+						ncol=4L)
+					lengths <- match(lengths, u_lengths)
 					LnL <- .Call("clusterML",
-						myClusters,
+						tree,
 						myXStringSet,
 						model_params,
 						branches,
@@ -2463,6 +2504,7 @@ TreeLine <- function(myXStringSet=NULL,
 						0,
 						typeX,
 						weights_ML,
+						u_lengths,
 						optProcessors,
 						PACKAGE="DECIPHER")
 					
@@ -2479,32 +2521,82 @@ TreeLine <- function(myXStringSet=NULL,
 					LnL
 				}
 				
-				.NNI <- function(myClusters) {
+				.NNI <- function(myClusters, probs=NULL) {
+					if (is.null(probs)) {
+						w <- NULL
+					} else {
+						w <- which(myClusters[, 7:8] > 0, arr.ind=TRUE)
+						w <- unname(w)
+						w <- w[probs[myClusters[, 7:8][w]] < threshold,, drop=FALSE]
+					}
 					out <- .localBranches(myClusters,
 						myXStringSet,
 						model_params,
 						weights_ML,
-						optProcessors)
-					delta <- out[[4]] - epsilon - out[[2L]]
+						optProcessors,
+						w)
+					
+					LnL <- out[[4L]]
+					delta <- LnL - epsilon - out[[2L]]
 					o <- which(delta > 0)
-					o <- o[order(out[[2L]][o])]
-					myClustersTemp <- myClusters
-					NNIs <- 0L
+					
+					if (sum(probs >= threshold) > 0 && sum(delta[o]) < absTol) {
+						# collect complete set of NNIs
+						w <- which(myClusters[, 7:8] > 0, arr.ind=TRUE)
+						w <- unname(w)
+						w <- w[probs[myClusters[, 7:8][w]] >= threshold,, drop=FALSE]
+						
+						temp <- .localBranches(myClusters,
+							myXStringSet,
+							model_params,
+							weights_ML,
+							optProcessors,
+							w)
+						out[[1L]] <- rbind(out[[1L]], temp[[1L]])
+						out[[2L]] <- c(out[[2L]], temp[[2L]])
+						out[[3L]] <- cbind(out[[3L]], temp[[3L]])
+						# NOTE: out[[4L]] == temp[[4L]]
+						
+						delta <- LnL - epsilon - out[[2L]]
+						o <- which(delta > 0)
+					}
+					
+					NNIs <- length(o) # number of potential NNI improvements
+					if (length(o) > 1L) {
+						# order NNIs by decreasing estimated improvement
+						o <- o[order(delta[o], decreasing=TRUE)]
+						
+						# exclude NNIs at the same split
+						o <- o[!duplicated(out[[1L]][o, 1L])]
+						
+						# exclude conflicting NNIs (within one branch away)
+						m <- match(myClusters[out[[1L]][o, 1L], 7L], # left branch
+							out[[1L]][o, 1L]) # center branch
+						m <- c(which(m < seq_along(m)), m[which(m > seq_along(m))])
+						if (length(m) > 0)
+							o <- o[-m]
+						m <- match(myClusters[out[[1L]][o, 1L], 8L], # right branch
+							out[[1L]][o, 1L]) # center branch
+						m <- c(which(m < seq_along(m)), m[which(m > seq_along(m))])
+						if (length(m) > 0)
+							o <- o[-m]
+						
+						# sort from beginning to end of myClusters
+						o <- o[order(out[[1L]][o, 1L])]
+					}
+					
+					p <- tapply(out[[2L]],
+						myClusters[, 7:8][out[[1L]][, 1:2]],
+						function(x)
+							1/sum(1, exp(LnL - x)))
+					probs <- rep(1, nrow(myClusters) - 1L)
+					probs[as.integer(names(p))] <- p
+					p <- which(myClusters[, 7:8] > 0)
+					p[myClusters[, 7:8][p]] <- myClusters[, 4:5][p]
+					p[duplicated(p)] <- NA_real_
+					
 					for (i in o) {
 						center <- out[[1L]][i, 1L]
-						left <- myClusters[center, 7L]
-						right <- myClusters[center, 8L]
-						if (myClustersTemp[center, 7L] != left ||
-							myClustersTemp[center, 8L] != right ||
-							(left > 0 &&
-							(myClustersTemp[left, 7L] != myClusters[left, 7L] ||
-							myClustersTemp[left, 8L] != myClusters[left, 8L])) ||
-							(right > 0 &&
-							(myClustersTemp[right, 7L] != myClusters[right, 7L] ||
-							myClustersTemp[right, 8L] != myClusters[right, 8L])))
-							next # incompatible NNI
-						
-						NNIs <- NNIs + 1L
 						side <- out[[1L]][i, 2L]
 						flip <- out[[1L]][i, 3L]
 						down <- myClusters[center, 6 + side]
@@ -2583,10 +2675,19 @@ TreeLine <- function(myXStringSet=NULL,
 						}
 					}
 					
+					# use branch lengths as a proxy for difference between trees
+					m <- which(myClusters[, 7:8] > 0)
+					m[myClusters[, 7:8][m]] <- myClusters[, 4:5][m]
+					m[duplicated(m)] <- NA_real_
+					m <- match(m, p, incomparables=NA_real_)
+					probs <- probs[m]
+					probs[is.na(probs)] <- 0
+					
 					list(myClusters,
 						NNIs,
 						cbind(out[[1L]], out[[2L]]),
-						out[[4]])
+						LnL,
+						probs)
 				}
 			} else {
 				.minimize <- function(C) {
@@ -2609,7 +2710,7 @@ TreeLine <- function(myXStringSet=NULL,
 					score
 				}
 				
-				.NNI <- function(myClusters) {
+				.NNI <- function(myClusters, probs=NULL) {
 					C <- myClusters[, 7:8]
 					res <- .Sankoff(C,
 						Z,
@@ -2770,6 +2871,7 @@ TreeLine <- function(myXStringSet=NULL,
 			
 			# initialize climb parameters
 			doClimbs <- TRUE
+			threshold <- 0.9 # support probability required to skip NNI calculations (0, 1]
 			
 			# initialize regrowth parameters
 			waitAttempts <- 10L # number of attempts (per generation) to wait before sampling all trees for PCA
@@ -2781,6 +2883,7 @@ TreeLine <- function(myXStringSet=NULL,
 			tolPCA <- seq(0.5, 0.5, length.out=generationSize) # tolerances for PCA each generation (0, 1]
 			addNoise <- 0.5 # amount of noise to add when converging to the same tree (>= 0)
 			popSize <- startingTrees[2L] # number of projected cophenetic matrices to store
+			fracRandomNNIs <- c(0.2, 0.7) # fraction of random NNIs in regrowth and shake (0, 1]
 			
 			# initialize grafting parameters
 			fracGraft <- 0.1 # fraction of high scoring trees for first grafts [0, 1]
@@ -2791,7 +2894,6 @@ TreeLine <- function(myXStringSet=NULL,
 			.Shakes <- NA # number of shakes (or NA for none)
 			doShakes <- FALSE
 			repsShakes <- 50L # number of shake replicates
-			fracRandomNNIs <- 0.7 # fraction of random NNIs (0, 1]
 			
 			# initialize variables for maximum parsimony
 			Z <- matrix(match(Z, states), # integer encode
@@ -2980,7 +3082,7 @@ TreeLine <- function(myXStringSet=NULL,
 							if (Scores[w] > 0) {
 								w <- W[sample(seq_along(W),
 									numSamp,
-									prob=base^(-1000*(Scores[W]/Scores[w] - 1)))]
+									prob=base^(-1000*(Scores[W]/Scores[w] - 1)) + .Machine$double.xmin)]
 							} else {
 								w <- W[sample(seq_along(W),
 									numSamp)]
@@ -3015,6 +3117,10 @@ TreeLine <- function(myXStringSet=NULL,
 								NULL,
 								processors,
 								PACKAGE="DECIPHER")
+							
+							myClusters <- .rNNIs(myClusters,
+								fracRandomNNIs[1L],
+								rep(1, nrow(myClusters) - 1L))
 							
 							if (method == 3) { # optimize all branch lengths
 								params <- as.vector(myClusters[, 4:5])
@@ -3123,6 +3229,7 @@ TreeLine <- function(myXStringSet=NULL,
 								S,
 								sample(dim), # seed
 								NNIs=1e6,
+								stochastic=TRUE,
 								weights=weights,
 								processors=processors)
 							temp[[4L]] <- temp[[4L]]/N # changes per site
@@ -3221,9 +3328,20 @@ TreeLine <- function(myXStringSet=NULL,
 									subTree[, 7:8][node] <- i1[match(subTree[, 7:8][node], i2)]
 									myClusters[i1,] <- subTree
 									
-									if (method == 3) { # optimize all branch lengths
+									if (method == 3) { # optimize branch lengths
+										branches <- c(r1, r1 + nrow(myClusters))
+										r1 <- myClusters[, 7:8][branches]
+										r1 <- r1[r1 > 0]
+										branches <- c(branches, r1, r1 + nrow(myClusters))
+										if (u[1L] > nrow(myClusters)) {
+											branches <- c(branches, u[1L], u[1L] - nrow(myClusters))
+										} else {
+											branches <- c(branches, u[1L], u[1L] + nrow(myClusters))
+										}
 										params <- as.vector(myClusters[, 4:5])
-										params <- .globalBranches(.minimize, params)
+										params <- .globalBranches(.minimize, params, as.integer(branches))
+										if (.best < best - epsilon) # perform global optimization
+											params <- .globalBranches(.minimize, params)
 										myClusters[, 4:5] <- params
 									} else {
 										.minimize(myClusters[, 7:8])
@@ -3350,8 +3468,14 @@ TreeLine <- function(myXStringSet=NULL,
 							myClusters <- .reorderClusters(myClusters, all=TRUE)
 							myClusters <- .adjustTreeHeights(myClusters)
 							myClusters <- .root(myClusters, root)
+							probs <- NULL
+						} else if (.Climbs == 0L) {
+							probs <- NULL
 						}
-						out <- .NNI(myClusters)
+						out <- .NNI(myClusters, probs)
+						if (method == 3L)
+							probs <- out[[5L]]
+						
 						if (out[[2L]] > 0) {
 							.Climbs <- .Climbs + 1L
 							myClusters <- out[[1L]]
@@ -3408,7 +3532,7 @@ TreeLine <- function(myXStringSet=NULL,
 							}
 							
 							myClusters <- .rNNIs(myClusters,
-								min(fracRandomNNIs, mean(support < 1)),
+								min(fracRandomNNIs[2L], mean(support < 1)),
 								1/support)
 							if (method == 3) { # optimize all branch lengths
 								params <- as.vector(myClusters[, 4:5])
@@ -3419,8 +3543,11 @@ TreeLine <- function(myXStringSet=NULL,
 							}
 							
 							lastNNI <- Inf
+							probs <- NULL
 							repeat {
-								outTemp <- .NNI(myClusters)
+								outTemp <- .NNI(myClusters, probs)
+								if (method == 3L)
+									probs <- outTemp[[5L]]
 								
 								if (outTemp[[2L]] == 0L) {
 									if (.Climbs == 0L &&
@@ -3578,6 +3705,7 @@ TreeLine <- function(myXStringSet=NULL,
 					scoreOnly=FALSE,
 					processors=processors)
 				myClusters[, 4:5] <- params[[3]]/N # changes per site
+				subs <- params[[4L]]
 			}
 			
 			myClusters <- .Call("reclusterNJ",
@@ -3606,6 +3734,7 @@ TreeLine <- function(myXStringSet=NULL,
 				myClusters <- .adjustTreeHeights(myClusters)
 				myClusters <- .root(myClusters, root)
 				.best <- params[[1L]]
+				subs <- params[[4L]]
 			} else {
 				.best <- m[, "-LnL"]
 				myClusters <- .reorderClusters(myClusters, all=TRUE)
@@ -3781,7 +3910,7 @@ TreeLine <- function(myXStringSet=NULL,
 					function(x)
 						1/sum(1, exp(LnL - x)))
 				probs <- rep(NA_real_, nrow(myClusters))
-				probs[as.numeric(names(p))] <- p
+				probs[as.integer(names(p))] <- p
 			} else {
 				probs <- rep(1, nrow(myClusters))
 			}
@@ -3801,15 +3930,21 @@ TreeLine <- function(myXStringSet=NULL,
 		if (reconstruct && type > 1) {
 			# perform ancestral state reconstruction
 			if (method != 7) {
+				tree <- myClusters[, 4:5]
+				u_lengths <- unique(tree)
+				tree <- matrix(c(match(tree, u_lengths),
+						as.integer(myClusters[, 7:8])),
+					ncol=4L)
 				states <- .Call("clusterML",
-					myClusters,
+					tree,
 					orgXStringSet,
 					model_params,
 					integer(),
-					numeric(),
+					integer(),
 					reconstruct,
 					typeX,
 					weights_ML,
+					u_lengths,
 					optProcessors,
 					PACKAGE="DECIPHER")
 			}
@@ -3840,6 +3975,10 @@ TreeLine <- function(myXStringSet=NULL,
 		attr(d, "model") <- model
 		attr(d, "parameters") <- params
 		attr(d, "score") <- .best
+		if (method == 7L) {
+			dimnames(subs) <- list(states, states)
+			attr(d, "substitutions") <- subs
+		}
 		
 		# specify the order of clusters that
 		# will match the plotted dendrogram

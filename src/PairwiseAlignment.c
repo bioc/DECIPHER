@@ -343,12 +343,14 @@ SEXP alignPair(SEXP x, SEXP y, SEXP s1, SEXP e1, SEXP s2, SEXP e2, SEXP go, SEXP
 		// fill gap closing at end
 		if (i == n - 1) {
 			i1 = l1 - 1;
-			while (i1 > 0) {
+			// j1 == l2
+			while (i1 >= 0) {
 				m[i1 + index[j1]] += TG;
 				i1--;
 			}
+			i1 = l1;
 			j1 = l2 - 1;
-			while (j1 > 0) {
+			while (j1 >= 0) {
 				m[i1 + index[j1]] += TG;
 				j1--;
 			}
@@ -356,7 +358,7 @@ SEXP alignPair(SEXP x, SEXP y, SEXP s1, SEXP e1, SEXP s2, SEXP e2, SEXP go, SEXP
 			i1 = l1 - 1;
 			j1 = l2;
 			i2 = GO;
-			while (i1 > 0) {
+			while (i1 >= 0) {
 				i2 += GE;
 				m[i1 + index[j1]] += i2;
 				i1--;
@@ -364,7 +366,7 @@ SEXP alignPair(SEXP x, SEXP y, SEXP s1, SEXP e1, SEXP s2, SEXP e2, SEXP go, SEXP
 			i1 = l1;
 			j1 = l2 - 1;
 			j2 = GO;
-			while (j1 > 0) {
+			while (j1 >= 0) {
 				j2 += GE;
 				m[i1 + index[j1]] += j2;
 				j1--;
@@ -544,11 +546,11 @@ SEXP alignPair(SEXP x, SEXP y, SEXP s1, SEXP e1, SEXP s2, SEXP e2, SEXP go, SEXP
 	
 	// set the class of the XStringSet
 	char ans_classname[40];
-	if (t==1) {
+	if (t == 1) {
 		strcpy(ans_classname, "DNAStringSet");
-	} else if (t==2) {
+	} else if (t == 2) {
 		strcpy(ans_classname, "RNAStringSet");
-	} else { // t==3
+	} else { // t == 3
 		strcpy(ans_classname, "AAStringSet");
 	}
 	
@@ -567,7 +569,7 @@ SEXP alignPair(SEXP x, SEXP y, SEXP s1, SEXP e1, SEXP s2, SEXP e2, SEXP go, SEXP
 			start += (res3[i] - 1 - start);
 		}
 		if (res4[i] > 0) { // insert gaps
-			if (t==3) { // AAStringSet
+			if (t == 3) { // AAStringSet
 				memset((char *) ans_elt_holder.ptr + sum, 45, res4[i] * sizeof(char));
 			} else { // DNAStringSet or RNAStringSet
 				memset((char *) ans_elt_holder.ptr + sum, 16, res4[i] * sizeof(char));
@@ -590,7 +592,7 @@ SEXP alignPair(SEXP x, SEXP y, SEXP s1, SEXP e1, SEXP s2, SEXP e2, SEXP go, SEXP
 			start += (res1[i] - 1 - start);
 		}
 		if (res2[i] > 0) { // insert gaps
-			if (t==3) { // AAStringSet
+			if (t == 3) { // AAStringSet
 				memset((char *) ans_elt_holder.ptr + sum, 45, res2[i] * sizeof(char));
 			} else { // DNAStringSet or RNAStringSet
 				memset((char *) ans_elt_holder.ptr + sum, 16, res2[i] * sizeof(char));

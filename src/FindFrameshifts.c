@@ -204,7 +204,7 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 			int *C = Calloc(rc*3, int); // initialized to zero
 			memset(C, -1, rc*3 * sizeof(int)); // initialize to -1
 			
-			// indexing:  A[k*rc + j*r + i]==A[i, j, k]
+			// indexing:  A[k*rc + j*r + i] == A[i, j, k]
 			
 			for (i = 0; i < m; i++) {
 				for (j = 0; j < n; j++) {
@@ -231,9 +231,9 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 						
 						// score matching
 						match = A[k*rc + j*r + i];
-						if (k==0) {
+						if (k == 0) {
 							match += *(subM + 21*ref[j] + f1[i]);
-						} else if (k==1) {
+						} else if (k == 1) {
 							match += *(subM + 21*ref[j] + f2[i]);
 						} else {
 							match += *(subM + 21*ref[j] + f3[i]);
@@ -318,7 +318,7 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 				if (C[k*rc + j*r + i] >= 0) {
 					d = k - C[k*rc + j*r + i];
 					pos = i*3 + k + 1;
-					if (d==1 || d==-2) {
+					if (d == 1 || d == -2) {
 						if (B[C[k*rc + j*r + i]*rc + j*r + i] > 0) {
 							// missing nucleotides
 							if (nDels > 998) {
@@ -333,7 +333,7 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 							}
 							ins[nIns++] = pos;
 						}
-					} else { // d==-1 || d==2
+					} else { // d == -1 || d == 2
 						if (B[C[k*rc + j*r + i]*rc + j*r + i] >= 0) {
 							// missing nucleotide
 							if (nDels > 999) {
@@ -352,18 +352,18 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 					k = C[k*rc + j*r + i];
 				}
 				
-				if (B[k*rc + j*r + i]==0) {
+				if (B[k*rc + j*r + i] == 0) {
 					i--;
 					j--;
 					
-					if (k==0) {
-						if (ref[j]==f1[i])
+					if (k == 0) {
+						if (ref[j] == f1[i])
 							pm++;
-					} else if (k==1) {
-						if (ref[j]==f2[i])
+					} else if (k == 1) {
+						if (ref[j] == f2[i])
 							pm++;
-					} else { // k==2
-						if (ref[j]==f3[i])
+					} else { // k == 2
+						if (ref[j] == f3[i])
 							pm++;
 					}
 				} else if (B[k*rc + j*r + i] < 0) {
@@ -373,12 +373,12 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 				}
 			}
 			
-			if (k==1) {
+			if (k == 1) {
 				if (nIns > 999) {
 					error("Out of memory");
 				}
 				ins[nIns++] = 1;
-			} else if (k==2) {
+			} else if (k == 2) {
 				if (nIns > 998) {
 					error("Out of memory");
 				}
@@ -414,12 +414,12 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 			}
 			
 			newL = *(lengths + s) - nIns + nDels;
-			if ((newL % 3)==1) {
+			if ((newL % 3) == 1) {
 				if (nIns > 999) {
 					error("Out of memory");
 				}
 				ins[nIns++] = *(lengths + s);
-			} else if ((newL % 3)==2) {
+			} else if ((newL % 3) == 2) {
 				if (nIns > 998) {
 					error("Out of memory");
 				}

@@ -23,7 +23,7 @@ NNLS <- function(A,
 		stop("More rows than row names.")
 	if (!is.numeric(b))
 		stop("b must be a numeric vector or matrix.")
-	if (!((length(b) %% length(A$dimnames[[1]]))==0))
+	if (!((length(b) %% length(A$dimnames[[1]])) == 0))
 		stop("The length of b must be a multiple of the number of rows in A.")
 	if (is(b, "matrix")) {
 		if (nrow(b) != length(A$dimnames[[1]]))
@@ -39,7 +39,7 @@ NNLS <- function(A,
 		stop("verbose must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")

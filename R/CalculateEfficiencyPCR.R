@@ -30,7 +30,7 @@ CalculateEfficiencyPCR <- function(primer,
 		stop("P must be greater than zero.")
 	if (!is.numeric(batchSize))
 		stop("batchSize must be a numeric.")
-	if (floor(batchSize)!=batchSize)
+	if (floor(batchSize) != batchSize)
 		stop("batchSize must be a whole number.")
 	if (batchSize <= 0)
 		stop("batchSize must be greater than zero.")
@@ -42,9 +42,9 @@ CalculateEfficiencyPCR <- function(primer,
 	RT <- 0.0019871*(273.15 + temp) # [kcal/mol]
 	l <- length(primer)
 	
-	if (l==0)
+	if (l == 0)
 		stop("No primer specified.")
-	if (l!=length(target))
+	if (l != length(target))
 		stop("primer is not the same length as target.")
 	
 	# align primer and target
@@ -72,7 +72,7 @@ CalculateEfficiencyPCR <- function(primer,
 			stop("maxGaps must be at least zero.")
 		if (!is.null(processors) && !is.numeric(processors))
 			stop("processors must be a numeric.")
-		if (!is.null(processors) && floor(processors)!=processors)
+		if (!is.null(processors) && floor(processors) != processors)
 			stop("processors must be a whole number.")
 		if (!is.null(processors) && processors < 1)
 			stop("processors must be at least 1.")
@@ -203,13 +203,13 @@ CalculateEfficiencyPCR <- function(primer,
 	
 	K2eff <- numeric(l)
 	K2eff[] <- -1
-	w <- which(K2b==0)
+	w <- which(K2b == 0)
 	K2eff[w] <- 0
 	w <- which(K2b*P/K2a < .01)
 	K2eff[w] <- K2a[w]
 	w <- which(8*K2b*P > (1 + K2a)^2)
 	K2eff[w] <- K2b[w]
-	w <- which(K2eff==-1)
+	w <- which(K2eff == -1)
 	K2eff[w] <- 4*K2b[w]*P/(-1 - K2a[w] + sqrt((1 + K2a[w])^2 - 8*K2b[w]*P)) - 1
 	w <- which(K2eff < 0)
 	K2eff[w] <- 0

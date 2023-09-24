@@ -39,7 +39,7 @@ FindNonCoding <- function(x,
 		stop("allScores must be a logcial.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -135,6 +135,7 @@ FindNonCoding <- function(x,
 				DNAStringSet(myXString),
 				K[[k]],
 				TRUE, # mask repeats
+				processors,
 				PACKAGE="DECIPHER")[[1L]]
 			
 			ints <- ints + 1L

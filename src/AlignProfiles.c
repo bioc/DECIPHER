@@ -40,7 +40,7 @@ static double traceback(int i, int j, int *o, double *pnorm, double *snorm, int 
 	
 	while (i > -1 && j > -1) {
 		z = *(o + i*ls + j);
-		if (z==0) {
+		if (z == 0) {
 			if (pnorm[i] > 0 && snorm[j] > 0)
 				d += sqrt(pnorm[i]*snorm[j]);
 			i--;
@@ -80,7 +80,7 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 	
 	double *subM;
 	int do_subM;
-	if (length(subMatrix)==0) {
+	if (length(subMatrix) == 0) {
 		do_subM = 0;
 	} else {
 		do_subM = 1;
@@ -138,7 +138,7 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 	int N16[16] = {0, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240};
 	int *Op, *Os;
 	double *Pp, *Ps;
-	if (RNA==2) { // prepare for scoring pairs
+	if (RNA == 2) { // prepare for scoring pairs
 		// initialize arrays of pair frequencies
 		Pp = Calloc(lp*16, double); // initialized to zero
 		Ps = Calloc(ls*16, double); // initialized to zero
@@ -177,11 +177,11 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 				if (Pp[j + i*16] > 0) {
 					Op[k + i*16] = j;
 					k++;
-				} else if (z==-1) {
+				} else if (z == -1) {
 					z = j;
 				}
 			}
-			if (z!=-1)
+			if (z != -1)
 				Op[k + i*16] = z;
 		}
 		for (i = 0; i < ls; i++) {
@@ -191,11 +191,11 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 				if (Ps[j + i*16] > 0) {
 					Os[k + i*16] = j;
 					k++;
-				} else if (z==-1) {
+				} else if (z == -1) {
 					z = j;
 				}
 			}
-			if (z!=-1)
+			if (z != -1)
 				Os[k + i*16] = z;
 		}
 	}
@@ -392,10 +392,10 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 			int SIZEJ = size*j;
 			
 			// calculate gap penalties
-			if (i==0 && j==0) { // terminal
+			if (i == 0 && j == 0) { // terminal
 				gp = egpL*sstarts[0];
 				gs = egpL*pstarts[0];
-			} else if (i==(lp - 1) && j==(ls - 1)) { // terminal
+			} else if (i == (lp - 1) && j == (ls - 1)) { // terminal
 				gp = egpR*sstops[ls - 1];
 				gs = egpR*pstops[lp - 1];
 			} else {
@@ -436,11 +436,11 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 				S = 0;
 				M = 0;
 				for (int n = 0; n < 4; n++) {
-					if (pprofile[n + SIZEI]==0)
+					if (pprofile[n + SIZEI] == 0)
 						continue;
 					S += pprofile[n + SIZEI]*sprofile[n + SIZEJ] * *(subM + n*4 + n);
 					for (int p = 0; p < 4; p++) {
-						if (p==n || sprofile[p + SIZEJ]==0)
+						if (p == n || sprofile[p + SIZEJ] == 0)
 							continue;
 						M += pprofile[n + SIZEI]*sprofile[p + SIZEJ] * *(subM + n*4 + p);
 					}
@@ -450,7 +450,7 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 				S = 0;
 				M = 0;
 				for (int n = 0; n < 4; n++) {
-					if (pprofile[n + SIZEI]==0)
+					if (pprofile[n + SIZEI] == 0)
 						continue;
 					S += pprofile[n + SIZEI]*sprofile[n + SIZEJ];
 				}
@@ -458,14 +458,14 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 			}
 			
 /*			double pFreq, sFreq;
-			if (RNA==2) {
+			if (RNA == 2) {
 				// score aligning pairs of nucleotides
 				for (int n = 0; n < 16; n++) {
 					pFreq = Pp[Op[n + i*16] + i*16];
-					if (pFreq!=0) {
+					if (pFreq != 0) {
 						for (int p = 0; p < 16; p++) {
 							sFreq = Ps[Os[p + j*16] + j*16];
-							if (sFreq!=0) {
+							if (sFreq != 0) {
 								M += pFreq*sFreq*subD[N16[Op[n + i*16]] + Os[p + j*16]];
 							} else {
 								break;
@@ -594,7 +594,7 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 		}
 	}
 /*	
-	if (RNA==2) {
+	if (RNA == 2) {
 		Free(Pp);
 		Free(Ps);
 		Free(Op);
@@ -686,7 +686,7 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 		z = *(o + i*ls + j);
 		//*(o + i*ls + j) = 0;
 		//*(m + (i + 1)*(ls + 1) + j + 1) = 0;
-		if (z==0) {
+		if (z == 0) {
 			i--;
 			j--;
 		} else if (z < 0) {
@@ -726,9 +726,9 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 	k = count + 1;
 	while (k < l) {
 		value = *(t + k);
-		if (value==0) {
+		if (value == 0) {
 			for (count = k + 1; count < l; count++) {
-				if (*(t + count)!=value)
+				if (*(t + count) != value)
 					break;
 			}
 			z = count - k;
@@ -858,11 +858,11 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 			if (pprofile[j + ISIZE] > 0) {
 				Op[k + SIZE20] = j;
 				k++;
-			} else if (z==-1) {
+			} else if (z == -1) {
 				z = j;
 			}
 		}
-		if (z!=-1)
+		if (z != -1)
 			Op[k + SIZE20] = z;
 	}
 	for (i = 0; i < ls; i++) {
@@ -874,11 +874,11 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 			if (sprofile[j + ISIZE] > 0) {
 				Os[k + SIZE20] = j;
 				k++;
-			} else if (z==-1) {
+			} else if (z == -1) {
 				z = j;
 			}
 		}
-		if (z!=-1)
+		if (z != -1)
 			Os[k + SIZE20] = z;
 	}
 	
@@ -1229,10 +1229,10 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 			int SIZE20J = 20*j;
 			
 			// calculate gap penalties
-			if (i==0 && j==0) { // terminal
+			if (i == 0 && j == 0) { // terminal
 				gp = egpL*sstarts[0];
 				gs = egpL*pstarts[0];
-			} else if (i==(lp - 1) && j==(ls - 1)) { // terminal
+			} else if (i == (lp - 1) && j == (ls - 1)) { // terminal
 				gp = egpR*sstops[ls - 1];
 				gs = egpR*pstops[lp - 1];
 			} else {
@@ -1280,11 +1280,11 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 			for (int n = 0; n < 20; n++) { // omit U in 20, O in 21
 				po = Op[n + SIZE20I];
 				pFreq = pprofile[po + SIZEI];
-				if (pFreq!=0) {
+				if (pFreq != 0) {
 					for (int p = 0; p < 20; p++) { // omit U in 20, O in 21
 						so = Os[p + SIZE20J];
 						sFreq = sprofile[so + SIZEJ];
-						if (sFreq!=0) {
+						if (sFreq != 0) {
 							M += pFreq*sFreq * *(subM + N21[po] + so);
 						} else {
 							break;
@@ -1304,17 +1304,17 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 			}
 			
 			// score aligning stops
-			if (pprofile[22 + SIZEI]!=0) { // stop (*)
+			if (pprofile[22 + SIZEI] != 0) { // stop (*)
 				for (int p = 0; p < 20; p++) { // omit U in 20, O in 21
-					if (sprofile[p + SIZEJ]!=0)
+					if (sprofile[p + SIZEJ] != 0)
 						M += pprofile[22 + SIZEI]*sprofile[p + SIZEJ] * *(subM + 420 + p);
 				}
-				if (sprofile[22 + SIZEJ]!=0) // both stops (*)
+				if (sprofile[22 + SIZEJ] != 0) // both stops (*)
 					M += pprofile[22 + SIZEI]*sprofile[22 + SIZEJ] * *(subM + 440);
 			}
-			if (sprofile[22 + SIZEJ]!=0) { // stop (*)
+			if (sprofile[22 + SIZEJ] != 0) { // stop (*)
 				for (int p = 0; p < 20; p++) { // omit U in 20, O in 21
-					if (pprofile[p + SIZEI]!=0)
+					if (pprofile[p + SIZEI] != 0)
 						M += pprofile[p + SIZEI]*sprofile[22 + SIZEJ] * *(subM + 420 + p);
 				}
 			}
@@ -1521,7 +1521,7 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 		z = *(o + i*ls + j);
 		//*(o + i*ls + j) = 0;
 		//*(m + (i + 1)*(ls + 1) + j + 1) = 0;
-		if (z==0) {
+		if (z == 0) {
 			i--;
 			j--;
 		} else if (z < 0) {
@@ -1561,9 +1561,9 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 	k = count + 1;
 	while (k < l) {
 		value = *(t + k);
-		if (value==0) {
+		if (value == 0) {
 			for (count = k + 1; count < l; count++) {
-				if (*(t + count)!=value)
+				if (*(t + count) != value)
 					break;
 			}
 			z = count - k;

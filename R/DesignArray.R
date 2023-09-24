@@ -72,7 +72,7 @@ DesignArray <- function(myDNAStringSet,
 		stop("numRecordedMismatches is too large.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -109,7 +109,7 @@ DesignArray <- function(myDNAStringSet,
 	}
 	
 	maxW <- unique(width(myDNAStringSet))
-	if (length(maxW)!=1)
+	if (length(maxW) != 1)
 		stop("\nSequences are not aligned.\n")
 	
 	probes <- .Call("designProbes",

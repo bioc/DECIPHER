@@ -4,7 +4,7 @@ Codec <- function(x,
 	processors=1) {
 	
 	# error checking
-	if (length(compression)==2) {
+	if (length(compression) == 2) {
 		if (compression[1] != "nbit" && compression[1] != "qbit")
 			stop("The first element of compression must be 'nbit' or 'qbit' when two elements are provided.")
 		if (!(compression[2] %in% c("gzip", "bzip2", "xz")))
@@ -14,21 +14,21 @@ Codec <- function(x,
 	} else if (!(compression %in% c("nbit", "qbit", "gzip", "bzip2", "xz"))) {
 		stop("Invalid type of compression.")
 	}
-	if (typeof(x)=="list") {
-		if (length(x)==0)
+	if (typeof(x) == "list") {
+		if (length(x) == 0)
 			return(character())
 		if (!all(unlist(lapply(x, is.raw))))
 			stop("All elements of x must be raw vectors.")
-	} else if (!typeof(x)=="character") {
+	} else if (!typeof(x) == "character") {
 		stop("Invalid type of x.")
-		if (length(x)==0)
+		if (length(x) == 0)
 			stop("Length of x must be greater than zero.")
 	}
 	if (!is.logical(compressRepeats))
 		stop("compressRepeats must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -38,28 +38,28 @@ Codec <- function(x,
 		processors <- as.integer(processors)
 	}
 	
-	if (typeof(x)=="character") {
-		if (compression[1]=="nbit") {
+	if (typeof(x) == "character") {
+		if (compression[1] == "nbit") {
 			y <- .Call(compression[1],
 				x,
 				2L - length(compression),
 				compressRepeats,
 				processors,
 				PACKAGE="DECIPHER")
-			if (length(compression)==2) {
-				w <- which(lengths(y)==0)
+			if (length(compression) == 2) {
+				w <- which(lengths(y) == 0)
 				for (i in w)
 					y[[i]] <- memCompress(x[i],
 						compression[2])
 			}
-		} else if (compression[1]=="qbit") {
+		} else if (compression[1] == "qbit") {
 			y <- .Call(compression[1],
 				x,
 				2L - length(compression),
 				processors,
 				PACKAGE="DECIPHER")
-			if (length(compression)==2) {
-				w <- which(lengths(y)==0)
+			if (length(compression) == 2) {
+				w <- which(lengths(y) == 0)
 				for (i in w)
 					y[[i]] <- memCompress(x[i],
 						compression[2])

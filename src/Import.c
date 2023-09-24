@@ -106,7 +106,7 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 						break;
 					} else {
 						p++;
-						if (o==(l1 - 1)) {
+						if (o == (l1 - 1)) {
 							hit = 1;
 							break;
 						}
@@ -115,7 +115,7 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 				}
 				
 				// find trailing spaces
-				if (hit==1) {
+				if (hit == 1) {
 					while (p < l2 && p < 12) {
 						if (str[p] != ' ') {
 							hit = 0;
@@ -124,16 +124,16 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 						p++;
 					}
 					
-					if (hit==1) {
+					if (hit == 1) {
 						if (curlen != 0) {
-							if (curlen==maxlen) {
+							if (curlen == maxlen) {
 								maxlen *= 2;
 								s = Realloc(s, maxlen, char);
 							}
 							s[curlen] = '\n';
 							curlen++;
 							
-							if (curlen==maxlen) {
+							if (curlen == maxlen) {
 								maxlen *= 2;
 								s = Realloc(s, maxlen, char);
 							}
@@ -142,7 +142,7 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 						}
 						
 						while (p < l2) {
-							if (curlen==maxlen) {
+							if (curlen == maxlen) {
 								maxlen *= 2;
 								s = Realloc(s, maxlen, char);
 							}
@@ -165,8 +165,8 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 								p++;
 							}
 							
-							if (hit==1) {
-								if (curlen==maxlen) {
+							if (hit == 1) {
+								if (curlen == maxlen) {
 									maxlen *= 2;
 									s = Realloc(s, maxlen, char);
 								}
@@ -174,7 +174,7 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 								curlen++;
 								
 								while (p < l2) {
-									if (curlen==maxlen) {
+									if (curlen == maxlen) {
 										maxlen *= 2;
 										s = Realloc(s, maxlen, char);
 									}
@@ -192,7 +192,7 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 				}
 			}
 			
-			if (curlen==maxlen) {
+			if (curlen == maxlen) {
 				maxlen *= 2;
 				s = Realloc(s, maxlen, char);
 			}

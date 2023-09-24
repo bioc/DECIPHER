@@ -75,7 +75,7 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'M':
 					case 'm':
 						// M = A or C
-						if (seq2[j]=='A' || seq2[j]=='a') {
+						if (seq2[j] == 'A' || seq2[j] == 'a') {
 							s1 = 0;
 						} else { // default to C
 							s1 = 1;
@@ -84,7 +84,7 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'R':
 					case 'r':
 						// R = A or G
-						if (seq2[j]=='A' || seq2[j]=='a') {
+						if (seq2[j] == 'A' || seq2[j] == 'a') {
 							s1 = 0;
 						} else { // default to G
 							s1 = 2;
@@ -93,7 +93,7 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'S':
 					case 's':
 						// S = C or G
-						if (seq2[j]=='C' || seq2[j]=='c') {
+						if (seq2[j] == 'C' || seq2[j] == 'c') {
 							s1 = 1;
 						} else { // default to G
 							s1 = 2;
@@ -102,7 +102,7 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'W':
 					case 'w':
 						// W = A or T
-						if (seq2[j]=='A' || seq2[j]=='a') {
+						if (seq2[j] == 'A' || seq2[j] == 'a') {
 							s1 = 0;
 						} else { // default to T
 							s1 = 3;
@@ -111,7 +111,7 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'Y':
 					case 'y':
 						// Y = C or T
-						if (seq2[j]=='C' || seq2[j]=='c') {
+						if (seq2[j] == 'C' || seq2[j] == 'c') {
 							s1 = 1;
 						} else { // default to T
 							s1 = 3;
@@ -120,7 +120,7 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'K':
 					case 'k':
 						// K = G or T
-						if (seq2[j]=='G' || seq2[j]=='g') {
+						if (seq2[j] == 'G' || seq2[j] == 'g') {
 							s1 = 2;
 						} else { // default to T
 							s1 = 3;
@@ -129,9 +129,9 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'V':
 					case 'v':
 						// V = A or C or G
-						if (seq2[j]=='A' || seq2[j]=='a') {
+						if (seq2[j] == 'A' || seq2[j] == 'a') {
 							s1 = 0;
-						} else if (seq2[j]=='C' || seq2[j]=='c') {
+						} else if (seq2[j] == 'C' || seq2[j] == 'c') {
 							s1 = 1;
 						} else { // default to G
 							s1 = 2;
@@ -140,9 +140,9 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'H':
 					case 'h':
 						// H = A or C or T
-						if (seq2[j]=='A' || seq2[j]=='a') {
+						if (seq2[j] == 'A' || seq2[j] == 'a') {
 							s1 = 0;
-						} else if (seq2[j]=='C' || seq2[j]=='c') {
+						} else if (seq2[j] == 'C' || seq2[j] == 'c') {
 							s1 = 1;
 						} else { // default to T
 							s1 = 3;
@@ -151,9 +151,9 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'D':
 					case 'd':
 						// D = A or G or T
-						if (seq2[j]=='A' || seq2[j]=='a') {
+						if (seq2[j] == 'A' || seq2[j] == 'a') {
 							s1 = 0;
-						} else if (seq2[j]=='G' || seq2[j]=='g') {
+						} else if (seq2[j] == 'G' || seq2[j] == 'g') {
 							s1 = 2;
 						} else { // default to T
 							s1 = 3;
@@ -162,9 +162,9 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'B':
 					case 'b':
 						// B = C or G or T
-						if (seq2[j]=='C' || seq2[j]=='c') {
+						if (seq2[j] == 'C' || seq2[j] == 'c') {
 							s1 = 1;
-						} else if (seq2[j]=='G' || seq2[j]=='g') {
+						} else if (seq2[j] == 'G' || seq2[j] == 'g') {
 							s1 = 2;
 						} else { // default to T
 							s1 = 3;
@@ -173,11 +173,11 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'N':
 					case 'n':
 						// N = A or C or G or T
-						if (seq2[j]=='A' || seq2[j]=='a') {
+						if (seq2[j] == 'A' || seq2[j] == 'a') {
 							s1 = 0;
-						} else if (seq2[j]=='C' || seq2[j]=='c') {
+						} else if (seq2[j] == 'C' || seq2[j] == 'c') {
 							s1 = 1;
-						} else if (seq2[j]=='G' || seq2[j]=='g') {
+						} else if (seq2[j] == 'G' || seq2[j] == 'g') {
 							s1 = 2;
 						} else { // default to T
 							s1 = 3;
@@ -210,7 +210,7 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'M':
 					case 'm':
 						// M = A or C
-						if (s1==0) {
+						if (s1 == 0) {
 							s2 = 0;
 						} else { // default to C
 							s2 = 1;
@@ -219,7 +219,7 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'R':
 					case 'r':
 						// R = A or G
-						if (s1==0) {
+						if (s1 == 0) {
 							s2 = 0;
 						} else { // default to G
 							s2 = 2;
@@ -228,7 +228,7 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'S':
 					case 's':
 						// S = C or G
-						if (s1==1) {
+						if (s1 == 1) {
 							s2 = 1;
 						} else { // default to G
 							s2 = 2;
@@ -237,7 +237,7 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'W':
 					case 'w':
 						// W = A or T
-						if (s1==0) {
+						if (s1 == 0) {
 							s2 = 0;
 						} else { // default to T
 							s2 = 3;
@@ -246,7 +246,7 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'Y':
 					case 'y':
 						// Y = C or T
-						if (s1==1) {
+						if (s1 == 1) {
 							s2 = 1;
 						} else { // default to T
 							s2 = 3;
@@ -255,7 +255,7 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'K':
 					case 'k':
 						// K = G or T
-						if (s1==2) {
+						if (s1 == 2) {
 							s2 = 2;
 						} else { // default to T
 							s2 = 3;
@@ -264,9 +264,9 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'V':
 					case 'v':
 						// V = A or C or G
-						if (s1==0) {
+						if (s1 == 0) {
 							s2 = 0;
-						} else if (s1==1) {
+						} else if (s1 == 1) {
 							s2 = 1;
 						} else { // default to G
 							s2 = 2;
@@ -275,9 +275,9 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'H':
 					case 'h':
 						// H = A or C or T
-						if (s1==0) {
+						if (s1 == 0) {
 							s2 = 0;
-						} else if (s1==1) {
+						} else if (s1 == 1) {
 							s2 = 1;
 						} else { // default to T
 							s2 = 3;
@@ -286,9 +286,9 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'D':
 					case 'd':
 						// D = A or G or T
-						if (s1==0) {
+						if (s1 == 0) {
 							s2 = 0;
-						} else if (s1==2) {
+						} else if (s1 == 2) {
 							s2 = 2;
 						} else { // default to T
 							s2 = 3;
@@ -297,9 +297,9 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'B':
 					case 'b':
 						// B = C or G or T
-						if (s1==1) {
+						if (s1 == 1) {
 							s2 = 1;
-						} else if (s1==2) {
+						} else if (s1 == 2) {
 							s2 = 2;
 						} else { // default to T
 							s2 = 3;
@@ -308,11 +308,11 @@ SEXP calculateDeltaG(SEXP p, SEXP t, SEXP deltaGrules)
 					case 'N':
 					case 'n':
 						// N = A or C or G or T
-						if (s1==0) {
+						if (s1 == 0) {
 							s2 = 0;
-						} else if (s1==1) {
+						} else if (s1 == 1) {
 							s2 = 1;
-						} else if (s1==2) {
+						} else if (s1 == 2) {
 							s2 = 2;
 						} else {
 							s2 = 3;

@@ -24,11 +24,11 @@ Keul, F., et al. (2017). PFASUM: a substitution matrix from Pfam structural alig
 }
 \examples{
 data(PFASUM)
-PFASUM31 <- PFASUM[,, "31"] # the PFASUM31 matrix
-PFASUM31["A", "R"] # score for A/R pairing
+PFASUM62 <- PFASUM[,, "62"] # the PFASUM62 matrix
+PFASUM62["A", "R"] # score for A/R pairing
 
 data(BLOSUM62)
-plot(BLOSUM62[1:20, 1:20], PFASUM31[1:20, 1:20])
+plot(BLOSUM62[1:20, 1:20], PFASUM62[1:20, 1:20])
 abline(a=0, b=1)
 }
 \keyword{datasets}

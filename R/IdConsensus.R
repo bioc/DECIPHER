@@ -28,7 +28,7 @@ IdConsensus <- function(dbFile,
 		stop("verbose must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -52,8 +52,8 @@ IdConsensus <- function(dbFile,
 	}
 	
 	f <- dbListFields(dbConn, tblName)
-	w <- which(f==colName)
-	if (length(w)==0)
+	w <- which(f == colName)
+	if (length(w) == 0)
 		stop(paste("The colName '", colName, "' does not exist.", sep=""))
 	
 	searchExpression <- paste('select distinct ',
@@ -83,13 +83,13 @@ IdConsensus <- function(dbFile,
 	if (verbose)
 		pBar <- txtProgressBar(min=0, max=100, initial=0, style=ifelse(interactive(), 3, 1))
 	
-	if (type==1) {
+	if (type == 1) {
 		consensus <- DNAStringSet()
-	} else if (type==2) {
+	} else if (type == 2) {
 		consensus <- RNAStringSet()
-	} else if (type==3) {
+	} else if (type == 3) {
 		consensus <- AAStringSet()
-	} else { # type==4
+	} else { # type == 4
 		consensus <- BStringSet()
 	}
 	
@@ -109,8 +109,8 @@ IdConsensus <- function(dbFile,
 				"'",
 				sep=""))
 		
-		if (length(consensus)==0) {
-			if (type!=4) {
+		if (length(consensus) == 0) {
+			if (type != 4) {
 				consensus <- ConsensusSequence(myXStringSet=x_subset,
 					...)
 			} else {
@@ -118,7 +118,7 @@ IdConsensus <- function(dbFile,
 					...)
 			}
 		} else {
-			if (type!=4) {
+			if (type != 4) {
 				consensus <- c(consensus,
 					 ConsensusSequence(myXStringSet=x_subset,
 						...))

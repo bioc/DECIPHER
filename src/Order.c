@@ -77,7 +77,7 @@ SEXP radixOrder(SEXP x, SEXP ascending, SEXP keepNAs)
 		int *counts = (int *) calloc(count, sizeof(int)); // initialized to zero (thread-safe on Windows)
 		o = k*R;
 		for (i = 0; i < l; i++)
-			counts[(v[order[i]] >> o) & mask]++;
+			counts[(v[i] >> o) & mask]++;
 		
 		// cumulative sum from zero
 		int one = 0;
@@ -92,7 +92,7 @@ SEXP radixOrder(SEXP x, SEXP ascending, SEXP keepNAs)
 		// move orders
 		int *temp = (int *) malloc(l*sizeof(int)); // thread-safe on Windows
 		for (i = 0; i < l; i++)
-			temp[counts[(v[order[i]] >> o) & mask]++] = order[i];
+			temp[counts[(v[order[i]] >> o) & mask]++] = order[i]; // slow when cache misses
 		free(counts);
 		
 		// replace orders
@@ -144,21 +144,26 @@ SEXP dereplicate(SEXP x, SEXP o)
 	int i = 0;
 	int j = 0;
 	int k = 1;
+	int prev, curr;
+	if (l > 0)
+		prev = X[O[j] - 1];
 	while (k < l) {
-		if (X[O[k] - 1] == X[O[j] - 1]) {
+		curr = X[O[k] - 1];
+		if (curr == prev) {
 			count++;
 		} else {
-			numbers[O[j] - 1] = O[j];
-			counts[O[j] - 1] = count;
+			numbers[i] = O[j];
+			counts[i] = count;
 			i++;
 			count = 1;
 			j = k;
+			prev = curr;
 		}
 		k++;
 	}
 	if (l > 0) {
-		numbers[O[j] - 1] = O[j];
-		counts[O[j] - 1] = count;
+		numbers[i] = O[j];
+		counts[i] = count;
 		i++;
 	}
 	
@@ -168,13 +173,9 @@ SEXP dereplicate(SEXP x, SEXP o)
 	int *rans1 = INTEGER(ans1);
 	int *rans2 = INTEGER(ans2);
 	
-	k = i;
-	for (j = 0; j < l; j++) {
-		if (counts[j] > 0) {
-			k--;
-			rans1[k] = numbers[j];
-			rans2[k] = counts[j];
-		}
+	for (j = 0; j < i; j++) {
+		rans1[j] = numbers[j];
+		rans2[j] = counts[j];
 	}
 	free(numbers);
 	free(counts);

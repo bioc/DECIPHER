@@ -81,13 +81,13 @@ MapCharacters <- function(x,
 						ini <- s1[nongaps[w]]
 						fin <- s2[nongaps[w]]
 						
-						ins <- which(s1[nongaps[w]]=="-")
+						ins <- which(s1[nongaps[w]] == "-")
 						if (length(ins) > 0) {
 							counts <- rep(1L, length(ins))
 							remove <- logical(length(ins))
 							start <- 1L
 							for (j in seq_along(ins)[-1]) {
-								if (w[ins[j]]==w[ins[j - 1]] + 1L) {
+								if (w[ins[j]] == w[ins[j - 1]] + 1L) {
 									counts[start] <- counts[start] + 1L
 									remove[j] <- TRUE
 								} else {
@@ -114,13 +114,13 @@ MapCharacters <- function(x,
 							}
 						}
 						
-						del <- which(s2[nongaps[w]]=="-")
+						del <- which(s2[nongaps[w]] == "-")
 						if (length(del) > 0) {
 							counts <- rep(1L, length(del))
 							remove <- logical(length(del))
 							start <- 1L
 							for (j in seq_along(del)[-1]) {
-								if (w[del[j]]==w[del[j - 1]] + 1L) {
+								if (w[del[j]] == w[del[j - 1]] + 1L) {
 									counts[start] <- counts[start] + 1L
 									remove[j] <- TRUE
 								} else {
@@ -202,9 +202,9 @@ MapCharacters <- function(x,
 	if(type > 1L) {
 		res <- table(unlist(res))
 		res <- sort(res, decreasing=TRUE)
-		if (type==2L) { # table
+		if (type == 2L) { # table
 			out <- res
-		} else if (type==3L) { # both
+		} else if (type == 3L) { # both
 			out <- list(out, res)
 		}
 	}

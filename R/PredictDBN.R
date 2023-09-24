@@ -5,8 +5,8 @@
 	
 	l <- length(myXStringSet)
 	
-	if (length(weight)==1) {
-		if (is.numeric(weight)) {
+	if (length(weight) == 1) {
+		if (l == 1L || is.numeric(weight)) {
 			weight <- rep(1, l)
 		} else if (is.na(weight)) {
 			if (verbose) {
@@ -115,32 +115,32 @@
 	parens <- square <- curly <- straight <- integer()
 	for (j in seq_along(s)) {
 		if (s[j] != "." && s[j] != "-") {
-			if (s[j]=="(") {
+			if (s[j] == "(") {
 				parens <- c(parens, j)
-			} else if (s[j]==")") {
+			} else if (s[j] == ")") {
 				i <- i + 1L
 				c1[i] <- parens[length(parens)]
 				c2[i] <- j
 				length(parens) <- length(parens) - 1L
-			} else if (s[j]=="[") {
+			} else if (s[j] == "[") {
 				square <- c(square, j)
-			} else if (s[j]=="]") {
+			} else if (s[j] == "]") {
 				i <- i + 1L
 				c1[i] <- square[length(square)]
 				c2[i] <- j
 				c3[i] <- 1L
 				length(square) <- length(square) - 1L
-			} else if (s[j]=="{") {
+			} else if (s[j] == "{") {
 				curly <- c(curly, j)
-			} else if (s[j]=="}") {
+			} else if (s[j] == "}") {
 				i <- i + 1L
 				c1[i] <- curly[length(curly)]
 				c2[i] <- j
 				c3[i] <- 2L
 				length(curly) <- length(curly) - 1L
-			} else if (s[j]=="<") {
+			} else if (s[j] == "<") {
 				straight <- c(straight, j)
-			} else if (s[j]==">") {
+			} else if (s[j] == ">") {
 				i <- i + 1L
 				c1[i] <- straight[length(straight)]
 				c2[i] <- j
@@ -178,27 +178,31 @@ PredictDBN <- function(myXStringSet,
 		is(myXStringSet, "RNAStringSet")))
 		stop("myXStringSet must be a DNAStringSet or RNAStringSet.")
 	l <- length(myXStringSet)
-	if (l < 2)
-		stop("myXStringSet must contain at least two sequences.")
+	if (l == 0L)
+		stop("myXStringSet must contain at least one sequence.")
+	if (!is.logical(useFreeEnergy))
+		stop("useFreeEnergy must be a logical.")
+	if (l == 1L && !useFreeEnergy)
+		stop("useFreeEnergy must be TRUE when there is only one sequence in myXStringSet.")
 	u <- unique(width(myXStringSet))
-	if (length(u)!=1)
+	if (length(u) != 1)
 		stop("Sequences in myXStringSet must be the same width (aligned).")
 	TYPES <- c("states", "pairs", "scores", "structures", "search", "evidence")
-	if (length(type)==0)
+	if (length(type) == 0)
 		stop("No type specified.")
 	type <- pmatch(type, TYPES)
 	if (is.na(type))
 		stop("Invalid type.")
-	if (type==-1)
+	if (type == -1)
 		stop("Ambiguous type.")
-	if (u==0) { # zero width sequences
-		if (type==1L) {
+	if (u == 0L) { # zero width sequences
+		if (type == 1L) {
 			return("")
-		} else if (type==2L) {
+		} else if (type == 2L) {
 			return(matrix(nrow=0, ncol=3, dimnames=list(NULL, c("(", ")", "order"))))
-		} else if (type==3L) {
+		} else if (type == 3L) {
 			return(matrix(nrow=3, ncol=0, dimnames=list(c(".", "(", ")"), NULL)))
-		} else if (type==6L) {
+		} else if (type == 6L) {
 			return(matrix(nrow=0, ncol=3, dimnames=list(NULL, c("(", ")", "score"))))
 		} else {
 			x <- matrix(0, nrow=3, ncol=0, dimnames=list(c(".", "(", ")"), NULL))
@@ -240,7 +244,7 @@ PredictDBN <- function(myXStringSet,
 		stop("verbose must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -279,7 +283,7 @@ PredictDBN <- function(myXStringSet,
 				which(!(pos[x,] %in% c("-", "."))))
 		
 		noGaps <- RemoveGaps(myXStringSet)
-		J <- W <- vector( "list", u)
+		J <- W <- rep(list(integer()), u)
 		for (i in seq_along(myXStringSet)) {
 			pals <- findPalindromes(noGaps[[i]],
 				min.armlength=4,
@@ -339,10 +343,33 @@ PredictDBN <- function(myXStringSet,
 				p1 <- p[p1]
 				p2 <- p[p2]
 				for (k in seq_along(p1)) {
-					m <- match(p2[k], J[[p1[k]]])
+					m <- .Call("firstHit",
+						p2[k],
+						J[[p1[k]]],
+						PACKAGE="DECIPHER")
 					if (is.na(m)) {
-						J[[p1[k]]] <- c(J[[p1[k]]], p2[k])
-						W[[p1[k]]] <- c(W[[p1[k]]], dG[o[j]]*weight[i])
+						w <- .Call("multiMatchLower",
+							J[[p1[k]]],
+							p2[k],
+							length(J[[p1[k]]]),
+							PACKAGE="DECIPHER")
+						if (length(w) == 0L) {
+							J[[p1[k]]] <- c(p2[k], J[[p1[k]]])
+							W[[p1[k]]] <- c(dG[o[j]]*weight[i], W[[p1[k]]])
+						} else {
+							w <- seq_len(w)
+							J1 <- J[[p1[k]]]
+							x <- logical(length(J1))
+							x[w] <- TRUE
+							y <- !x
+							J2 <- J1[y]
+							J1 <- J1[x]
+							J[[p1[k]]] <- c(J1, p2[k], J2)
+							W1 <- W[[p1[k]]]
+							W2 <- W1[y]
+							W1 <- W1[x]
+							W[[p1[k]]] <- c(W1, dG[o[j]]*weight[i], W2)
+						}
 					} else {
 						W[[p1[k]]][m] <- W[[p1[k]]][m] + dG[o[j]]*weight[i]
 					}
@@ -353,20 +380,14 @@ PredictDBN <- function(myXStringSet,
 				setTxtProgressBar(pBar, i/l)
 		}
 		
-		t <- TerminalChar(myXStringSet)
-		w <- numeric(u)
-		for (i in seq_along(myXStringSet))
-			if (t[i, 3L] > 0)
-				w[(t[i, 1L] + 1):(u - t[i, 2L])] <- w[(t[i, 1L] + 1):(u - t[i, 2L])] + weight[i]
-		for (i in seq_along(J))
-			W[[i]] <- W[[i]]/pmin(w[J[[i]]], w[i])
-		
-		for (i in seq_along(J)) {
-			if (length(J[[i]]) > 0) {
-				o <- order(J[[i]])
-				J[[i]] <- J[[i]][o]
-				W[[i]] <- W[[i]][o]
-			}
+		if (l > 1L) {
+			t <- TerminalChar(myXStringSet)
+			w <- numeric(u)
+			for (i in seq_along(myXStringSet))
+				if (t[i, 3L] > 0)
+					w[(t[i, 1L] + 1):(u - t[i, 2L])] <- w[(t[i, 1L] + 1):(u - t[i, 2L])] + weight[i]
+			for (i in seq_along(J))
+				W[[i]] <- W[[i]]/pmin(w[J[[i]]], w[i])
 		}
 		patterns <- list(J, W)
 		
@@ -410,17 +431,17 @@ PredictDBN <- function(myXStringSet,
 		processors,
 		PACKAGE="DECIPHER")
 	
-	if (type==2L) {
+	if (type == 2L) {
 		ans <- .parseDBN(ans)
-	} else if (type==3L) {
+	} else if (type == 3L) {
 		rownames(ans) <- c(".", "(", ")")
-	} else if (type==4L) {
+	} else if (type == 4L) {
 		ans <- lapply(ans,
 			function(x) {
 				rownames(x) <- c(".", "(", ")")
 				return(x)
 			})
-	} else if (type==6L) {
+	} else if (type == 6L) {
 		colnames(ans) <- c("(", ")", "score")
 	}
 	

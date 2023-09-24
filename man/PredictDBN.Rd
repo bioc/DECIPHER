@@ -48,7 +48,7 @@ Numeric giving the relative shift of the sigmoid used to convert mutual informat
 Numeric specifying the score threshold at which to consider positions for pairing.  Only applicable if \code{type} is \code{"states"} or \code{"pairs"}.
 }
   \item{pseudoknots}{
-Integer indicating the maximum order of pseudoknots that are acceptable.  A value of \code{0} will prevent pseudoknots in the structure, whereas \code{1} (the default) will search for first-order psuedoknots.  Only used if \code{type} is \code{"states"} or \code{"pairs"}.
+Integer indicating the maximum order of pseudoknots that are acceptable.  A value of \code{0} will prevent pseudoknots in the structure, whereas \code{1} (the default) will attempt to find first-order psuedoknots.  Only used if \code{type} is \code{"states"} or \code{"pairs"}.
 }
   \item{weight}{
 Either a numeric vector of weights for each sequence, a single number implying equal weights, or \code{NA} (the default) to automatically calculate sequence weights based on \code{myXStringSet}.
@@ -104,7 +104,7 @@ If \code{type} is \code{"scores"}, then a matrix of three rows is returned, wher
 
 If \code{type} is \code{"structures"}, then the output is a list with one element for each sequence in \code{myXStringSet}.  Each list element contains a matrix of dimension 3 (each state) by the number of nucleotides in the sequence.  Columns of the matrix sum to zero where the nucleotide was located in a position that was below \code{minOccupancy}.  Otherwise, positions are considered paired if they are consistent with pairing (i.e., A/U, C/G, or G/U) in the consensus secondary structure.
 
-If \code{type} is \code{"search"} then an attempt is made to find additional secondary structure beyond positions exhibiting covariation.  First, anchors are identified as pairs of covarying positions with their score above \code{threshold}.  Next, the regions between anchors are searched for previously unidentified stem loops.  Finally, any helices are assigned a score according to their length, i.e. one minus the probability of finding that many consecutive pairs within the anchor boundaries by chance.  Hence, output \code{type} \code{"search"} will find secondary structure outside of the consensus structure shared by most sequences, and can identify secondary structure in conserved alignment regions.
+When \code{type} is \code{"search"} the results are similar to \code{"structures"}, but an attempt is made to find additional secondary structure beyond positions exhibiting covariation.  First, anchors are identified as pairs of covarying positions with their score above \code{threshold}.  Next, the regions between anchors are searched for previously unidentified stem loops.  Finally, any helices are assigned a score according to their length, i.e. one minus the probability of finding that many consecutive pairs within the anchor boundaries by chance.  Hence, output \code{type} \code{"search"} will find secondary structure outside of the consensus structure shared by most sequences, and can identify secondary structure in conserved alignment regions.
 }
 \references{
 Buslje, C., et al. (2009). Correction for phylogeny, small number of observations and data redundancy improves the identification of coevolving amino acid pairs using mutual information. Bioinformatics, \bold{25(9)}, 1125-1131.
@@ -126,7 +126,6 @@ Erik Wright \email{eswright@pitt.edu}
 db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
 rna <- SearchDB(db, type="RNAStringSet")
 
-\dontrun{
 # predict the secondary structure in dot-bracket notation (dbn)
 p <- PredictDBN(rna, "states") # predict the secondary structure in dbn
 p # pairs are denoted by (), and (optionally) pseudoknots by [], {}, and <>
@@ -171,5 +170,4 @@ BrowseSeqs(rna, patterns=p) # red = unpaired, green = left-pairing, blue = right
 p <- PredictDBN(rna, "search") # scores per sequence after searching
 BrowseSeqs(rna, patterns=p) # red = unpaired, green = left-pairing, blue = right
 # note that "search" identified many more pairings than "structures"
-}
 }

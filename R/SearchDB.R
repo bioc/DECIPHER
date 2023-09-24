@@ -43,11 +43,11 @@ SearchDB <- function(dbFile,
 		stop("Invalid quality.")
 	if (quality == -1)
 		stop("Ambiguous quality.")
-	if (quality==1) {
+	if (quality == 1) {
 		quality <- PhredQuality
-	} else if (quality==2) {
+	} else if (quality == 2) {
 		quality <- SolexaQuality
-	} else if (quality==3) {
+	} else if (quality == 3) {
 		quality <- IlluminaQuality
 	}
 	if (!is.character(clause))
@@ -56,7 +56,7 @@ SearchDB <- function(dbFile,
 		stop("verbose must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -68,12 +68,12 @@ SearchDB <- function(dbFile,
 	if (type > 4 && type != 9 && removeGaps > 1)
 		stop(paste('removeGaps must be "none" when type is ', TYPES[type], '.', sep=''))
 	if (is.numeric(limit)) {
-		if (floor(limit)!=limit)
+		if (floor(limit) != limit)
 				stop("limit must be a whole number or two comma-separated whole numbers specifying offset,limit.")
 	} else {
 		if (!grepl("[0-9],[0-9]", limit, perl=TRUE)) {
 			limit <- as.numeric(limit)
-			if (floor(limit)!=limit)
+			if (floor(limit) != limit)
 				stop("limit must be a whole number or two comma-separated whole numbers specifying offset,limit.")
 		}
 	}
@@ -101,7 +101,7 @@ SearchDB <- function(dbFile,
 		searchExpression <- paste('select count(*) from ',
 			tblName,
 			sep="")
-	} else if (nameBy=="row_names" && orderBy=="row_names") {
+	} else if (nameBy == "row_names" && orderBy == "row_names") {
 		searchExpression <- paste('select row_names, sequence',
 			ifelse(type > 4 && type != 9, ', quality', ''),
 			' from _',
@@ -111,7 +111,7 @@ SearchDB <- function(dbFile,
 			sep="")
 	} else {
 		searchExpression <- paste('select ',
-			ifelse(nameBy=="row_names",
+			ifelse(nameBy == "row_names",
 				paste(tblName, ".row_names", sep=""),
 				nameBy),
 			', _',
@@ -139,22 +139,22 @@ SearchDB <- function(dbFile,
 			sep="")
 	}
 	
-	if (identifier!="")
+	if (identifier != "")
 		searchExpression <- paste(searchExpression,
 			' where identifier is "',
 			identifier,
 			'"',
 			sep="")
-	if (clause!="")
+	if (clause != "")
 		searchExpression <- paste(searchExpression,
-			ifelse(identifier=="", " where ", " and "),
+			ifelse(identifier == "", " where ", " and "),
 			clause,
 			sep="")
 	
 	if (!countOnly)
 		searchExpression <- paste(searchExpression, ")", sep="")
 	
-	if (orderBy!="row_names") # default ordering is row_names
+	if (orderBy != "row_names") # default ordering is row_names
 		searchExpression <- paste(searchExpression,
 			'order by',
 			orderBy)
@@ -180,7 +180,7 @@ SearchDB <- function(dbFile,
 		searchResult$sequence <- Codec(searchResult$sequence,
 			processors=processors)
 		
-		if (type==9 || type==10) {
+		if (type == 9 || type == 10) {
 			# guess the input type of XStringSet
 			freqs <- .Call("composition",
 				searchResult$sequence,
@@ -188,26 +188,26 @@ SearchDB <- function(dbFile,
 			
 			if (all(freqs[1:2] < 0.6)) { # not DNA/RNA
 				if (freqs[3] > 0.9) { # AA
-					if (type==9) {
+					if (type == 9) {
 						type <- 3
 					} else {
 						type <- 7
 					}
 				} else {
-					if (type==9) {
+					if (type == 9) {
 						type <- 4
 					} else {
 						type <- 8
 					}
 				}
 			} else if (freqs[1] > freqs[2]) { # DNA
-				if (type==9) {
+				if (type == 9) {
 					type <- 1
 				} else {
 					type <- 5
 				}
 			} else { # RNA
-				if (type==9) {
+				if (type == 9) {
 					type <- 2
 				} else {
 					type <- 6
@@ -217,18 +217,18 @@ SearchDB <- function(dbFile,
 		
 		if (is.na(replaceChar)) {
 			replaceChar <- NA_character_
-		} else if (type==1 || type==5) {
-			if (is.na(pmatch(replaceChar, DNA_ALPHABET)) && (replaceChar!=""))
+		} else if (type == 1 || type == 5) {
+			if (is.na(pmatch(replaceChar, DNA_ALPHABET)) && (replaceChar != ""))
 				stop("replaceChar must be a character in the DNA_ALPHABET or empty character.")
-		} else if (type==2 || type==6) {
-			if (is.na(pmatch(replaceChar, RNA_ALPHABET)) && (replaceChar!=""))
+		} else if (type == 2 || type == 6) {
+			if (is.na(pmatch(replaceChar, RNA_ALPHABET)) && (replaceChar != ""))
 				stop("replaceChar must be a character in the RNA_ALPHABET or empty character.")
-		} else if (type==3 || type==7) {
-			if (is.na(pmatch(replaceChar, AA_ALPHABET)) && (replaceChar!=""))
+		} else if (type == 3 || type == 7) {
+			if (is.na(pmatch(replaceChar, AA_ALPHABET)) && (replaceChar != ""))
 				stop("replaceChar must be a character in the AA_ALPHABET or empty character.")
 		}
 		
-		if (type!=4 && type!=8) {
+		if (type != 4 && type != 8) {
 			# replace characters that are not in the alphabet
 			searchResult$sequence <- .Call("replaceChars",
 				searchResult$sequence,
@@ -238,7 +238,7 @@ SearchDB <- function(dbFile,
 		}
 		
 		# remove gaps if applicable
-		if (removeGaps==2) {
+		if (removeGaps == 2) {
 			searchResult$sequence <- .Call("replaceChar",
 				searchResult$sequence,
 				"-",
@@ -249,24 +249,24 @@ SearchDB <- function(dbFile,
 				".",
 				"",
 				PACKAGE="DECIPHER")
-		} else if (removeGaps==3) {
+		} else if (removeGaps == 3) {
 			searchResult$sequence <- .Call("commonGaps",
 				searchResult$sequence,
 				PACKAGE="DECIPHER")
 		}
 		
 		# build an XStringSet based on the database sequences
-		if (type==1) {
+		if (type == 1) {
 			myXStringSet <- DNAStringSet(searchResult$sequence)
-		} else if (type==2) {
+		} else if (type == 2) {
 			myXStringSet <- RNAStringSet(searchResult$sequence)
-		} else if (type==3) {
+		} else if (type == 3) {
 			myXStringSet <- AAStringSet(searchResult$sequence)
-		} else if (type==4) {
+		} else if (type == 4) {
 			myXStringSet <- BStringSet(searchResult$sequence)
 		} else {
-			w <- which(lengths(searchResult$quality)==0)
-			if (length(w)==length(searchResult$quality)) {
+			w <- which(lengths(searchResult$quality) == 0)
+			if (length(w) == length(searchResult$quality)) {
 				stop("All sequences are missing quality scores.")
 			} else if (length(w) > 0) {
 				stop("Some sequences are missing quality scores.")
@@ -274,16 +274,16 @@ SearchDB <- function(dbFile,
 				searchResult$quality <- Codec(searchResult$quality)
 			}
 			
-			if (type==5) {
+			if (type == 5) {
 				myXStringSet <- QualityScaledDNAStringSet(DNAStringSet(searchResult$sequence),
 					quality(searchResult$quality))
-			} else if (type==6) {
+			} else if (type == 6) {
 				myXStringSet <- QualityScaledRNAStringSet(RNAStringSet(searchResult$sequence),
 					quality(searchResult$quality))
-			} else if (type==7) {
+			} else if (type == 7) {
 				myXStringSet <- QualityScaledAAStringSet(AAStringSet(searchResult$sequence),
 					quality(searchResult$quality))
-			} else { # type==8
+			} else { # type == 8
 				myXStringSet <- QualityScaledBStringSet(BStringSet(searchResult$sequence),
 					quality(searchResult$quality))
 			}

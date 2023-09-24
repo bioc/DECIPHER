@@ -34,7 +34,7 @@ AlignTranslation <- function(myXStringSet,
 	a <- vcountPattern(".", myXStringSet)
 	if (any(a > 0))
 		stop("Unknown characters ('.') must be removed before alignment.")
-	if (length(type)==0)
+	if (length(type) == 0)
 		stop("No type specified.")
 	if (length(type) > 1)
 		stop("Only one type may be specified.")
@@ -42,17 +42,17 @@ AlignTranslation <- function(myXStringSet,
 	type <- pmatch(type, TYPES)
 	if (is.na(type))
 		stop("Invalid type.")
-	if (type==-1)
+	if (type == -1)
 		stop("Ambiguous type.")
-	if (type==1) {
+	if (type == 1) {
 		if (!is(myXStringSet, "DNAStringSet"))
 			stop("type cannot be 'RNAStringSet' when myXStringSet is a DNAStringSet.")
-	} else if (type==2) {
+	} else if (type == 2) {
 		if (!is(myXStringSet, "RNAStringSet"))
 			stop("type cannot be 'DNAStringSet' when myXStringSet is a RNAStringSet.")
 	}
 	if (is.list(geneticCode)) {
-		if (length(geneticCode)!=length(myXStringSet))
+		if (length(geneticCode) != length(myXStringSet))
 			stop("The list geneticCode must have one item per sequence.")
 		mapping <- selfmatch(geneticCode)
 		mapping <- tapply(seq_along(mapping), mapping, c)
@@ -63,26 +63,26 @@ AlignTranslation <- function(myXStringSet,
 		group <- 1L
 	}
 	
-	if (sense=="-")
+	if (sense == "-")
 		myXStringSet <- reverseComplement(myXStringSet)
-	if (direction=="3' to 5'")
+	if (direction == "3' to 5'")
 		myXStringSet <- reverse(myXStringSet)
-	if (length(readingFrame)==1)
+	if (length(readingFrame) == 1)
 		readingFrame <- rep(readingFrame, length(myXStringSet))
 	
 	index <- c(0:2, 0) # circle back around to the first reading frame
 	AA <- AAStringSet(rep("", length(myXStringSet)))
 	for (i in seq_along(index)) {
-		w <- which(((readingFrame - 1)==index[i] & # (specified reading frame AND
+		w <- which(((readingFrame - 1) == index[i] & # (specified reading frame AND
 			i != length(index)) | # not the last possible reading frame) OR
 			is.na(readingFrame)) # reading frame is unspecified
-		if (length(w)==0)
+		if (length(w) == 0)
 			next
 		
 		start <- index[i] + 1
 		for (j in seq_along(group)) {
 			W <- w[w %in% mapping[[j]]]
-			if (length(W)==0)
+			if (length(W) == 0)
 				next
 			
 			end <- width(myXStringSet)[W]
@@ -114,9 +114,9 @@ AlignTranslation <- function(myXStringSet,
 		lastResidue <- substring(AA[w],
 			width(AA)[w],
 			width(AA)[w])
-		readingFrame[w] <- ifelse(a==0 | # no stops OR
-			(a==1 & lastResidue=="*") | # one stop at end OR
-			i==length(index), # already checked all reading frames
+		readingFrame[w] <- ifelse(a == 0 | # no stops OR
+			(a == 1 & lastResidue == "*") | # one stop at end OR
+			i == length(index), # already checked all reading frames
 			index[i] + 1,
 			readingFrame[w])
 	}
@@ -124,7 +124,7 @@ AlignTranslation <- function(myXStringSet,
 	names(AA) <- names(myXStringSet)
 	AA <- AlignSeqs(myXStringSet=AA, ...)
 	if (type > 2) {
-		if (type==4) {
+		if (type == 4) {
 			results <- list(NULL, AA)
 		} else {
 			return(AA)
@@ -132,9 +132,9 @@ AlignTranslation <- function(myXStringSet,
 	}
 	
 	# correct for shifts introduced by "+"
-	readingFrame <- ifelse(readingFrame==1,
+	readingFrame <- ifelse(readingFrame == 1,
 		1,
-		ifelse(readingFrame==2,
+		ifelse(readingFrame == 2,
 			-1,
 			0))
 	
@@ -145,13 +145,13 @@ AlignTranslation <- function(myXStringSet,
 	for (i in seq_along(myXStringSet)) {
 		start <- start(gaps[[i]])
 		if (length(start) > 0) {
-			w <- which(start + (length(start) - 1):0==width(AA)[i])
+			w <- which(start + (length(start) - 1):0 == width(AA)[i])
 			if (length(w) > 0)
 				length(start) <- length(start) - length(w)
 			start <- start*3 - 3 + readingFrame[i]
 			start <- sort(c(start, start + 1, start + 2))
 			start <- start - 0:(length(start) - 1)
-			w <- which(start==(readingFrame[i]))
+			w <- which(start == (readingFrame[i]))
 			if (length(w) > 0)
 				start[w] <- 1
 		}
@@ -168,19 +168,19 @@ AlignTranslation <- function(myXStringSet,
 	}
 	
 	# remove leading common gaps
-	start <- min(unlist(lapply(starts, function(x) return(length(which(x==1))))))
+	start <- min(unlist(lapply(starts, function(x) return(length(which(x == 1))))))
 	if (start > 0)
 		starts <- lapply(starts, function(x) return(x[-(1:start)]))
 	
 	myXStringSet <- replaceAt(myXStringSet,
 		starts,
 		"-")
-	if (sense=="-")
+	if (sense == "-")
 		myXStringSet <- reverseComplement(myXStringSet)
-	if (direction=="3' to 5'")
+	if (direction == "3' to 5'")
 		myXStringSet <- reverse(myXStringSet)
 	
-	if (type==4) {
+	if (type == 4) {
 		results[[1]] <- myXStringSet
 		return(results)
 	} else {

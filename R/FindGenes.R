@@ -32,8 +32,8 @@
 	topScore <- topScore - log(toplengths) # analogous to multiple testing correction
 	
 	maxL <- (length(sameScores) - 1L)/2L
-	if (maxL==maxOverlapSame &&
-		maxL==maxOverlapOpposite) {
+	if (maxL == maxOverlapSame &&
+		maxL == maxOverlapOpposite) {
 		scoreIntergenic <- TRUE
 	} else {
 		scoreIntergenic <- FALSE
@@ -64,14 +64,14 @@
 			topstarts[indices[i], 3L] - last >= ORFanDist) {
 			j <- i + 1L
 			while (j < length(indices) &&
-				topstarts[indices[j], 1L]==topstarts[indices[i], 1L]) {
+				topstarts[indices[j], 1L] == topstarts[indices[i], 1L]) {
 				if (toplengths[indices[j]] < ORFanCutoff) {
 					j <- j + 1L
 				} else {
 					break
 				}
 			}
-			if (topstarts[indices[j], 1L]==topstarts[indices[i], 1L]) {
+			if (topstarts[indices[j], 1L] == topstarts[indices[i], 1L]) {
 				if (topstarts[indices[j], 3L] - topstarts[indices[j - 1L], 4L] < ORFanDist)
 					j <- j - 1L
 				if (j > i) {
@@ -100,14 +100,14 @@
 	while (length(missing) > 0) {
 		if (currIndex != allstarts[missing[1L], 1L]) {
 			currIndex <- allstarts[missing[1L], 1L]
-			W <- which(allstarts[, 1L]==allstarts[missing[1L], 1L])
+			W <- which(allstarts[, 1L] == allstarts[missing[1L], 1L])
 			begins <- allstarts[W, 3L]
 			ends <- allstarts[W, 4L]
 		}
-		if (allstarts[missing[1], 2L]==1L) { # reverse strand
-			w <- W[begins==allstarts[missing[1L], 3L]]
+		if (allstarts[missing[1], 2L] == 1L) { # reverse strand
+			w <- W[begins == allstarts[missing[1L], 3L]]
 		} else { # forward strand
-			w <- W[ends==allstarts[missing[1L], 4L]]
+			w <- W[ends == allstarts[missing[1L], 4L]]
 		}
 		if (all(totScore[w] < minScore)) { # could not be included already
 			# pick max scoring (long) ORF to include
@@ -119,7 +119,7 @@
 				allstarts[indices, 4L] >= allstarts[i, 4L] &
 				allstarts[indices, 1L] == allstarts[i, 1L])
 			
-			if (length(overlap)==0) { # check beginning overlap
+			if (length(overlap) == 0) { # check beginning overlap
 				overlap <- which(allstarts[indices, 3L] > allstarts[i, 3L] &
 					allstarts[indices, 3L] < allstarts[i, 4L] &
 					allstarts[indices, 1L] == allstarts[i, 1L])
@@ -130,7 +130,7 @@
 				}
 			}
 			
-			if (length(overlap)==0) { # check ending overlap
+			if (length(overlap) == 0) { # check ending overlap
 				overlap <- which(allstarts[indices, 4L] > allstarts[i, 3L] &
 					allstarts[indices, 4L] < allstarts[i, 4L] &
 					allstarts[indices, 1L] == allstarts[i, 1L])
@@ -141,7 +141,7 @@
 				}
 			}
 			
-			if (length(overlap)==0)
+			if (length(overlap) == 0)
 				indices <- c(indices, i)
 		}
 		missing <- missing[!(missing %in% w)]
@@ -201,8 +201,8 @@
 		p <- RemoveGaps(p)
 		p <- unique(p)
 		
-		if (length(p)==1 &&
-			width(p)==length(SD))
+		if (length(p) == 1 &&
+			width(p) == length(SD))
 			SD <- p[[1]]
 	}
 	
@@ -222,7 +222,7 @@
 	mapping["G", "G"] <- 4
 	mapping["C", "C"] <- 4
 	
-	w <- which(width(dna)==upstreamWidth)
+	w <- which(width(dna) == upstreamWidth)
 	p <- pairwiseAlignment(dna[w],
 		pattern,
 		type="local-global",
@@ -254,7 +254,7 @@
 	deltaGrulesRNA) {
 	
 	mapping <- diag(4)
-	mapping[mapping==0] <- -4
+	mapping[mapping == 0] <- -4
 	dimnames(mapping) <- list(DNA_BASES,
 			DNA_BASES)
 	mapping["G", "G"] <- 6
@@ -335,10 +335,10 @@
 				na.rm=TRUE),
 			1))
 	fg <- tabulate(p[indices], bins)
-	fg <- ifelse(fg==0, 1, fg)
+	fg <- ifelse(fg == 0, 1, fg)
 	fg <- fg/sum(fg)
 	bg <- tabulate(p[-indices], bins)
-	bg <- ifelse(bg==0, 1, bg)
+	bg <- ifelse(bg == 0, 1, bg)
 	bg <- bg/sum(bg)
 	score <- log(fg/bg)
 	score[p]
@@ -413,7 +413,7 @@ FindGenes <- function(myDNAStringSet,
 	# error checking
 	if (!is(myDNAStringSet, "DNAStringSet"))
 		stop("myDNAStringSet must be a DNAStringSet.")
-	if (sum(width(myDNAStringSet))==0)
+	if (sum(width(myDNAStringSet)) == 0)
 		stop("myDNAStringSet must contain sequences.")
 	a <- vcountPattern("-", myDNAStringSet)
 	if (any(a > 0))
@@ -427,19 +427,19 @@ FindGenes <- function(myDNAStringSet,
 		stop("geneticCode must contain 64 codons.")
 	if (is.null(names(geneticCode)))
 		stop("geneticCode must be a named character vector.")
-	startCodons <- names(geneticCode[which(geneticCode=="M")])
+	startCodons <- names(geneticCode[which(geneticCode == "M")])
 	startCodons <- c(startCodons,
 		attr(geneticCode, "alt_init_codons"))
-	if (length(startCodons)==0)
+	if (length(startCodons) == 0)
 		stop("geneticCode must contain at least one start codon.")
 	if (length(startCodons) >= 10)
 		stop("geneticCode must contain fewer than 10 start codons.")
 	startIndex <- match(startCodons, codons) - 1L
 	if (any(is.na(startIndex)))
 		stop("geneticCode may only contain standard 3-letter start codons.")
-	stopIndex <- names(geneticCode[which(geneticCode=="*")])
+	stopIndex <- names(geneticCode[which(geneticCode == "*")])
 	stopIndex <- match(stopIndex, codons) - 1L
-	if (length(stopIndex)==0)
+	if (length(stopIndex) == 0)
 		stop("No stop codons (*) found in the geneticCode.")
 	if (length(stopIndex) >= 10)
 		stop("geneticCode must contain fewer than 10 stop codons.")
@@ -476,7 +476,7 @@ FindGenes <- function(myDNAStringSet,
 		stop("showPlot must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -510,7 +510,7 @@ FindGenes <- function(myDNAStringSet,
 	includeGenes <- includeGenes[, colnames(ORFs)]
 	mode(includeGenes) <- "integer" # coerce to integer matrix
 	
-	if (nrow(ORFs)==0)
+	if (nrow(ORFs) == 0)
 		stop("myDNAStringSet does not contain any open reading frames.")
 	
 	longest <- .Call("longestORFs",
@@ -522,8 +522,8 @@ FindGenes <- function(myDNAStringSet,
 	o <- longest[l[longest] >= noiseCutoff]
 	o <- o[order(ORFs[o, 1], ORFs[o, 3])]
 	intergenic <- ORFs[o[-1], 3] - ORFs[o[-length(o)], 4] + 1L
-	sameStrand <- ORFs[o[-1], 2]==ORFs[o[-length(o)], 2]
-	sameIndex <- ORFs[o[-1], 1]==ORFs[o[-length(o)], 1]
+	sameStrand <- ORFs[o[-1], 2] == ORFs[o[-length(o)], 2]
+	sameIndex <- ORFs[o[-1], 1] == ORFs[o[-length(o)], 1]
 	r <- -maxL:maxL # symmetric length range of scores
 	bg_same <- tabulate(intergenic[sameStrand & sameIndex] + maxL + 1L, length(r))
 	first <- maxL - maxOverlapSame
@@ -767,8 +767,8 @@ FindGenes <- function(myDNAStringSet,
 				TRUE, # relative to start
 				PACKAGE="DECIPHER")
 			
-			w <- which(nchar(foldLeft)==foldingWidth[1] &
-				nchar(foldRight)==foldingWidth[1])
+			w <- which(nchar(foldLeft) == foldingWidth[1] &
+				nchar(foldRight) == foldingWidth[1])
 		} else {
 			foldLeft <- .Call("getRegion",
 				myDNAStringSet,
@@ -786,8 +786,8 @@ FindGenes <- function(myDNAStringSet,
 				FALSE, # relative to stop
 				PACKAGE="DECIPHER")
 			
-			w <- which(nchar(foldLeft)==foldingWidth[2] &
-				nchar(foldRight)==foldingWidth[2])
+			w <- which(nchar(foldLeft) == foldingWidth[2] &
+				nchar(foldRight) == foldingWidth[2])
 		}
 		foldLeft <- DNAStringSet(unlist(foldLeft))
 		foldRight <- DNAStringSet(unlist(foldRight))
@@ -936,7 +936,7 @@ FindGenes <- function(myDNAStringSet,
 				clusts <- c(clusts,
 					lapply(seq_len(max(clust[, i])),
 						function(x)
-							which(clust[, i]==x)))
+							which(clust[, i] == x)))
 			size <- sapply(clusts,
 				function(x)
 					sum(l[indices[x]]))
@@ -944,8 +944,8 @@ FindGenes <- function(myDNAStringSet,
 			clusts <- clusts[keep]
 			size <- size[keep]
 			if (length(clusts) > 1 ||
-				length(clusts)==0 ||
-				(length(clusts)==1 &&
+				length(clusts) == 0 ||
+				(length(clusts) == 1 &&
 				length(clusts[[1]]) < length(indices))) {
 				clusts <- c(list(seq_along(indices)),
 					clusts)
@@ -978,7 +978,7 @@ FindGenes <- function(myDNAStringSet,
 				codon_scores,
 				PACKAGE="DECIPHER")
 			
-			if (i==1L) {
+			if (i == 1L) {
 				codScr <- tempScr
 				
 				# add run length into model
@@ -996,7 +996,7 @@ FindGenes <- function(myDNAStringSet,
 						PACKAGE="DECIPHER")
 					orf_scores <- orf_scores + runScr
 				}
-			} else if (i==2L) {
+			} else if (i == 2L) {
 				altScr <- tempScr
 				if (allScores)
 					models <- rep(i, length(altScr))
@@ -1268,7 +1268,7 @@ FindGenes <- function(myDNAStringSet,
 			bg <- oligonucleotideFrequency(upstream[-indices],
 				RBSk,
 				simplify.as="collapse")
-			bg[bg==0] <- 1L # add pseudocounts
+			bg[bg == 0] <- 1L # add pseudocounts
 			bg <- bg/sum(bg)
 			score <- log(fg/bg)
 			score <- sort(score,
@@ -1305,7 +1305,7 @@ FindGenes <- function(myDNAStringSet,
 					as.prob=TRUE)
 				PWMs <- lapply(o,
 					function(x) {
-						w <- which(clusts==x)
+						w <- which(clusts == x)
 						
 						# weight motifs approximately by score
 						m <- rep(motif[w],
@@ -1380,14 +1380,14 @@ FindGenes <- function(myDNAStringSet,
 		if (scoreIntergenicLength) {
 			o <- order(ORFs[indices, 1], ORFs[indices, 3])
 			intergenic <- ORFs[indices[o][-1], 3] - ORFs[indices[o][-length(o)], 4] + 1L
-			sameStrand <- ORFs[indices[o][-1], 2]==ORFs[indices[o][-length(o)], 2]
-			sameIndex <- ORFs[indices[o][-1], 1]==ORFs[indices[o][-length(o)], 1]
+			sameStrand <- ORFs[indices[o][-1], 2] == ORFs[indices[o][-length(o)], 2]
+			sameIndex <- ORFs[indices[o][-1], 1] == ORFs[indices[o][-length(o)], 1]
 			obs_same <- tabulate(intergenic[sameStrand & sameIndex] + maxL + 1L, length(r))
 			obs_same[seq_len(first)] <- 0L
 			# accumulate background
 			sum <- 0
 			for (i in (maxL - 1):(first + 1)) {
-				if (obs_same[i]==0) {
+				if (obs_same[i] == 0) {
 					sum <- sum + bg_same[i]
 				} else if (sum > 0) {
 					bg_same[i] <- bg_same[i] + sum
@@ -1399,7 +1399,7 @@ FindGenes <- function(myDNAStringSet,
 			# accumulate background
 			sum <- 0
 			for (i in (maxL - 1):(first + 1)) {
-				if (obs_oppo[i]==0) {
+				if (obs_oppo[i] == 0) {
 					sum <- sum + bg_oppo[i]
 				} else if (sum > 0) {
 					bg_oppo[i] <- bg_oppo[i] + sum
@@ -1688,40 +1688,40 @@ FindGenes <- function(myDNAStringSet,
 	params <- list()
 	for (j in seq_len(ncol(signals))) {
 		for (i in seq_len(nrow(signals))) {
-			if (signals[i, j]==1) {
+			if (signals[i, j] == 1) {
 				params <- c(params,
 					list(multiModel=TRUE))
-			} else if (signals[i, j]==2) {
+			} else if (signals[i, j] == 2) {
 				params <- c(params,
 					list(startCodonModel=TRUE))
-			} else if (signals[i, j]==3) {
+			} else if (signals[i, j] == 3) {
 				params <- c(params,
 					list(initialCodons=initialCodons))
-			} else if (signals[i, j]==4) {
+			} else if (signals[i, j] == 4) {
 				params <- c(params,
 					list(terminationCodons=terminationCodons))
-			} else if (signals[i, j]==5) {
+			} else if (signals[i, j] == 5) {
 				params <- c(params,
 					list(runLengthModel=TRUE))
-			} else if (signals[i, j]==6) {
+			} else if (signals[i, j] == 6) {
 				params <- c(params,
 					list(scoreRBS=TRUE))
-			} else if (signals[i, j]==7) {
+			} else if (signals[i, j] == 7) {
 				params <- c(params,
 					list(scoreAutocorr=TRUE))
-			} else if (signals[i, j]==8) {
+			} else if (signals[i, j] == 8) {
 				params <- c(params,
 					list(upstreamMotifs=upstreamMotifs))
-			} else if (signals[i, j]==9) {
+			} else if (signals[i, j] == 9) {
 				params <- c(params,
 					list(scoreFolding=TRUE))
-			} else if (signals[i, j]==10) {
+			} else if (signals[i, j] == 10) {
 				params <- c(params,
 					list(scoreIntergenicLength=TRUE))
-			} else if (signals[i, j]==11) {
+			} else if (signals[i, j] == 11) {
 				params <- c(params,
 					list(stopCodonModel=TRUE))
-			} else if (signals[i, j]==12) {
+			} else if (signals[i, j] == 12) {
 				params <- c(params,
 					list(scoreUpstream=TRUE))
 			}
@@ -1746,8 +1746,8 @@ FindGenes <- function(myDNAStringSet,
 		
 		bootstraps[indices] <- bootstraps[indices] + 1L
 		indices <- which(bootstraps >= i*includeFrac)
-		if (length(prev_indices)==length(indices) &&
-			all(prev_indices==indices))
+		if (length(prev_indices) == length(indices) &&
+			all(prev_indices == indices))
 			break
 		prev_indices <- indices
 	}

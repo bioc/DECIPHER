@@ -394,12 +394,12 @@ plot.Taxa <- function(x, y=NULL, showRanks=TRUE, n=NULL, ...) {
 			stop("y must be an object of class 'Taxa'.")
 		if (class(x)[2]=="Train") {
 			train <- x
-			if (class(y)[2]!="Test")
+			if (class(y)[2] != "Test")
 				stop("y must be an object of class 'Test' when x is an object of class 'Train'.")
 			test <- y
 		} else if (class(x)[2]=="Test") {
 			test <- x
-			if (class(y)[2]!="Train")
+			if (class(y)[2] != "Train")
 				stop("y must be an object of class 'Train' when x is an object of class 'Test'.")
 			train <- y
 		} else {

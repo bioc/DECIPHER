@@ -38,7 +38,7 @@ AlignDB <- function(dbFile,
 		stop("add2tbl must be a character specifying a table name.")
 	if (!is.numeric(batchSize))
 		stop("batchSize must be a numeric.")
-	if (floor(batchSize)!=batchSize)
+	if (floor(batchSize) != batchSize)
 		stop("batchSize must be a whole number.")
 	if (batchSize <= 0)
 		stop("batchSize must be greater than zero.")
@@ -90,7 +90,7 @@ AlignDB <- function(dbFile,
 		stop("standardize must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -184,7 +184,7 @@ AlignDB <- function(dbFile,
 		if (i==1) {
 			uw1 <- temp
 		} else {
-			if (uw1!=temp)
+			if (uw1 != temp)
 				stop("Multiple width sequences found.")
 		}
 		
@@ -238,7 +238,7 @@ AlignDB <- function(dbFile,
 				") than the maximum allowable size (2,147,483,647).",
 				sep=""))
 		} else {
-			if (uw2!=temp)
+			if (uw2 != temp)
 				stop("Multiple width sequences found.")
 		}
 		

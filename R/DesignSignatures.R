@@ -29,9 +29,9 @@
 		stop("temp must be greater than or equal to absolute zero.")
 	
 	l <- length(primer)
-	if (l==0)
+	if (l == 0)
 		stop("No primer specified.")
-	if (l!=length(target))
+	if (l != length(target))
 		stop("primer is not the same length as target.")
 	
 	if (align) {
@@ -50,7 +50,7 @@
 	if (taqEfficiency) {
 		if (!is.null(processors) && !is.numeric(processors))
 			stop("processors must be a numeric.")
-		if (!is.null(processors) && floor(processors)!=processors)
+		if (!is.null(processors) && floor(processors) != processors)
 			stop("processors must be a whole number.")
 		if (!is.null(processors) && processors < 1)
 			stop("processors must be at least 1.")
@@ -138,17 +138,17 @@ DesignSignatures <- function(dbFile,
 		stop("Sodium equivilent concentration must be at least 0.01M.")
 	if (!is.numeric(minLength))
 		stop("minLength must be a numeric.")
-	if (floor(minLength)!=minLength)
+	if (floor(minLength) != minLength)
 		stop("minLength must be a whole number.")
 	if (!is.numeric(levels))
 		stop("levels must be a numeric.")
-	if (floor(levels)!=levels)
+	if (floor(levels) != levels)
 		stop("levels must be a whole number.")
 	if (levels < 2)
 		stop("levels must be at least two.")
 	if (!is.numeric(maxLength))
 		stop("maxLength must be a numeric.")
-	if (floor(maxLength)!=maxLength)
+	if (floor(maxLength) != maxLength)
 		stop("maxLength must be a whole number.")
 	maxLength <- as.integer(maxLength)
 	if (minLength > maxLength)
@@ -175,25 +175,25 @@ DesignSignatures <- function(dbFile,
 		stop("ampEfficiency must be between zero and minEfficiency.")
 	if (!is.numeric(numPrimerSets))
 		stop("numPrimerSets must be a numeric.")
-	if (floor(numPrimerSets)!=numPrimerSets)
+	if (floor(numPrimerSets) != numPrimerSets)
 		stop("numPrimerSets must be a whole number.")
 	if (numPrimerSets <= 0)
 		stop("numPrimerSets must be greater than zero.")
 	if (!is.numeric(minProductSize))
 		stop("minProductSize must be a numeric.")
-	if (floor(minProductSize)!=minProductSize)
+	if (floor(minProductSize) != minProductSize)
 		stop("minProductSize must be a whole number.")
 	if (minProductSize <= 2*maxLength)
 		stop("minProductSize must be greater than 2*maxLength.")
 	if (!is.numeric(maxProductSize))
 		stop("maxProductSize must be a numeric.")
-	if (floor(maxProductSize)!=maxProductSize)
+	if (floor(maxProductSize) != maxProductSize)
 		stop("maxProductSize must be a whole number.")
 	if (maxProductSize < minProductSize)
 		stop("maxProductSize must be greater than or equal to minProductSize.")
 	if (!is.numeric(kmerSize))
 		stop("kmerSize must be a numeric.")
-	if (floor(kmerSize)!=kmerSize)
+	if (floor(kmerSize) != kmerSize)
 		stop("kmerSize must be a whole number.")
 	if (kmerSize > minLength)
 		stop("kmerSize must be less than or equal to minLength.")
@@ -203,13 +203,13 @@ DesignSignatures <- function(dbFile,
 		stop("kmerSize must be at least 4.")
 	if (!is.numeric(maxPermutations))
 		stop("maxPermutations must be a numeric.")
-	if (floor(maxPermutations)!=maxPermutations)
+	if (floor(maxPermutations) != maxPermutations)
 		stop("maxPermutations must be a whole number.")
 	if (maxPermutations <= 0)
 		stop("maxPermutations must be greater than zero.")
 	if (!is.numeric(searchPrimers))
 		stop("searchPrimers must be a numeric.")
-	if (floor(searchPrimers)!=searchPrimers)
+	if (floor(searchPrimers) != searchPrimers)
 		stop("searchPrimers must be a whole number.")
 	if (searchPrimers <= numPrimerSets)
 		stop("searchPrimers must be greater than numPrimerSets.")
@@ -235,7 +235,7 @@ DesignSignatures <- function(dbFile,
 		stop("pNorm must be greater than zero.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -246,8 +246,8 @@ DesignSignatures <- function(dbFile,
 	}
 	if (!is.numeric(resolution))
 		stop("resolution must be a numeric.")
-	if (length(resolution)==1) {
-		if (type==1L) { # type is "melt"
+	if (length(resolution) == 1) {
+		if (type == 1L) { # type is "melt"
 			if (resolution < 0.1)
 				stop("resolution must be at least 0.1.")
 			if (resolution >= 3)
@@ -262,7 +262,7 @@ DesignSignatures <- function(dbFile,
 				stop("resolution must be at least 1.")
 			if (resolution != floor(resolution))
 				stop("resolution must be a whole number.")
-			if (type==2L) { # type is "length"
+			if (type == 2L) { # type is "length"
 				# resolution specifies the number of bins
 				resolution <- seq(minProductSize,
 					maxProductSize,
@@ -274,12 +274,12 @@ DesignSignatures <- function(dbFile,
 			}
 		}
 	} else {
-		if (type==3L)
+		if (type == 3L)
 			stop("resolution must be a single number if type is 'sequence'.")
 		# resolution specifies boundaries
 		if (is.unsorted(resolution))
 			stop("resolution must be monotonically increasing.")
-		if (type==1L) { # type is "melt"
+		if (type == 1L) { # type is "melt"
 			maxTemp <- resolution[length(resolution)]
 			if (maxTemp < annealingTemp)
 				stop("The maximum resolution must surpass annealingTemp.")
@@ -290,7 +290,7 @@ DesignSignatures <- function(dbFile,
 		}
 	}
 	if (!is.null(enzymes)) {
-		if (type==3L)
+		if (type == 3L)
 			stop("enzymes must be NULL if type is 'sequence'.")
 		if (!is.character(enzymes))
 			stop("enzymes must be a named character vector.")
@@ -320,7 +320,7 @@ DesignSignatures <- function(dbFile,
 	ids <- searchResult$identifier
 	dbClearResult(rs)
 	
-	if (identifier[1]=="") {
+	if (identifier[1] == "") {
 		identifier <- ids
 	} else {
 		w <- which(!(identifier %in% ids))
@@ -365,7 +365,7 @@ DesignSignatures <- function(dbFile,
 			kmerSize,
 			"-mers for ",
 			length(identifier),
-			ifelse(length(identifier)==1L,
+			ifelse(length(identifier) == 1L,
 				" group",
 				" groups"),
 			":\n",
@@ -418,7 +418,7 @@ DesignSignatures <- function(dbFile,
 	.dGinis <- function(primers) {
 		left <- substring(primers, 1, 1)
 		right <- substring(primers, nchar(primers), nchar(primers))
-		GC_term <- (left=="G" | left=="C") + (right=="G" | right=="C")
+		GC_term <- (left == "G" | left == "C") + (right == "G" | right == "C")
 		
 		return(dGini[GC_term + 1])
 	}
@@ -452,7 +452,7 @@ DesignSignatures <- function(dbFile,
 				identifier[focusID],
 				"':\n",
 				sep="")
-		} else if (length(focusID)==1) {
+		} else if (length(focusID) == 1) {
 			cat("\nDesigning primer sequences based on the group '",
 				identifier[focusID],
 				"':\n",
@@ -517,7 +517,7 @@ DesignSignatures <- function(dbFile,
 		
 		# determine primer lengths
 		a <- alphabetFrequency(f.tails)
-		if (dim(a)[1]==1) {
+		if (dim(a)[1] == 1) {
 			ambig <- which(sum(a[, 5:18]) > 0)
 		} else {
 			ambig <- which(rowSums(a[, 5:18]) > 0)
@@ -531,7 +531,7 @@ DesignSignatures <- function(dbFile,
 			W <- 1:length(u)
 			for (j in minLength:maxLength) {
 				primers <- substring(u[W], maxLength - j + 1, maxLength)
-				if (length(primers)==0)
+				if (length(primers) == 0)
 					next
 				eff <- .CalculateEfficiencyPCR(primers,
 					primers,
@@ -545,12 +545,12 @@ DesignSignatures <- function(dbFile,
 				if (length(w) > 0) {
 					u[W[w]] <- primers[w]
 					W <- W[-w]
-					if (length(W)==0)
+					if (length(W) == 0)
 						break
 				}
 			}
 			
-			w <- which(nchar(u)==minLength)
+			w <- which(nchar(u) == minLength)
 			if (length(w) > 0) {
 				primers <- substring(u[w], 2, minLength)
 				eff <- .CalculateEfficiencyPCR(primers,
@@ -572,7 +572,7 @@ DesignSignatures <- function(dbFile,
 		}
 		
 		a <- alphabetFrequency(r.tails)
-		if (dim(a)[1]==1) {
+		if (dim(a)[1] == 1) {
 			ambig <- which(sum(a[, 5:18]) > 0)
 		} else {
 			ambig <- which(rowSums(a[, 5:18]) > 0)
@@ -586,7 +586,7 @@ DesignSignatures <- function(dbFile,
 			W <- 1:length(u)
 			for (j in minLength:maxLength) {
 				primers <- substring(u[W], maxLength - j + 1, maxLength)
-				if (length(primers)==0)
+				if (length(primers) == 0)
 					next
 				eff <- .CalculateEfficiencyPCR(primers,
 					primers,
@@ -600,12 +600,12 @@ DesignSignatures <- function(dbFile,
 				if (length(w) > 0) {
 					u[W[w]] <- primers[w]
 					W <- W[-w]
-					if (length(W)==0)
+					if (length(W) == 0)
 						break
 				}
 			}
 			
-			w <- which(nchar(u)==minLength)
+			w <- which(nchar(u) == minLength)
 			if (length(w) > 0) {
 				primers <- substring(u[w], 2, minLength)
 				eff <- .CalculateEfficiencyPCR(primers,
@@ -811,7 +811,7 @@ DesignSignatures <- function(dbFile,
 		q <- ifelse(q < 0, 0, q)
 		f.w <- which(t > quantile(t, q))
 		f.w <- c(f.w,
-			sample(which(t==quantile(t, q)),
+			sample(which(t == quantile(t, q)),
 				searchPrimers - length(f.w)))
 		f.primers <- f.primers[f.w]
 	} else {
@@ -823,7 +823,7 @@ DesignSignatures <- function(dbFile,
 		q <- ifelse(q < 0, 0, q)
 		r.w <- which(t > quantile(t, q))
 		r.w <- c(r.w,
-			sample(which(t==quantile(t, q)),
+			sample(which(t == quantile(t, q)),
 				searchPrimers - length(r.w)))
 		r.primers <- r.primers[r.w]
 	} else {
@@ -1022,7 +1022,7 @@ DesignSignatures <- function(dbFile,
 		tb.width=threePrimeWidth)
 	r.primers.rc <- as.character(reverseComplement(r.p))
 	
-	if (type==3L) { # type is 'sequence'
+	if (type == 3L) { # type is 'sequence'
 		bins <- 4^resolution # possible k-mers
 	} else { # type is 'melt' or 'length'
 		bins <- length(resolution) - 1 # number of bins
@@ -1044,17 +1044,17 @@ DesignSignatures <- function(dbFile,
 						sep=""))))
 	}
 	
-	if (type==3L) { # type is 'sequence'
+	if (type == 3L) { # type is 'sequence'
 		s <- 1:(4^resolution)
 	} else { # type is 'melt' or 'length'
 		s <- resolution
-		if (type==1L) # define midpoint melt temps for bins
+		if (type == 1L) # define midpoint melt temps for bins
 			midpoints <- (s[2:length(s)] + s[1:(length(s) - 1)])/2
 	}
 	binMat <- matrix(seq_len(maxBins*ints),
 		nrow=maxBins)
 	levs <- levels^(0:(maxBins - 1))
-	if (type==1L) { # melt
+	if (type == 1L) { # melt
 		# use `round` to approximate levels
 		.bin <- function(x) {
 			l <- .bincode(x,
@@ -1129,7 +1129,7 @@ DesignSignatures <- function(dbFile,
 		starts2 <- startIndex(m.f2)
 		index <- unlist(lapply(starts, length))
 		index2 <- unlist(lapply(starts2, length))
-		if (all(index==0) && all(index2==0))
+		if (all(index == 0) && all(index2 == 0))
 			next
 		keep <- integer(sum(index, index2))
 		pos <- 0L # position in keep
@@ -1150,7 +1150,7 @@ DesignSignatures <- function(dbFile,
 			}
 			counter2 <- counter2 + index2[j]
 		}
-		w <- which(keep==0)
+		w <- which(keep == 0)
 		if (length(w) > 0)
 			keep <- keep[-w]
 		index <- unlist(lapply(starts, length)) # reevaluate index
@@ -1192,7 +1192,7 @@ DesignSignatures <- function(dbFile,
 		}
 		
 		index <- unlist(lapply(starts, length))
-		if (all(index==0))
+		if (all(index == 0))
 			next
 		
 		m.r <- matchPDict(r.pdict,
@@ -1207,7 +1207,7 @@ DesignSignatures <- function(dbFile,
 		ends2 <- endIndex(m.r2)
 		index <- unlist(lapply(ends, length))
 		index2 <- unlist(lapply(ends2, length))
-		if (all(index==0) && all(index2==0))
+		if (all(index == 0) && all(index2 == 0))
 			next
 		keep <- integer(sum(index, index2))
 		pos <- 0L # position in keep
@@ -1228,7 +1228,7 @@ DesignSignatures <- function(dbFile,
 			}
 			counter2 <- counter2 + index2[j]
 		}
-		w <- which(keep==0)
+		w <- which(keep == 0)
 		if (length(w) > 0)
 			keep <- keep[-w]
 		index <- unlist(lapply(ends, length)) # reevaluate index
@@ -1270,7 +1270,7 @@ DesignSignatures <- function(dbFile,
 		}
 		
 		index <- unlist(lapply(ends, length))
-		if (all(index==0))
+		if (all(index == 0))
 			next
 		index <- rep(1:length(index), index)
 		ends <- as.integer(unlist(ends))
@@ -1293,7 +1293,7 @@ DesignSignatures <- function(dbFile,
 					# geometric mean > minimum efficiency
 					eff.pairs <- sqrt(eff[k]*eff.r[w])
 					z <- which(eff.pairs > ampEfficiency)
-					if (length(z)==0)
+					if (length(z) == 0)
 						next
 					
 					w <- w[z]
@@ -1309,7 +1309,7 @@ DesignSignatures <- function(dbFile,
 				b <- unlist(b)
 				e <- unlist(e)
 				effs <- unlist(effs)
-				if (type==1L) { # melt
+				if (type == 1L) { # melt
 					ind <- index[W]
 					u <- as.integer(names(table(ind)))
 					t <- matrix(nrow=length(u), ncol=ints)
@@ -1325,7 +1325,7 @@ DesignSignatures <- function(dbFile,
 						ions=ions)
 					
 					for (p in seq_along(u)) {
-						w <- which(ind==u[p])
+						w <- which(ind == u[p])
 						
 						# weighted average melt profile
 						mPs <- t(out[, w])*effs[w]
@@ -1334,13 +1334,13 @@ DesignSignatures <- function(dbFile,
 						mPs <- mPs/sum(effs[w])
 						mPs <- mPs/mean(width(products)[w])
 						mPs <- round((levels - 1)*mPs)
-						if (all(mPs==0))
+						if (all(mPs == 0))
 							next # no signature
 						
 						t[p,] <- .bin(rep(midpoints,
 							mPs))
 					}
-				} else if (type==2L) { # length
+				} else if (type == 2L) { # length
 					reps <- ceiling(effs*(levels - 1L))
 					peaks <- rep(e - b + 1L, reps)
 					ind <- rep(index[W], reps)
@@ -1388,7 +1388,7 @@ DesignSignatures <- function(dbFile,
 	}
 	
 	w <- which(is.na(amplicons[, 1]) | is.na(amplicons[, 5]))
-	if (length(w)==dim(amplicons)[1]) {
+	if (length(w) == dim(amplicons)[1]) {
 		if (verbose) {
 			setTxtProgressBar(pBar, 1)
 			close(pBar)
@@ -1456,7 +1456,7 @@ DesignSignatures <- function(dbFile,
 		w <- .Call("multiMatch", m, i, begin, PACKAGE="DECIPHER")
 		begin <- w[length(w)]
 		
-		if (length(w)==1)
+		if (length(w) == 1)
 			next
 		
 		sigs[i] <- .Call("intDist",
@@ -1504,7 +1504,7 @@ DesignSignatures <- function(dbFile,
 	count <- 0L
 	keep <- vector(mode="list", numPrimerSets)
 	for (i in seq_along(o)) {
-		w <- which(m==o[i])
+		w <- which(m == o[i])
 		forward <- f.primers[amplicons[w[1], "Forward"]]
 		reverse <- r.primers[amplicons[w[1], "Reverse"]]
 		
@@ -1552,14 +1552,14 @@ DesignSignatures <- function(dbFile,
 		temp <- ""
 		for (j in which(unlist(lapply(t, length)) > 1)) {
 			identifiers <- identifier[amplicons[w[t[[j]]], "Identifier"]]
-			temp <- paste(ifelse(j==1,
+			temp <- paste(ifelse(j == 1,
 					"",
 					temp),
 				paste("(",
 					paste(identifiers, collapse=", "),
 					")",
 					sep=""),
-				sep=ifelse(j==1, "", "; "))
+				sep=ifelse(j == 1, "", "; "))
 		}
 		primers[count, "similar_signatures"] <- temp
 		
@@ -1574,7 +1574,7 @@ DesignSignatures <- function(dbFile,
 		if (verbose)
 			setTxtProgressBar(pBar, count/numPrimerSets)
 		
-		if (count==numPrimerSets)
+		if (count == numPrimerSets)
 			break
 	}
 	
@@ -1675,7 +1675,7 @@ DesignSignatures <- function(dbFile,
 			starts2 <- startIndex(m.f2)
 			index <- unlist(lapply(starts, length))
 			index2 <- unlist(lapply(starts2, length))
-			if (all(index==0) && all(index2==0))
+			if (all(index == 0) && all(index2 == 0))
 				next
 			keep <- integer(sum(index, index2))
 			pos <- 0L # position in keep
@@ -1696,7 +1696,7 @@ DesignSignatures <- function(dbFile,
 				}
 				counter2 <- counter2 + index2[j]
 			}
-			w <- which(keep==0)
+			w <- which(keep == 0)
 			if (length(w) > 0)
 				keep <- keep[-w]
 			index <- unlist(lapply(starts, length)) # reevaluate index
@@ -1738,7 +1738,7 @@ DesignSignatures <- function(dbFile,
 			}
 			
 			index <- unlist(lapply(starts, length))
-			if (all(index==0))
+			if (all(index == 0))
 				next
 			
 			m.r <- matchPDict(r.pdict,
@@ -1753,7 +1753,7 @@ DesignSignatures <- function(dbFile,
 			ends2 <- endIndex(m.r2)
 			index <- unlist(lapply(ends, length))
 			index2 <- unlist(lapply(ends2, length))
-			if (all(index==0) && all(index2==0))
+			if (all(index == 0) && all(index2 == 0))
 				next
 			keep <- integer(sum(index, index2))
 			pos <- 0L # position in keep
@@ -1774,7 +1774,7 @@ DesignSignatures <- function(dbFile,
 				}
 				counter2 <- counter2 + index2[j]
 			}
-			w <- which(keep==0)
+			w <- which(keep == 0)
 			if (length(w) > 0)
 				keep <- keep[-w]
 			index <- unlist(lapply(ends, length)) # reevaluate index
@@ -1818,7 +1818,7 @@ DesignSignatures <- function(dbFile,
 			}
 			
 			index <- unlist(lapply(ends, length))
-			if (all(index==0))
+			if (all(index == 0))
 				next
 			
 			# loop through pairs of primers
@@ -1838,7 +1838,7 @@ DesignSignatures <- function(dbFile,
 						# geometric mean > minimum efficiency
 						eff.pairs <- sqrt(eff[k]*effr[w])
 						z <- which(eff.pairs > ampEfficiency)
-						if (length(z)==0)
+						if (length(z) == 0)
 							next
 						
 						w <- w[z]
@@ -1870,7 +1870,7 @@ DesignSignatures <- function(dbFile,
 							function(x)
 								length(x[[1]])))
 						digested <- which(pieces > 0)
-						if (length(digested)==0)
+						if (length(digested) == 0)
 							next # no cut sites
 						
 						prods <- list()
@@ -1884,12 +1884,12 @@ DesignSignatures <- function(dbFile,
 						prods <- do.call(base::c,
 							prods)
 						
-						if (type==1L) { # melt
+						if (type == 1L) { # melt
 							EFFS <- rep(effs[digested], pieces)
 							
 							remove <- which(width(prods) < 3)
 							if (length(remove) > 0) {
-								if (length(remove)==length(prods))
+								if (length(remove) == length(prods))
 									next
 								prods <- prods[-remove]
 								EFFS <- EFFS[-remove]
@@ -1909,7 +1909,7 @@ DesignSignatures <- function(dbFile,
 							mPs <- mPs/sum(EFFS)
 							mPs <- mPs/mean(width(prods))
 							mPs <- round((levels - 1)*mPs)
-							if (all(mPs==0))
+							if (all(mPs == 0))
 								next # no signature
 							
 							t[1,] <- .bin(rep(midpoints,
@@ -1987,7 +1987,7 @@ DesignSignatures <- function(dbFile,
 				for (j in 1:length(w)) {
 					signatures[[j]] <- .revBin(fragments[w[j], 4 + 1:ints])
 				}
-				W <- which(amplicons[, "Primers"]==fragments[w[1], "Primers"] &
+				W <- which(amplicons[, "Primers"] == fragments[w[1], "Primers"] &
 					!(amplicons[, "Identifier"] %in% fragments[w, "Identifier"]))
 				for (j in seq_along(W)) {
 					signatures[[j + length(w)]] <- .revBin(amplicons[W[j], 4 + 1:ints])
@@ -2017,14 +2017,14 @@ DesignSignatures <- function(dbFile,
 				temp <- ""
 				for (j in which(unlist(lapply(t, length)) > 1)) {
 					identifiers <- identifier[W[t[[j]]]]
-					temp <- paste(ifelse(j==1,
+					temp <- paste(ifelse(j == 1,
 							"",
 							temp),
 						paste("(",
 							paste(identifiers, collapse=", "),
 							")",
 							sep=""),
-						sep=ifelse(j==1, "", "; "))
+						sep=ifelse(j == 1, "", "; "))
 				}
 				similar[i] <- temp
 			}

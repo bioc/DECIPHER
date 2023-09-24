@@ -33,7 +33,7 @@ DB2Seqs <- function(file,
 		stop("Ambiguous type.")
 	if (!is.numeric(limit))
 		stop("limit must be a numeric.")
-	if (floor(limit)!=limit)
+	if (floor(limit) != limit)
 		stop("limit must be a whole number.")
 	if (!is.character(nameBy))
 		stop("nameBy must be a character string.")
@@ -49,13 +49,13 @@ DB2Seqs <- function(file,
 		stop("verbose must be a logical.")
 	if (!is.numeric(chunkSize))
 		stop("chunkSize must be a numeric.")
-	if (floor(chunkSize)!=chunkSize)
+	if (floor(chunkSize) != chunkSize)
 		stop("chunkSize must be a whole number.")
 	if (chunkSize <= 0)
 		stop("chunkSize must be greater than zero.")
 	if (!is.numeric(width))
 		stop("width must be a numeric.")
-	if (floor(width)!=width)
+	if (floor(width) != width)
 		stop("width must be a whole number.")
 	if (width < 1)
 		stop("width must be at least 1.")
@@ -63,7 +63,7 @@ DB2Seqs <- function(file,
 		stop("width can be at most 20001.")
 	if (!is.character(sep))
 		stop("sep must be a character string.")
-	if (length(sep)!=1)
+	if (length(sep) != 1)
 		stop("sep must be a single character string.")
 	GAPS <- c("none", "all", "common")
 	removeGaps <- pmatch(removeGaps, GAPS)
@@ -73,21 +73,21 @@ DB2Seqs <- function(file,
 		stop("Ambiguous removeGaps method.")
 	if (is.na(replaceChar)) {
 			replaceChar <- NA_character_
-	} else if (type==1 || type==5) {
-		if (is.na(pmatch(replaceChar, DNA_ALPHABET)) && (replaceChar!=""))
+	} else if (type == 1 || type == 5) {
+		if (is.na(pmatch(replaceChar, DNA_ALPHABET)) && (replaceChar != ""))
 			stop("replaceChar must be a character in the DNA_ALPHABET or empty character.")
-	} else if (type==2 || type==6) {
-		if (is.na(pmatch(replaceChar, RNA_ALPHABET)) && (replaceChar!=""))
+	} else if (type == 2 || type == 6) {
+		if (is.na(pmatch(replaceChar, RNA_ALPHABET)) && (replaceChar != ""))
 			stop("replaceChar must be a character in the RNA_ALPHABET or empty character.")
-	} else if (type==3 || type==7) {
-		if (is.na(pmatch(replaceChar, AA_ALPHABET)) && (replaceChar!=""))
+	} else if (type == 3 || type == 7) {
+		if (is.na(pmatch(replaceChar, AA_ALPHABET)) && (replaceChar != ""))
 			stop("replaceChar must be a character in the AA_ALPHABET or empty character.")
 	}
 	if (type > 4 && removeGaps > 1)
 		stop(paste('removeGaps must be "none" when type is ', TYPES[type], '.', sep=''))
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -115,15 +115,15 @@ DB2Seqs <- function(file,
 	
 	searchExpression <- tblName
 	
-	if (identifier!="")
+	if (identifier != "")
 		searchExpression <- paste(searchExpression,
 			' where identifier is "',
 			identifier,
 			'"',
 			sep="")
-	if (clause!="")
+	if (clause != "")
 		searchExpression <- paste(searchExpression,
-			ifelse(identifier=="", " where ", " and "),
+			ifelse(identifier == "", " where ", " and "),
 			clause,
 			sep="")
 	
@@ -143,14 +143,14 @@ DB2Seqs <- function(file,
 	
 	if (count < 1)
 		stop("No sequences matched the specified parameters.")
-	if (limit!=-1 && count > limit)
+	if (limit != -1 && count > limit)
 		count <- limit
-	if (count > chunkSize && removeGaps==3)
+	if (count > chunkSize && removeGaps == 3)
 		stop("chunkSize must be at least ",
 			count,
 			" with this query if removeGaps is 'common'.")
 	
-	if (orderBy!="row_names") # default ordering is row_names
+	if (orderBy != "row_names") # default ordering is row_names
 		searchExpression <- paste(searchExpression,
 			'order by',
 			orderBy)
@@ -162,16 +162,16 @@ DB2Seqs <- function(file,
 		# build the search expression
 		searchExpression1 <- paste(searchExpression,
 			'limit',
-			ifelse(i==length(s), count - s[i] + 1, chunkSize),
+			ifelse(i == length(s), count - s[i] + 1, chunkSize),
 			'offset',
-			ifelse(i==1, 0, s[i] - 1))
-		if (all(nameBy=="row_names")) {
+			ifelse(i == 1, 0, s[i] - 1))
+		if (all(nameBy == "row_names")) {
 			searchExpression1 <- paste("select row_names from",
 				searchExpression1)
 		} else {
 			temp <- 'select row_names'
 			for (j in 1:length(nameBy)) {
-				if (nameBy[j]=="row_names")
+				if (nameBy[j] == "row_names")
 					next
 				temp <- paste(temp, ", ", nameBy[j], sep="")
 			}
@@ -204,7 +204,7 @@ DB2Seqs <- function(file,
 		searchResult2$sequence <- Codec(searchResult2$sequence,
 			processors=processors)
 		
-		if (type!=4 && type!=8) {
+		if (type != 4 && type != 8) {
 			# replace characters that are not in the DNA_ALPHABET
 			searchResult2$sequence <- .Call("replaceChars",
 				searchResult2$sequence,
@@ -214,7 +214,7 @@ DB2Seqs <- function(file,
 		}
 		
 		# remove gaps if applicable
-		if (removeGaps==2) {
+		if (removeGaps == 2) {
 			searchResult2$sequence <- .Call("replaceChar",
 				searchResult2$sequence,
 				"-",
@@ -225,7 +225,7 @@ DB2Seqs <- function(file,
 				".",
 				"",
 				PACKAGE="DECIPHER")
-		} else if (removeGaps==3) {
+		} else if (removeGaps == 3) {
 			searchResult2$sequence <- .Call("commonGaps",
 				searchResult2$sequence,
 				PACKAGE="DECIPHER")
@@ -237,13 +237,13 @@ DB2Seqs <- function(file,
 				processors=processors)
 		}
 		
-		if (type==1 || type==5) {
+		if (type == 1 || type == 5) {
 			myXStringSet <- DNAStringSet(searchResult2$sequence)
-		} else if (type==2 || type==6) {
+		} else if (type == 2 || type == 6) {
 			myXStringSet <- RNAStringSet(searchResult2$sequence)
-		} else if (type==3 || type==7) {
+		} else if (type == 3 || type == 7) {
 			myXStringSet <- AAStringSet(searchResult2$sequence)
-		} else if (type==4 || type==8) {
+		} else if (type == 4 || type == 8) {
 			myXStringSet <- BStringSet(searchResult2$sequence)
 		}
 		
@@ -258,21 +258,21 @@ DB2Seqs <- function(file,
 		if (type > 4) {
 			writeXStringSet(myXStringSet,
 				file,
-				append=ifelse(i==1, append, TRUE),
+				append=ifelse(i == 1, append, TRUE),
 				format="FASTQ",
 				compress=compress,
 				qualities=PhredQuality(searchResult2$quality))
 		} else {
 			writeXStringSet(myXStringSet,
 				file,
-				append=ifelse(i==1, append, TRUE),
+				append=ifelse(i == 1, append, TRUE),
 				format="FASTA",
 				compress=compress,
 				width=width)
 		}
 		
 		if (verbose)
-			setTxtProgressBar(pBar, ifelse(i==length(s), 1, (s[i + 1] - 1)/count))
+			setTxtProgressBar(pBar, ifelse(i == length(s), 1, (s[i + 1] - 1)/count))
 	}
 	
 	if (verbose) {

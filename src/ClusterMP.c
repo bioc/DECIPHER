@@ -35,34 +35,60 @@
 
 static void allStates(double *R, int *P, double *S, int c, int k0, int o0, int k1, int o1, int k2, int o2, int scoreOnly)
 {
-	int i, j, w;
-	double temp[c];
-	for (i = 0; i < c; i++) {
-		w = 0; // minimum of temp
-		for (j = 0; j < c; j++) {
-			temp[j] = *(R + k1*3*c + o1 + j) + *(S + i*c + j);
-			if (temp[j] < temp[w])
-				w = j;
-		}
-		if (temp[w] != R_PosInf)
-			*(R + k0*3*c + o0 + i) = temp[w];
-		if (scoreOnly == 0)
-			*(P + k1*2*c + o1 + i) = w + 1;
-		w = 0; // minimum of temp
-		for (j = 0; j < c; j++) {
-			temp[j] = *(R + k2*3*c + o2 + j) + *(S + i*c + j);
-			if (temp[j] < temp[w])
-				w = j;
-		}
-		if (temp[w] != R_PosInf) {
-			if (*(R + k0*3*c + o0 + i) != R_PosInf) {
-				*(R + k0*3*c + o0 + i) += temp[w];
-			} else {
-				*(R + k0*3*c + o0 + i) = temp[w];
+	int i, j, w1, w2;
+	double t1, t2, min1, min2;
+	double *R0 = R + k0*3*c + o0;
+	double *R1 = R + k1*3*c + o1;
+	double *R2 = R + k2*3*c + o2;
+	
+	if (scoreOnly) {
+		for (i = 0; i < c; i++) {
+			min1 = R_PosInf;
+			min2 = R_PosInf;
+			for (j = 0; j < c; j++) {
+				t1 = *(R1 + j) + *(S + i*c + j);
+				t2 = *(R2 + j) + *(S + i*c + j);
+				if (t1 < min1)
+					min1 = t1;
+				if (t2 < min2)
+					min2 = t2;
 			}
+			if (min1 != R_PosInf) {
+				*(R0 + i) = min1;
+				if (min2 != R_PosInf)
+					*(R0 + i) += min2;
+			} else if (min2 != R_PosInf) {
+				*(R0 + i) = min2;
+			} // else already R_PosInf
 		}
-		if (scoreOnly == 0)
-			*(P + k2*2*c + o2 + i) = w + 1;
+	} else {
+		for (i = 0; i < c; i++) {
+			min1 = R_PosInf;
+			min2 = R_PosInf;
+			w1 = 0;
+			w2 = 0;
+			for (j = 0; j < c; j++) {
+				t1 = *(R1 + j) + *(S + i*c + j);
+				t2 = *(R2 + j) + *(S + i*c + j);
+				if (t1 < min1) {
+					w1 = j;
+					min1 = t1;
+				}
+				if (t2 < min2) {
+					w2 = j;
+					min2 = t2;
+				}
+			}
+			if (min1 != R_PosInf) {
+				*(R0 + i) = min1;
+				if (min2 != R_PosInf)
+					*(R0 + i) += min2;
+			} else if (min2 != R_PosInf) {
+				*(R0 + i) = min2;
+			} // else already R_PosInf
+			*(P + k1*2*c + o1 + i) = w1 + 1;
+			*(P + k2*2*c + o2 + i) = w2 + 1;
+		}
 	}
 }
 

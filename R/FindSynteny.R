@@ -70,7 +70,7 @@ FindSynteny <- function(dbFile,
 	storage <- storage*1e9 # convert to bytes
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -99,7 +99,7 @@ FindSynteny <- function(dbFile,
 	ids <- dbGetQuery(dbConn,
 		paste("select distinct identifier from",
 			tblName))$identifier
-	if (identifier[1]=="") {
+	if (identifier[1] == "") {
 		identifier <- ids
 	} else {
 		w <- which(!(identifier %in% ids))
@@ -140,7 +140,7 @@ FindSynteny <- function(dbFile,
 			collapse=""))
 	}
 	if (is.list(geneticCode)) {
-		if (length(geneticCode)!=l)
+		if (length(geneticCode) != l)
 			stop("The list geneticCode must have as many items as the number of identifiers.")
 		if (!is.null(names(geneticCode))) {
 			m <- match(identifier, names(geneticCode))
@@ -155,7 +155,7 @@ FindSynteny <- function(dbFile,
 	
 	if (!is.character(alphabet))
 		stop("alphabet must be a character vector.")
-	if (any(alphabet==""))
+	if (any(alphabet == ""))
 		stop("No elements of alphabet can be empty.")
 	r <- strsplit(alphabet, "", fixed=TRUE)
 	alphabet <- setNames(rep(0L, 20),
@@ -173,13 +173,13 @@ FindSynteny <- function(dbFile,
 				".")
 		alphabet[r[[i]]] <- i
 	}
-	w <- which(alphabet==0L)
+	w <- which(alphabet == 0L)
 	if (length(w) > 0)
 		stop("Standard amino acids missing from alphabet:  ",
 			paste(names(w), collapse=", "),
 			".")
 	sizeAA <- max(alphabet)
-	if (sizeAA==1)
+	if (sizeAA == 1)
 		stop("More than one grouping of amino acids is required in the alphabet.")
 	n <- as.integer(floor(log(4294967295, sizeAA)))
 	alphabet <- alphabet - 1L
@@ -239,7 +239,7 @@ FindSynteny <- function(dbFile,
 		store[g1][[1L]][["O"]][["aa_rc"]] <- list()
 		
 		s1 <- store[g1][[1L]][["S"]]
-		if (length(s1)==0) {
+		if (length(s1) == 0) {
 			s1 <- SearchDB(dbConn,
 				tblName=tblName,
 				identifier=identifier[g1],
@@ -260,7 +260,7 @@ FindSynteny <- function(dbFile,
 			s1 <- s1[-w]
 			INDEX1 <- INDEX1[-w]
 		}
-		if (length(s1)==0) {
+		if (length(s1) == 0) {
 			for (g2 in (g1 + 1):l) {
 				results[g1, g2][[1]] <- empty_upper
 				results[g2, g1][[1]] <- empty_lower
@@ -283,7 +283,7 @@ FindSynteny <- function(dbFile,
 		
 		for (g2 in (g1 + 1):l) {
 			s2 <- store[g2][[1L]][["S"]]
-			if (length(s2)==0) {
+			if (length(s2) == 0) {
 				s2 <- SearchDB(dbConn,
 					tblName=tblName,
 					identifier=identifier[g2],
@@ -304,7 +304,7 @@ FindSynteny <- function(dbFile,
 				s2 <- s2[-w]
 				INDEX2 <- INDEX2[-w]
 			}
-			if (length(s2)==0) {
+			if (length(s2) == 0) {
 				results[g1, g2][[1]] <- empty_upper
 				results[g2, g1][[1]] <- empty_lower
 				
@@ -332,15 +332,8 @@ FindSynteny <- function(dbFile,
 					seq1,
 					N,
 					maskRepeats,
+					processors,
 					PACKAGE="DECIPHER")[[1]]
-#				if (maskRepeats) # in-place change of E1
-#					E1 <- .Call("maskRepeats",
-#						E1,
-#						N,
-#						7L, # minimum period
-#						12L, # maximum period
-#						30L, # minimum length
-#						PACKAGE="DECIPHER")
 				for (i in which(WIDTH1 > (N - 2) & WIDTH1 < length(E1)))
 					E1[(WIDTH1[i] - (N - 2)):WIDTH1[i]] <- NA
 				if ((object.size(E1) + object.size(store) + object.size(results)) < storage)
@@ -353,15 +346,8 @@ FindSynteny <- function(dbFile,
 					seq2,
 					N,
 					maskRepeats,
+					processors,
 					PACKAGE="DECIPHER")[[1]]
-#				if (maskRepeats) # in-place change of e2
-#					e2 <- .Call("maskRepeats",
-#						e2,
-#						N,
-#						7L, # minimum period
-#						12L, # maximum period
-#						30L, # minimum length
-#						PACKAGE="DECIPHER")
 				for (i in which(WIDTH2 > (N - 2) & WIDTH2 < length(e2)))
 					e2[(WIDTH2[i] - (N - 2)):WIDTH2[i]] <- NA
 				if ((object.size(e2) + object.size(store) + object.size(results)) < storage)
@@ -407,7 +393,7 @@ FindSynteny <- function(dbFile,
 			}
 			m <- .Call("fillOverlaps", m, N, PACKAGE="DECIPHER") # in-place change of m
 			r <- Rle(.Call("intDiff", m, PACKAGE="DECIPHER"))
-			w <- which(r@values==1)
+			w <- which(r@values == 1)
 			widths <- r@lengths[w] + N
 			ends <- cumsum(r@lengths)[w] + N
 			
@@ -463,7 +449,7 @@ FindSynteny <- function(dbFile,
 					}
 					
 					# determine the optimal alphabet size
-					if (rF1==1) {
+					if (rF1 == 1) {
 						sizeAA <- .Call("alphabetSizeReducedAA",
 							t1,
 							alphabet,
@@ -480,15 +466,8 @@ FindSynteny <- function(dbFile,
 							N_AA,
 							alphabet,
 							maskRepeats,
+							processors,
 							PACKAGE="DECIPHER")[[1]]
-#						if (maskRepeats) # in-place change of e1
-#							e1 <- .Call("maskRepeats",
-#								e1,
-#								N_AA,
-#								3L, # minimum period
-#								11L, # maximum period
-#								15L, # minimum length
-#								PACKAGE="DECIPHER")
 						for (i in which(width1 > (N_AA - 2) & width1 < length(e1)))
 							e1[(width1[i] - (N_AA - 2)):width1[i]] <- NA
 						if ((object.size(e1) + object.size(store) + object.size(results)) < storage)
@@ -525,15 +504,8 @@ FindSynteny <- function(dbFile,
 								N_AA,
 								alphabet,
 								maskRepeats,
+								processors,
 								PACKAGE="DECIPHER")[[1]]
-#							if (maskRepeats) # in-place change of e2
-#								e2 <- .Call("maskRepeats",
-#									e2,
-#									N_AA,
-#									3L, # minimum period
-#									11L, # maximum period
-#									15L, # minimum length
-#									PACKAGE="DECIPHER")
 							for (i in which(width2 > (N_AA - 2) & width2 < length(e2)))
 								e2[(width2[i] - (N_AA - 2)):width2[i]] <- NA
 							if ((object.size(e2) + object.size(store) + object.size(results)) < storage)
@@ -569,7 +541,7 @@ FindSynteny <- function(dbFile,
 						}
 						m <- .Call("fillOverlaps", m, N_AA, PACKAGE="DECIPHER") # in-place change of m
 						r <- Rle(.Call("intDiff", m, PACKAGE="DECIPHER"))
-						w <- which(r@values==1)
+						w <- which(r@values == 1)
 						widths <- r@lengths[w] + N_AA
 						ends <- cumsum(r@lengths)[w] + N_AA
 						
@@ -662,7 +634,7 @@ FindSynteny <- function(dbFile,
 			# the number of k-mers in search space is approximated as
 			# the longest sequence times the number of times searched
 			# where the number of times searched is ~(sep + gap)
-			weights <- as.double(ifelse(x.f==0L,
+			weights <- as.double(ifelse(x.f == 0L,
 				weights*log(size),
 				weights*log(sizeAA)/3))
 #			w <- which(weights <= 0)
@@ -750,15 +722,8 @@ FindSynteny <- function(dbFile,
 					seq2,
 					N,
 					maskRepeats,
+					processors,
 					PACKAGE="DECIPHER")[[1]]
-#				if (maskRepeats) # in-place change of e2
-#					e2 <- .Call("maskRepeats",
-#						e2,
-#						N,
-#						7L, # minimum period
-#						12L, # maximum period
-#						30L, # minimum length
-#						PACKAGE="DECIPHER")
 				for (i in which(WIDTH2 > (N - 2) & WIDTH2 < length(e2)))
 					e2[(WIDTH2[i] - (N - 2)):WIDTH2[i]] <- NA
 				if ((object.size(e2) + object.size(store) + object.size(results)) < storage)
@@ -785,7 +750,7 @@ FindSynteny <- function(dbFile,
 				PACKAGE="DECIPHER")
 			m <- .Call("fillOverlaps", m, N, PACKAGE="DECIPHER") # in-place change of m
 			r <- Rle(.Call("intDiff", m, PACKAGE="DECIPHER"))
-			w <- which(r@values==1)
+			w <- which(r@values == 1)
 			widths <- r@lengths[w] + N
 			ends <- cumsum(r@lengths)[w] + N
 			
@@ -853,15 +818,8 @@ FindSynteny <- function(dbFile,
 							N_AA,
 							alphabet,
 							maskRepeats,
+							processors,
 							PACKAGE="DECIPHER")[[1]]
-#						if (maskRepeats) # in-place change of e1
-#							e1 <- .Call("maskRepeats",
-#								e1,
-#								N_AA,
-#								3L, # minimum period
-#								11L, # maximum period
-#								15L, # minimum length
-#								PACKAGE="DECIPHER")
 						for (i in which(width1 > (N_AA - 2) & width1 < length(e1)))
 							e1[(width1[i] - (N_AA - 2)):width1[i]] <- NA
 						if ((object.size(e1) + object.size(store) + object.size(results)) < storage)
@@ -898,15 +856,8 @@ FindSynteny <- function(dbFile,
 								N_AA,
 								alphabet,
 								maskRepeats,
+								processors,
 								PACKAGE="DECIPHER")[[1]]
-#							if (maskRepeats) # in-place change of e2
-#								e2 <- .Call("maskRepeats",
-#									e2,
-#									N_AA,
-#									3L, # minimum period
-#									11L, # maximum period
-#									15L, # minimum length
-#									PACKAGE="DECIPHER")
 							for (i in which(width2 > (N_AA - 2) & width2 < length(e2)))
 								e2[(width2[i] - (N_AA - 2)):width2[i]] <- NA
 							if ((object.size(e2) + object.size(store) + object.size(results)) < storage)
@@ -934,7 +885,7 @@ FindSynteny <- function(dbFile,
 							PACKAGE="DECIPHER")
 						m <- .Call("fillOverlaps", m, N_AA, PACKAGE="DECIPHER") # in-place change of m
 						r <- Rle(.Call("intDiff", m, PACKAGE="DECIPHER"))
-						w <- which(r@values==1)
+						w <- which(r@values == 1)
 						widths <- r@lengths[w] + N_AA
 						ends <- cumsum(r@lengths)[w] + N_AA
 						
@@ -1024,7 +975,7 @@ FindSynteny <- function(dbFile,
 			y.f <- y.f[o]
 			weights <- weights[o]
 			
-			weights <- as.double(ifelse(x.f==0L,
+			weights <- as.double(ifelse(x.f == 0L,
 				weights*log(size),
 				weights*log(sizeAA)/3))
 #			w <- which(weights <= 0)
@@ -1111,10 +1062,10 @@ FindSynteny <- function(dbFile,
 			starts1 <- result[starts, "start1"]
 			ends1 <- result[ends, "start1"] + result[ends, "width"] - 1L
 			strand <- result[starts, "strand"]
-			starts2 <- ifelse(strand==0,
+			starts2 <- ifelse(strand == 0,
 				result[starts, "start2"],
 				result[ends, "start2"] + 1L - result[ends, "width"])
-			ends2 <- ifelse(strand==0,
+			ends2 <- ifelse(strand == 0,
 				result[ends, "start2"] + result[ends, "width"] - 1L,
 				result[starts, "start2"])
 			index1 <- result[starts, "index1"]
@@ -1150,10 +1101,10 @@ FindSynteny <- function(dbFile,
 				
 				ss1 <- result[, "start1"]
 				ee1 <- result[, "start1"] + result[, "width"] - 1L
-				ss2 <- ifelse(result[, "strand"]==0,
+				ss2 <- ifelse(result[, "strand"] == 0,
 					result[, "start2"],
 					result[, "start2"] + 1L - result[, "width"])
-				ee2 <- ifelse(result[, "strand"]==0,
+				ee2 <- ifelse(result[, "strand"] == 0,
 					result[, "start2"] + result[, "width"] - 1L,
 					result[, "start2"])
 				
@@ -1164,8 +1115,8 @@ FindSynteny <- function(dbFile,
 				last <- 1L
 				for (i in 2:length(strand)) { # each block
 					if (starts1[o[i]] <= ends1[o[last]] &&
-						index1[o[i]]==index1[o[last]] &&
-						index2[o[i]]==index2[o[last]]) {
+						index1[o[i]] == index1[o[last]] &&
+						index2[o[i]] == index2[o[last]]) {
 						if (ends1[o[i]] <= ends1[o[last]]) {
 							# completely overlapping
 							chain_l <- chains[[o[last]]]
@@ -1183,7 +1134,7 @@ FindSynteny <- function(dbFile,
 							# remove partial overlap from last
 							chain_l <- chains[[o[last]]]
 							over_l <- which(ss1[chain_l] >= (starts1[o[i]] - 2)) # min anchor width of 2
-							if (length(over_l)==length(chain_l)) {
+							if (length(over_l) == length(chain_l)) {
 								remove[o[last]] <- TRUE
 								last <- i
 								next
@@ -1200,7 +1151,7 @@ FindSynteny <- function(dbFile,
 								# remove overlap from last hit
 								results[g1, g2][[1]][cl, "width"] <- results[g1, g2][[1]][cl, "width"] - overlap
 								ee1[cl] <- ee1[cl] - overlap
-								if (strand[o[last]]==0) {
+								if (strand[o[last]] == 0) {
 									ee2[cl] <- ee2[cl] - overlap
 								} else {
 									ss2[cl] <- ss2[cl] + overlap
@@ -1208,7 +1159,7 @@ FindSynteny <- function(dbFile,
 							}
 							ends1[o[last]] <- ee1[cl]
 							results[g2, g1][[1]][o[last], "end1"] <- ee1[cl]
-							if (strand[o[last]]==0) {
+							if (strand[o[last]] == 0) {
 								ends2[o[last]] <- ee2[cl]
 								results[g2, g1][[1]][o[last], "end2"] <- ee2[cl]
 							} else {
@@ -1230,8 +1181,8 @@ FindSynteny <- function(dbFile,
 				last <- w[1]
 				for (i in w[-1]) {
 					if (starts2[o[i]] <= ends2[o[last]] &&
-						index1[o[i]]==index1[o[last]] &&
-						index2[o[i]]==index2[o[last]]) {
+						index1[o[i]] == index1[o[last]] &&
+						index2[o[i]] == index2[o[last]]) {
 						if (ends2[o[i]] <= ends2[o[last]]) {
 							# completely overlapping
 							chain_l <- chains[[o[last]]]
@@ -1249,7 +1200,7 @@ FindSynteny <- function(dbFile,
 							# remove partial overlap from last
 							chain_l <- chains[[o[last]]]
 							over_l <- which(ss2[chain_l] >= (starts2[o[i]] - 2)) # min anchor width of 2
-							if (length(over_l)==length(chain_l)) {
+							if (length(over_l) == length(chain_l)) {
 								remove[o[last]] <- TRUE
 								last <- i
 								next
@@ -1259,7 +1210,7 @@ FindSynteny <- function(dbFile,
 								chain_l <- chain_l[-over_l]
 								chains[[o[last]]] <- chain_l
 							}
-							if (strand[o[last]]==0) {
+							if (strand[o[last]] == 0) {
 								cl <- chain_l[length(chain_l)]
 							} else {
 								cl <- chain_l[1]
@@ -1268,7 +1219,7 @@ FindSynteny <- function(dbFile,
 							if (overlap > 0) {
 								# remove overlap from last hit
 								results[g1, g2][[1]][cl, "width"] <- results[g1, g2][[1]][cl, "width"] - overlap
-								if (strand[o[last]]==0) {
+								if (strand[o[last]] == 0) {
 									ee1[cl] <- ee1[cl] - overlap
 									ee2[cl] <- ee2[cl] - overlap
 								} else {
@@ -1278,7 +1229,7 @@ FindSynteny <- function(dbFile,
 									results[g1, g2][[1]][cl, "start2"] <- results[g1, g2][[1]][cl, "start2"] - overlap
 								}
 							}
-							if (strand[o[last]]==0) {
+							if (strand[o[last]] == 0) {
 								results[g2, g1][[1]][o[last], "end1"] <- ee1[cl]
 								results[g2, g1][[1]][o[last], "end2"] <- ee2[cl]
 							} else {
@@ -1372,13 +1323,13 @@ FindSynteny <- function(dbFile,
 				# adjust width, start1, and start2 of first_hit
 				results[g1, g2][[1]][first_hit, "width"] <- results[g1, g2][[1]][first_hit, "start1"] + results[g1, g2][[1]][first_hit, "width"] - starts1
 				results[g1, g2][[1]][first_hit, "start1"] <- starts1
-				results[g1, g2][[1]][first_hit, "start2"] <- ifelse(strand==0,
+				results[g1, g2][[1]][first_hit, "start2"] <- ifelse(strand == 0,
 					starts2,
 					ends2)
 				
 				# adjust width and start2 of last_hit
 				results[g1, g2][[1]][last_hit, "width"] <- ends1 - results[g1, g2][[1]][last_hit, "start1"] + 1L
-				results[g1, g2][[1]][last_hit, "start2"] <- ifelse(strand==0,
+				results[g1, g2][[1]][last_hit, "start2"] <- ifelse(strand == 0,
 					ends2 - results[g1, g2][[1]][last_hit, "width"] + 1L,
 					starts2 + results[g1, g2][[1]][last_hit, "width"] - 1L)
 			}

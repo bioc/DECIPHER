@@ -40,7 +40,7 @@
 // DECIPHER header file
 #include "DECIPHER.h"
 
-static double distance(const Chars_holder *P, const Chars_holder *S, int start, int end, int pGapLetters, int minWidth, double coverage)
+static double distance(const Chars_holder *P, const Chars_holder *S, int start, int end, int pGapLetters, int width, double coverage)
 {
 	double distance;
 	int i, j, mismatches, gapGapMatches, gapLetterMatches, count, letters, state;
@@ -106,7 +106,7 @@ static double distance(const Chars_holder *P, const Chars_holder *S, int start, 
 	//Rprintf("\nmismatches:%d gapGapMatches:%d gapLetterMatches:%d count:%d",mismatches,gapGapMatches,gapLetterMatches,count);
 	
 	// calculate distance as the percent mis-matches
-	if ((double)letters/(double)minWidth < coverage) {
+	if (coverage > 0 && (double)letters/(double)width < coverage) {
 		distance = NA_REAL;
 	} else {
 		distance = (double)mismatches/((double)count - (double)gapGapMatches - (double)gapLetterMatches);
@@ -114,7 +114,7 @@ static double distance(const Chars_holder *P, const Chars_holder *S, int start, 
 	return distance;
 }
 
-static double distanceAA(const Chars_holder *P, const Chars_holder *S, int start, int end, int pGapLetters, int minWidth, double coverage)
+static double distanceAA(const Chars_holder *P, const Chars_holder *S, int start, int end, int pGapLetters, int width, double coverage)
 {
 	double distance;
 	int i, j, mismatches, gapGapMatches, gapLetterMatches, count, letters, state;
@@ -184,7 +184,7 @@ static double distanceAA(const Chars_holder *P, const Chars_holder *S, int start
 	//Rprintf("\nmismatches:%d gapGapMatches:%d gapLetterMatches:%d count:%d",mismatches,gapGapMatches,gapLetterMatches,count);
 	
 	// calculate distance as the percent mis-matches
-	if ((double)letters/(double)minWidth < coverage) {
+	if (coverage > 0 && (double)letters/(double)width < coverage) {
 		distance = NA_REAL;
 	} else {
 		distance = (double)mismatches/((double)count - (double)gapGapMatches - (double)gapLetterMatches);
@@ -310,7 +310,7 @@ SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP
 {
 	XStringSet_holder x_set;
 	Chars_holder x_i, x_j;
-	int start, end, seqLength_i, seqLength_j, index, minWidth;
+	int start, end, seqLength_i, seqLength_j, index, width, useMax;
 	double E = asReal(e);
 	R_xlen_t x_length, i, j, last;
 	int pGapLetters, tGaps, fM = asLogical(fullMatrix);
@@ -319,6 +319,12 @@ SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP
 	int nthreads = asInteger(nThreads);
 	int o = asInteger(output);
 	double coverage = asReal(minCoverage);
+	if (coverage >= 0) {
+		useMax = 0;
+	} else {
+		useMax = 1;
+		coverage *= -1;
+	}
 	int mode = asInteger(method);
 	SEXP ans, percentComplete, utilsPackage;
 	v = asLogical(verbose);
@@ -337,7 +343,7 @@ SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP
 	if (x_length < 2) { // there is only one sequence
 		PROTECT(ans = NEW_INTEGER(0));
 	} else {
-		if (o==1) { // type is "matrix"
+		if (o == 1) { // type is "matrix"
 			if (fM) {
 				last = x_length - 1;
 				PROTECT(ans = allocMatrix(REALSXP, x_length, x_length));
@@ -356,7 +362,7 @@ SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP
 		int *gapLengths[2];
 		gapLengths[0] = (int *) calloc(x_length, sizeof(int)); // initialized to zero (thread-safe on Windows)
 		gapLengths[1] = (int *) calloc(x_length, sizeof(int)); // initialized to zero (thread-safe on Windows)
-		if (asInteger(t)==3) { // AAStringSet
+		if (asInteger(t) == 3) { // AAStringSet
 			for (i = 0; i < x_length; i++) {
 				x_i = get_elt_from_XStringSet_holder(&x_set, i);
 				gapLengths[0][i] = frontTerminalGapsAA(&x_i);
@@ -374,7 +380,7 @@ SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP
 		
 		// find the sequence lengths
 		int *seqLengths = (int *) calloc(x_length, sizeof(int)); // initialized to zero (thread-safe on Windows)
-		if (asInteger(t)==3) { // AAStringSet
+		if (asInteger(t) == 3) { // AAStringSet
 			for (i = 0; i < x_length; i++) {
 				x_i = get_elt_from_XStringSet_holder(&x_set, i);
 				seqLengths[i] = x_i.length - totalGapsAA(&x_i);
@@ -393,13 +399,13 @@ SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP
 			x_i = get_elt_from_XStringSet_holder(&x_set, i);
 			seqLength_i = x_i.length;
 			
-			#pragma omp parallel for private(j,x_j,seqLength_j,start,end,index,minWidth) schedule(guided) num_threads(nthreads)
+			#pragma omp parallel for private(j,x_j,seqLength_j,start,end,index,width) schedule(guided) num_threads(nthreads)
 			for (j = (i+1); j < x_length; j++) {
 				// extract each jth DNAString from the DNAStringSet
 				x_j = get_elt_from_XStringSet_holder(&x_set, j);
 				seqLength_j = x_j.length;
 				
-				if (o==1) { // matrix
+				if (o == 1) { // matrix
 					index = j + x_length*i;
 				} else { // dist
 					index = x_length*i - i*(i + 1)/2 + j - i - 1;
@@ -430,45 +436,77 @@ SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP
 							end = gapLengths[1][j];
 						}
 						if (seqLengths[i] <= seqLengths[j]) {
-							minWidth = seqLengths[i];
+							if (useMax == 0) {
+								width = seqLengths[i];
+							} else {
+								width = seqLengths[j];
+							}
 						} else {
-							minWidth = seqLengths[j];
+							if (useMax == 0) {
+								width = seqLengths[j];
+							} else {
+								width = seqLengths[i];
+							}
 						}
 					} else { // use whole sequence including terminal gaps
 						if (mode == 1) { // overlap
 							start = 0;
 							end = 0;
 							if (seqLengths[i] <= seqLengths[j]) {
-								minWidth = seqLengths[i];
+								if (useMax == 0) {
+									width = seqLengths[i];
+								} else {
+									width = seqLengths[j];
+								}
 							} else {
-								minWidth = seqLengths[j];
+								if (useMax == 0) {
+									width = seqLengths[j];
+								} else {
+									width = seqLengths[i];
+								}
 							}
 						} else if (mode == 2) { // shortest
 							if (seqLengths[i] <= seqLengths[j]) {
-								minWidth = seqLengths[i];
+								if (useMax == 0) {
+									width = seqLengths[i];
+								} else {
+									width = seqLengths[j];
+								}
 								start = gapLengths[0][i];
 								end = gapLengths[1][i];
 							} else {
-								minWidth = seqLengths[j];
+								if (useMax == 0) {
+									width = seqLengths[j];
+								} else {
+									width = seqLengths[i];
+								}
 								start = gapLengths[0][j];
 								end = gapLengths[1][j];
 							}
 						} else { // longest
 							if (seqLengths[i] >= seqLengths[j]) {
-								minWidth = seqLengths[j];
+								if (useMax == 0) {
+									width = seqLengths[j];
+								} else {
+									width = seqLengths[i];
+								}
 								start = gapLengths[0][i];
 								end = gapLengths[1][i];
 							} else {
-								minWidth = seqLengths[i];
+								if (useMax == 0) {
+									width = seqLengths[i];
+								} else {
+									width = seqLengths[j];
+								}
 								start = gapLengths[0][j];
 								end = gapLengths[1][j];
 							}
 						}
 					}
-					if (asInteger(t)==3) { // AAStringSet
-						rans[index] = distanceAA(&x_i, &x_j, start, end, pGapLetters, minWidth, coverage);
+					if (asInteger(t) == 3) { // AAStringSet
+						rans[index] = distanceAA(&x_i, &x_j, start, end, pGapLetters, width, coverage);
 					} else {
-						rans[index] = distance(&x_i, &x_j, start, end, pGapLetters, minWidth, coverage);
+						rans[index] = distance(&x_i, &x_j, start, end, pGapLetters, width, coverage);
 					}
 					if (E > 0) {
 						if (rans[index] >= E) {
@@ -480,11 +518,11 @@ SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP
 					}
 				}
 			}
-			if (fM && o==1) // make the matrix symetrical
+			if (fM && o == 1) // make the matrix symetrical
 				for (j = (i+1); j < x_length; j++)
 					rans[i + x_length*j] = rans[j + x_length*i];
 			
-			if (o==1) // set the matrix diagonal to zero distance
+			if (o == 1) // set the matrix diagonal to zero distance
 				rans[i*x_length + i] = 0;
 			
 			if (v) { // print the percent completed so far
@@ -499,7 +537,7 @@ SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP
 				R_CheckUserInterrupt();
 			}
 		}
-		if (fM && o==1) // set the last element of the diagonal to zero
+		if (fM && o == 1) // set the last element of the diagonal to zero
 			rans[(x_length - 1)*x_length + (x_length - 1)] = 0;
 		
 		free(gapLengths[0]);
@@ -532,7 +570,7 @@ SEXP gaps(SEXP x, SEXP t)
 	rans = REAL(ans);
 	
 	// find the three lengths for each sequence
-	if (asInteger(t)==3) { // AAStringSet
+	if (asInteger(t) == 3) { // AAStringSet
 		for (i = 0; i < x_length; i++) {
 			x_i = get_elt_from_XStringSet_holder(&x_set, i);
 			rans[i + x_length*0] = frontTerminalGapsAA(&x_i);
@@ -620,7 +658,7 @@ SEXP firstSeqsGapsEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, 
 		y_set = hold_XStringSet(y);
 		x_i = get_elt_from_XStringSet_holder(&x_set, fx - 1);
 		y_i = get_elt_from_XStringSet_holder(&y_set, fy - 1);
-		if (asInteger(t)==3) { // AAStringSet
+		if (asInteger(t) == 3) { // AAStringSet
 			for (i = sx - 1, j = sy - 1;
 				 i < ex; // i <= ex - 1 covers j <= ey - 1 because equal length
 				 i++, j++) {
@@ -680,7 +718,7 @@ SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, S
 	
 	while (i < ex && j < ey) {
 		if (ci) {
-			if (type==3) { // AAStringSet
+			if (type == 3) { // AAStringSet
 				if (!(!((*((char *)x_i.ptr + i)) ^ 0x2D) || !((*((char *)x_i.ptr + i)) ^ 0x2E))) {
 					cx++; // site
 				}
@@ -691,7 +729,7 @@ SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, S
 			}
 		}
 		if (cj) {
-			if (type==3) { // AAStringSet
+			if (type == 3) { // AAStringSet
 				if (!(!((*((char *)y_i.ptr + j)) ^ 0x2D) || !((*((char *)y_i.ptr + j)) ^ 0x2E))) {
 					cy++; // site
 				}
@@ -757,7 +795,7 @@ SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, S
 			i++;
 			
 			while (i < ex) {
-				if (type==3) { // AAStringSet
+				if (type == 3) { // AAStringSet
 					if (!(!((*((char *)x_i.ptr + i)) ^ 0x2D) || !((*((char *)x_i.ptr + i)) ^ 0x2E))) {
 						cx++; // site
 					}
@@ -779,7 +817,7 @@ SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, S
 			j++;
 			
 			while (j < ey) {
-				if (type==3) { // AAStringSet
+				if (type == 3) { // AAStringSet
 					if (!(!((*((char *)y_i.ptr + j)) ^ 0x2D) || !((*((char *)y_i.ptr + j)) ^ 0x2E))) {
 						cy++; // site
 					}
@@ -793,7 +831,7 @@ SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, S
 	}
 	
 	SEXP ret_list, ans;
-	if (cx==cy) { // same number of sites
+	if (cx == cy) { // same number of sites
 		PROTECT(ret_list = allocVector(VECSXP, 4));
 		int *rans;
 		
@@ -828,7 +866,7 @@ SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, S
 	Free(ny);
 	Free(py);
 	
-	if (cx==cy) { // same number of sites
+	if (cx == cy) { // same number of sites
 		UNPROTECT(5);
 		
 		return ret_list;
@@ -840,12 +878,18 @@ SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, S
 // approximate similarity from anchor ranges
 SEXP similarities(SEXP res, SEXP widths1, SEXP widths2, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP minCoverage, SEXP method, SEXP nThreads)
 {
-	int i, j, n, s, p1, p2, t1, t2, ov, OV, g1, g2, g, o, count, *r;
+	int i, j, n, s, p1, p2, t1, t2, ov, OV, off, g1, g2, g, o, count, *r, useMax;
 	int w1 = asInteger(widths1);
 	int *w2 = INTEGER(widths2);
 	int tGaps = asLogical(terminalGaps);
 	int pGapLetters = asLogical(penalizeGapLetters);
 	double coverage = asReal(minCoverage);
+	if (coverage >= 0) {
+		useMax = 0;
+	} else {
+		useMax = 1;
+		coverage *= -1;
+	}
 	int mode = asInteger(method);
 	int nthreads = asInteger(nThreads);
 	int global = tGaps != 0 && pGapLetters != 0;
@@ -863,7 +907,7 @@ SEXP similarities(SEXP res, SEXP widths1, SEXP widths2, SEXP terminalGaps, SEXP 
 	PROTECT(ans = allocVector(REALSXP, l));
 	double *rans = REAL(ans);
 	
-	#pragma omp parallel for private(i,j,n,s,p1,p2,t1,t2,ov,OV,g1,g2,g,o,count,r) schedule(guided) num_threads(nthreads)
+	#pragma omp parallel for private(i,j,n,s,p1,p2,t1,t2,ov,OV,off,g1,g2,g,o,count,r) schedule(guided) num_threads(nthreads)
 	for (i = 0; i < l; i++) {
 		r = pr[i];
 		n = pn[i];
@@ -917,62 +961,9 @@ SEXP similarities(SEXP res, SEXP widths1, SEXP widths2, SEXP terminalGaps, SEXP 
 				}
 			}
 			
-			if (coverage > 0 ||
-				global == 0 ||
-				pGapLetters != 1) {
-				if (t1 > t2) {
-					t1 = t1 - t2;
-					t2 = 0;
-				} else if (t2 > t1) {
-					t2 = t2 - t1;
-					t1 = 0;
-				} else {
-					t1 = 0;
-					t2 = 0;
-				}
-				if (global && pGapLetters != 0) { // pGapLetters = NA
-					count = (t1 != t2) + (p1 != p2);
-				} else {
-					count = 0;
-				}
-				if (p1 <= p2 && t1 <= t2) { // 1 within 2
-					OV = w1;
-					if (global == 0 || pGapLetters != 1)
-						o = 1;
-				} else if (p2 <= p1 && t2 <= t1) { // 2 within 1
-					OV = w2[i];
-					if (global == 0 || pGapLetters != 1)
-						o = 2;
-				} else if (p1 > p2) { // end of 1 overlaps start of 2
-					if (w1 - p1 + p2 > w2[i] - t2) {
-						OV = w1 - p1 + p2;
-						if (global == 0 || pGapLetters != 1)
-							o = 1;
-					} else {
-						OV = w2[i] - t2;
-						if (global == 0 || pGapLetters != 1)
-							o = 2;
-					}
-				} else { // end of 2 overlaps start of 1
-					if (w2[i] - p2 + p1 > w1 - t1) {
-						OV = w2[i] - p2 + p1;
-						if (global == 0 || pGapLetters != 1)
-							o = 2;
-					} else {
-						OV = w1 - t1;
-						if (global == 0 || pGapLetters != 1)
-							o = 1;
-					}
-				}
-				
-				if (global == 0 || pGapLetters != 1)
-					ov = OV;
-			} else {
-				count = 0;
-			}
-			
 			g1 = 0;
 			g2 = 0;
+			count = 0;
 			if (n > 1) {
 				for (j = 1; j < n; j++) {
 					g = r[j*4 + 2] - r[(j - 1)*4 + 3] - r[j*4] + r[(j - 1)*4 + 1];
@@ -985,15 +976,68 @@ SEXP similarities(SEXP res, SEXP widths1, SEXP widths2, SEXP terminalGaps, SEXP 
 					} // else g = 0
 				}
 			}
-			if (g1 < g2) {
-				g = g1;
-			} else {
-				g = g2;
+			
+			if (coverage != 0 ||
+				global == 0 ||
+				pGapLetters != 1) {
+				if (t1 > t2) {
+					t1 = t1 - t2;
+					t2 = 0;
+				} else if (t2 > t1) {
+					t2 = t2 - t1;
+					t1 = 0;
+				} else {
+					t1 = 0;
+					t2 = 0;
+				}
+				if (global && pGapLetters != 0) // pGapLetters = NA
+					count += (t1 != t2) + (p1 != p2);
+				if (p1 <= p2 && t1 <= t2) { // 1 within 2
+					OV = w1;
+					off = g1;
+					if (global == 0 || pGapLetters != 1)
+						o = 1;
+				} else if (p2 <= p1 && t2 <= t1) { // 2 within 1
+					OV = w2[i];
+					off = g2;
+					if (global == 0 || pGapLetters != 1)
+						o = 2;
+				} else if (p1 > p2) { // end of 1 overlaps start of 2
+					if (w1 - p1 + p2 > w2[i] - t2) {
+						OV = w1 - p1 + p2;
+						off = g1;
+						if (global == 0 || pGapLetters != 1)
+							o = 1;
+					} else {
+						OV = w2[i] - t2;
+						off = g2;
+						if (global == 0 || pGapLetters != 1)
+							o = 2;
+					}
+				} else { // end of 2 overlaps start of 1
+					if (w2[i] - p2 + p1 > w1 - t1) {
+						OV = w2[i] - p2 + p1;
+						off = g2;
+						if (global == 0 || pGapLetters != 1)
+							o = 2;
+					} else {
+						OV = w1 - t1;
+						off = g1;
+						if (global == 0 || pGapLetters != 1)
+							o = 1;
+					}
+				}
+				
+				if (global == 0 || pGapLetters != 1)
+					ov = OV;
 			}
 			
-			if (coverage > 0 &&
-				(double)(OV + g)/(double)w1 < coverage &&
-				(double)(OV + g)/(double)w2[i] < coverage) {
+			if ((useMax == 0 &&
+				((w2[i] <= w1 && (double)(OV + off)/(double)w2[i] < coverage) ||
+				(w1 <= w2[i] && (double)(OV + off)/(double)w1 < coverage))) ||
+				(useMax == 1 &&
+				((w2[i] <= w1 && (double)(OV + off)/(double)w1 < coverage) ||
+				(w1 <= w2[i] && (double)(OV + off)/(double)w2[i] < coverage)))) {
 				rans[i] = 0;
 			} else {
 				if (pGapLetters == 1) {

@@ -22,6 +22,11 @@
 /* for Calloc/Free */
 #include <R_ext/RS.h>
 
+// for OpenMP parallel processing
+#ifdef SUPPORT_OPENMP
+#include <omp.h>
+#endif
+
 // for math functions
 #include <math.h>
 
@@ -60,28 +65,23 @@ static void alphabetFrequency(const Chars_holder *P, int *bits, int position)
 }
 
 // changes repeat regions to NAs
-SEXP maskRepeats(SEXP e, int n, int l1, int l2, int l3)
+static void maskRepeats(int *x, int n, int l1, int l2, int l3, int l)
 {
-	if (MAYBE_SHARED(e))
-		error(".Call function 'maskRepeats' called in incorrect context.");
-	
+	// n: size
+	// l1: min period
+	// l2: max period
+	// l3: min length of repeat
 	int i, p, j, k;
-	int *x = INTEGER(e); // enumerated sequence
-	int l = length(e);
-//	int n = asInteger(size);
-//	int l1 = asInteger(minL); // min period
-//	int l2 = asInteger(maxL); // max period
-//	int l3 = asInteger(totL); // min length of repeat
 	
 	i = 0; // current position
 	while (i < (l - l2)) {
-		if (x[i]!=NA_INTEGER) {
+		if (x[i] != NA_INTEGER) {
 			for (p = l1; p <= l2; p++) { // periodicity
-				if (x[i]==x[i + p]) { // repeat
+				if (x[i] == x[i + p]) { // repeat
 					j = i + 1;
 					
 					while (j < (l - p)) {
-						if (x[j]!=x[j + p])
+						if (x[j] != x[j + p])
 							break;
 						j++;
 					}
@@ -98,16 +98,14 @@ SEXP maskRepeats(SEXP e, int n, int l1, int l2, int l3)
 		}
 		i++;
 	}
-	
-	return R_NilValue;
 }
 
-//ans_start <- .Call("enumerateSequence", myDNAStringSet, wordSize, FALSE, PACKAGE="DECIPHER")
-SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask)
+SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP nThreads)
 {
 	XStringSet_holder x_set;
 	Chars_holder x_i;
 	int x_length, i, j, k, wS, maskReps, sum, ambiguous, *rans;
+	int nthreads = asInteger(nThreads);
 	
 	// initialize the XStringSet
 	x_set = hold_XStringSet(x);
@@ -126,6 +124,8 @@ SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask)
 		pwv[i] = pwv[i - 1]*4;
 	}
 	
+	// build a vector of thread-safe pointers
+	int **ptrs = Calloc(x_length, int *); // vectors
 	for (i = 0; i < x_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
 		SEXP ans;
@@ -133,7 +133,18 @@ SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask)
 			PROTECT(ans = allocVector(INTSXP, 0));
 		} else {
 			PROTECT(ans = allocVector(INTSXP, x_i.length - wS + 1));
-			rans = INTEGER(ans);
+			ptrs[i] = INTEGER(ans);
+		}
+		
+		SET_VECTOR_ELT(ret_list, i, ans);
+		UNPROTECT(1);
+	}
+	
+	#pragma omp parallel for private(i,j,k,x_i,rans,sum,ambiguous) num_threads(nthreads)
+	for (i = 0; i < x_length; i++) {
+		x_i = get_elt_from_XStringSet_holder(&x_set, i);
+		if ((x_i.length - wS + 1) >= 1) {
+			rans = ptrs[i];
 			int bases[wS];
 			for (j = 0; j < (wS - 1); j++) {
 				alphabetFrequency(&x_i, &bases[j], j); // fill initial numbers
@@ -156,14 +167,10 @@ SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask)
 					*(rans + j - wS + 1) = sum;
 				}
 			}
+			
+			if (maskReps)
+				maskRepeats(rans, wS, 7, 12, 30, x_i.length - wS + 1);
 		}
-		
-		if (maskReps)
-			maskRepeats(ans, wS, 7, 12, 30);
-		
-		SET_VECTOR_ELT(ret_list, i, ans);
-		UNPROTECT(1);
-		R_CheckUserInterrupt();
 	}
 	
 	UNPROTECT(1);
@@ -243,7 +250,6 @@ static void alphabetFrequencyAA(const Chars_holder *P, int *bits, int position)
 	}
 }
 
-//ans_start <- .Call("enumerateSequenceAA", myDNAStringSet, wordSize, PACKAGE="DECIPHER")
 SEXP enumerateSequenceAA(SEXP x, SEXP wordSize)
 {
 	XStringSet_holder x_set;
@@ -316,7 +322,6 @@ int pop(unsigned int x)
 	return((x*0x1010101) >> 24);
 }
 
-//ans_start <- .Call("enumerateGappedSequence", myDNAStringSet, wordSize, ordering, PACKAGE="DECIPHER")
 SEXP enumerateGappedSequence(SEXP x, SEXP wordSize, SEXP ordering)
 {
 	XStringSet_holder x_set;
@@ -410,7 +415,7 @@ SEXP enumerateGappedSequence(SEXP x, SEXP wordSize, SEXP ordering)
 							values[bitCount] = temp;
 							*(rans + j) = temp;
 						} else { // check for a repeat
-							if (values[bitCount]==temp) {
+							if (values[bitCount] == temp) {
 								*(rans + j) = NA_INTEGER;
 								*(rans + repeat[bitCount]) = NA_INTEGER;
 							} else { // not a recent repeat
@@ -438,7 +443,6 @@ SEXP enumerateGappedSequence(SEXP x, SEXP wordSize, SEXP ordering)
 	return ret_list;
 }
 
-//ans_start <- .Call("enumerateGappedSequenceAA", myDNAStringSet, wordSize, ordering, PACKAGE="DECIPHER")
 SEXP enumerateGappedSequenceAA(SEXP x, SEXP wordSize, SEXP ordering)
 {
 	XStringSet_holder x_set;
@@ -532,7 +536,7 @@ SEXP enumerateGappedSequenceAA(SEXP x, SEXP wordSize, SEXP ordering)
 							values[bitCount] = temp;
 							*(rans + j) = temp;
 						} else { // check for a repeat
-							if (values[bitCount]==temp) {
+							if (values[bitCount] == temp) {
 								*(rans + j) = NA_INTEGER;
 								*(rans + repeat[bitCount]) = NA_INTEGER;
 							} else { // not a recent repeat
@@ -632,12 +636,13 @@ static void alphabetFrequencyReducedAA(const Chars_holder *P, int *bits, int pos
 	}
 }
 
-SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask)
+SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP nThreads)
 {
 	XStringSet_holder x_set;
 	Chars_holder x_i;
 	int x_length, i, j, k, wS, maskReps, sum, ambiguous, *rans;
 	int *alpha = INTEGER(alphabet);
+	int nthreads = asInteger(nThreads);
 	
 	// initialize the XStringSet
 	x_set = hold_XStringSet(x);
@@ -653,6 +658,9 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask)
 		if (*(alpha + i) > m)
 			m = *(alpha + i);
 	}
+	
+	int SIZE[20] = {0, 60, 38, 30, 26, 24, 22, 20, 19, 19, 18, 17, 17, 16, 16, 15, 15, 15, 15, 14};
+	int n = SIZE[m]; // minimum length of significant repeat
 	m++; // start at 1
 	
 	// fill the position weight vector
@@ -663,6 +671,8 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask)
 		pwv[i] = pwv[i - 1]*m;
 	}
 	
+	// build a vector of thread-safe pointers
+	int **ptrs = Calloc(x_length, int *); // vectors
 	for (i = 0; i < x_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
 		SEXP ans;
@@ -670,7 +680,18 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask)
 			PROTECT(ans = allocVector(INTSXP, 0));
 		} else {
 			PROTECT(ans = allocVector(INTSXP, x_i.length - wS + 1));
-			rans = INTEGER(ans);
+			ptrs[i] = INTEGER(ans);
+		}
+		
+		SET_VECTOR_ELT(ret_list, i, ans);
+		UNPROTECT(1);
+	}
+	
+	#pragma omp parallel for private(i,j,k,x_i,rans,sum,ambiguous) num_threads(nthreads)
+	for (i = 0; i < x_length; i++) {
+		x_i = get_elt_from_XStringSet_holder(&x_set, i);
+		if ((x_i.length - wS + 1) >= 1) {
+			rans = ptrs[i];
 			int bases[wS];
 			for (j = 0; j < (wS - 1); j++) {
 				alphabetFrequencyReducedAA(&x_i, &bases[j], j, alpha); // fill initial numbers
@@ -693,14 +714,10 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask)
 					*(rans + j - wS + 1) = sum;
 				}
 			}
+			
+			if (maskReps)
+				maskRepeats(rans, wS, 3, 11, n, x_i.length - wS + 1);
 		}
-		
-		if (maskReps)
-			maskRepeats(ans, wS, 3, 11, 15);
-		
-		SET_VECTOR_ELT(ret_list, i, ans);
-		UNPROTECT(1);
-		R_CheckUserInterrupt();
 	}
 	
 	UNPROTECT(1);
@@ -801,129 +818,6 @@ SEXP alphabetSizeReducedAA(SEXP x, SEXP alphabet)
 			rans[0] -= p*log(p); // negative entropy
 	}
 	rans[0] = exp(rans[0]);
-	
-	UNPROTECT(1);
-	
-	return ans;
-}
-
-// equalivent to t(oligonucleotideFrequency(x, wordSize, fast.moving.side="left"))
-SEXP frequencies(SEXP x, SEXP wordSize)
-{
-	XStringSet_holder x_set;
-	Chars_holder x_i;
-	int x_length, i, j, k, wS, sum, ambiguous, *rans;
-	
-	// initialize the XStringSet
-	x_set = hold_XStringSet(x);
-	x_length = get_length_from_XStringSet_holder(&x_set);
-	wS = asInteger(wordSize); // [1 to 15]
-	
-	// fill the position weight vector
-	int pwv[wS]; // wS[0] is ignored
-	if (wS > 1)
-		pwv[1] = 4;
-	for (i = 2; i < wS; i++) {
-		pwv[i] = pwv[i - 1]*4;
-	}
-	
-	int words = 4;
-	for (i = 1; i < wS; i++)
-		words *= 4;
-	SEXP ans;
-	PROTECT(ans = allocMatrix(INTSXP, words, x_length));
-	rans = INTEGER(ans);
-	for (i = 0; i < words*x_length; i++)
-		rans[i] = 0;
-	
-	for (i = 0; i < x_length; i++) {
-		x_i = get_elt_from_XStringSet_holder(&x_set, i);
-		int bases[wS];
-		for (j = 0; j < (wS - 1); j++) {
-			alphabetFrequency(&x_i, &bases[j], j); // fill initial numbers
-		}
-		for (j = wS - 1; j < x_i.length; j++) {
-			alphabetFrequency(&x_i, &bases[wS - 1], j);
-			sum = bases[0];
-			ambiguous = 0;
-			if (bases[0] < 0)
-				ambiguous = 1;
-			for (k = 1; k < wS; k++) {
-				sum += bases[k]*pwv[k];
-				if (bases[k] < 0)
-					ambiguous = 1;
-				bases[k - 1] = bases[k]; // shift numbers left
-			}
-			if (ambiguous == 0)
-				(*(rans + words*i + sum))++;
-		}
-		R_CheckUserInterrupt();
-	}
-	
-	UNPROTECT(1);
-	
-	return ans;
-}
-
-SEXP frequenciesReducedAA(SEXP x, SEXP wordSize, SEXP alphabet)
-{
-	XStringSet_holder x_set;
-	Chars_holder x_i;
-	int x_length, i, j, k, wS, sum, ambiguous, *rans;
-	int *alpha = INTEGER(alphabet);
-	
-	// initialize the XStringSet
-	x_set = hold_XStringSet(x);
-	x_length = get_length_from_XStringSet_holder(&x_set);
-	wS = asInteger(wordSize); // [1 to 20]
-	
-	int m = 0; // hold max of alphabet
-	for (i = 0; i < 20; i++) {
-		if (*(alpha + i) > m)
-			m = *(alpha + i);
-	}
-	m++; // start at 1
-	
-	// fill the position weight vector
-	int pwv[wS]; // wS[0] is ignored
-	if (wS > 1)
-		pwv[1] = m;
-	for (i = 2; i < wS; i++) {
-		pwv[i] = pwv[i - 1]*m;
-	}
-	
-	int words = m;
-	for (i = 1; i < wS; i++)
-		words *= m;
-	SEXP ans;
-	PROTECT(ans = allocMatrix(INTSXP, words, x_length));
-	rans = INTEGER(ans);
-	for (i = 0; i < words*x_length; i++)
-		rans[i] = 0;
-	
-	for (i = 0; i < x_length; i++) {
-		x_i = get_elt_from_XStringSet_holder(&x_set, i);
-		int bases[wS];
-		for (j = 0; j < (wS - 1); j++) {
-			alphabetFrequencyReducedAA(&x_i, &bases[j], j, alpha); // fill initial numbers
-		}
-		for (j = wS - 1; j < x_i.length; j++) {
-			alphabetFrequencyReducedAA(&x_i, &bases[wS - 1], j, alpha);
-			sum = bases[0];
-			ambiguous = 0;
-			if (bases[0] < 0)
-				ambiguous = 1;
-			for (k = 1; k < wS; k++) {
-				sum += bases[k]*pwv[k];
-				if (bases[k] < 0)
-					ambiguous = 1;
-				bases[k - 1] = bases[k]; // shift numbers left
-			}
-			if (ambiguous == 0)
-				(*(rans + words*i + sum))++;
-		}
-		R_CheckUserInterrupt();
-	}
 	
 	UNPROTECT(1);
 	

@@ -83,7 +83,7 @@ void Traceback(double *MI, int tot, int *unpaired, int *pos, char *states, char 
 		} else if (MI[unpaired[j]*tot + unpaired[i]] < -1e9) {
 			j += MI[unpaired[j]*tot + unpaired[i]] + 1e9;
 		} else { // base pairing
-//			if (states[pos[unpaired[i]]]!='.' || states[pos[unpaired[j]]]!='.')
+//			if (states[pos[unpaired[i]]] != '.' || states[pos[unpaired[j]]] != '.')
 //				error("crossed-over twice");
 			states[pos[unpaired[i]]] = leftSymbol;
 			states[pos[unpaired[j]]] = rightSymbol;
@@ -285,34 +285,34 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 						break;
 				}
 				
-				if (p1==5) { // -
+				if (p1 == 5) { // -
 					other += w[s];
-				} else if (p2==5) { // -
+				} else if (p2 == 5) { // -
 					other += w[s];
-				} else if (p1==1) { // A
-					if (p2==4) { // T/U
+				} else if (p1 == 1) { // A
+					if (p2 == 4) { // T/U
 						AU += w[s];
 					} else {
 						other += w[s];
 					}
-				} else if (p1==2) { // C
-					if (p2==3) { // G
+				} else if (p1 == 2) { // C
+					if (p2 == 3) { // G
 						CG += w[s];
 					} else {
 						other += w[s];
 					}
-				} else if (p1==3) { // G
-					if (p2==2) { // C
+				} else if (p1 == 3) { // G
+					if (p2 == 2) { // C
 						GC += w[s];
-					} else if (p2==4) { // T/U
+					} else if (p2 == 4) { // T/U
 						GU += w[s];
 					} else {
 						other += w[s];
 					}
-				} else if (p1==4) { // T/U
-					if (p2==1) { // A
+				} else if (p1 == 4) { // T/U
+					if (p2 == 1) { // A
 						UA += w[s];
-					} else if (p2==3) { // G
+					} else if (p2 == 3) { // G
 						UG += w[s];
 					} else {
 						other += w[s];
@@ -433,7 +433,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 			} else if (o < 3 && MI[i*tot + j] < thresh) {
 				MI[i*tot + j] = 0;
 			}
-			if (o==6 &&  MI[i*tot + j] >= thresh)
+			if (o == 6 &&  MI[i*tot + j] >= thresh)
 				n++;
 			//Rprintf("\ni = %d j = %d MI = %1.2f", pos[i] + 1, pos[j] + 1, MI[i*tot + j]);
 		}
@@ -554,7 +554,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 					// bifurcation
 					k = i + 3;
 					while (k <= (j - 4)) {
-						if ((k % q)==0) {
+						if ((k % q) == 0) {
 							if ((rowMax[i*n + k/q] + colMax[j*n + k/q]) <= MI[unpaired[i]*tot + unpaired[j]]) {
 								k += q;
 								continue;
@@ -576,16 +576,16 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 			Free(rowMax);
 			Free(colMax);
 			
-			if (p==0) {
+			if (p == 0) {
 				leftSymbol = '(';
 				rightSymbol = ')';
-			} else if (p==1) {
+			} else if (p == 1) {
 				leftSymbol = '[';
 				rightSymbol = ']';
-			} else if (p==2) {
+			} else if (p == 2) {
 				leftSymbol = '{';
 				rightSymbol = '}';
-			} else if (p==3) {
+			} else if (p == 3) {
 				leftSymbol = '<';
 				rightSymbol = '>';
 			}
@@ -599,10 +599,10 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 				// excluded paired positions from unpaired
 				l = 0;
 				for (i = 0; i < tot; i++) {
-					if (states[pos[i]]=='.')
+					if (states[pos[i]] == '.')
 						unpaired[l++] = i;
 				}
-				if (l==0) // all positions paired
+				if (l == 0) // all positions paired
 					break;
 			}
 		}
@@ -611,7 +611,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 		PROTECT(ans = allocVector(STRSXP, 1));
 		SET_STRING_ELT(ans, 0, mkChar(states));
 		Free(states);
-	} else if (o==3) { // scores
+	} else if (o == 3) { // scores
 		PROTECT(ans = allocMatrix(REALSXP, 3, width)); // [state][pos]
 		rans = REAL(ans);
 		for (i = 0; i < 3*width; i++)
@@ -637,7 +637,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 				rans[3*pos[i]] = 1 - sum;
 			}
 		}
-	} else if (o==6) { // evidence
+	} else if (o == 6) { // evidence
 		PROTECT(ans = allocMatrix(REALSXP, n, 3));
 		rans = REAL(ans);
 		
@@ -649,11 +649,11 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 					rans[count + n] = pos[j] + 1; // right pair
 					rans[count + 2*n] = MI[i*tot + j]; // score
 					count++;
-					if (count==n)
+					if (count == n)
 						break;
 				}
 			}
-			if (count==n)
+			if (count == n)
 				break;
 		}
 	} else { // structures or search
@@ -754,7 +754,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 				}
 			}
 			
-			if (o==5) { // search
+			if (o == 5) { // search
 				// eliminate single anchors between two unanchored positions
 				int last1[2] = {-1};
 				int last2[2] = {-1};
@@ -799,7 +799,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 						} else { // right anchored
 							last1[1] = i;
 						}
-					} else if (anchor[i]==0) { // unanchored
+					} else if (anchor[i] == 0) { // unanchored
 						if (last1[0] >= 0) {
 							anchor[i] = -1*(anchor[last1[0]] - 1); // mark as missing anchor
 							last1[0] = -1; // reset last left anchor
@@ -832,7 +832,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 					if (anchor[i] > 0) { // anchored
 						range1[0] = i;
 						range2[1] = -1; // flag as new anchor
-					} else if (anchor[i] < 0 && i < -1*anchor[i] && range2[1]==-1) { // new missing left anchor(s)
+					} else if (anchor[i] < 0 && i < -1*anchor[i] && range2[1] == -1) { // new missing left anchor(s)
 						// set right boundary in alignment
 						range2[1] = pos[-1*anchor[i]];
 						range2[0] = range2[1];
@@ -861,7 +861,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 										break;
 									}
 								}
-								if (next==0) // pairing within the right boundaries
+								if (next == 0) // pairing within the right boundaries
 									break;
 								
 								range1[0] = nucs[pos[range1[0]]];// + 1;
@@ -929,7 +929,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 												foldm[l1*pj + pi] = gapR;
 												foldn[l1*pj + pi] = -1;
 											} else {
-												if (NN[16*s2[pj] + s1[pi]]==0) {
+												if (NN[16*s2[pj] + s1[pi]] == 0) {
 													foldn[l1*pj + pi] = -3;
 												} else if (pi < l1 - 1 && pj > 0 && foldn[l1*(pj - 1) + pi + 1] > 0) {
 													foldn[l1*pj + pi] = foldn[l1*(pj - 1) + pi + 1] + 1;
@@ -962,7 +962,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 									prob[j] = -1;
 								
 								while(range2[0] + pj > range1[0] + pi + minLoop + 1 && pi < l1 && pj >= 0) {
-									if (foldn[l1*pj + pi]==-3) { // unpaired
+									if (foldn[l1*pj + pi] == -3) { // unpaired
 										if (pi + 1 >= l1 || pj - 1 < 0) {
 											break;
 										} else if (foldn[l1*(pj - 1) + pi + 1] < 0) {
@@ -1013,7 +1013,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 											pi += val;
 											pj -= val;
 										}
-									} else if (foldn[l1*pj + pi]==-2) { // gap in L
+									} else if (foldn[l1*pj + pi] == -2) { // gap in L
 										pi++;
 									} else { // gap in R
 										pj--;
@@ -1072,41 +1072,6 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 	} else {
 		UNPROTECT(1);
 	}
-	
-	return ans;
-}
-
-SEXP allZero(SEXP vec1, SEXP vec2, SEXP start1, SEXP start2, SEXP end1, SEXP end2)
-{
-	int i;
-	int *v1 = INTEGER(vec1);
-	int *v2 = INTEGER(vec2);
-	int s1 = asInteger(start1) - 1;
-	int s2 = asInteger(start2) - 1;
-	int e1 = asInteger(end1) - 1;
-	int e2 = asInteger(end2) - 1;
-	
-	SEXP ans;
-	PROTECT(ans = allocVector(INTSXP, 1));
-	int *rans = INTEGER(ans);
-	rans[0] = 1;
-	
-	for (i = s1; i <= s2; i++) {
-		if (v1[i] || v2[i]) {
-			rans[0] = 0;
-			break;
-		}
-	}
-	if (rans[0]) {
-		for (i = e1; i <= e2; i++) {
-			if (v1[i] || v2[i]) {
-				rans[0] = 0;
-				break;
-			}
-		}
-	}
-	
-	UNPROTECT(1);
 	
 	return ans;
 }

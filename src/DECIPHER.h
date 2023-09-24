@@ -52,7 +52,7 @@ SEXP adjustHeights(SEXP x);
 
 // ClusterML.c
 
-SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP states, SEXP type, SEXP weights, SEXP nThreads);
+SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP states, SEXP type, SEXP weights, SEXP uLengths, SEXP nThreads);
 
 SEXP expM(SEXP x, SEXP model, SEXP type);
 
@@ -64,7 +64,7 @@ SEXP designProbes(SEXP x, SEXP max_pl, SEXP min_pl, SEXP max_c, SEXP numMMs, SEX
 
 SEXP commonGaps(SEXP x);
 
-// MultiMatch.c
+// Utils.c
 
 SEXP multiMatch(SEXP x, SEXP y, SEXP z);
 
@@ -74,13 +74,7 @@ SEXP multiMatchCharNotNA(SEXP x);
 
 SEXP intMatch(SEXP x, SEXP y);
 
-SEXP firstMatchUpper(SEXP x, SEXP y, SEXP nThreads);
-
-SEXP matchLists(SEXP x, SEXP verbose, SEXP pBar, SEXP nThreads);
-
 SEXP matchOrder(SEXP x, SEXP verbose, SEXP pBar, SEXP nThreads);
-
-SEXP matchOrderDual(SEXP x, SEXP y, SEXP nThreads);
 
 SEXP matchRanges(SEXP x, SEXP y, SEXP wordSize, SEXP maxLength, SEXP threshold);
 
@@ -96,13 +90,23 @@ SEXP groupMax(SEXP x, SEXP y, SEXP z);
 
 SEXP matchOverlap(SEXP x, SEXP y, SEXP v, SEXP wordSize, SEXP nThreads);
 
-SEXP countOverlap(SEXP x, SEXP y, SEXP v, SEXP nThreads);
-
 SEXP countHits(SEXP x, SEXP v, SEXP nThreads);
 
 SEXP sumBins(SEXP v, SEXP bins);
 
-SEXP countRepeats(SEXP v);
+SEXP xorShift(SEXP seed, SEXP base);
+
+SEXP selectIndices(SEXP P, SEXP select, SEXP initial, SEXP final, SEXP ordering, SEXP num);
+
+SEXP selectGroups(SEXP ordering, SEXP initial, SEXP final, SEXP num);
+
+SEXP firstHit(SEXP x, SEXP y);
+
+SEXP maxGroup(SEXP groups, SEXP weights);
+
+SEXP sortedUnique(SEXP v);
+
+SEXP splitPartitions(SEXP order, SEXP partition, SEXP var, SEXP minSize, SEXP minSplit);
 
 // ReplaceChars.c
 
@@ -111,8 +115,6 @@ SEXP replaceChars(SEXP x, SEXP r, SEXP t);
 SEXP replaceChar(SEXP x, SEXP c, SEXP r);
 
 SEXP replaceGaps(SEXP x, SEXP y, SEXP start, SEXP type);
-
-SEXP selectIndices(SEXP P, SEXP select, SEXP initial, SEXP final, SEXP ordering, SEXP num);
 
 // TerminalMismatch.c
 
@@ -142,7 +144,7 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 
 // EnumerateSequence.c
 
-SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask);
+SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP nThreads);
 
 SEXP enumerateSequenceAA(SEXP x, SEXP wordSize);
 
@@ -150,21 +152,13 @@ SEXP enumerateGappedSequence(SEXP x, SEXP wordSize, SEXP ordering);
 
 SEXP enumerateGappedSequenceAA(SEXP x, SEXP wordSize, SEXP ordering);
 
-SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask);
+SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP nThreads);
 
 SEXP alphabetSizeReducedAA(SEXP x, SEXP alphabet);
 
 SEXP alphabetSize(SEXP x);
 
-SEXP maskRepeats(SEXP e, int n, int l1, int l2, int l3);
-
-SEXP frequencies(SEXP x, SEXP wordSize);
-
-SEXP frequenciesReducedAA(SEXP x, SEXP wordSize, SEXP alphabet);
-
 // Compositions.c
-
-SEXP gcContent(SEXP x, SEXP begins, SEXP ends);
 
 SEXP composition(SEXP x);
 
@@ -262,8 +256,6 @@ SEXP getPools(SEXP x);
 
 SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgProdCorr, SEXP slope, SEXP shift, SEXP weights, SEXP pseudoknots, SEXP threshold, SEXP patterns, SEXP verbose, SEXP pBar, SEXP nThreads);
 
-SEXP allZero(SEXP vec1, SEXP vec2, SEXP start1, SEXP start2, SEXP end1, SEXP end2);
-
 // InformationContent.c
 
 SEXP informationContent(SEXP p, SEXP nS, SEXP correction, SEXP randomBackground);
@@ -330,8 +322,6 @@ SEXP longestORFs(SEXP orftable);
 
 SEXP getIndex(SEXP start1, SEXP start2, SEXP len, SEXP score);
 
-SEXP inBounds(SEXP vec1, SEXP vec3, SEXP lo1, SEXP hi1, SEXP hi3);
-
 SEXP getBounds(SEXP widths, SEXP start, SEXP end, SEXP minL, SEXP maxL, SEXP lenScores, SEXP kmer, SEXP Ksize, SEXP negOk, SEXP minS, SEXP partS, SEXP minC);
 
 SEXP addIfElse(SEXP vec, SEXP index, SEXP scores);
@@ -359,13 +349,3 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 // PairwiseAlignment.c
 
 SEXP alignPair(SEXP x, SEXP y, SEXP s1, SEXP e1, SEXP s2, SEXP e2, SEXP go, SEXP ge, SEXP tg, SEXP maxLength, SEXP type, SEXP subMatrix, SEXP nThreads);
-
-// SphericalKmeans.c
-
-SEXP sphericalKmeans(SEXP X, SEXP Y, SEXP Kmeans, SEXP tolerance, SEXP maxIterations, SEXP verbose, SEXP nThreads);
-
-// RawVectors.c
-
-SEXP graphLaplacian(SEXP vecs, SEXP bitMask, SEXP nThreads);
-
-SEXP assignClusters(SEXP vecs, SEXP bitMask, SEXP clusters, SEXP nThreads);

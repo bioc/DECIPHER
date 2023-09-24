@@ -74,10 +74,11 @@ TreeLine uses multi-start optimization followed by hill-climbing to find the hig
 Finding a tree with very high likelihood/parsimony is no easy feat.  \Rfunction{TreeLine} systematically optimizes hundreds to thousands of candidate trees before returning the best one.  This takes time, but there are things you can do to make it go faster.
 
 \begin{itemize}
-\item Only use the sequences you need:  \Rfunction{TreeLine} scales a bit worse than quadratically with the number of sequences.  Hence, limiting the number of sequences is a worthwhile consideration.  In particular, always eliminate redundant sequences, as shown below, and remove any sequences that are not necessary.  This concern is shared for all tree building programs, and \Rfunction{TreeLine} is no exception.
+\item Only use the sequences you need:  \Rfunction{TreeLine} scales approximately quadratically with the number of sequences.  Hence, limiting the number of sequences is a worthwhile consideration.  In particular, always eliminate redundant sequences, as shown below, and remove any sequences that are not necessary.  This concern is shared for all tree building programs, and \Rfunction{TreeLine} is no exception.
+\item Choose a model:  Automatic model selection is a useful feature, but frequently this time-consuming step can be skipped.  For most modestly large sets of nucleotide sequences, the \code{"GTR+G4"} model will be automatically selected.  Typical amino acid sequences will tend to pick the \code{"LG+G4"} or \code{"WAG+G4"} models, unless the sequences are from a particular origin (e.g., mitochondria).  Pre-selecting a subset of the available \Robject{MODELS} and supplying this as the \Rfunarg{model} argument can save considerable time.
 \item Set a timeout:  The \code{maxTime} argument specifies the (approximate) maximum number of hours you are willing to let \Rfunction{TreeLine} run.  If you are concerned about the code running too long then simply specify this argument.
 \item Compile with OpenMP support:  Significant speed-ups can be achieved with multi-threading using OpenMP.  See the ``Getting Started DECIPHERing'' vignette for how to do this on your computer platform.  Then you only need to set the argument \code{processors=NULL} and \Rfunction{TreeLine} will use all available processors.
-%\item Compile for SIMD support:  \Rfunction{TreeLine} is configured to make use of SIMD operations, which are available on some processors.  The easiest way to enable SIMD is to add `` -O3 -march=native'' to the end of \code{PKG_CFLAGS} in the ``DECIPHER/src/MAKEVARS'' text file.  This enables level-3 compiler optimization for your native computer architecture.  Then, after recompiling, there can be an automatic speed-up on systems with SIMD support.
+\item Compile for SIMD support:  \Rfunction{TreeLine} is configured to make use of SIMD operations, which are available on some processors.  The easiest way to enable SIMD is to add `` -O3 -march=native'' to the end of \code{PKG_CFLAGS} in the ``DECIPHER/src/MAKEVARS'' text file.  Then, after recompiling, there may be an automatic speed-up on systems with SIMD support.  Note that enabling SIMD makes the compiled code non-portable, so the code always needs to be compiled on the hardware being used.
 \end{itemize}
 
 %------------------------------------------------------------
@@ -175,13 +176,20 @@ We lucked out because maximum likelihood and maximum parsimony trees both provid
 getSupports <- function(x) {
 	if (is.leaf(x)) {
 		NULL
+	} else if (is.null(attr(x, "support"))) {
+		rbind(getSupports(x[[1]]), getSupports(x[[2]]))
 	} else {
-		rbind(cbind(attr(x, "support"), attr(x, "probability")),
+		rbind(cbind(attr(x, "support"),
+				attr(x, "probability"),
+				attr(x, "members")),
 			getSupports(x[[1]]), getSupports(x[[2]]))
 	}
 }
 support <- getSupports(tree)
-plot(support[, 1], support[, 2], xlab="Support", ylab="aBayes probability", asp=1)
+plot(support[, 1],
+	support[, 2],
+	cex=log10(support[, 3]),
+	xlab="Support", ylab="aBayes probability", asp=1)
 abline(a=0, b=1, lty=2) # line of identity (y=x)
 @
 \caption{\label{f3} Comparison of aBayes probabilities and branch support values.}

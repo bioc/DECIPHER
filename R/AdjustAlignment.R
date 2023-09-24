@@ -57,9 +57,9 @@ AdjustAlignment <- function(myXStringSet,
 		stop("shiftPenalty must be less than or equal to zero.")
 	if (!is.numeric(weight))
 		stop("weight must be a numeric.")
-	if (length(weight)!=1 && length(weight)!=length(myXStringSet))
+	if (length(weight) != 1 && length(weight) != length(myXStringSet))
 		stop("Length of weight must equal one or the length of the myXStringSet.")
-	if (length(weight)==1) {
+	if (length(weight) == 1) {
 		weight <- rep(1, length(myXStringSet))
 	} else {
 		if (!isTRUE(all.equal(1, mean(weight))))
@@ -67,7 +67,7 @@ AdjustAlignment <- function(myXStringSet,
 	}
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -77,7 +77,7 @@ AdjustAlignment <- function(myXStringSet,
 		processors <- as.integer(processors)
 	}
 	
-	if (type==3L) { # AAStringSet
+	if (type == 3L) { # AAStringSet
 		AAs <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I",
 			"L", "K", "M", "F", "P", "S", "T", "W", "Y", "V", "*")
 		if (is.null(substitutionMatrix)) {
@@ -96,7 +96,7 @@ AdjustAlignment <- function(myXStringSet,
 				stop("substitutionMatrix is incomplete.")
 			subMatrix <- substitutionMatrix
 		} else {
-			subMatrix <- eval(parse(text=data(list=substitutionMatrix, envir=environment(), package=ifelse(substitutionMatrix=="MIQS", "DECIPHER", "Biostrings"))))
+			subMatrix <- eval(parse(text=data(list=substitutionMatrix, envir=environment(), package=ifelse(substitutionMatrix == "MIQS", "DECIPHER", "Biostrings"))))
 		}
 		subMatrix <- subMatrix[AAs, AAs]
 		subMatrix <- as.numeric(subMatrix)
@@ -105,7 +105,7 @@ AdjustAlignment <- function(myXStringSet,
 	} else { # DNAStringSet or RNAStringSet
 		if (is.matrix(substitutionMatrix)) {
 			bases <- c("A", "C", "G",
-				ifelse(type==2L, "U", "T"))
+				ifelse(type == 2L, "U", "T"))
 			if (any(!(bases %in% dimnames(substitutionMatrix)[[1]])) ||
 				any(!(bases %in% dimnames(substitutionMatrix)[[2]])))
 				stop("substitutionMatrix is incomplete.")

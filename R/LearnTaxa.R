@@ -37,7 +37,7 @@ LearnTaxa <- function(train,
 	if (is(train, "AAStringSet")) {
 		if (!is.character(alphabet))
 			stop("alphabet must be a character vector.")
-		if (any(alphabet==""))
+		if (any(alphabet == ""))
 			stop("No elements of alphabet can be empty.")
 		r <- strsplit(alphabet, "", fixed=TRUE)
 		alphabet <- setNames(rep(0L, 20),
@@ -55,13 +55,13 @@ LearnTaxa <- function(train,
 					".")
 			alphabet[r[[i]]] <- i
 		}
-		w <- which(alphabet==0L)
+		w <- which(alphabet == 0L)
 		if (length(w) > 0)
 			stop("Standard amino acids missing from alphabet:  ",
 				paste(names(w), collapse=", "),
 				".")
 		size <- max(alphabet)
-		if (size==1)
+		if (size == 1)
 			stop("More than one grouping of amino acids is required in the alphabet.")
 		alphabet <- alphabet - 1L
 	} else {
@@ -179,18 +179,20 @@ LearnTaxa <- function(train,
 			K,
 			alphabet,
 			FALSE, # mask repeats
+			1L, # processors
 			PACKAGE="DECIPHER")
 	} else {
 		kmers <- .Call("enumerateSequence",
 			train,
 			K,
 			FALSE, # mask repeats
+			1L, # processors
 			PACKAGE="DECIPHER")
 	}
 	kmers <- lapply(kmers,
 		function(x)
 			sort(unique(x + 1L), na.last=NA))
-	if (any(lengths(kmers)==0))
+	if (any(lengths(kmers) == 0))
 		stop("All training sequences must have at least one k-mer.")
 	
 	# create lists of:
@@ -224,7 +226,7 @@ LearnTaxa <- function(train,
 	maxL <- max(levels) - 1L # max level with children
 	levs <- vector("list", maxL)
 	for (i in seq_len(maxL))
-		levs[[i]] <- which(levels==(i + 1L))
+		levs[[i]] <- which(levels == (i + 1L))
 	starts <- rep(1L, maxL)
 	children <- vector("list", length(taxonomy))
 	for (i in seq_along(children)) {
@@ -254,13 +256,13 @@ LearnTaxa <- function(train,
 	} else {
 		ranks <- character(length(taxa))
 		for (i in seq_along(ranks)) {
-			w <- which(rank$Name==taxa[i])
-			if (length(w)==0) {
+			w <- which(rank$Name == taxa[i])
+			if (length(w) == 0) {
 				stop("rank is missing the name: ",
 					taxa[i])
 			} else if (length(w) > 1) {
-				w <- w[which(rank$Level[w]==(levels[i] - 1L))]
-				if (length(w)==0) {
+				w <- w[which(rank$Level[w] == (levels[i] - 1L))]
+				if (length(w) == 0) {
 					stop("rank is missing the name: ",
 						taxa[i],
 						" at level ",
@@ -281,8 +283,8 @@ LearnTaxa <- function(train,
 			# confirm the correct parent
 			w <- rank$Parent[w] # Index of Parent
 			if (w > 0) { # not Root
-				w <- which(rank$Index==w) # Index matching Parent
-				if (length(w)==0)
+				w <- which(rank$Index == w) # Index matching Parent
+				if (length(w) == 0)
 					stop("All values of Parent in rank must have a corresponding Index.")
 				if (rank$Name[w] != taxa[parents[i]])
 					stop("rank contains an unexpected Parent for Name: ",
@@ -371,12 +373,12 @@ LearnTaxa <- function(train,
 	delta <- (maxFraction - minFraction)*multiplier
 	for (it in seq_len(maxIterations)) {
 		remainingSeqs <- which(incorrect)
-		if (length(remainingSeqs)==0)
+		if (length(remainingSeqs) == 0)
 			break
 		
 		# test whether the sequences can be correctly classified
 		for (i in remainingSeqs) {
-			if (length(kmers[[i]])==0)
+			if (length(kmers[[i]]) == 0)
 				next # no k-mers to test
 			
 			k <- 1L
@@ -385,7 +387,7 @@ LearnTaxa <- function(train,
 				subtrees <- children[[k]]
 				n <- length(decision_kmers[[k]][[1]])
 				
-				if (n==0) { # no decision k-mers
+				if (n == 0) { # no decision k-mers
 					break
 				} else if (length(subtrees) > 1) {
 					# set number of k-mers to choose each bootstrap replicate
@@ -416,7 +418,7 @@ LearnTaxa <- function(train,
 					}
 					
 					maxes <- apply(hits, 2, max) # max hits per bootstrap replicate
-					hits <- colSums(t(hits)==maxes & maxes > 0)
+					hits <- colSums(t(hits) == maxes & maxes > 0)
 					w <- which.max(hits)
 					if (hits[w] < B*0.8) # require 80% confidence to further descend the taxonomic tree
 						break
@@ -429,7 +431,7 @@ LearnTaxa <- function(train,
 					break
 				}
 				
-				if (length(children[[subtrees[w]]])==0)
+				if (length(children[[subtrees[w]]]) == 0)
 					break
 				
 				k <- subtrees[w]

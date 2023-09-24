@@ -37,16 +37,16 @@ AlignProfiles <- function(pattern,
 	if (length(subject) < 1)
 		stop("At least one sequence is required in the subject.")
 	w.p <- unique(width(pattern))
-	if (length(w.p)!=1)
+	if (length(w.p) != 1)
 		stop("Sequences in pattern must be the same width (aligned).")
 	w.s <- unique(width(subject))
-	if (length(w.s)!=1)
+	if (length(w.s) != 1)
 		stop("Sequences in subject must be the same width (aligned).")
 	if (!is.numeric(p.weight))
 		stop("p.weight must be a numeric.")
-	if (length(p.weight)!=1 && length(p.weight)!=length(pattern))
+	if (length(p.weight) != 1 && length(p.weight) != length(pattern))
 		stop("Length of p.weight must equal one or the length of the pattern.")
-	if (length(p.weight)==1) {
+	if (length(p.weight) == 1) {
 		p.weight <- rep(1, length(pattern))
 	} else {
 		if (!isTRUE(all.equal(1, mean(p.weight))))
@@ -54,9 +54,9 @@ AlignProfiles <- function(pattern,
 	}
 	if (!is.numeric(s.weight))
 		stop("s.weight must be a numeric.")
-	if (length(s.weight)!=1 && length(s.weight)!=length(subject))
+	if (length(s.weight) != 1 && length(s.weight) != length(subject))
 		stop("Length of s.weight must equal one or the length of the subject.")
-	if (length(s.weight)==1) {
+	if (length(s.weight) == 1) {
 		s.weight <- rep(1, length(subject))
 	} else {
 		if (!isTRUE(all.equal(1, mean(s.weight))))
@@ -103,11 +103,11 @@ AlignProfiles <- function(pattern,
 		stop("Length of terminalGap must be 1 or 2.")
 	if (any(is.infinite(terminalGap)))
 		stop("terminalGap must be finite.")
-	if (length(terminalGap)==1)
+	if (length(terminalGap) == 1)
 		terminalGap[2] <- terminalGap[1]
 	if (!is.numeric(restrict))
 		stop("restrict must be a numeric.")
-	if (length(restrict)!=3)
+	if (length(restrict) != 3)
 		stop("Length of restrict must be 3.")
 	if (restrict[1] >= 0)
 		stop("restrict[1] must be less than zero.")
@@ -115,7 +115,7 @@ AlignProfiles <- function(pattern,
 		stop("restrict[2] must be at least zero.")
 	if (restrict[3] <= 0)
 		stop("restrict[3] must be greater than zero.")
-	if (floor(restrict[3])!=restrict[3])
+	if (floor(restrict[3]) != restrict[3])
 		stop("restrict[3] must be a whole number.")
 	restrict <- as.double(restrict)
 	if (!is.numeric(anchor) && !is.na(anchor))
@@ -160,7 +160,7 @@ AlignProfiles <- function(pattern,
 		stop("standardize must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -180,7 +180,7 @@ AlignProfiles <- function(pattern,
 			") longer than the maximum allowable length (2,147,483,647).",
 			sep=""))
 	
-	if (type==3L) { # AAStringSet
+	if (type == 3L) { # AAStringSet
 		AAs <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I",
 			"L", "K", "M", "F", "P", "S", "T", "W", "Y", "V", "*")
 		if (is.null(substitutionMatrix)) {
@@ -199,13 +199,13 @@ AlignProfiles <- function(pattern,
 				stop("substitutionMatrix is incomplete.")
 			subMatrix <- substitutionMatrix
 		} else {
-			subMatrix <- eval(parse(text=data(list=substitutionMatrix, envir=environment(), package=ifelse(substitutionMatrix=="MIQS", "DECIPHER", "Biostrings"))))
+			subMatrix <- eval(parse(text=data(list=substitutionMatrix, envir=environment(), package=ifelse(substitutionMatrix == "MIQS", "DECIPHER", "Biostrings"))))
 		}
 		subMatrix <- subMatrix[AAs, AAs]
 		subMatrix <- as.numeric(subMatrix)
 	} else {
 		bases <- c("A", "C", "G",
-			ifelse(type==2L, "U", "T"))
+			ifelse(type == 2L, "U", "T"))
 		if (!is.null(substitutionMatrix)) {
 			if (is.matrix(substitutionMatrix)) {
 				if (any(!(bases %in% dimnames(substitutionMatrix)[[1]])) ||
@@ -216,15 +216,15 @@ AlignProfiles <- function(pattern,
 			} else {
 				stop("substitutionMatrix must be NULL or a matrix.")
 			}
-		} else if (type==2L && missing(perfectMatch) && missing(misMatch)) {
-			sM <- matrix(c(10, 3, 5, 3, 3, 12, 3, 5, 5, 3, 12, 3, 3, 5, 3, 10),
+		} else if (type == 2L && missing(perfectMatch) && missing(misMatch)) {
+			sM <- matrix(c(12, 4, 6, 4, 4, 14, 4, 6, 6, 4, 14, 4, 4, 6, 4, 12),
 				nrow=4,
 				ncol=4,
 				dimnames=list(bases, bases))
 		}
 	}
 	
-	if (type==3L) {
+	if (type == 3L) {
 		consensusProfile <- "consensusProfileAA"
 	} else {
 		consensusProfile <- "consensusProfile"
@@ -242,12 +242,12 @@ AlignProfiles <- function(pattern,
 			PACKAGE="DECIPHER")
 	} else {
 		if (is.null(structureMatrix)) {
-			if (type==3L) {
+			if (type == 3L) {
 				# assume structures from PredictHEC
-				structureMatrix <- matrix(c(6, 2, -1, 2, 12, 0, -1, 0, 1),
+				structureMatrix <- matrix(c(4, 0, -2, 0, 14, 0, -2, 0, 0),
 					nrow=3) # order is H, E, C
 			} else {
-				structureMatrix <- matrix(c(-1, -3, -3, -3, 7, -3, -3, -3, 7),
+				structureMatrix <- matrix(c(7, -4, -4, -4, 12, -3, -4, -3, 12),
 					nrow=3) # order is ., (, )
 			}
 		} else {
@@ -314,7 +314,7 @@ AlignProfiles <- function(pattern,
 				") than the maximum allowable size (2,147,483,647).",
 				sep=""))
 		
-		if (type==3) { # AAStringSet
+		if (type == 3) { # AAStringSet
 			if (is.null(p.struct)) {
 				t <- .Call("alignProfilesAA",
 					p.profile,
@@ -397,7 +397,7 @@ AlignProfiles <- function(pattern,
 		if (is.matrix(anchor)) {
 			anchors <- anchor
 		} else { # find anchors
-			if (type==3L) { # AAStringSet
+			if (type == 3L) { # AAStringSet
 				wordSize <- 7
 			} else {
 				wordSize <- 15
@@ -405,7 +405,7 @@ AlignProfiles <- function(pattern,
 			l <- min(length(pattern), length(subject))
 			o.p <- order(p.weight, decreasing=TRUE)
 			o.s <- order(s.weight, decreasing=TRUE)
-			if (type==3L) { # AAStringSet
+			if (type == 3L) { # AAStringSet
 				num.p <- .Call("enumerateGappedSequenceAA",
 					pattern,
 					wordSize,
@@ -439,7 +439,7 @@ AlignProfiles <- function(pattern,
 		}
 		
 		numAnchors <- dim(anchors)[2]
-		if (numAnchors==0) {
+		if (numAnchors == 0) {
 			inserts <- f(p.profile, s.profile)
 		} else {
 			max.p <- which.max(p.weight)
@@ -502,7 +502,7 @@ AlignProfiles <- function(pattern,
 						max.p,
 						max.s,
 						PACKAGE="DECIPHER")
-					if (length(temp)==4) {
+					if (length(temp) == 4) {
 						inserts[[1]] <- c(inserts[[1]], temp[[1]])
 						inserts[[3]] <- c(inserts[[3]], temp[[3]])
 					} else { # number of sites differs

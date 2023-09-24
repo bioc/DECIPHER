@@ -43,10 +43,10 @@ SEXP all(SEXP x)
 {	
 	int i, l = length(x), *v = INTEGER(x), count = 0;
 	for (i = 0; i < l; i++) {
-		if (v[i]!=NA_LOGICAL) {
-			if (count==0)
+		if (v[i] != NA_LOGICAL) {
+			if (count == 0)
 				count = 1;
-			if (v[i]==0)
+			if (v[i] == 0)
 				break;
 		}
 	}
@@ -55,7 +55,7 @@ SEXP all(SEXP x)
 	PROTECT(ans = allocVector(LGLSXP, 1));
 	int *rans = INTEGER(ans);
 	
-	if (count==0) {
+	if (count == 0) {
 		rans[0] = NA_LOGICAL;
 	} else if (i < l) {
 		rans[0] = 0;
@@ -73,10 +73,10 @@ SEXP any(SEXP x)
 {	
 	int i, l = length(x), *v = INTEGER(x), count = 0, en = 0;
 	for (i = 0; i < l; i++) {
-		if (v[i]!=NA_LOGICAL) {
-			if (count==0)
+		if (v[i] != NA_LOGICAL) {
+			if (count == 0)
 				count = 1;
-			if (v[i]==1) {
+			if (v[i] == 1) {
 				en = 1;
 				break;
 			}
@@ -87,7 +87,7 @@ SEXP any(SEXP x)
 	PROTECT(ans = allocVector(LGLSXP, 1));
 	int *rans = INTEGER(ans);
 	
-	if (count==0) {
+	if (count == 0) {
 		rans[0] = NA_LOGICAL;
 	} else if (en) {
 		rans[0] = 1;

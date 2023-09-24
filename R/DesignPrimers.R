@@ -72,7 +72,7 @@
 	mapping["T", c("T","W","Y","K","H","D","B","N")] <- .7
 	mapping["G", "T"] <- .2
 	mapping["T", "G"] <- .2
-	w <- which(mapping==0)
+	w <- which(mapping == 0)
 	mapping[w] <- 0
 	mapping[,"-"] <- 0.2
 	mapping["-",] <- 0.2
@@ -144,18 +144,18 @@ DesignPrimers <- function(tiles,
 		stop("Sodium equivilent concentration must be at least 0.01M.")
 	if (!is.numeric(minLength))
 		stop("minLength must be a numeric.")
-	if (floor(minLength)!=minLength)
+	if (floor(minLength) != minLength)
 		stop("minLength must be a whole number.")
 	if (!is.numeric(maxLength))
 		stop("maxLength must be a numeric.")
-	if (floor(maxLength)!=maxLength)
+	if (floor(maxLength) != maxLength)
 		stop("maxLength must be a whole number.")
 	if (minLength > maxLength)
 		stop("minLength must be less or equal to maxLength.")
 	if (minLength < 7)
 		stop("minLength must be at least 7 nucleotides.")
 	ids <- unique(tiles$id)
-	if (length(ids)==0)
+	if (length(ids) == 0)
 		stop("No identifiers found in tiles.")
 	if (any(grepl("%,", ids, fixed=TRUE)))
 		stop("Identifiers in tiles cannot include '%,'.")
@@ -183,37 +183,37 @@ DesignPrimers <- function(tiles,
 		stop("worstScore must be less than or equal to zero.")
 	if (!is.numeric(batchSize))
 		stop("batchSize must be a numeric.")
-	if (floor(batchSize)!=batchSize)
+	if (floor(batchSize) != batchSize)
 		stop("batchSize must be a whole number.")
 	if (batchSize <= 0)
 		stop("batchSize must be greater than zero.")
 	if (!is.numeric(numPrimerSets))
 		stop("numPrimerSets must be a numeric.")
-	if (floor(numPrimerSets)!=numPrimerSets)
+	if (floor(numPrimerSets) != numPrimerSets)
 		stop("numPrimerSets must be a whole number.")
 	if (numPrimerSets < 0)
 		stop("numPrimerSets must be greater than or equal to zero.")
 	if (!is.numeric(minProductSize))
 		stop("minProductSize must be a numeric.")
-	if (floor(minProductSize)!=minProductSize)
+	if (floor(minProductSize) != minProductSize)
 		stop("minProductSize must be a whole number.")
 	if (minProductSize <= 0)
 		stop("minProductSize must be greater than zero.")
 	if (!is.numeric(maxProductSize))
 		stop("maxProductSize must be a numeric.")
-	if (floor(maxProductSize)!=maxProductSize)
+	if (floor(maxProductSize) != maxProductSize)
 		stop("maxProductSize must be a whole number.")
 	if (maxProductSize < minProductSize)
 		stop("maxProductSize must be greater than or equal to minProductSize.")
 	if (!is.numeric(maxSearchSize))
 		stop("maxSearchSize must be a numeric.")
-	if (floor(maxSearchSize)!=maxSearchSize)
+	if (floor(maxSearchSize) != maxSearchSize)
 		stop("maxSearchSize must be a whole number.")
 	if (maxSearchSize <= 0)
 		stop("maxSearchSize must be greater than zero.")
 	if (!is.numeric(maxPermutations))
 		stop("maxPermutations must be a numeric.")
-	if (floor(maxPermutations)!=maxPermutations)
+	if (floor(maxPermutations) != maxPermutations)
 		stop("maxPermutations must be a whole number.")
 	if (maxPermutations <= 0)
 		stop("maxPermutations must be greater than zero.")
@@ -228,7 +228,7 @@ DesignPrimers <- function(tiles,
 	if (!is.numeric(induceMismatch) && !is.logical(induceMismatch))
 		stop("induceMismatch must be a logical or integer between 2 and 6.")
 	if (is.numeric(induceMismatch)) {
-		if (floor(induceMismatch)!=induceMismatch)
+		if (floor(induceMismatch) != induceMismatch)
 			stop("induceMismatch must be a whole number.")
 		if (induceMismatch < 2 || induceMismatch > 6)
 			stop("induceMismatch must be between 2 and 6.")
@@ -247,7 +247,7 @@ DesignPrimers <- function(tiles,
 		stop("end must be a numeric or NULL.")
 	if (start < 1)
 		stop("start must be greater than zero.")
-	if (floor(start)!=start)
+	if (floor(start) != start)
 		stop("start must be a whole number.")
 	if (!is.numeric(minCoverage))
 		stop("minCoverage must be a numeric.")
@@ -266,10 +266,10 @@ DesignPrimers <- function(tiles,
 	if (!is.null(end)) {
 		if (end < start)
 			stop("end must be greater than start.")
-		if (floor(end)!=end)
+		if (floor(end) != end)
 			stop("end must be a whole number.")
 	}
-	if (identifier[1]=="") {
+	if (identifier[1] == "") {
 		identifier <- ids
 	} else {
 		w <- which(!(identifier %in% ids))
@@ -279,7 +279,7 @@ DesignPrimers <- function(tiles,
 	}
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -351,16 +351,16 @@ DesignPrimers <- function(tiles,
 		}
 		
 		if (is.null(end)) {
-			w <- which(tiles$id==id &
-				tiles$misprime==0 &
+			w <- which(tiles$id == id &
+				tiles$misprime == 0 &
 				tiles$start_aligned >= start)
 		} else {
-			w <- which(tiles$id==id &
-				tiles$misprime==0 &
+			w <- which(tiles$id == id &
+				tiles$misprime == 0 &
 				tiles$start_aligned >= start &
 				tiles$end_aligned <= end)
 		}
-		if (length(w)==0) {
+		if (length(w) == 0) {
 			warning("Skipped because no target sites met the specified constraints: ", id)
 			next
 		}
@@ -421,7 +421,7 @@ DesignPrimers <- function(tiles,
 		begin <- 1L
 		for (i in 1:l) {
 			# find all target_sites
-			#w <- which(target$start==u[i])
+			#w <- which(target$start == u[i])
 			w <- .Call("multiMatch", target$start_aligned, u[i], begin, PACKAGE="DECIPHER")
 			begin <- w[1]
 			target_site <- target$target_site[w]
@@ -461,8 +461,8 @@ DesignPrimers <- function(tiles,
 			primers$start_reverse[i] <- target$end[w[1]]
 		}
 		
-		w <- which(primers$permutations_forward==0)
-		if (length(w)==dim(primers)[1]) {
+		w <- which(primers$permutations_forward == 0)
+		if (length(w) == dim(primers)[1]) {
 			warning("Skipped because all target sites have too many permutations: ", id)
 			next
 		}
@@ -481,11 +481,11 @@ DesignPrimers <- function(tiles,
 		for (j in 1:(maxLength - minLength + 1)) {
 			if (length(empty) > 0) {
 				empty <- c((1:(l*maxPermutations))[-empty][w],
-					which(targets_F[,,j]==""),
+					which(targets_F[,,j] == ""),
 					empty)
 			} else {
 				empty <- c((1:(l*maxPermutations))[w],
-					which(targets_F[,,j]==""))
+					which(targets_F[,,j] == ""))
 			}
 			t <- targets_F[,,j]
 			if (length(empty) > 0) {
@@ -493,7 +493,7 @@ DesignPrimers <- function(tiles,
 			} else {
 				t <- as.vector(t)
 			}
-			if (length(t)==0)
+			if (length(t) == 0)
 				break
 			eff <- CalculateEfficiencyPCR(t,
 				strsplit(toString(reverseComplement(DNAStringSet(t))),
@@ -522,11 +522,11 @@ DesignPrimers <- function(tiles,
 		for (j in 1:(maxLength - minLength + 1)) {
 			if (length(empty) > 0) {
 				empty <- c((1:(l*maxPermutations))[-empty][w],
-					which(targets_R[,,j]==""),
+					which(targets_R[,,j] == ""),
 					empty)
 			} else {
 				empty <- c((1:(l*maxPermutations))[w],
-					which(targets_R[,,j]==""))
+					which(targets_R[,,j] == ""))
 			}
 			t <- targets_R[,,j]
 			if (length(empty) > 0) {
@@ -534,7 +534,7 @@ DesignPrimers <- function(tiles,
 			} else {
 				t <- as.vector(t)
 			}
-			if (length(t)==0)
+			if (length(t) == 0)
 				break
 			eff <- CalculateEfficiencyPCR(strsplit(toString(reverseComplement(DNAStringSet(t))),
 					", ",
@@ -563,13 +563,13 @@ DesignPrimers <- function(tiles,
 		
 		w <- integer()
 		for (i in 1:l) {
-			if (primers$start_aligned_forward[i]==0) {
+			if (primers$start_aligned_forward[i] == 0) {
 				w <- c(w,i) # empty primer
 				next
 			}
 			p <- primers$permutations_forward[i]
-			pf <- length(which(primers$forward_primer[i,]!=""))
-			pr <- length(which(primers$reverse_primer[i,]!=""))
+			pf <- length(which(primers$forward_primer[i,] != ""))
+			pr <- length(which(primers$reverse_primer[i,] != ""))
 			if ((p != pr) && (p != pf)) {
 				w <- c(w,i)
 			} else {
@@ -583,7 +583,7 @@ DesignPrimers <- function(tiles,
 					l <- length(which(df))
 					if (l > 0) {
 						for (j in which(df)) {
-							w1 <- which(primers$forward_primer[i,1:(j - 1)]==primers$forward_primer[i,j])[1]
+							w1 <- which(primers$forward_primer[i,1:(j - 1)] == primers$forward_primer[i,j])[1]
 							primers$forward_coverage[i,w1] <- primers$forward_coverage[i,w1] + primers$forward_coverage[i,j]
 							primers$forward_coverage[i,j] <- NA
 						}
@@ -608,7 +608,7 @@ DesignPrimers <- function(tiles,
 					l <- length(which(dr))
 					if (l > 0) {
 						for (j in which(dr)) {
-							w1 <- which(primers$reverse_primer[i,1:(j - 1)]==primers$reverse_primer[i,j])[1]
+							w1 <- which(primers$reverse_primer[i,1:(j - 1)] == primers$reverse_primer[i,j])[1]
 							primers$reverse_coverage[i,w1] <- primers$reverse_coverage[i,w1] + primers$reverse_coverage[i,j]
 							primers$reverse_coverage[i,j] <- NA
 						}
@@ -641,7 +641,7 @@ DesignPrimers <- function(tiles,
 		
 		if (induceMismatch) {
 			empty <- which(is.na(primers$forward_primer))
-			if (length(empty)==0) {
+			if (length(empty) == 0) {
 				n <- nchar(primers$forward_primer)
 				nt <- strsplit(toString(reverseComplement(DNAStringSet(as.vector(primers$forward_primer)))),
 					", ",
@@ -660,9 +660,9 @@ DesignPrimers <- function(tiles,
 				ncol=dim(primers$forward_primer)[2]))
 			for (i in c("A", "C", "T", "G")) {
 				w <- which(X != i)
-				if (length(w)==0)
+				if (length(w) == 0)
 					next
-				if (length(empty)==0) {
+				if (length(empty) == 0) {
 					t <- primers$forward_primer[w]
 				} else {
 					t <- primers$forward_primer[-empty][w]
@@ -682,7 +682,7 @@ DesignPrimers <- function(tiles,
 					processors=processors)
 				W <- which(eff_PM >= minEfficiency)
 				w <- w[W]
-				if (length(w)==0)
+				if (length(w) == 0)
 					next
 				t <- t[W]
 				x <- x[W]
@@ -702,7 +702,7 @@ DesignPrimers <- function(tiles,
 					W <- sort(c(W, nnas[which(eff_MM[nnas] > primers$forward_efficiency_MM[w[nnas]])]))
 				W <- W[which(eff_MM[W] >= 0.1)] # must have 10% MM efficiency
 				if (length(W) > 0) {
-					if (length(empty)==0) {
+					if (length(empty) == 0) {
 						primers$forward_efficiency_MM[w[W]] <- eff_MM[W]
 						primers$forward_efficiency[w[W]] <- eff_PM[W]
 						primers$forward_MM[w[W]] <- paste(i,
@@ -727,7 +727,7 @@ DesignPrimers <- function(tiles,
 			}
 			
 			empty <- which(is.na(primers$reverse_primer))
-			if (length(empty)==0) {
+			if (length(empty) == 0) {
 				n <- nchar(primers$reverse_primer)
 				nt <- strsplit(toString(reverseComplement(DNAStringSet(as.vector(primers$reverse_primer)))),
 					", ",
@@ -746,9 +746,9 @@ DesignPrimers <- function(tiles,
 				ncol=dim(primers$reverse_primer)[2]))
 			for (i in c("A", "C", "T", "G")) {
 				w <- which(X != i)
-				if (length(w)==0)
+				if (length(w) == 0)
 					next
-				if (length(empty)==0) {
+				if (length(empty) == 0) {
 					t <- primers$reverse_primer[w]
 				} else {
 					t <- primers$reverse_primer[-empty][w]
@@ -768,7 +768,7 @@ DesignPrimers <- function(tiles,
 					processors=processors)
 				W <- which(eff_PM >= minEfficiency)
 				w <- w[W]
-				if (length(w)==0)
+				if (length(w) == 0)
 					next
 				t <- t[W]
 				x <- x[W]
@@ -788,7 +788,7 @@ DesignPrimers <- function(tiles,
 					W <- sort(c(W, nnas[which(eff_MM[nnas] > primers$reverse_efficiency_MM[w[nnas]])]))
 				W <- W[which(eff_MM[W] >= 0.1)] # must have 10% MM efficiency
 				if (length(W) > 0) {
-					if (length(empty)==0) {
+					if (length(empty) == 0) {
 						primers$reverse_efficiency_MM[w[W]] <- eff_MM[W]
 						primers$reverse_efficiency[w[W]] <- eff_PM[W]
 						primers$reverse_MM[w[W]] <- paste(i,
@@ -817,7 +817,7 @@ DesignPrimers <- function(tiles,
 			if (ids[k] == id)
 				next
 			
-			w <- which(tiles$id==ids[k])
+			w <- which(tiles$id == ids[k])
 			target <- tiles[w,]
 			
 			if (any(uw != unique(target$width)))
@@ -835,14 +835,14 @@ DesignPrimers <- function(tiles,
 				# find all non-target_sites
 				w <- .Call("multiMatchUpper", target$start_aligned, primers$start_aligned_forward[i], begin, PACKAGE="DECIPHER")
 				
-				if (length(w)==0) # target does not overlap nontarget
+				if (length(w) == 0) # target does not overlap nontarget
 					break
 				
 				begin <- w[1]
 				target_site <- target$target_site[w]
 				
 				j <- length(target_site)
-				if (j==0) # no nontarget
+				if (j == 0) # no nontarget
 					next
 				
 				w <- .Call("multiMatchCharNotNA", primers$forward_primer[i,], PACKAGE="DECIPHER")
@@ -863,14 +863,14 @@ DesignPrimers <- function(tiles,
 				# find all non-target_sites
 				w <- .Call("multiMatchUpper", target$end_aligned, primers$start_aligned_reverse[i], begin, PACKAGE="DECIPHER")
 				
-				if (length(w)==0) # target does not overlap nontarget
+				if (length(w) == 0) # target does not overlap nontarget
 					break
 				
 				begin <- w[1]
 				target_site <- target$target_site[w]
 				
 				j <- length(target_site)
-				if (j==0) # no nontarget
+				if (j == 0) # no nontarget
 					next
 				
 				w <- .Call("multiMatchCharNotNA", primers$reverse_primer[i,], PACKAGE="DECIPHER")
@@ -886,7 +886,7 @@ DesignPrimers <- function(tiles,
 				}
 			}
 			
-			if ((count_F==1) && (count_R==1)) # sites do not overlap
+			if ((count_F == 1) && (count_R == 1)) # sites do not overlap
 				next
 			
 			if (count_F != 1) {
@@ -982,7 +982,7 @@ DesignPrimers <- function(tiles,
 				if (length(w) > 0)
 					primers <- primers[-w,]
 				d <- dim(primers)[1]
-				if (d==0) {
+				if (d == 0) {
 					warning("All primers were below the worstScore: ", id)
 					next
 				}
@@ -997,7 +997,7 @@ DesignPrimers <- function(tiles,
 			setTxtProgressBar(pBar, 100)
 		
 		if (numPrimerSets > 0) {
-			if (d==1) {
+			if (d == 1) {
 				warning("Not enough primers to design a primer set:", id)
 				break
 			}
@@ -1054,12 +1054,12 @@ DesignPrimers <- function(tiles,
 				dimnames=list(f_F[o_F][1:s_F],
 					f_R[o_R][1:s_R]))
 			for (i in 1:s_F) {
-				w_F <- which(index_F==i)
-				if (length(w_F)==0)
+				w_F <- which(index_F == i)
+				if (length(w_F) == 0)
 					next
 				for (j in 1:s_R) {
-					w_R <- which(index_R==j)
-					if (length(w_R)==0)
+					w_R <- which(index_R == j)
+					if (length(w_R) == 0)
 						next
 					MMs <- match(MMs_F[w_F], MMs_R[w_R])
 					w <- which(!is.na(MMs))
@@ -1075,10 +1075,10 @@ DesignPrimers <- function(tiles,
 			p <- outer(primers$permutations_forward[f_F[o_F][1:s_F]],
 				primers$permutations_reverse[f_R[o_R][1:s_R]],
 				FUN="+")
-			c <- -1*outer(ifelse(rep(s_F, s_F)==1,
+			c <- -1*outer(ifelse(rep(s_F, s_F) == 1,
 					sum(primers$forward_coverage[f_F[o_F][1:s_F],], na.rm=TRUE),
 					rowSums(as.matrix(primers$forward_coverage[f_F[o_F][1:s_F],]), na.rm=TRUE)),
-				ifelse(rep(s_R, s_R)==1,
+				ifelse(rep(s_R, s_R) == 1,
 					sum(primers$reverse_coverage[f_R[o_R][1:s_R],], na.rm=TRUE),
 					rowSums(as.matrix(primers$reverse_coverage[f_R[o_R][1:s_R],]), na.rm=TRUE)),
 				FUN="*")
@@ -1125,12 +1125,12 @@ DesignPrimers <- function(tiles,
 				if ((productSize > minProductSize) &&
 					(productSize < maxProductSize)) {
 					space <- space + 1
-					if (length(which(g_F==w_o[1])) == 0) {
+					if (length(which(g_F == w_o[1])) == 0) {
 						g_F <- c(g_F, w_o[1])
 						starts_F <- min(starts_F,
 							primers$start_aligned_forward[f_F[o_F][w_o[1]]])
 					}
-					if (length(which(g_R==w_o[2])) == 0) {
+					if (length(which(g_R == w_o[2])) == 0) {
 						g_R <- c(g_R, w_o[2])
 						starts_R <- max(starts_R,
 							primers$start_aligned_reverse[f_R[o_R][w_o[2]]])
@@ -1156,7 +1156,7 @@ DesignPrimers <- function(tiles,
 					if (ids[k] == id)
 						next
 					
-					w <- which(tiles$id==ids[k])
+					w <- which(tiles$id == ids[k])
 					if (length(w) > 0)
 						w <- w[which(tiles$end_aligned[w] < starts_R)]
 					#if (length(w) > 0)
@@ -1164,7 +1164,7 @@ DesignPrimers <- function(tiles,
 					if (length(w) > 0)
 						w <- w[which((tiles$start[w] >= primers$start_forward[f_F[o_F][g_F[i]]] - maxSearchSize) &
 							(tiles$start[w] <= primers$start_forward[f_F[o_F][g_F[i]]] + maxSearchSize))]
-					if (length(w)==0)
+					if (length(w) == 0)
 						next
 					target <- tiles[w,]
 					
@@ -1189,7 +1189,7 @@ DesignPrimers <- function(tiles,
 						processors=processors)
 					
 					if (ragged5Prime) {
-						w_max <- which(eff==max(eff))
+						w_max <- which(eff == max(eff))
 						w_max <- w_max[length(w_max)]
 					} else {
 						w_max <- which.max(eff)
@@ -1236,7 +1236,7 @@ DesignPrimers <- function(tiles,
 					if (ids[k] == id)
 						next
 					
-					w <- which(tiles$id==ids[k])
+					w <- which(tiles$id == ids[k])
 					if (length(w) > 0)
 						w <- w[which(tiles$start_aligned[w] > starts_F)]
 					#if (length(w) > 0)
@@ -1244,7 +1244,7 @@ DesignPrimers <- function(tiles,
 					if (length(w) > 0)
 						w <- w[which((tiles$end[w] >= primers$start_reverse[f_R[o_R][g_R[i]]] - maxSearchSize) &
 							(tiles$end[w] <= primers$start_reverse[f_R[o_R][g_R[i]]] + maxSearchSize))]
-					if (length(w)==0)
+					if (length(w) == 0)
 						next
 					target <- tiles[w,]
 					
@@ -1269,7 +1269,7 @@ DesignPrimers <- function(tiles,
 					if (ragged5Prime) {
 						w_max <- which.max(eff)
 					} else {
-						w_max <- which(eff==max(eff))
+						w_max <- which(eff == max(eff))
 						w_max <- w_max[length(w_max)]
 					}
 					
@@ -1335,12 +1335,12 @@ DesignPrimers <- function(tiles,
 				dimnames=list(f_F[o_F][g_F[1:s_F]],
 					f_R[o_R][g_R[1:s_R]]))
 			for (i in 1:s_F) {
-				w_F <- which(index_F==i)
-				if (length(w_F)==0)
+				w_F <- which(index_F == i)
+				if (length(w_F) == 0)
 					next
 				for (j in 1:s_R) {
-					w_R <- which(index_R==j)
-					if (length(w_R)==0)
+					w_R <- which(index_R == j)
+					if (length(w_R) == 0)
 						next
 					MMs <- match(MMs_F[w_F], MMs_R[w_R])
 					w <- which(!is.na(MMs))
@@ -1353,14 +1353,14 @@ DesignPrimers <- function(tiles,
 			
 			# choose the best primer sets
 			d <- dimnames(m)
-			w <- which(pSets$identifier==id)
+			w <- which(pSets$identifier == id)
 			p <- outer(primers$permutations_forward[f_F[o_F][g_F[1:s_F]]],
 				primers$permutations_reverse[f_R[o_R][g_R[1:s_R]]],
 				FUN="+")
-			c <- -1*outer(ifelse(rep(s_F, s_F)==1,
+			c <- -1*outer(ifelse(rep(s_F, s_F) == 1,
 					sum(primers$forward_coverage[f_F[o_F][g_F[1:s_F]],], na.rm=TRUE),
 					rowSums(as.matrix(primers$forward_coverage[f_F[o_F][g_F[1:s_F]],]), na.rm=TRUE)),
-				ifelse(rep(s_R, s_R)==1,
+				ifelse(rep(s_R, s_R) == 1,
 					sum(primers$reverse_coverage[f_R[o_R][g_R[1:s_R]],], na.rm=TRUE),
 					rowSums(as.matrix(primers$reverse_coverage[f_R[o_R][g_R[1:s_R]],]), na.rm=TRUE)),
 				FUN="*")
@@ -1441,11 +1441,11 @@ DesignPrimers <- function(tiles,
 						pSets$reverse_efficiency_MM[w[k],] <- primers$reverse_efficiency_MM[r,]
 					}
 					
-					w_F <- which(index_F==w_o[1])
-					w_R <- which(index_R==w_o[2])
+					w_F <- which(index_F == w_o[1])
+					w_R <- which(index_R == w_o[2])
 					MMs <- match(MMs_F[w_F], MMs_R[w_R])
 					w_S <- which(!is.na(MMs))
-					if (length(w_S)==0)
+					if (length(w_S) == 0)
 						next
 					effs <- tapply(c(effs_F[w_F[w_S]], effs_R[w_R[MMs[w_S]]]),
 							rep(1:length(w_S), 2),
@@ -1486,12 +1486,12 @@ DesignPrimers <- function(tiles,
 	}
 	
 	if (numPrimerSets > 0) {
-		w <- which(pSets$start_forward==0)
+		w <- which(pSets$start_forward == 0)
 		if (length(w) > 0)
 			pSets <- pSets[-w,]
 		return(pSets)
 	} else {
-		w <- which(primers_all$start_forward==0)
+		w <- which(primers_all$start_forward == 0)
 		if (length(w) > 0)
 			primers_all <- primers_all[-w,]
 		return(primers_all)

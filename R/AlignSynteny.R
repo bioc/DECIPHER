@@ -14,7 +14,7 @@ AlignSynteny <- function(synteny,
 	if (!is.logical(verbose))
 		stop("verbose must be a logical.")
 	if (is.character(identifier)) {
-		if (identifier[1]=="") {
+		if (identifier[1] == "") {
 			identifier <- rownames(synteny)
 			index <- seq_along(identifier)
 		} else {
@@ -40,7 +40,7 @@ AlignSynteny <- function(synteny,
 		stop("At least two identifiers are required.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -83,8 +83,8 @@ AlignSynteny <- function(synteny,
 			removeGaps="all",
 			processors=processors,
 			verbose=FALSE)
-		if (length(seq1)==0 ||
-			!all(width(seq1)==synteny[index1, index1][[1]]))
+		if (length(seq1) == 0 ||
+			!all(width(seq1) == synteny[index1, index1][[1]]))
 			stop("dbFile is mismatched with synteny object.")
 		
 		for (j in (i + 1):l) {
@@ -97,8 +97,8 @@ AlignSynteny <- function(synteny,
 				removeGaps="all",
 				processors=processors,
 				verbose=FALSE)
-			if (length(seq2)==0 ||
-				!all(width(seq2)==synteny[index2, index2][[1]]))
+			if (length(seq2) == 0 ||
+				!all(width(seq2) == synteny[index2, index2][[1]]))
 				stop("dbFile is mismatched with synteny object.")
 			
 			s <- synteny[index2, index1][[1]]
@@ -110,7 +110,7 @@ AlignSynteny <- function(synteny,
 			i1 <- s[, "index1"]
 			i1 <- lapply(seq_along(seq1),
 				function(x) {
-					which(i1==x)
+					which(i1 == x)
 				})
 			r1 <- lapply(i1,
 				function(x) {
@@ -130,7 +130,7 @@ AlignSynteny <- function(synteny,
 			i2 <- s[, "index2"]
 			i2 <- lapply(seq_along(seq2),
 				function(x) {
-					which(i2==x)
+					which(i2 == x)
 				})
 			r2 <- lapply(i2,
 				function(x) {
@@ -142,7 +142,7 @@ AlignSynteny <- function(synteny,
 			seg2 <- unlist(seg2)
 			i2 <- unlist(i2)
 			seg2 <- seg2[order(i2)]
-			w <- which(s[, "strand"]==1)
+			w <- which(s[, "strand"] == 1)
 			if (length(w) > 0)
 				seg2[w] <- reverseComplement(seg2[w])
 			names(seg2) <- rep(identifier[o[j]],
@@ -164,7 +164,7 @@ AlignSynteny <- function(synteny,
 				s1 <- s1 - s[k, "start1"] + 1L
 				e1 <- s1 + S[chain, "width"] - 1L
 				
-				if (s[k, "strand"]==0) {
+				if (s[k, "strand"] == 0) {
 					s2 <- S[chain, "start2"]
 					s2 <- s2 - s[k, "start2"] + 1L
 					e2 <- s2 + S[chain, "width"] - 1L

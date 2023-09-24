@@ -20,7 +20,7 @@ IdTaxa <- function(test,
 	d <- !duplicated(test)
 	map <- match(test, test[d]) # mapping of unique sequences
 	# ensure that the strand vector is consistently mapped
-	if (length(strand)==length(test)) {
+	if (length(strand) == length(test)) {
 		# check for different strand with same sequence
 		w <- strand[d][map] != strand
 		if (any(w)) { # include both strands
@@ -54,11 +54,11 @@ IdTaxa <- function(test,
 	strand <- pmatch(strand, STRANDS)
 	if (any(is.na(strand)))
 		stop("Invalid strand.")
-	if (any(strand==-1))
+	if (any(strand == -1))
 		stop("Ambiguous strand.")
-	if (length(strand)==1)
+	if (length(strand) == 1)
 		strand <- rep(strand, length(test))
-	w <- which(strand==3)
+	w <- which(strand == 3)
 	if (length(w) > 0) # use opposite orientation
 		test[w] <- reverseComplement(test[w])
 	if (!is.numeric(threshold))
@@ -81,12 +81,12 @@ IdTaxa <- function(test,
 	}
 	if (!is.numeric(fullLength))
 		stop("fullLength should be a numeric.")
-	if (length(fullLength)==1L && fullLength==0) {
+	if (length(fullLength) == 1L && fullLength == 0) {
 		fullLength <- c(0, Inf)
 	} else {
 		if (any(fullLength < 0))
 			stop("fullLength must be greater than zero.")
-		if (length(fullLength)==1L) {
+		if (length(fullLength) == 1L) {
 			if (fullLength < 1L) { # upper/lower quantiles
 				fullLength <- sort(c(fullLength,
 					1 - fullLength))
@@ -94,7 +94,7 @@ IdTaxa <- function(test,
 				fullLength <- c(1/fullLength,
 					fullLength)
 			}
-		} else if (length(fullLength)==2L) {
+		} else if (length(fullLength) == 2L) {
 			if (all.equal(fullLength[1], fullLength[2]))
 				stop("fullLength must be 2 different numerics.")
 			fullLength <- sort(fullLength)
@@ -106,7 +106,7 @@ IdTaxa <- function(test,
 		stop("verbose must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -143,7 +143,7 @@ IdTaxa <- function(test,
 		t <- tapply(Ls,
 			crossIndex,
 			function(x) {
-				if (length(x)==1L) {
+				if (length(x) == 1L) {
 					NA_real_
 				} else {
 					x/mean(x)
@@ -168,12 +168,14 @@ IdTaxa <- function(test,
 			K,
 			trainingSet$alphabet,
 			FALSE, # mask repeats
+			processors,
 			PACKAGE="DECIPHER")
 	} else {
 		testkmers <- .Call("enumerateSequence",
 			test,
 			K,
 			FALSE, # mask repeats
+			processors,
 			PACKAGE="DECIPHER")
 	}
 	
@@ -191,7 +193,7 @@ IdTaxa <- function(test,
 		stop("samples evalated to NA.")
 	if (any(S < 0))
 		stop("samples evaluated to a negative number of samples.")
-	if (length(S)==1) {
+	if (length(S) == 1) {
 		S <- rep(S, length(notNAs))
 	} else if (length(S) != length(notNAs)) {
 		stop("samples did not evaluate to a vector of length equal to the number of sequences in test.")
@@ -229,19 +231,20 @@ IdTaxa <- function(test,
 	B <- ifelse(B > bootstraps, bootstraps, B)
 	B <- as.integer(B)
 	
-	boths <- which(strand==1)
+	boths <- which(strand == 1)
 	if (length(boths) > 0) {
 		revkmers <- .Call("enumerateSequence",
 			reverseComplement(test[boths]),
 			K,
 			FALSE, # mask repeats
+			processors,
 			PACKAGE="DECIPHER")
 		revkmers <- lapply(revkmers,
 			function(x)
 				sort(unique(x + 1L), na.last=NA))
 	}
 	
-	if (type==1L) {
+	if (type == 1L) {
 		if (is.null(trainingSet$ranks)) {
 			results <- "Root [0%]; unclassified_Root [0%]"
 		} else {
@@ -287,7 +290,7 @@ IdTaxa <- function(test,
 			subtrees <- children[[k]]
 			n <- length(decision_kmers[[k]][[1]])
 			
-			if (n==0 || is.na(fraction[k])) { # use every subtree
+			if (n == 0 || is.na(fraction[k])) { # use every subtree
 				w <- seq_along(subtrees)
 				break
 			} else if (length(subtrees) > 1) {
@@ -315,17 +318,17 @@ IdTaxa <- function(test,
 				}
 				
 				maxes <- apply(hits, 2, max) # max hits per bootstrap replicate
-				hits <- colSums(t(hits)==maxes & maxes > 0)
+				hits <- colSums(t(hits) == maxes & maxes > 0)
 				w <- which(hits >= minDescend*B[I[i]])
 				if (length(w) != 1) { # zero or multiple groups with 100% confidence
 					w <- which(hits >= B[I[i]]*0.5) # require 50% confidence to use a subset of groups
-					if (length(w)==0) {
+					if (length(w) == 0) {
 						w <- seq_along(hits) # use all groups
 						break
 					}
 					
 					w <- which(hits > 0) # use any group with hits
-					if (length(w)==0)
+					if (length(w) == 0)
 						w <- seq_along(hits) # use all groups
 					break
 				}
@@ -333,7 +336,7 @@ IdTaxa <- function(test,
 				w <- 1
 			}
 			
-			if (length(children[[subtrees[w]]])==0)
+			if (length(children[[subtrees[w]]]) == 0)
 				break
 			
 			k <- subtrees[w]
@@ -343,7 +346,7 @@ IdTaxa <- function(test,
 		if (fullLength[1] > 0 || is.finite(fullLength[2])) {
 			keep <- keep[Ls[keep] >= fullLength[1]*length(mykmers) &
 				Ls[keep] <= fullLength[2]*length(mykmers)]
-			if (length(keep)==0L) # no sequences
+			if (length(keep) == 0L) # no sequences
 				next
 		}
 		
@@ -392,7 +395,7 @@ IdTaxa <- function(test,
 			totHits[maxes[j]] <- totHits[maxes[j]] + hits[j, maxes[j]]/davg
 		
 		# choose the group with highest confidence
-		w <- which(totHits==max(totHits))
+		w <- which(totHits == max(totHits))
 		if (length(w) > 1) {
 			selected <- sample(w, 1)
 		} else {
@@ -432,8 +435,8 @@ IdTaxa <- function(test,
 		
 		# record the results for this sequence
 		w <- which(confidences >= threshold)
-		if (type==1L) {
-			if (length(w)==length(predicteds)) {
+		if (type == 1L) {
+			if (length(w) == length(predicteds)) {
 				confidences <- formatC(confidences,
 					digits=1,
 					format="f")
@@ -457,7 +460,7 @@ IdTaxa <- function(test,
 						collapse="; ")
 				}
 			} else {
-				if (length(w)==0)
+				if (length(w) == 0)
 					w <- 1 # assign to Root
 				confidences <- formatC(c(confidences[w],
 						confidences[w[length(w)]]),
@@ -490,8 +493,8 @@ IdTaxa <- function(test,
 						collapse="; ")
 				}
 			}
-		} else { # type==2L
-			if (length(w)==length(predicteds)) {
+		} else { # type == 2L
+			if (length(w) == length(predicteds)) {
 				if (is.null(trainingSet$ranks)) {
 					results[[I[i]]] <- list(taxon=taxa[predicteds],
 						confidence=confidences)
@@ -501,7 +504,7 @@ IdTaxa <- function(test,
 						rank=trainingSet$ranks[predicteds])
 				}
 			} else {
-				if (length(w)==0)
+				if (length(w) == 0)
 					w <- 1 # assign to Root
 				if (is.null(trainingSet$ranks)) {
 					results[[I[i]]] <- list(taxon=c(taxa[predicteds[w]],
@@ -528,7 +531,7 @@ IdTaxa <- function(test,
 	}
 	results <- results[map] # re-replicate
 	names(results) <- ns # inherit names from test
-	if (type==2L) # extended
+	if (type == 2L) # extended
 		class(results) <- c("Taxa", "Test")
 	
 	if (verbose) {

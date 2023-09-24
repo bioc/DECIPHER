@@ -91,6 +91,7 @@ MapCharacters            Map Changes in Ancestral Character States
 MaskAlignment            Mask Highly Variable Regions of An Alignment
 MeltDNA                  Simulate Melting of DNA
 MIQS                     MIQS Amino Acid Substitution Matrix
+MMLSUM                   MMLSUM Amino Acid Substitution Matrices
 MODELS                   Available Models of Sequence Evolution
 NNLS                     Sequential Coordinate-wise Algorithm for the
                          Non-negative Least Squares Problem

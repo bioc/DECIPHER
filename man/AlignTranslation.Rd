@@ -56,10 +56,10 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{AlignDB}}, \code{\link{AlignProfiles}}, \code{\link{AlignSeqs}}, \code{\link{AlignSynteny}}, \code{\link{CorrectFrameshifts}}
 }
 \examples{
-# first three sequences translate to  MFITP*
-# and the last sequence translates as MF-TP*
-rna <- RNAStringSet(c("AUGUUCAUCACCCCCUAA", "AUGUUCAUAACUCCUUGA",
-	"AUGUUCAUUACACCGUAG", "AUGUUUACCCCAUAA"))
+# first three sequences translate to  MGFITP*
+# and the last sequence translates as MGF-TP*
+rna <- RNAStringSet(c("AUGGGUUUCAUCACCCCCUAA", "AUGGGCUUCAUAACUCCUUGA",
+	"AUGGGAUUCAUUACACCGUAG", "AUGGGGUUUACCCCAUAA"))
 RNA <- AlignSeqs(rna, verbose=FALSE)
 RNA
 

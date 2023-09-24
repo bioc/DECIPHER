@@ -182,7 +182,7 @@ SEXP expandAmbiguities(SEXP x, SEXP c)
 						} else {
 							pers[k*count + j] = k % 3;
 						}
-						if (pers[k*count + j]==2)
+						if (pers[k*count + j] == 2)
 							pers[k*count + j]++;
 					}
 					break;

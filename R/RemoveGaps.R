@@ -23,7 +23,7 @@ RemoveGaps <- function(myXStringSet,
 		stop("includeMask must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
 		stop("processors must be a numeric.")
-	if (!is.null(processors) && floor(processors)!=processors)
+	if (!is.null(processors) && floor(processors) != processors)
 		stop("processors must be a whole number.")
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
@@ -33,7 +33,7 @@ RemoveGaps <- function(myXStringSet,
 		processors <- as.integer(processors)
 	}
 	
-	if (removeGaps==2L) { # all gaps
+	if (removeGaps == 2L) { # all gaps
 		ns <- names(myXStringSet)
 		myXStringSet <- .Call("removeGaps",
 			myXStringSet,
@@ -42,7 +42,7 @@ RemoveGaps <- function(myXStringSet,
 			processors,
 			PACKAGE="DECIPHER")
 		names(myXStringSet) <- ns
-	} else if (removeGaps==3L) { # common gaps
+	} else if (removeGaps == 3L) { # common gaps
 		ns <- names(myXStringSet)
 		myXStringSet <- .Call("removeCommonGaps",
 			myXStringSet,

@@ -15,7 +15,7 @@ WriteDendrogram <- function(x,
 		stop("convertBlanks must be a logical.")
 	if (!is.numeric(digits))
 		stop("digits must be a numeric.")
-	if (floor(digits)!=digits)
+	if (floor(digits) != digits)
 		stop("digits must be a whole number.")
 	if (digits < 1)
 		stop("digits must be at least 1.")
