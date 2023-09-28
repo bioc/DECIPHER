@@ -51,7 +51,6 @@
 <<echo=false>>=
 options(continue=" ")
 options(width=80)
-options(SweaveHooks=list(fig=function()	par(mar=c(4.1, 4.1, 0.3, 0.1))))
 set.seed(123)
 @
 

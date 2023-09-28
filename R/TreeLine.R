@@ -2523,11 +2523,15 @@ TreeLine <- function(myXStringSet=NULL,
 				
 				.NNI <- function(myClusters, probs=NULL) {
 					if (is.null(probs)) {
-						w <- NULL
+						w <- NULL # use all branches
 					} else {
 						w <- which(myClusters[, 7:8] > 0, arr.ind=TRUE)
 						w <- unname(w)
 						w <- w[probs[myClusters[, 7:8][w]] < threshold,, drop=FALSE]
+						if (nrow(w) == 1L &&
+							w[, 1L] == nrow(myClusters) && # only root
+							any(myClusters[nrow(myClusters), 7:8] < 0)) # trifurcation
+							w <- NULL # use all branches
 					}
 					out <- .localBranches(myClusters,
 						myXStringSet,
@@ -2545,20 +2549,23 @@ TreeLine <- function(myXStringSet=NULL,
 						w <- which(myClusters[, 7:8] > 0, arr.ind=TRUE)
 						w <- unname(w)
 						w <- w[probs[myClusters[, 7:8][w]] >= threshold,, drop=FALSE]
-						
-						temp <- .localBranches(myClusters,
-							myXStringSet,
-							model_params,
-							weights_ML,
-							optProcessors,
-							w)
-						out[[1L]] <- rbind(out[[1L]], temp[[1L]])
-						out[[2L]] <- c(out[[2L]], temp[[2L]])
-						out[[3L]] <- cbind(out[[3L]], temp[[3L]])
-						# NOTE: out[[4L]] == temp[[4L]]
-						
-						delta <- LnL - epsilon - out[[2L]]
-						o <- which(delta > 0)
+						if (!(nrow(w) == 1L &&
+							w[, 1L] == nrow(myClusters) &&
+							any(myClusters[nrow(myClusters), 7:8] < 0))) {
+							temp <- .localBranches(myClusters,
+								myXStringSet,
+								model_params,
+								weights_ML,
+								optProcessors,
+								w)
+							out[[1L]] <- rbind(out[[1L]], temp[[1L]])
+							out[[2L]] <- c(out[[2L]], temp[[2L]])
+							out[[3L]] <- cbind(out[[3L]], temp[[3L]])
+							# NOTE: out[[4L]] == temp[[4L]]
+							
+							delta <- LnL - epsilon - out[[2L]]
+							o <- which(delta > 0)
+						}
 					}
 					
 					NNIs <- length(o) # number of potential NNI improvements

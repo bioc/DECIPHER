@@ -110,17 +110,23 @@ seqs <- seqs[!duplicated(ns)] # remove redundant sequences from the same species
 seqs
 @
 
-Now, it's time to try our luck at finding the most likely tree.  Here, we will set a stringent time limit (0.05 hours) to make this example faster, although longer time limits (e.g., 24 hours) are advised because setting very short time limits leaves the result up to luck.
+Now, it's time to try our luck at finding the most likely tree.  Here, we will set a stringent time limit (0.01 hours) to make this example faster, although longer time limits (e.g., 24 hours) are advised because setting very short time limits leaves the result partly up to luck.
 
 Note that \Rfunction{TreeLine} automatically selects a substitution model based on Akaike information criterion (by default).  It is possible to specify specific model(s) (e.g., \code{model="GTR+G4"}) to limit the possible selections and test your luck with fewer models.
 
-Also, since \Rfunction{TreeLine} is a stochastic optimizer, it is critical to always set the random number seed for reproducibility.  You can pick any lucky number, and if you every wonder how much you pushed your luck, you can try running again from a different random number seed to see how much the result came down to luck of the draw.
+Also, since \Rfunction{TreeLine} is a stochastic optimizer, it is critical to always set the random number seed for reproducibility.  You can pick any lucky number, and if you ever wonder how much you pushed your luck, you can try running again from a different random number seed to see how much the result came down to luck of the draw.
+
+Note that setting a time limit, as done below with \Rfunarg{maxTime}, negates the purpose of setting a seed -- never set a time limit if reproducibility is desired or you'll have no such luck.
 
 \begin{centerfig}
 <<expr3,eval=TRUE,echo=TRUE,fig=TRUE,height=3.5,width=6>>=
 set.seed(123) # set the random number seed
 
-tree <- TreeLine(seqs, reconstruct=TRUE, maxTime=0.05) # default is method="ML"
+tree <- TreeLine(seqs,
+	method="ML",
+	model="GTR+G4",
+	reconstruct=TRUE,
+	maxTime=0.01)
 
 set.seed(NULL) # reset seed
 

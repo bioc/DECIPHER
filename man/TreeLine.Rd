@@ -63,7 +63,7 @@ Character string specifying which information criterion to use in automatic mode
 Integer indicating the maximum number of generations of optimization to perform.  More generations will potentially better search tree space at the expense of added runtime.  Only applicable if \code{method} is \code{"ML"} or \code{"MP"}.
 }
   \item{maxTime}{
-Numeric giving the maximum number of hours the algorithm is allowed to run before returning a result.  Once \code{maxTime} is reached, the algorithm will proceed at the next available opportunity.  Therefore, the \code{maxTime} is a soft maximum and does not guarantee results will be returned at exactly the allotted time.  Only applicable if \code{method} is \code{"ML"} or \code{"MP"}.
+Numeric giving the maximum number of hours the algorithm is allowed to run before returning a result.  Once \code{maxTime} is reached, the algorithm will proceed at the next available opportunity.  Therefore, the \code{maxTime} is a soft maximum and does not guarantee results will be returned at exactly the allotted time.  Only applicable if \code{method} is \code{"ML"} or \code{"MP"}.  Note that setting a time limit may prevent reproducibility when using a random number seed.
 }
   \item{quadrature}{
 Logical determining whether to use the Laguerre quadrature or equal-sized bins when discretizing the rate distribution across sites.  The default is to use equal-sized bins for direct comparison among likelihoods computed by other programs, although the Laguerre quadrature theoretically offers an improvement in accuracy for the same number of rates (Felsenstein, 2001).

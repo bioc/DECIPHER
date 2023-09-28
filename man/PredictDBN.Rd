@@ -126,6 +126,7 @@ Erik Wright \email{eswright@pitt.edu}
 db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
 rna <- SearchDB(db, type="RNAStringSet")
 
+\dontrun{
 # predict the secondary structure in dot-bracket notation (dbn)
 p <- PredictDBN(rna, "states") # predict the secondary structure in dbn
 p # pairs are denoted by (), and (optionally) pseudoknots by [], {}, and <>
@@ -170,4 +171,5 @@ BrowseSeqs(rna, patterns=p) # red = unpaired, green = left-pairing, blue = right
 p <- PredictDBN(rna, "search") # scores per sequence after searching
 BrowseSeqs(rna, patterns=p) # red = unpaired, green = left-pairing, blue = right
 # note that "search" identified many more pairings than "structures"
+}
 }
