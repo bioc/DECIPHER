@@ -12,9 +12,9 @@ SEXP consensusProfile(SEXP x, SEXP weight, SEXP structs);
 
 SEXP consensusProfileAA(SEXP x, SEXP weight, SEXP structs);
 
-SEXP colScores(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP weights, SEXP structs, SEXP dbnMatrix);
+SEXP colScores(SEXP x, SEXP subset, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP weights, SEXP structs, SEXP dbnMatrix);
 
-SEXP colScoresAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP weights, SEXP structs, SEXP hecMatrix);
+SEXP colScoresAA(SEXP x, SEXP subset, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP weights, SEXP structs, SEXP hecMatrix);
 
 SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP thresh, SEXP weights);
 

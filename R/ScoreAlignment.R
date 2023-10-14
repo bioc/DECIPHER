@@ -129,65 +129,30 @@ ScoreAlignment <- function(myXStringSet,
 	if (method == 1L) { # pairs
 		z <- .Call(functionCall,
 			myXStringSet,
+			seq_len(l),
 			subMatrix,
 			gapOpening/2, # applied at both ends
 			gapExtension,
 			includeTerminalGaps,
 			weight,
 			structures,
-			structureMatrix)
+			structureMatrix,
+			PACKAGE="DECIPHER")
 		z <- sum(z)
 	} else { # adjacent (method == 2L)
-		s <- unlist(strsplit(as.character(myXStringSet), "", fixed=TRUE))
-		s <- matrix(match(s, rownames(subMatrix)),
-			ncol=l)
-		g <- !is.na(s)
-		
 		z <- 0
-		for (k in seq_len(ncol(s) - 1)) { # each adjacent pair
-			# score similarity
-			g1 <- g[, k]
-			g2 <- g[, k + 1L]
-			z <- z + sum(subMatrix[s[g1 & g2, k:(k + 1L), drop=FALSE]])
-			
-			# score gaps
-			w <- which(g1 != g2)
-			if (!includeTerminalGaps) {
-				reject <- logical(length(w))
-				i <- 1L
-				while (i <= length(w) && w[i] == i) {
-					reject[i] <- TRUE
-					i <- i + 1L
-				}
-				j <- u
-				i <- length(w)
-				while (i >= 1 && w[i] == j) {
-					reject[i] <- TRUE
-					i <- i - 1L
-					j <- j - 1L
-				}
-				w <- w[!reject]
-			}
-			if (length(w) > 0) {
-				e <- w[-length(w)] + 1L == w[-1L]
-				e <- sum(e)
-				z <- z + gapOpening*(length(w) - e)
-				z <- z + gapExtension*e
-			}
-			
-			# score structures
-			if (length(structureMatrix) > 0L) {
-				c1 <- cumsum(g1)
-				c2 <- cumsum(g2)
-				w <- which(g1 & g2)
-				s1 <- structures[[k]][, c1[w], drop=FALSE]
-				s2 <- structures[[k + 1L]][, c2[w], drop=FALSE]
-				s1 <- lapply(seq_len(nrow(s1)), function(x) s1[x,])
-				s2 <- lapply(seq_len(nrow(s2)), function(x) s2[x,])
-				for (i in seq_along(s1))
-					for (j in seq_along(s2))
-						z <- z + structureMatrix[i, j]*sum(s1[[i]]*s2[[j]])
-			}
+		for (k in seq_len(l - 1L)) {
+			z <- z + sum(.Call(functionCall,
+				myXStringSet,
+				k:(k + 1L), # subset
+				subMatrix,
+				gapOpening/2, # applied at both ends
+				gapExtension,
+				includeTerminalGaps,
+				weight,
+				structures,
+				structureMatrix,
+				PACKAGE="DECIPHER"))
 		}
 	}
 	

@@ -272,7 +272,8 @@ DetectRepeats <- function(myXStringSet,
 							start <- i
 							divisor <- x[i]
 						} else if (x[i] < divisor) {
-							if ((divisor/x[i]) %in% 1:3) {
+							quotient <- divisor/x[i]
+							if (quotient == 1 || quotient == 2 || quotient == 3) {
 								divisor <- x[i]
 								if (i + 2*divisor <= length(y) &&
 									!is.na(y[i + 2*divisor]) &&
@@ -294,7 +295,8 @@ DetectRepeats <- function(myXStringSet,
 								divisor <- x[i]
 							}
 						} else if (x[i] > divisor) {
-							if ((x[i]/divisor) %in% 1:3) {
+							quotient <- x[i]/divisor
+							if (quotient == 1 || quotient == 2 || quotient == 3) {
 								if (i + 2*divisor <= length(y) &&
 									!is.na(y[i + 2*divisor]) &&
 									y[i + 2*divisor] == y[i]) {
@@ -432,7 +434,9 @@ DetectRepeats <- function(myXStringSet,
 				posR <- posL + values[w[o[i]]] - 1L
 				if (posR > l)
 					posR <- l
-				if (all(visited[posL:posR] > maxVisits))
+				if (.Call("all",
+					visited[posL:posR] > maxVisits,
+					PACKAGE="DECIPHER"))
 					next
 				visited[posL:posR] <- visited[posL:posR] + 1L
 				keep[o[i]] <- TRUE

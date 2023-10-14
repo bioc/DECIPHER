@@ -1063,6 +1063,7 @@ AlignSeqs <- function(myXStringSet,
 		colScores <- function(seqs, structs, weights) {
 			scores <- .Call(functionCall,
 				seqs,
+				seq_along(seqs),
 				sM,
 				GO,
 				gapExtensionMax,

@@ -2528,9 +2528,10 @@ TreeLine <- function(myXStringSet=NULL,
 						w <- which(myClusters[, 7:8] > 0, arr.ind=TRUE)
 						w <- unname(w)
 						w <- w[probs[myClusters[, 7:8][w]] < threshold,, drop=FALSE]
-						if (nrow(w) == 1L &&
+						if (nrow(w) == 0L ||
+							(nrow(w) == 1L &&
 							w[, 1L] == nrow(myClusters) && # only root
-							any(myClusters[nrow(myClusters), 7:8] < 0)) # trifurcation
+							any(myClusters[nrow(myClusters), 7:8] < 0))) # trifurcation
 							w <- NULL # use all branches
 					}
 					out <- .localBranches(myClusters,
@@ -2549,9 +2550,10 @@ TreeLine <- function(myXStringSet=NULL,
 						w <- which(myClusters[, 7:8] > 0, arr.ind=TRUE)
 						w <- unname(w)
 						w <- w[probs[myClusters[, 7:8][w]] >= threshold,, drop=FALSE]
-						if (!(nrow(w) == 1L &&
+						if (!(nrow(w) == 0L ||
+							(nrow(w) == 1L &&
 							w[, 1L] == nrow(myClusters) &&
-							any(myClusters[nrow(myClusters), 7:8] < 0))) {
+							any(myClusters[nrow(myClusters), 7:8] < 0)))) {
 							temp <- .localBranches(myClusters,
 								myXStringSet,
 								model_params,

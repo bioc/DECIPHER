@@ -1915,11 +1915,13 @@ SEXP consensusProfileAA(SEXP x, SEXP weight, SEXP structs)
 
 // returns the sum of substitution scores
 // for each alignment column [start-end]
-SEXP colScores(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP weights, SEXP structs, SEXP dbnMatrix)
+SEXP colScores(SEXP x, SEXP subset, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP weights, SEXP structs, SEXP dbnMatrix)
 {
 	XStringSet_holder x_set;
 	Chars_holder x_i;
-	int x_length, k, i, j, seqLength;
+	int x_length, sub_length, k, i, j, seqLength;
+	int *sub = INTEGER(subset);
+	sub_length = length(subset);
 	double *subM = REAL(subMatrix);
 	double *w = REAL(weights);
 	double GO = asReal(go); // gap opening
@@ -1951,12 +1953,12 @@ SEXP colScores(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP
 	// initialize an array of encoded base counts
 	double *bases = Calloc(7*seqLength, double); // initialized to zero
 	// initialize an array of terminal gap lengths
-	int *gapLengths = Calloc(x_length*2, int); // initialized to zero
+	int *gapLengths = Calloc(sub_length*2, int); // initialized to zero
 	if (do_DBN) // initialize an array of structure counts
 		DBN = Calloc(d*seqLength, double); // initialized to zero
 	
-	for (i = 0; i < x_length; i++) {
-		x_i = get_elt_from_XStringSet_holder(&x_set, i);
+	for (i = 0; i < sub_length; i++) {
+		x_i = get_elt_from_XStringSet_holder(&x_set, sub[i] - 1);
 		
 		// update the alphabet for this string
 		gapLengths[i*2] = frontTerminalGaps(&x_i);
@@ -1964,13 +1966,13 @@ SEXP colScores(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP
 			continue;
 		gapLengths[i*2 + 1] = endTerminalGaps(&x_i);
 		if (tGaps) {
-			alphabetFrequency(&x_i, bases, seqLength, 1, 0, 0, 0, w[i]);
+			alphabetFrequency(&x_i, bases, seqLength, 1, 0, 0, 0, w[sub[i] - 1]);
 		} else {
-			alphabetFrequency(&x_i, bases, seqLength, 1, 0, gapLengths[i*2], gapLengths[i*2 + 1], w[i]);
+			alphabetFrequency(&x_i, bases, seqLength, 1, 0, gapLengths[i*2], gapLengths[i*2 + 1], w[sub[i] - 1]);
 		}
 		
 		if (do_DBN) {
-			elmt = VECTOR_ELT(structs, i);
+			elmt = VECTOR_ELT(structs, sub[i] - 1);
 			s = REAL(elmt);
 			l = length(elmt);
 			n = 0;
@@ -1979,7 +1981,7 @@ SEXP colScores(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP
 					if (n + d > l)
 						error("Structure does not match the sequence.");
 					for (k = 0; k < d; k++)
-						DBN[j + k*seqLength] += s[n++]*w[i];
+						DBN[j + k*seqLength] += s[n++]*w[sub[i] - 1];
 				}
 			}
 		}
@@ -1995,17 +1997,21 @@ SEXP colScores(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP
 		*(rans + k) = 0;
 		total = 0;
 		for (i = 0; i < 4; i++) {
-			total += bases[i*seqLength + k];
-			for (j = i; j < 4; j++) {
-				weight = (i == j) ? 0.5 : 1;
-				weight *= bases[j*seqLength + k] - ((i == j) ? 1 : 0);
-				weight *= bases[i*seqLength + k];
-				if (weight > 0)
-					*(rans + k) += *(subM + i*4 + j)*weight;
+			if (bases[i*seqLength + k] > 0) {
+				total += bases[i*seqLength + k];
+				for (j = i; j < 4; j++) {
+					weight = (i == j) ? 0.5 : 1;
+					weight *= bases[j*seqLength + k] - ((i == j) ? 1 : 0);
+					weight *= bases[i*seqLength + k];
+					if (weight > 0)
+						*(rans + k) += *(subM + i*4 + j)*weight;
+				}
 			}
 		}
 		
-		if (total >= 1.9999999) {
+		if (total == 0) {
+			continue; // no information
+		} else if (total >= 1.9999999) {
 			if (do_DBN) {
 				for (i = 0; i < d; i++) {
 					for (j = i; j < d; j++) {
@@ -2052,11 +2058,13 @@ SEXP colScores(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP
 
 // returns the sum of substitution scores
 // for each alignment column [start-end]
-SEXP colScoresAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP weights, SEXP structs, SEXP hecMatrix)
+SEXP colScoresAA(SEXP x, SEXP subset, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SEXP weights, SEXP structs, SEXP hecMatrix)
 {
 	XStringSet_holder x_set;
 	Chars_holder x_i;
-	int x_length, k, i, j, seqLength;
+	int x_length, sub_length, k, i, j, seqLength;
+	int *sub = INTEGER(subset);
+	sub_length = length(subset);
 	double *subM = REAL(subMatrix);
 	double *w = REAL(weights);
 	double GO = asReal(go); // gap opening
@@ -2088,12 +2096,12 @@ SEXP colScoresAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SE
 	// initialize an array of encoded base counts
 	double *bases = Calloc(26*seqLength, double); // initialized to zero
 	// initialize an array of terminal gap lengths
-	int *gapLengths = Calloc(x_length*2, int); // initialized to zero
+	int *gapLengths = Calloc(sub_length*2, int); // initialized to zero
 	if (do_HEC) // initialize an array of structure counts
 		HEC = Calloc(d*seqLength, double); // initialized to zero
 	
-	for (i = 0; i < x_length; i++) {
-		x_i = get_elt_from_XStringSet_holder(&x_set, i);
+	for (i = 0; i < sub_length; i++) {
+		x_i = get_elt_from_XStringSet_holder(&x_set, sub[i] - 1);
 		
 		// update the alphabet for this string
 		gapLengths[i*2] = frontTerminalGapsAA(&x_i);
@@ -2101,13 +2109,13 @@ SEXP colScoresAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SE
 			continue;
 		gapLengths[i*2 + 1] = endTerminalGapsAA(&x_i);
 		if (tGaps) {
-			alphabetFrequencyAA(&x_i, bases, seqLength, 1, 0, 0, 0, w[i]);
+			alphabetFrequencyAA(&x_i, bases, seqLength, 1, 0, 0, 0, w[sub[i] - 1]);
 		} else {
-			alphabetFrequencyAA(&x_i, bases, seqLength, 1, 0, gapLengths[i*2], gapLengths[i*2 + 1], w[i]);
+			alphabetFrequencyAA(&x_i, bases, seqLength, 1, 0, gapLengths[i*2], gapLengths[i*2 + 1], w[sub[i] - 1]);
 		}
 		
 		if (do_HEC) {
-			elmt = VECTOR_ELT(structs, i);
+			elmt = VECTOR_ELT(structs, sub[i] - 1);
 			s = REAL(elmt);
 			l = length(elmt);
 			n = 0;
@@ -2116,7 +2124,7 @@ SEXP colScoresAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SE
 					if (n + d > l)
 						error("Structure does not match the sequence.");
 					for (k = 0; k < d; k++)
-						HEC[j + k*seqLength] += s[n++]*w[i];
+						HEC[j + k*seqLength] += s[n++]*w[sub[i] - 1];
 				}
 			}
 		}
@@ -2132,17 +2140,21 @@ SEXP colScoresAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP terminalGaps, SE
 		*(rans + k) = 0;
 		total = 0;
 		for (i = 0; i < 20; i++) {
-			total += bases[i*seqLength + k];
-			for (j = i; j < 20; j++) {
-				weight = (i == j) ? 0.5 : 1;
-				weight *= bases[j*seqLength + k] - ((i == j) ? 1 : 0);
-				weight *= bases[i*seqLength + k];
-				if (weight > 0)
-					*(rans + k) += *(subM + i*21 + j)*weight;
+			if (bases[i*seqLength + k] > 0) {
+				total += bases[i*seqLength + k];
+				for (j = i; j < 20; j++) {
+					weight = (i == j) ? 0.5 : 1;
+					weight *= bases[j*seqLength + k] - ((i == j) ? 1 : 0);
+					weight *= bases[i*seqLength + k];
+					if (weight > 0)
+						*(rans + k) += *(subM + i*21 + j)*weight;
+				}
 			}
 		}
 		
-		if (total >= 1.9999999) {
+		if (total == 0) {
+			continue; // no information
+		} else if (total >= 1.9999999) {
 			if (do_HEC) {
 				for (i = 0; i < d; i++) {
 					for (j = i; j < d; j++) {

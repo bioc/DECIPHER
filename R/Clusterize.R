@@ -962,7 +962,8 @@ Clusterize <- function(myXStringSet,
 		
 		if (!any(inPlay) ||
 			(avg_cor >= 0.9995 && # rounds to 100%
-			all(alignments >= minSimilarities)))
+			(all(alignments >= minSimilarities) || # sufficient alignments
+			all(alignments*maxPhase2/i < minSimilarities)))) # insufficient sequences
 			break
 	}
 	if (maxPhase2 > 0L) {
