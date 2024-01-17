@@ -55,9 +55,9 @@ static const R_CallMethodDef callMethods[] = { // method call, pointer, num args
 	{"consensusProfile", (DL_FUNC) &consensusProfile, 3},
 	{"consensusProfileAA", (DL_FUNC) &consensusProfileAA, 3},
 	{"adjustHeights", (DL_FUNC) &adjustHeights, 1},
-	{"enumerateSequence", (DL_FUNC) &enumerateSequence, 4},
+	{"enumerateSequence", (DL_FUNC) &enumerateSequence, 5},
 	{"enumerateSequenceAA", (DL_FUNC) &enumerateSequenceAA, 2},
-	{"enumerateSequenceReducedAA", (DL_FUNC) &enumerateSequenceReducedAA, 5},
+	{"enumerateSequenceReducedAA", (DL_FUNC) &enumerateSequenceReducedAA, 6},
 	{"enumerateGappedSequence", (DL_FUNC) &enumerateGappedSequence, 3},
 	{"enumerateGappedSequenceAA", (DL_FUNC) &enumerateGappedSequenceAA, 3},
 	{"matchOrder", (DL_FUNC) &matchOrder, 4},
@@ -85,7 +85,7 @@ static const R_CallMethodDef callMethods[] = { // method call, pointer, num args
 	{"radixOrder", (DL_FUNC) &radixOrder, 3},
 	{"fillOverlaps", (DL_FUNC) &fillOverlaps, 2},
 	{"indexByContig", (DL_FUNC) &indexByContig, 5},
-	{"chainSegments", (DL_FUNC) &chainSegments, 19},
+	{"chainSegments", (DL_FUNC) &chainSegments, 21},
 	{"basicTranslate", (DL_FUNC) &basicTranslate, 3},
 	{"firstSeqsGapsEqual", (DL_FUNC) &firstSeqsGapsEqual, 9},
 	{"positionWeightMatrix", (DL_FUNC) &positionWeightMatrix, 4},
@@ -163,6 +163,12 @@ static const R_CallMethodDef callMethods[] = { // method call, pointer, num args
 	{"maxGroup", (DL_FUNC) &maxGroup, 2},
 	{"sortedUnique", (DL_FUNC) &sortedUnique, 1},
 	{"splitPartitions", (DL_FUNC) &splitPartitions, 5},
+	{"searchIndex", (DL_FUNC) &searchIndex, 17},
+	{"detectCores", (DL_FUNC) &detectCores, 0},
+	{"countIndex", (DL_FUNC) &countIndex, 3},
+	{"updateIndex", (DL_FUNC) &updateIndex, 8},
+	{"approxFreqs", (DL_FUNC) &approxFreqs, 3},
+	{"alignPairs", (DL_FUNC) &alignPairs, 15},
 	{NULL, NULL, 0}
 };
 

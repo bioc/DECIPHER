@@ -111,7 +111,7 @@ IdTaxa <- function(test,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- detectCores()
+		processors <- .detectCores()
 	} else {
 		processors <- as.integer(processors)
 	}
@@ -168,6 +168,7 @@ IdTaxa <- function(test,
 			K,
 			trainingSet$alphabet,
 			FALSE, # mask repeats
+			FALSE, # mask low complexity regions
 			processors,
 			PACKAGE="DECIPHER")
 	} else {
@@ -175,6 +176,7 @@ IdTaxa <- function(test,
 			test,
 			K,
 			FALSE, # mask repeats
+			FALSE, # mask low complexity regions
 			processors,
 			PACKAGE="DECIPHER")
 	}
@@ -237,6 +239,7 @@ IdTaxa <- function(test,
 			reverseComplement(test[boths]),
 			K,
 			FALSE, # mask repeats
+			FALSE, # mask low complexity regions
 			processors,
 			PACKAGE="DECIPHER")
 		revkmers <- lapply(revkmers,

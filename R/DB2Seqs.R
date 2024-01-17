@@ -92,7 +92,7 @@ DB2Seqs <- function(file,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- detectCores()
+		processors <- .detectCores()
 	} else {
 		processors <- as.integer(processors)
 	}

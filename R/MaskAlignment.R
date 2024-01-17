@@ -83,7 +83,8 @@ MaskAlignment <- function(myXStringSet,
 			pwm,
 			length(myXStringSet),
 			correction,
-			randomBackground)
+			randomBackground,
+			PACKAGE="DECIPHER")
 		if (showPlot)
 			MAX <- max(4.321928094887362625798, # log2(20)
 				a)
@@ -104,7 +105,8 @@ MaskAlignment <- function(myXStringSet,
 			pwm,
 			length(myXStringSet),
 			correction,
-			randomBackground)
+			randomBackground,
+			PACKAGE="DECIPHER")
 		if (showPlot)
 			MAX <- max(2, # log2(4)
 				a)

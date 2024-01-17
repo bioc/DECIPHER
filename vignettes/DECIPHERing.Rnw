@@ -59,7 +59,7 @@ options(width=80)
 
 \Rpackage{DECIPHER} is a software toolset that can be used for deciphering and managing biological sequences efficiently using the \R{} statistical programming language.  The program features tools falling into five categories:
 \begin{itemize}
-\item Sequence databases: import, maintain, view, and export a massive number of sequences.
+\item Sequence databases: import, maintain, view, index, search, and export a massive number of sequences.
 \item Sequence alignment: accurately align thousands of DNA, RNA, or amino acid sequences. Quickly find and align the syntenic regions of multiple genomes.
 \item Oligo design: test oligos in silico, or create new primer and probe sequences optimized for a variety of objectives.
 \item Manipulate sequences: trim low quality regions, correct frameshifts, reorient nucleotides, determine consensus, or digest with restriction enzymes.
@@ -117,7 +117,7 @@ The functions of DECIPHER can be grouped into several categories based on intend
 \item Analyzing sequences:
 \begin{enumerate} \item \Rfunction{DetectRepeats} \item \Rfunction{DigestDNA} \item \Rfunction{PredictDBN} \item \Rfunction{PredictHEC} \end{enumerate}
 \item Multiple sequence alignment:
-\begin{enumerate} \item \Rfunction{AdjustAlignment} \item \Rfunction{AlignDB} \item \Rfunction{AlignProfiles} \item \Rfunction{AlignSeqs} \item \Rfunction{AlignTranslation} \item \Rfunction{ScoreAlignment} \end{enumerate}
+\begin{enumerate} \item \Rfunction{AdjustAlignment} \item \Rfunction{AlignDB} \item \Rfunction{AlignProfiles} \Rfunction{AlignPairs} \item \Rfunction{AlignSeqs} \item \Rfunction{AlignTranslation} \item \Rfunction{ScoreAlignment} \end{enumerate}
 \item Comparison of sequences that are not collinear (i.e., genomes):
 \begin{enumerate} \item \Rfunction{AlignSynteny} \item \Rfunction{FindSynteny} \item \Rclass{Synteny-class} \end{enumerate}
 \item Functions related to chimeras (PCR artifacts):
@@ -132,6 +132,8 @@ The functions of DECIPHER can be grouped into several categories based on intend
 \begin{enumerate} \item \Rfunction{LearnTaxa} \item \Rfunction{IdTaxa} \item \Rclass{Taxa-class} \end{enumerate}
 \item Gene calling (a.k.a. gene finding):
 \begin{enumerate} \item \Rfunction{ExtractGenes} \item \Rfunction{FindGenes} \item \Rfunction{FindNonCoding} \item \Rclass{Genes-class} \item \Rfunction{LearnNonCoding} \item \Rclass{NonCoding-class} \item \Rfunction{WriteGenes} \end{enumerate}
+\item Functions for searching or mapping sequences and homology inference:
+\begin{enumerate} \item \Rfunction{IndexSeqs} \item \Rclass{InvertedIndex-class} \item \Rfunction{SearchIndex} \end{enumerate}
 \end{enumerate}
 
 %------------------------------------------------------------

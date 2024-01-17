@@ -7,7 +7,6 @@ import(XVector)
 import(Biostrings)
 import(RSQLite)
 import(DBI)
-import(parallel)
 
 importFrom("grDevices", "colorRampPalette", "colors", "dev.flush", "dev.hold", "dev.size", "rainbow", "rgb", "as.graphicsAnnot", "col2rgb")
 importFrom("graphics", "abline", "axis", "box", "legend", "mtext", "par", "plot", "points", "rect", "segments", "strheight", "strwidth", "text", "axTicks", "hist", "layout", "lines", "polygon", "locator")
@@ -37,14 +36,16 @@ CalculateEfficiencyFISH, DesignProbes,
 BrowseSeqs, BrowseDB,
 # sequence analysis/manipulation:
 CorrectFrameshifts, DetectRepeats, OrientNucleotides, PredictDBN, PredictHEC, RemoveGaps, TrimDNA,
-# multiple alignment:
-AdjustAlignment, AlignDB, AlignProfiles, AlignSeqs, AlignTranslation, MaskAlignment, ScoreAlignment, StaggerAlignment,
+# sequence alignment:
+AdjustAlignment, AlignDB, AlignPairs, AlignProfiles, AlignSeqs, AlignTranslation, MaskAlignment, ScoreAlignment, StaggerAlignment,
 # synteny:
 AA_REDUCED, AlignSynteny, FindSynteny,
 # taxonomic classification:
 LearnTaxa, IdTaxa,
 # genes:
-FindGenes, FindNonCoding, ExtractGenes, LearnNonCoding, WriteGenes
+FindGenes, FindNonCoding, ExtractGenes, LearnNonCoding, WriteGenes,
+# search:
+IndexSeqs, SearchIndex
 )
 
 S3method(`[`, "Synteny")
@@ -59,3 +60,4 @@ S3method(`[`, "Genes")
 S3method(`plot`, "Genes")
 S3method(`print`, "Genes")
 S3method(`print`, "NonCoding")
+S3method(`print`, "InvertedIndex")

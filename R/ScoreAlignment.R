@@ -1,5 +1,6 @@
 ScoreAlignment <- function(myXStringSet,
 	method="pairs",
+	type="sum",
 	perfectMatch=1,
 	misMatch=0,
 	gapOpening=-7.5,
@@ -12,11 +13,11 @@ ScoreAlignment <- function(myXStringSet,
 	
 	# error checking
 	if (is(myXStringSet, "DNAStringSet")) {
-		type <- 1L
+		typeX <- 1L
 	} else if (is(myXStringSet, "RNAStringSet")) {
-		type <- 2L
+		typeX <- 2L
 	} else if (is(myXStringSet, "AAStringSet")) {
-		type <- 3L
+		typeX <- 3L
 	} else {
 		stop("myXStringSet must be an AAStringSet, DNAStringSet, or RNAStringSet.")
 	}
@@ -60,8 +61,14 @@ ScoreAlignment <- function(myXStringSet,
 		if (!isTRUE(all.equal(1, mean(weight))))
 			stop("The mean of weight must be 1.")
 	}
+	TYPES <- c("sum", "scores")
+	type <- pmatch(type, TYPES)
+	if (is.na(type))
+		stop("Invalid type.")
+	if (type == -1)
+		stop("Ambiguous type.")
 	
-	if (type == 3L) { # AAStringSet
+	if (typeX == 3L) { # AAStringSet
 		AAs <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I",
 			"L", "K", "M", "F", "P", "S", "T", "W", "Y", "V", "*")
 		if (is.null(substitutionMatrix)) {
@@ -88,7 +95,7 @@ ScoreAlignment <- function(myXStringSet,
 		functionCall <- "colScoresAA"
 	} else { # DNAStringSet or RNAStringSet
 		bases <- c("A", "C", "G",
-			ifelse(type == 2L, "U", "T"))
+			ifelse(typeX == 2L, "U", "T"))
 		if (is.matrix(substitutionMatrix)) {
 			if (any(!(bases %in% dimnames(substitutionMatrix)[[1]])) ||
 				any(!(bases %in% dimnames(substitutionMatrix)[[2]])))
@@ -138,11 +145,10 @@ ScoreAlignment <- function(myXStringSet,
 			structures,
 			structureMatrix,
 			PACKAGE="DECIPHER")
-		z <- sum(z)
 	} else { # adjacent (method == 2L)
-		z <- 0
-		for (k in seq_len(l - 1L)) {
-			z <- z + sum(.Call(functionCall,
+		z <- numeric(u)
+		for (k in seq_len(l - 1L))
+			z <- z + .Call(functionCall,
 				myXStringSet,
 				k:(k + 1L), # subset
 				subMatrix,
@@ -152,9 +158,12 @@ ScoreAlignment <- function(myXStringSet,
 				weight,
 				structures,
 				structureMatrix,
-				PACKAGE="DECIPHER"))
-		}
+				PACKAGE="DECIPHER")
 	}
 	
-	return(z)
+	if (type == 1L) { # sum
+		return(sum(z))
+	} else { # scores
+		return(z)
+	}
 }

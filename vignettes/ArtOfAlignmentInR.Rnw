@@ -161,7 +161,7 @@ points(N3, timings3,
 points(N, predict(c3,
 		data.frame(N3 = N)),
 	type="l", lty=3, col="green")
-legend("bottomright",
+legend("topright",
 	c("Biostrings::pairwiseAlignment",
 		"AlignProfiles (unrestricted, unanchored)",
 		"AlignProfiles (restricted, unanchored)",

@@ -2,17 +2,20 @@ FindSynteny <- function(dbFile,
 	tblName="Seqs",
 	identifier="",
 	useFrames=TRUE,
-	alphabet=AA_REDUCED[[1]],
+	alphabet=AA_REDUCED[[12]],
 	geneticCode=GENETIC_CODE,
-	sepCost=0,
-	gapCost=-0.01,
+	sepCost=-0.5,
+	sepPower=0.5,
+	gapCost=-5,
+	gapPower=0.5,
 	shiftCost=0,
 	codingCost=0,
-	maxSep=2000,
-	maxGap=5000,
-	minScore=30,
+	maxSep=500,
+	maxGap=100,
+	minScore=20,
 	dropScore=-100,
 	maskRepeats=TRUE,
+	maskLCRs=TRUE,
 	allowOverlap=TRUE,
 	storage=0.5,
 	processors=1,
@@ -29,10 +32,18 @@ FindSynteny <- function(dbFile,
 		stop("sepCost must be a single numeric.")
 	if (sepCost > 0)
 		stop("sepCost must be less than or equal to zero.")
+	if (!is.numeric(sepPower))
+		stop("sepPower must be a single numeric.")
+	if (sepPower <= 0)
+		stop("sepPower must be greater than zero.")
 	if (!is.numeric(gapCost))
 		stop("gapCost must be a single numeric.")
 	if (gapCost > 0)
 		stop("gapCost must be less than or equal to zero.")
+	if (!is.numeric(gapPower))
+		stop("gapPower must be a single numeric.")
+	if (gapPower <= 0)
+		stop("gapPower must be greater than zero.")
 	if (!is.numeric(shiftCost))
 		stop("shiftCost must be a single numeric.")
 	if (shiftCost > 0)
@@ -59,6 +70,8 @@ FindSynteny <- function(dbFile,
 		stop("minScore must be greater than zero.")
 	if (!is.logical(maskRepeats))
 		stop("maskRepeats must be a logical.")
+	if (!is.logical(maskLCRs))
+		stop("maskLCRs must be a logical.")
 	if (!is.logical(allowOverlap))
 		stop("allowOverlap must be a logical.")
 	if (!is.logical(verbose))
@@ -75,7 +88,7 @@ FindSynteny <- function(dbFile,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- detectCores()
+		processors <- .detectCores()
 	} else {
 		processors <- as.integer(processors)
 	}
@@ -322,9 +335,12 @@ FindSynteny <- function(dbFile,
 			# probability of occuring by chance
 			M <- max(WIDTH1[length(WIDTH1)],
 				WIDTH2[length(WIDTH2)])*10
-			N <- as.integer(ceiling(log(M, size)))
-			if (N > 16L)
+			N <- as.integer(log(M, size))
+			if (N < 1L) {
+				N <- 1L
+			} else if (N > 16L) {
 				N <- 16L
+			}
 			
 			E1 <- store[g1][[1L]][["E"]][["nt"]][N][[1L]]
 			if (is.null(E1)) {
@@ -332,6 +348,7 @@ FindSynteny <- function(dbFile,
 					seq1,
 					N,
 					maskRepeats,
+					maskLCRs,
 					processors,
 					PACKAGE="DECIPHER")[[1]]
 				for (i in which(WIDTH1 > (N - 2) & WIDTH1 < length(E1)))
@@ -346,6 +363,7 @@ FindSynteny <- function(dbFile,
 					seq2,
 					N,
 					maskRepeats,
+					maskLCRs,
 					processors,
 					PACKAGE="DECIPHER")[[1]]
 				for (i in which(WIDTH2 > (N - 2) & WIDTH2 < length(e2)))
@@ -454,9 +472,12 @@ FindSynteny <- function(dbFile,
 							t1,
 							alphabet,
 							PACKAGE="DECIPHER")
-						N_AA <- as.integer(ceiling(log(M/3, sizeAA)))
-						if (N_AA > n)
+						N_AA <- as.integer(log(M/3, sizeAA))
+						if (N_AA < 1L) {
+							N_AA <- 1L
+						} else if (N_AA > n) {
 							N_AA <- n
+						}
 					}
 					
 					e1 <- store[g1][[1L]][["E"]][["aa"]][[rF1]][N_AA][[1L]]
@@ -466,6 +487,7 @@ FindSynteny <- function(dbFile,
 							N_AA,
 							alphabet,
 							maskRepeats,
+							maskLCRs,
 							processors,
 							PACKAGE="DECIPHER")[[1]]
 						for (i in which(width1 > (N_AA - 2) & width1 < length(e1)))
@@ -504,6 +526,7 @@ FindSynteny <- function(dbFile,
 								N_AA,
 								alphabet,
 								maskRepeats,
+								maskLCRs,
 								processors,
 								PACKAGE="DECIPHER")[[1]]
 							for (i in which(width2 > (N_AA - 2) & width2 < length(e2)))
@@ -661,7 +684,9 @@ FindSynteny <- function(dbFile,
 				y.f,
 				weights,
 				sepCost,
+				sepPower,
 				gapCost,
+				gapPower,
 				shiftCost,
 				codingCost,
 				maxSep,
@@ -722,6 +747,7 @@ FindSynteny <- function(dbFile,
 					seq2,
 					N,
 					maskRepeats,
+					maskLCRs,
 					processors,
 					PACKAGE="DECIPHER")[[1]]
 				for (i in which(WIDTH2 > (N - 2) & WIDTH2 < length(e2)))
@@ -818,6 +844,7 @@ FindSynteny <- function(dbFile,
 							N_AA,
 							alphabet,
 							maskRepeats,
+							maskLCRs,
 							processors,
 							PACKAGE="DECIPHER")[[1]]
 						for (i in which(width1 > (N_AA - 2) & width1 < length(e1)))
@@ -856,6 +883,7 @@ FindSynteny <- function(dbFile,
 								N_AA,
 								alphabet,
 								maskRepeats,
+								maskLCRs,
 								processors,
 								PACKAGE="DECIPHER")[[1]]
 							for (i in which(width2 > (N_AA - 2) & width2 < length(e2)))
@@ -1007,7 +1035,9 @@ FindSynteny <- function(dbFile,
 				y.f,
 				weights,
 				sepCost,
+				sepPower,
 				gapCost,
+				gapPower,
 				shiftCost,
 				codingCost,
 				maxSep,

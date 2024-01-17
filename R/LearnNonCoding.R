@@ -69,7 +69,7 @@ LearnNonCoding <- function(myXStringSet,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- detectCores()
+		processors <- .detectCores()
 	} else {
 		processors <- as.integer(processors)
 	}
@@ -838,17 +838,17 @@ LearnNonCoding <- function(myXStringSet,
 				k <- k + 1L
 				if (i > n1) {
 					t1 <- hairpins[[i - n1, "hits"]]
-					p1 <- paste0("hairpin", i - n1)
+					p1 <- paste("hairpin", i - n1, sep="")
 				} else {
 					t1 <- motifs[[i, "hits"]] + 1L # offset because missing hits recorded as zero
-					p1 <- paste0("motif", i)
+					p1 <- paste("motif", i, sep="")
 				}
 				if (j > n1) {
 					t2 <- hairpins[[j - n1, "hits"]]
-					p2 <- paste0("hairpin", j - n1)
+					p2 <- paste("hairpin", j - n1, sep="")
 				} else {
 					t2 <- motifs[[j, "hits"]] + 1L # offset because missing hits recorded as zero
-					p2 <- paste0("motif", j)
+					p2 <- paste("motif", j, sep="")
 				}
 				names(scores)[k] <- paste(p1, p2, sep=" / ")
 				

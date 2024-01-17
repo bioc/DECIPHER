@@ -9,6 +9,7 @@ Calculates a score for a multiple sequence alignment based on either sum-of-pair
 \usage{
 ScoreAlignment(myXStringSet,
                method = "pairs",
+               type = "sum",
                perfectMatch = 1,
                misMatch = 0,
                gapOpening = -7.5,
@@ -25,6 +26,9 @@ An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object of ali
 }
   \item{method}{
 Character string indicating the method of scoring.  This should be (an abbreviation of) one of \code{"pairs"} for sum-of-pairs or \code{"adjacent"} for sum-of-adjacent-pairs.  (See details section below.)
+}
+  \item{type}{
+Character string giving the type of result.  This should be (an abbreviation of) one of \code{"sum"} for the total score or \code{"scores"} for a vector with one score per site (column) in \code{myXStringSet}.
 }
   \item{perfectMatch}{
 Numeric giving the reward for aligning two matching nucleotides in the alignment.  Only used for \code{DNAStringSet} or \code{RNAStringSet} inputs.

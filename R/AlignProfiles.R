@@ -165,7 +165,7 @@ AlignProfiles <- function(pattern,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- detectCores()
+		processors <- .detectCores()
 	} else {
 		processors <- as.integer(processors)
 	}
@@ -436,6 +436,13 @@ AlignProfiles <- function(pattern,
 				w.p,
 				anchor,
 				PACKAGE="DECIPHER")
+			if (ncol(anchors) > 1L) {
+				# reject unevenly spaced adjacent anchors
+				d <- diff(anchors[1L,])/diff(anchors[3L,])
+				d <- d >= 0.8 & d <= 1.25 # within rejection ratio
+				d <- c(FALSE, d) | c(d, FALSE)
+				anchors <- anchors[, d, drop=FALSE]
+			}
 		}
 		
 		numAnchors <- dim(anchors)[2]

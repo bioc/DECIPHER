@@ -344,7 +344,7 @@ rnas <- FindNonCoding(x, genome)
 rnas
 @
 
-Tada!  \Rfunction{FindNonCoding} outputs an object of class \Rclass{Genes} just like \Rfunction{FindGenes}.  However, non-coding RNAs are denoted with negative numbers in the \code{Gene} column.  Each number corresponds to the model that was identified.  We can look at the set of non-coding RNAs that were found in the \emph{C. trachomatis} genome:
+Tada! \Rfunction{FindNonCoding} outputs an object of class \Rclass{Genes} just like \Rfunction{FindGenes}.  However, non-coding RNAs are denoted with negative numbers in the \code{Gene} column.  Each number corresponds to the model that was identified.  We can look at the set of non-coding RNAs that were found in the \emph{C. trachomatis} genome:
 
 <<expr21,eval=TRUE>>=
 annotations <- attr(rnas, "annotations")

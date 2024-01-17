@@ -106,7 +106,7 @@ SEXP parallelMatch(SEXP x, SEXP y, SEXP indices, SEXP a, SEXP b, SEXP pos, SEXP 
 	
 	#pragma omp parallel num_threads(nthreads)
 	{
-		int *temp = (int *) malloc(size_x*sizeof(int)); // initialized to zero (thread-safe on Windows)
+		int *temp = (int *) malloc(size_x*sizeof(int)); // thread-safe on Windows
 		
 		#pragma omp for private(i, j, k) schedule(guided)
 		for (k = 0; k < n; k++) {

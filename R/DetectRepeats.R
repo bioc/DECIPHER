@@ -1,12 +1,14 @@
 DetectRepeats <- function(myXStringSet,
 	type="tandem",
-	minScore=15,
+	minScore=10,
 	allScores=FALSE,
+	maxCopies=1000,
 	maxPeriod=1000,
-	maxFailures=2,
+	maxFailures=3,
 	maxShifts=5,
-	alphabet=AA_REDUCED[[125]],
+	alphabet=AA_REDUCED[[77]],
 	useEmpirical=TRUE,
+	correctBackground=TRUE,
 	processors=1,
 	verbose=TRUE,
 	...) {
@@ -72,6 +74,12 @@ DetectRepeats <- function(myXStringSet,
 		stop("minScore must be at least zero.")
 	if (!is.logical(allScores))
 		stop("allScores must be a logical.")
+	if (!is.numeric(maxCopies) || length(maxCopies) > 1)
+		stop("maxCopies must be a numeric.")
+	if (maxCopies < 2)
+		stop("maxCopies must be at least two.")
+	if (maxCopies != floor(maxCopies))
+		stop("maxCopies must be a whole number.")
 	if (!is.numeric(maxPeriod) || length(maxPeriod) > 1)
 		stop("maxPeriod must be a numeric.")
 	if (maxPeriod < 1)
@@ -93,6 +101,8 @@ DetectRepeats <- function(myXStringSet,
 		stop("maxPeriod must be at least one.")
 	if (!is.logical(useEmpirical))
 		stop("useEmpirical must be a logical.")
+	if (!is.logical(correctBackground))
+		stop("correctBackground must be a logical.")
 	if (!is.logical(verbose))
 		stop("verbose must be a logical.")
 	a <- vcountPattern("-", myXStringSet)
@@ -108,7 +118,7 @@ DetectRepeats <- function(myXStringSet,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- detectCores()
+		processors <- .detectCores()
 	} else {
 		processors <- as.integer(processors)
 	}
@@ -118,16 +128,48 @@ DetectRepeats <- function(myXStringSet,
 	
 	# default parameters
 	N <- 10 # find k-mers on average N times per maxPeriod
-	gapCost <- c(-2.6, -0.1) # gap open and extension coefficients
 	mult <- 2L # multiplier on K for lookahead length
-	maxVisits <- 1L # maximum attempts to detect repeats in each position
-	if (xtype == 3L) {
-		residues <- c(A=0.05, R=-0.02, N=0.05, D=0.06, C=0.29, Q=-0.07, E=-0.09, G=0.01, H=-0.79, I=0.27, L=0.1, K=-0.12, M=-0.31, F=0.21, P=-0.15, S=-0.19, T=0.03, W=0.28, Y=0.2, V=0.22) # log-odds in tandem repeat
-		periods <- c(0.6281454, -4.807124, 2.698869, 1.994083, 0.9163926, 10.58584) # sigmoid fit for log-odds of periodicity relative to background
+	maxVisits <- 2L # maximum attempts to detect repeats in each position
+	if (useEmpirical) {
+		if (xtype == 3L) {
+			if (correctBackground) {
+				correction <- 0.32 # correction factor to standardize log-odds scores
+			} else {
+				correction <- 0.21 # correction factor to standardize log-odds scores
+			}
+			offset <- 0.06 # calibrate substitution matrix
+			residues <- c(A=0.05, R=-0.02, N=0.05, D=0.06, C=0.29, Q=-0.07, E=-0.09, G=0.01, H=-0.79, I=0.27, L=0.1, K=-0.12, M=-0.31, F=0.21, P=-0.15, S=-0.19, T=0.03, W=0.28, Y=0.2, V=0.22) # log-odds in tandem repeat
+			periods <- c(0.6281454, -4.807124, 2.698869, 1.994083, 0.9163926, 10.58584) # sigmoid fit for log-odds of periodicity relative to background
+		} else {
+			if (correctBackground) {
+				correction <- 0.61 # correction factor to standardize log-odds scores
+			} else {
+				correction <- 0.33 # correction factor to standardize log-odds scores
+			}
+			periods <- c(0.6217107, -3.638397, 0.2537369, 0.1148134, 0.3390507, 11.63033) # sigmoid fit for log-odds of periodicity relative to background
+		}
+		lens <- c(NaN, 0.2, -2, 0, -0.5, 0.6, 0.9, 2.9, 1.1) # log-odds of repeat copy number relative to background
+		gapCost <- c(-3, -0.2) # gap open and extension coefficients
+		coef <- -0.65 # coefficient of the normalized quadratic column weight function (> -1)
 	} else {
-		periods <- c(0.6217107, -3.638397, 0.2537369, 0.1148134, 0.3390507, 11.63033) # sigmoid fit for log-odds of periodicity relative to background
+		if (xtype == 3L) {
+			if (correctBackground) {
+				correction <- 0.48 # correction factor to standardize log-odds scores
+			} else {
+				correction <- 0.19 # correction factor to standardize log-odds scores
+			}
+		} else {
+			if (correctBackground) {
+				correction <- 0.52 # correction factor to standardize log-odds scores
+			} else {
+				correction <- 0.23 # correction factor to standardize log-odds scores
+			}
+		}
+		gapCost <- c(-2.6, -0.1) # gap open and extension coefficients
+		coef <- 0 # coefficient of the normalized quadratic column weight function (> -1)
 	}
-	lens <- c(NaN, 0.2, -2, 0, -0.5, 0.6, 0.9, 2.9, 1.1) # log-odds of repeat copy number relative to background
+	if (correctBackground)
+		samples <- 5000 # total relative weight of background frequencies
 	
 	.score <- function(x,
 		gapCost,
@@ -147,7 +189,7 @@ DetectRepeats <- function(myXStringSet,
 				POSR,
 				SIMPLIFY=FALSE)
 			if (useEmpirical) {
-				AAs <- colSums(alphabetFrequency(x)[, 1:20])
+				AAs <- alphabetFrequency(x, collapse=TRUE)[1:20]
 				addScore <- sum(residues*AAs) # score for amino acid enrichment
 			} else {
 				addScore <- 0
@@ -169,22 +211,33 @@ DetectRepeats <- function(myXStringSet,
 			}
 		}
 		
-		addScore + ScoreAlignment(x,
+		colScores <- ScoreAlignment(x,
 			method="adjacent",
+			type="scores",
 			gapOpening=gapCost[1L],
 			gapExtension=gapCost[2L],
 			substitutionMatrix=sM,
 			structures=structures,
 			structureMatrix=structureMatrix,
 			includeTerminalGaps=TRUE)
+		
+		# apply weight function to alignment columns
+		w <- seq(-1, 1, length.out=length(colScores))
+		w <- w*w
+		w <- 1 + coef*w
+		w <- w/mean(w) # normalize to mean of 1
+		
+		addScore + sum(w*colScores)
 	}
 	
 	if (xtype == 3L) {
 		# convert substitution matrix to units of log-odds (rather than two-thirds bits)
-		SM <- matrix(c(0.951, -0.266, -0.305, -0.327, 0.099, -0.126, -0.151, 0.041, -0.383, -0.26, -0.274, -0.236, -0.131, -0.451, -0.14, 0.191, 0.008, -0.586, -0.501, 0.015, -2.542, -0.266, 1.465, 0.013, -0.153, -0.741, 0.37, 0.117, -0.453, 0.178, -0.81, -0.701, 0.679, -0.46, -0.874, -0.311, -0.097, -0.129, -0.5, -0.415, -0.679, -2.542, -0.305, 0.013, 1.494, 0.532, -0.582, 0.189, 0.129, 0.037, 0.255, -0.962, -0.947, 0.202, -0.606, -0.879, -0.252, 0.261, 0.075, -0.873, -0.433, -0.834, -2.542, -0.327, -0.153, 0.532, 1.575, -1.007, 0.155, 0.597, -0.131, -0.045, -1.265, -1.194, 0.052, -0.915, -1.235, -0.131, 0.099, -0.121, -1.102, -0.8, -1.051, -2.542, 0.099, -0.741, -0.582, -1.007, 3.127, -0.777, -0.995, -0.499, -0.438, -0.174, -0.218, -0.884, -0.137, -0.189, -0.832, -0.091, -0.185, -0.446, -0.268, 0.016, -2.542, -0.126, 0.37, 0.189, 0.155, -0.777, 1.289, 0.494, -0.368, 0.251, -0.762, -0.636, 0.433, -0.259, -0.846, -0.241, 0.046, -0.01, -0.707, -0.444, -0.624, -2.542, -0.151, 0.117, 0.129, 0.597, -0.995, 0.494, 1.287, -0.38, -0.057, -0.967, -0.931, 0.342, -0.646, -1.116, -0.162, 0.007, -0.072, -0.97, -0.681, -0.758, -2.542, 0.041, -0.453, 0.037, -0.131, -0.499, -0.368, -0.38, 1.768, -0.42, -1.087, -1.022, -0.369, -0.758, -0.924, -0.333, 0.043, -0.342, -0.886, -0.863, -0.861, -2.542, -0.383, 0.178, 0.255, -0.045, -0.438, 0.251, -0.057, -0.42, 2.254, -0.781, -0.663, 0.033, -0.433, -0.29, -0.354, -0.099, -0.206, -0.217, 0.381, -0.664, -2.542, -0.26, -0.81, -0.962, -1.265, -0.174, -0.762, -0.967, -1.087, -0.781, 1.184, 0.585, -0.819, 0.423, 0.216, -0.799, -0.716, -0.29, -0.347, -0.258, 0.785, -2.542, -0.274, -0.701, -0.947, -1.194, -0.218, -0.636, -0.931, -1.022, -0.663, 0.585, 1.087, -0.799, 0.585, 0.39, -0.777, -0.73, -0.43, -0.123, -0.159, 0.343, -2.542, -0.236, 0.679, 0.202, 0.052, -0.884, 0.433, 0.342, -0.369, 0.033, -0.819, -0.799, 1.282, -0.5, -1.005, -0.175, 0.006, -0.035, -0.829, -0.564, -0.704, -2.542, -0.131, -0.46, -0.606, -0.915, -0.137, -0.259, -0.646, -0.758, -0.433, 0.423, 0.585, -0.5, 1.637, 0.285, -0.712, -0.406, -0.171, -0.135, -0.091, 0.219, -2.542, -0.451, -0.874, -0.879, -1.235, -0.189, -0.846, -1.116, -0.924, -0.29, 0.216, 0.39, -1.005, 0.285, 1.717, -0.837, -0.7, -0.528, 0.608, 0.885, 0.045, -2.542, -0.14, -0.311, -0.252, -0.131, -0.832, -0.241, -0.162, -0.333, -0.354, -0.799, -0.777, -0.175, -0.712, -0.837, 2.121, -0.015, -0.198, -0.777, -0.763, -0.588, -2.542, 0.191, -0.097, 0.261, 0.099, -0.091, 0.046, 0.007, 0.043, -0.099, -0.716, -0.73, 0.006, -0.406, -0.7, -0.015, 0.979, 0.427, -0.727, -0.505, -0.505, -2.542, 0.008, -0.129, 0.075, -0.121, -0.185, -0.01, -0.072, -0.342, -0.206, -0.29, -0.43, -0.035, -0.171, -0.528, -0.198, 0.427, 1.128, -0.659, -0.439, -0.062, -2.542, -0.586, -0.5, -0.873, -1.102, -0.446, -0.707, -0.97, -0.886, -0.217, -0.347, -0.123, -0.829, -0.135, 0.608, -0.777, -0.727, -0.659, 3.153, 0.763, -0.428, -2.542, -0.501, -0.415, -0.433, -0.8, -0.268, -0.444, -0.681, -0.863, 0.381, -0.258, -0.159, -0.564, -0.091, 0.885, -0.763, -0.505, -0.439, 0.763, 2.023, -0.287, -2.542, 0.015, -0.679, -0.834, -1.051, 0.016, -0.624, -0.758, -0.861, -0.664, 0.785, 0.343, -0.704, 0.219, 0.045, -0.588, -0.505, -0.062, -0.428, -0.287, 1.084, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, -2.542, 3.235),
+		SM <- matrix(c(0.8324524, -0.218532, -0.2657873, -0.2841384, 0.1137628, -0.1057223, -0.132703, 0.0656757, -0.3322948, -0.1996091, -0.2015672, -0.2129695, -0.07751118, -0.3568842, -0.1186668, 0.1685214, 0.01476403, -0.4825517, -0.4096673, 0.03146888, -2.54154, -0.218532, 1.324362, 0.05157015, -0.07413209, -0.6492536, 0.3704525, 0.1644838, -0.3646994, 0.1869765, -0.722242, -0.6231913, 0.6354253, -0.4040008, -0.7596027, -0.2274043, -0.05765252, -0.08515313, -0.4235649, -0.3423107, -0.5975795, -2.54154, -0.2657873, 0.05157015, 1.326718, 0.5145925, -0.5346764, 0.203716, 0.1608275, 0.06898547, 0.2330881, -0.8566086, -0.8444439, 0.227283, -0.5355428, -0.7694627, -0.1831468, 0.2529467, 0.08686867, -0.763259, -0.3633478, -0.7466928, -2.54154, -0.2841384, -0.07413209, 0.5145925, 1.451606, -0.8815099, 0.1895064, 0.5766811, -0.08309102, -0.01270192, -1.123522, -1.065003, 0.1085988, -0.8130616, -1.092175, -0.06352694, 0.1184415, -0.0733523, -0.9669403, -0.6929566, -0.9349516, -2.54154, 0.1137628, -0.6492536, -0.5346764, -0.8815099, 2.978956, -0.6824207, -0.8679589, -0.4107417, -0.3668135, -0.09125283, -0.1317846, -0.7753198, -0.05883087, -0.1113021, -0.709956, -0.07350826, -0.1492519, -0.3533838, -0.19876, 0.06574501, -2.54154, -0.1057223, 0.3704525, 0.203716, 0.1895064, -0.6824207, 1.120005, 0.4807669, -0.3028533, 0.2300036, -0.6820222, -0.5751562, 0.4190595, -0.2444557, -0.7449253, -0.1849837, 0.06706199, 0.01455609, -0.5997803, -0.368685, -0.5563199, -2.54154, -0.132703, 0.1644838, 0.1608275, 0.5766811, -0.8679589, 0.4807669, 1.167797, -0.3148448, -0.01814313, -0.8708528, -0.8331283, 0.362568, -0.5800775, -0.9887745, -0.1153397, 0.03599167, -0.03429346, -0.8595372, -0.5824169, -0.6889883, -2.54154, 0.0656757, -0.3646994, 0.06898547, -0.08309102, -0.4107417, -0.3028533, -0.3148448, 1.654577, -0.3493808, -0.928332, -0.8720658, -0.3017443, -0.6340564, -0.7735349, -0.2399156, 0.07392415, -0.2633959, -0.7408184, -0.7190016, -0.7276139, -2.54154, -0.3322948, 0.1869765, 0.2330881, -0.01270192, -0.3668135, 0.2300036, -0.01814313, -0.3493808, 2.122399, -0.692714, -0.589487, 0.05004523, -0.3718041, -0.2701368, -0.2695303, -0.07399346, -0.1642239, -0.1734601, 0.3390183, -0.5845483, -2.54154, -0.1996091, -0.722242, -0.8566086, -1.123522, -0.09125283, -0.6820222, -0.8708528, -0.928332, -0.692714, 1.05166, 0.5674103, -0.7364169, 0.4077265, 0.2621656, -0.692662, -0.6180274, -0.2506767, -0.2521496, -0.1753489, 0.7226753, -2.54154, -0.2015672, -0.6231913, -0.8444439, -1.065003, -0.1317846, -0.5751562, -0.8331283, -0.8720658, -0.589487, 0.5674103, 0.9706833, -0.7245641, 0.544987, 0.4017828, -0.6738084, -0.6305906, -0.3651673, -0.05576369, -0.09674602, 0.3510964, -2.54154, -0.2129695, 0.6354253, 0.227283, 0.1085988, -0.7753198, 0.4190595, 0.362568, -0.3017443, 0.05004523, -0.7364169, -0.7245641, 1.153068, -0.4585688, -0.8880428, -0.1207289, 0.03126094, -0.0091842, -0.7176846, -0.4753603, -0.6393243, -2.54154, -0.07751118, -0.4040008, -0.5355428, -0.8130616, -0.05883087, -0.2444557, -0.5800775, -0.6340564, -0.3718041, 0.4077265, 0.544987, -0.4585688, 1.370144, 0.2994396, -0.6052734, -0.3403353, -0.1373991, -0.06671542, -0.02880027, 0.2333827, -2.54154, -0.3568842, -0.7596027, -0.7694627, -1.092175, -0.1113021, -0.7449253, -0.9887745, -0.7735349, -0.2701368, 0.2621656, 0.4017828, -0.8880428, 0.2994396, 1.51541, -0.7086563, -0.5942004, -0.433321, 0.594391, 0.8069966, 0.1037295, -2.54154, -0.1186668, -0.2274043, -0.1831468, -0.06352694, -0.709956, -0.1849837, -0.1153397, -0.2399156, -0.2695303, -0.692662, -0.6738084, -0.1207289, -0.6052734, -0.7086563, 1.985312, 0.01431349, -0.1457342, -0.6387178, -0.6383886, -0.5052523, -2.54154, 0.1685214, -0.05765252, 0.2529467, 0.1184415, -0.07350826, 0.06706199, 0.03599167, 0.07392415, -0.07399346, -0.6180274, -0.6305906, 0.03126094, -0.3403353, -0.5942004, 0.01431349, 0.8363687, 0.3843674, -0.6161732, -0.4164255, -0.4361282, -2.54154, 0.01476403, -0.08515313, 0.08686867, -0.0733523, -0.1492519, 0.01455609, -0.03429346, -0.2633959, -0.1642239, -0.2506767, -0.3651673, -0.0091842, -0.1373991, -0.433321, -0.1457342, 0.3843674, 0.9569763, -0.5494924, -0.3483065, -0.05342432, -2.54154, -0.4825517, -0.4235649, -0.763259, -0.9669403, -0.3533838, -0.5997803, -0.8595372, -0.7408184, -0.1734601, -0.2521496, -0.05576369, -0.7176846, -0.06671542, 0.594391, -0.6387178, -0.6161732, -0.5494924, 2.96544, 0.7479405, -0.3300074, -2.54154, -0.4096673, -0.3423107, -0.3633478, -0.6929566, -0.19876, -0.368685, -0.5824169, -0.7190016, 0.3390183, -0.1753489, -0.09674602, -0.4753603, -0.02880027, 0.8069966, -0.6383886, -0.4164255, -0.3483065, 0.7479405, 1.820603, -0.2030748, -2.54154, 0.03146888, -0.5975795, -0.7466928, -0.9349516, 0.06574501, -0.5563199, -0.6889883, -0.7276139, -0.5845483, 0.7226753, 0.3510964, -0.6393243, 0.2333827, 0.1037295, -0.5052523, -0.4361282, -0.05342432, -0.3300074, -0.2030748, 0.956907, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, -2.54154, 3.003638),
 			nrow=21,
 			ncol=21,
 			dimnames=list(c(AA_STANDARD, "*"), c(AA_STANDARD, "*")))
+		if (useEmpirical)
+			SM <- SM + offset
 		freqs <- setNames(c(0.0774, 0.0552, 0.0397, 0.0533, 0.0179, 0.0421, 0.0652, 0.0683, 0.0242, 0.0513, 0.0971, 0.0535, 0.0231, 0.0382, 0.0547, 0.0753, 0.0545, 0.0124, 0.029, 0.0655, 0.0019),
 			c(AA_STANDARD, "*"))
 		
@@ -205,7 +258,11 @@ DetectRepeats <- function(myXStringSet,
 		structures <- NULL
 		structureMatrix <- NULL
 	}
-	BG <- outer(freqs, freqs)
+	if (correctBackground) {
+		BG <- outer(freqs, freqs)
+	} else {
+		sM <- SM
+	}
 	
 	if (type == 1L || type == 3L) { # tandem repeats
 		if (verbose) {
@@ -218,14 +275,10 @@ DetectRepeats <- function(myXStringSet,
 		}
 		
 		if (xtype == 3L) {
-			size <- .Call("alphabetSizeReducedAA",
-				myXStringSet,
-				alphabet,
-				PACKAGE="DECIPHER")
+			size <- tapply(freqs[1:20], alphabet, sum)
+			size <- exp(-sum(size*log(size)))
 		} else {
-			size <- .Call("alphabetSize",
-				myXStringSet,
-				PACKAGE="DECIPHER")
+			size <- exp(-sum(freqs*log(freqs)))
 		}
 		K <- as.integer(ceiling(log(maxPeriod/N, size)))
 		if (xtype == 3L) {
@@ -236,6 +289,7 @@ DetectRepeats <- function(myXStringSet,
 				K,
 				alphabet,
 				FALSE, # mask repeats
+				FALSE, # mask low complexity regions
 				processors,
 				PACKAGE="DECIPHER")
 		} else {
@@ -245,6 +299,7 @@ DetectRepeats <- function(myXStringSet,
 				myXStringSet,
 				K,
 				FALSE, # mask repeats
+				FALSE, # mask low complexity regions
 				processors,
 				PACKAGE="DECIPHER")
 		}
@@ -345,7 +400,7 @@ DetectRepeats <- function(myXStringSet,
 			kmers,
 			SIMPLIFY=FALSE)
 		
-		shift <- function(x, LnL, posL, posR, maxShifts) {
+		.shift <- function(x, LnL, posL, posR, maxShifts) {
 			# optimize the phase
 			tempL <- posL
 			tempR <- posR
@@ -410,16 +465,17 @@ DetectRepeats <- function(myXStringSet,
 			values <- r[[k]]$values
 			lengths <- r[[k]]$lengths
 			
-			if (xtype == 3L) {
-				bg <- alphabetFrequency(myXString,
-					as.prob=TRUE)[c(1:20, 27)]
+			if (correctBackground) {
+				if (xtype == 3L) {
+					bg <- alphabetFrequency(myXString)[c(1:20, 27)]
+				} else {
+					bg <- oligonucleotideFrequency(myXString, width=1L)
+				}
+				bg <- bg + samples*freqs
+				bg[bg == 0] <- 1 # add pseudocounts (needed if samples is zero)
 				bg <- bg/sum(bg)
-			} else {
-				bg <- oligonucleotideFrequency(myXString,
-					width=1,
-					as.prob=TRUE)
+				sM <- SM + log(BG/outer(bg, bg))
 			}
-			sM <- SM + log(BG/outer(bg, bg))
 			
 			# only repeats occurring more frequently than expected
 			w <- which(values/lengths <= maxPeriod/N &
@@ -470,25 +526,53 @@ DetectRepeats <- function(myXStringSet,
 						setTxtProgressBar(pBar,
 							(totW[k] + w[i])/totW[length(totW)])
 					next
+				} else if (length(posR) > maxCopies) {
+					length(posL) <- maxCopies
+					length(posR) <- maxCopies
 				}
 				
 				# align the repeats
-				x <- extractAt(myXString, IRanges(posL, posR))
+				x <- .extractSet(myXString, posL, posR)
 				ux <- unique(x)
 				if (length(ux) > 1) {
 					index <- match(x, ux)
-					if (length(ux) == 2) {
-						ux <- AlignProfiles(.subset(ux, 1),
-							.subset(ux, 2),
-							anchor=NA,
-							processors=processors)
+					if (xtype == 3L) {
+						rev_index <- match(ux, x)
+						if (length(ux) == 2) {
+							ux <- AlignProfiles(.subset(ux, 1),
+								.subset(ux, 2),
+								p.struct=struct[, posL[rev_index[1L]]:posR[rev_index[1L]], drop=FALSE],
+								s.struct=struct[, posL[rev_index[2L]]:posR[rev_index[2L]], drop=FALSE],
+								anchor=NA,
+								processors=processors)
+						} else {
+							ux <- AlignSeqs(ux,
+								iterations=0,
+								refinements=0,
+								structures=mapply(function(a, b)
+										struct[, a:b, drop=FALSE],
+									posL[rev_index],
+									posR[rev_index],
+									SIMPLIFY=FALSE),
+								anchor=NA,
+								processors=processors,
+								verbose=FALSE)
+						}
 					} else {
-						ux <- AlignSeqs(ux,
-							iterations=0,
-							refinements=0,
-							anchor=NA,
-							processors=processors,
-							verbose=FALSE)
+						if (length(ux) == 2) {
+							ux <- AlignProfiles(.subset(ux, 1),
+								.subset(ux, 2),
+								anchor=NA,
+								processors=processors)
+						} else {
+							ux <- AlignSeqs(ux,
+								iterations=0,
+								refinements=0,
+								useStructures=FALSE,
+								anchor=NA,
+								processors=processors,
+								verbose=FALSE)
+						}
 					}
 					x <- .subset(ux, index)
 					
@@ -496,6 +580,17 @@ DetectRepeats <- function(myXStringSet,
 					off <- min(t[-nrow(t), "trailingChar"])
 					x <- subseq(x, end=width(x)[1L] - off)
 					posR[length(posR)] <- posR[length(posR)] - off
+					off <- min(t[-1L, "leadingChar"])
+					x <- subseq(x, off + 1L)
+					posL[1L] <- posL[1L] + off
+					
+					if (width(x)[1L] == 0L) {
+						res[[i]] <- list(posL, posR, -Inf, k)
+						if (verbose)
+							setTxtProgressBar(pBar,
+								(totW[k] + w[i])/totW[length(totW)])
+						next
+					}
 				}
 				
 				# calculate the likelihood
@@ -508,95 +603,105 @@ DetectRepeats <- function(myXStringSet,
 					next
 				}
 				
-				# try extending left
-				start <- posL[1L] - values[w[i]]
-				attempts <- 0L
-				X <- x
-				POSL <- posL
-				POSR <- posR
-				while (start >= 1L &&
-					attempts <= maxFailures) {
-					start <- start - delta
-					if (start < 1)
-						start <- 1L
-					subseq <- .extract(myXStringSet,
-						k,
-						start,
-						POSL[1L] - 1L)
-					y <- AlignProfiles(subseq,
-						X,
-						anchor=NA,
-						processors=processors)
-					t <- TerminalChar(y)
-					off <- min(t[-1L, "leadingChar"])
-					y <- subseq(y, off + 1L)
-					start <- start + off
-					if (start >= POSL[1L])
-						break # no overlap in alignment
-					POSR <- c(POSL[1L] - 1L, POSR)
-					POSL <- c(start, POSL)
-					temp <- .score(y, gapCost, POSL, POSR)
-					
-					X <- y
-					if (temp > LnL) {
-						LnL <- temp
-						posL <- POSL
-						posR <- POSR
-						x <- y
-						attempts <- 0L
-					} else {
-						attempts <- attempts + 1L
+				prevLnL <- 0
+				while (LnL > prevLnL) {
+					# try extending left
+					start <- posL[1L] - values[w[i]]
+					attempts <- 0L
+					X <- x
+					POSL <- posL
+					POSR <- posR
+					while (start >= 1L &&
+						attempts <= maxFailures &&
+						length(POSL) < maxCopies) {
+						start <- start - delta
+						if (start < 1)
+							start <- 1L
+						subseq <- .extract(myXStringSet,
+							k,
+							start,
+							POSL[1L] - 1L)
+						y <- AlignProfiles(subseq,
+							X,
+							anchor=NA,
+							processors=processors)
+						t <- TerminalChar(y)
+						off <- min(t[-1L, "leadingChar"])
+						y <- subseq(y, off + 1L)
+						start <- start + off
+						if (start >= POSL[1L])
+							break # no overlap in alignment
+						POSR <- c(POSL[1L] - 1L, POSR)
+						POSL <- c(start, POSL)
+						temp <- .score(y, gapCost, POSL, POSR)
+						
+						X <- y
+						if (temp > LnL) {
+							LnL <- temp
+							posL <- POSL
+							posR <- POSR
+							x <- y
+							attempts <- 0L
+						} else {
+							attempts <- attempts + 1L
+						}
+						start <- POSL[1L] - values[w[i]]
 					}
-					start <- POSL[1L] - values[w[i]]
-				}
-				
-				# try extending right
-				end <- posR[length(posR)] + values[w[i]]
-				attempts <- 0L
-				X <- x
-				POSL <- posL
-				POSR <- posR
-				while (end <= l &&
-					attempts <= maxFailures) {
-					end <- end + delta
-					if (end > l)
-						end <- l
-					subseq <- .extract(myXStringSet,
-						k,
-						POSR[length(POSR)] + 1L,
-						end)
-					y <- AlignProfiles(X,
-						subseq,
-						anchor=NA,
-						processors=processors)
-					t <- TerminalChar(y)
-					off <- min(t[-nrow(t), "trailingChar"])
-					y <- subseq(y, end=width(y)[1L] - off)
-					end <- end - off
-					if (end <= POSR[length(POSR)])
-						break # no overlap in alignment
-					POSL <- c(POSL, POSR[length(POSR)] + 1L)
-					POSR <- c(POSR, end)
-					temp <- .score(y, gapCost, POSL, POSR)
 					
-					X <- y
-					if (temp > LnL) {
-						LnL <- temp
-						posL <- POSL
-						posR <- POSR
-						x <- y
-						attempts <- 0L
-					} else {
-						attempts <- attempts + 1L
+					# try extending right
+					end <- posR[length(posR)] + values[w[i]]
+					attempts <- 0L
+					X <- x
+					POSL <- posL
+					POSR <- posR
+					while (end <= l &&
+						attempts <= maxFailures &&
+						length(POSL) < maxCopies) {
+						end <- end + delta
+						if (end > l)
+							end <- l
+						subseq <- .extract(myXStringSet,
+							k,
+							POSR[length(POSR)] + 1L,
+							end)
+						y <- AlignProfiles(X,
+							subseq,
+							anchor=NA,
+							processors=processors)
+						t <- TerminalChar(y)
+						off <- min(t[-nrow(t), "trailingChar"])
+						y <- subseq(y, end=width(y)[1L] - off)
+						end <- end - off
+						if (end <= POSR[length(POSR)])
+							break # no overlap in alignment
+						POSL <- c(POSL, POSR[length(POSR)] + 1L)
+						POSR <- c(POSR, end)
+						temp <- .score(y, gapCost, POSL, POSR)
+						
+						X <- y
+						if (temp > LnL) {
+							LnL <- temp
+							posL <- POSL
+							posR <- POSR
+							x <- y
+							attempts <- 0L
+						} else {
+							attempts <- attempts + 1L
+						}
+						end <- POSR[length(POSR)] + values[w[i]]
 					}
-					end <- POSR[length(POSR)] + values[w[i]]
+					
+					if (LnL > prevLnL) {
+						prevLnL <- LnL
+						out <- .shift(x, LnL, posL, posR, min(diff(posL), maxShifts))
+						x <- out[[1L]]
+						LnL <- out[[2L]]
+						posL <- out[[3L]]
+						posR <- out[[4L]]
+					} else { # no change since last attempt
+						break # LnL == prevLnL
+					}
 				}
-				
-				out <- shift(x, LnL, posL, posR, min(values[w[i]], maxShifts))
-				x <- out[[1L]]
-				LnL <- out[[2L]]
-				posL <- out[[3L]]
-				posR <- out[[4L]]
 				
 				# record the result
 				res[[i]] <- list(posL, posR, LnL, k)
@@ -617,7 +722,7 @@ DetectRepeats <- function(myXStringSet,
 				End=sapply(posR, tail, n=1L),
 				Left=I(posL),
 				Right=I(posR),
-				Score=sapply(result, `[[`, 3L))
+				Score=sapply(result, `[[`, 3L)*correction)
 			result <- result[result[, "Score"] >= minScore,]
 			result <- result[order(result[, "Index"], result[, "Begin"]),]
 		} else {
@@ -709,15 +814,19 @@ DetectRepeats <- function(myXStringSet,
 			ali <- ali[[1L]]
 			res2 <- data.frame(syn[[2, 1]][, 1:8])
 			if (length(ali) > 0) {
-				bg <- oligonucleotideFrequency(myXStringSet,
-					width=1,
-					as.prob=TRUE,
-					simplify.as="collapse")
-				sM <- SM + log(BG/outer(bg, bg))
+				if (correctBackground) {
+					bg <- oligonucleotideFrequency(myXStringSet,
+						width=1,
+						simplify.as="collapse")
+					bg <- bg + samples*freqs
+					bg[bg == 0] <- 1 # add pseudocounts (needed if samples is zero)
+					bg <- bg/sum(bg)
+					sM <- SM + log(BG/outer(bg, bg))
+				}
 				
 				res2[, "score"] <- sapply(ali,
 					.score,
-					gapCost=gapCost)
+					gapCost=gapCost)*correction
 				res2 <- res2[res2[, "score"] >= minScore,]
 				
 				if (!allScores) {

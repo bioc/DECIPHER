@@ -27,6 +27,7 @@ AdjustAlignment          Improve An Existing Alignment By Adjusting Gap
                          Placements
 AlignDB                  Align Two Sets of Aligned Sequences in a Sequence
                          Database
+AlignPairs               Align pairs of sequences
 AlignProfiles            Align Two Sets of Aligned Sequences
 AlignSeqs                Align a Set of Unaligned Sequences
 AlignSynteny             Pairwise Aligns Syntenic Blocks
@@ -85,6 +86,8 @@ IdentifyByRank           Identify By Taxonomic Rank
 IdLengths                Determine the Number of Characters in Each Sequence
                          of Each Sequence
 IdTaxa                   Assign Sequences a Taxonomic Classification
+IndexSeqs                Build an inverted index
+InvertedIndex-class      InvertedIndex objects
 LearnNonCoding           Learn a Non-Coding RNA Model
 LearnTaxa                Train a Classifier for Assigning Taxonomy
 MapCharacters            Map Changes in Ancestral Character States
@@ -108,6 +111,7 @@ RemoveGaps               Remove Gap Characters in Sequences
 RESTRICTION_ENZYMES      Common Restriction Enzyme's Cut Sites
 ScoreAlignment           Score a Multiple Sequence Alignment
 SearchDB                 Obtain Specific Sequences from a Database
+SearchIndex              Search an inverted index
 Seqs2DB                  Add Sequences from Text File to Database
 StaggerAlignment         Produce a Staggered Alignment
 Synteny-class            Synteny blocks and hits

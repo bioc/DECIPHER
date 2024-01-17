@@ -51,7 +51,7 @@ OrientNucleotides <- function(myXStringSet,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- detectCores()
+		processors <- .detectCores()
 	} else {
 		processors <- as.integer(processors)
 	}
@@ -98,6 +98,7 @@ OrientNucleotides <- function(myXStringSet,
 		myXStringSet,
 		wordSize,
 		FALSE, # mask repeats
+		FALSE, # mask low complexity regions
 		processors,
 		PACKAGE="DECIPHER")
 	v <- lapply(v, sort)
@@ -129,6 +130,7 @@ OrientNucleotides <- function(myXStringSet,
 			seqs,
 			wordSize,
 			FALSE, # mask repeats
+			FALSE, # mask low complexity regions
 			processors,
 			PACKAGE="DECIPHER")
 		v <- lapply(v, sort.int)
@@ -159,6 +161,7 @@ OrientNucleotides <- function(myXStringSet,
 			seqs,
 			wordSize,
 			FALSE, # mask repeats
+			FALSE, # mask low complexity regions
 			processors,
 			PACKAGE="DECIPHER")
 		v <- lapply(v, sort.int)
@@ -189,6 +192,7 @@ OrientNucleotides <- function(myXStringSet,
 			seqs,
 			wordSize,
 			FALSE, # mask repeats
+			FALSE, # mask low complexity regions
 			processors,
 			PACKAGE="DECIPHER")
 		v <- lapply(v, sort.int)

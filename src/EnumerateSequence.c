@@ -65,30 +65,52 @@ static void alphabetFrequency(const Chars_holder *P, int *bits, int position)
 }
 
 // changes repeat regions to NAs
-static void maskRepeats(int *x, int n, int l1, int l2, int l3, int l)
+static void maskRepeats(int *x, int n, int l1, int l2, int l3, int l4, int l, double prob)
 {
-	// n: size
+	// n: word size
 	// l1: min period
 	// l2: max period
 	// l3: min length of repeat
-	int i, p, j, k;
+	// l4: max positions between matches
+	// prob: expected probability of match
+	
+	int i, p, j, k, c;
+	double m, s, t;
 	
 	i = 0; // current position
-	while (i < (l - l2)) {
+	while (i < l) {
 		if (x[i] != NA_INTEGER) {
-			for (p = l1; p <= l2; p++) { // periodicity
+			for (p = l1; p <= l2 && i + p < l; p++) { // periodicity
 				if (x[i] == x[i + p]) { // repeat
-					j = i + 1;
-					
-					while (j < (l - p)) {
-						if (x[j] != x[j + p])
-							break;
-						j++;
+					m = 1; // number of matches
+					s = m - prob*p; // score = matches above expectation
+					j = i + 1; // last match
+					k = j; // position
+					c = 0; // mismatch count
+					while (k < l - p) {
+						if (x[k] == x[k + p]) {
+							m++; // increment match
+							t = m - prob*(k + p - i); // temp score
+							if (t <= 0) { // fewer matches than expected
+								break;
+							} else if (t > s) {
+								s = t; // new high score
+								j = ++k; // update last position
+							}
+							c = 0; // reset mismatch count
+						} else {
+							if (c >= l4) // too many mismatches
+								break;
+							c++; // increment mismatch count
+							k++;
+						}
 					}
 					
-					if ((j - i + n) > p && // continuous repeat
+					if (s > 0 && // higher score than expected
+						(j - i + n) > p && // continuous repeat
 						(j + p - i + n) > l3) {
-						for (k = i; k <= (j + p - 1); k++)
+						// mask all repeat units after the first unit
+						for (k = i + p; k <= (j + p - 1); k++)
 							x[k] = NA_INTEGER;
 						i = k - 1;
 						break;
@@ -100,7 +122,101 @@ static void maskRepeats(int *x, int n, int l1, int l2, int l3, int l)
 	}
 }
 
-SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP nThreads)
+// changes low complexity regions to NAs
+static void maskSimple(int *x, int n, double *E, int l1, int l2, double l3, int l)
+{
+	// n: word size
+	// E: expected counts
+	// l1: number of bins
+	// l2: window size
+	// l3: threshold for statistical significance
+	
+	int j, k, sum;
+	double freq[l1]; // level frequencies
+	for (j = 0; j < l1; j++)
+		freq[j] = 0;
+	int s = 0; // sum of frequencies
+	int c = 0; // count of positions
+	int pos[n]; // store previous positions for masking
+	int prev[l2]; // previous values before masking
+	int curr = 0; // index in prev
+	
+	for (j = 0; j < l; j++) {
+		if (s == l2) { // remove position outside of window
+			sum = prev[curr];
+			freq[sum]--;
+			s--;
+		}
+		sum = *(x + j);
+		if (sum >= 0 && sum != NA_INTEGER) {
+			sum %= l1;
+			prev[curr++] = sum;
+			if (curr == l2)
+				curr = 0;
+			freq[sum]++;
+			s++;
+		} // else continue with previous frequencies
+		double score = 0;
+		double temp;
+		double expected;
+		for (k = 0; k < l1; k++) { // Pearson's chi-squared test
+			expected = E[k]*s;
+			temp = freq[k] - expected;
+			temp *= temp;
+			score += temp/expected;
+		}
+		if (score > l3) { // mask
+			if (c < n) {
+				pos[c] = j - s/2;
+				c++;
+			} else if (c == n) {
+				for (c = 0; c < n; c++)
+					*(x + pos[c]) = NA_INTEGER;
+				*(x + j - s/2) = NA_INTEGER;
+				c++;
+			} else { // c > n
+				*(x + j - s/2) = NA_INTEGER;
+			}
+		} else {
+			c = 0;
+		}
+	}
+	while (s > 1) {
+		curr--;
+		if (curr < 0)
+			curr = l2 - 1;
+		sum = prev[curr];
+		freq[sum]--;
+		
+		double score = 0;
+		double temp;
+		double expected;
+		for (k = 0; k < l1; k++) { // Pearson's chi-squared test
+			expected = E[k]*s;
+			temp = freq[k] - expected;
+			temp *= temp;
+			score += temp/expected;
+		}
+		if (score > l3) { // mask
+			if (c < n) {
+				pos[c] = j - s/2;
+				c++;
+			} else if (c == n) {
+				for (c = 0; c < n; c++)
+					*(x + pos[c]) = NA_INTEGER;
+				*(x + j - s/2) = NA_INTEGER;
+				c++;
+			} else { // c > n
+				*(x + j - s/2) = NA_INTEGER;
+			}
+		} else {
+			c = 0;
+		}
+		s--;
+	}
+}
+
+SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP nThreads)
 {
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -112,6 +228,16 @@ SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP nThreads)
 	x_length = get_length_from_XStringSet_holder(&x_set);
 	wS = asInteger(wordSize); // [1 to 15]
 	maskReps = asInteger(mask);
+	double prob = pow(0.7, wS); // expected probability of match
+	double missed = -48.35429; // log(probability of no matches)
+	int maxMismatches = (int)(missed/log(1 - prob)); // interval between matches
+	
+	// initialize variables for masking low complexity regions
+	double threshold = 12.66667;
+	double threshold2 = 38.90749;
+	int maskSimp = (asInteger(maskLCRs) == 0) ? 0 : 20; // window size
+	int maskSimp2 = (asInteger(maskLCRs) == 0) ? 0 : 95; // window size
+	double E[4] = {0.25, 0.25, 0.25, 0.25}; // expected frequency
 	
 	SEXP ret_list;
 	PROTECT(ret_list = allocVector(VECSXP, x_length));
@@ -169,7 +295,12 @@ SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP nThreads)
 			}
 			
 			if (maskReps)
-				maskRepeats(rans, wS, 7, 12, 30, x_i.length - wS + 1);
+				maskRepeats(rans, wS, 1, 700, 25, maxMismatches, x_i.length - wS + 1, prob);
+			
+			if (maskSimp)
+				maskSimple(rans, wS, E, 4, maskSimp, threshold, x_i.length - wS + 1);
+			if (maskSimp2)
+				maskSimple(rans, wS, E, 4, maskSimp2, threshold2, x_i.length - wS + 1);
 		}
 	}
 	
@@ -636,7 +767,7 @@ static void alphabetFrequencyReducedAA(const Chars_holder *P, int *bits, int pos
 	}
 }
 
-SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP nThreads)
+SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP maskLCRs, SEXP nThreads)
 {
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -649,6 +780,9 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask,
 	x_length = get_length_from_XStringSet_holder(&x_set);
 	wS = asInteger(wordSize); // [1 to 20]
 	maskReps = asInteger(mask);
+	double prob = pow(0.7, wS); // expected probability of match
+	double missed = -48.35429; // log(probability of no matches)
+	int maxMismatches = (int)(missed/log(1 - prob)); // interval between matches
 	
 	SEXP ret_list;
 	PROTECT(ret_list = allocVector(VECSXP, x_length));
@@ -659,9 +793,30 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask,
 			m = *(alpha + i);
 	}
 	
-	int SIZE[20] = {0, 60, 38, 30, 26, 24, 22, 20, 19, 19, 18, 17, 17, 16, 16, 15, 15, 15, 15, 14};
+	// initialize variables for masking low complexity regions
+	int WINDOWSIZE[20] = {0, 24, 22, 20, 18, 17, 15, 14, 13, 12, 12, 11, 11, 10, 10, 9, 9, 9, 9, 8};
+	int maskSimp = (asInteger(maskLCRs) == 0) ? 0 : WINDOWSIZE[m]; // window size
+	double THRESHOLD[20] = {0, 18.189, 21.64, 24.462, 26.987, 29.327, 31.539, 33.653, 35.691, 37.667, 39.591, 41.47, 43.311, 45.118, 46.895, 48.645, 50.372, 52.076, 53.76, 55.426};
+	double threshold = THRESHOLD[m];
+	int WINDOWSIZE2[20] = {0, 56, 54, 54, 53, 52, 51, 51, 50, 50, 50, 49, 49, 49, 48, 48, 48, 48, 48, 47};
+	int maskSimp2 = (asInteger(maskLCRs) == 0) ? 0 : WINDOWSIZE2[m]; // window size
+	double THRESHOLD2[20] = {0, 73.513, 78.288, 82.27, 85.853, 89.178, 92.317, 95.311, 98.19, 100.973, 103.674, 106.304, 108.872, 111.385, 113.848, 116.267, 118.646, 120.987, 123.294, 125.57};
+	double threshold2 = THRESHOLD2[m];
+	
+	// initialize variables for masking repeat regions
+	int SIZE[20] = {0, 54, 34, 27, 23, 21, 19, 18, 17, 16, 16, 15, 15, 14, 14, 14, 13, 13, 13, 13};
 	int n = SIZE[m]; // minimum length of significant repeat
 	m++; // start at 1
+	
+	double E[m]; // expected frequency
+	if (maskSimp) { // assume uniform frequency distribution
+		for (i = 0; i < m; i++)
+			E[i] = 0;
+		for (i = 0; i < 20; i++)
+			E[*(alpha + i)]++;
+		for (i = 0; i < m; i++)
+			E[i] /= 20;
+	}
 	
 	// fill the position weight vector
 	int pwv[wS]; // wS[0] is ignored
@@ -716,7 +871,12 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask,
 			}
 			
 			if (maskReps)
-				maskRepeats(rans, wS, 3, 11, n, x_i.length - wS + 1);
+				maskRepeats(rans, wS, 1, 500, n, maxMismatches, x_i.length - wS + 1, prob);
+			
+			if (maskSimp)
+				maskSimple(rans, wS, E, m, maskSimp, threshold, x_i.length - wS + 1);
+			if (maskSimp2)
+				maskSimple(rans, wS, E, m, maskSimp2, threshold2, x_i.length - wS + 1);
 		}
 	}
 	

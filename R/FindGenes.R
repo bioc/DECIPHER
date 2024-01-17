@@ -159,7 +159,7 @@
 	dna <- xscat(dna, paste(rep("-", maxL), collapse=""))
 	dna <- unlist(dna)
 	dna <- xscat(dna,
-		paste0(rep("-", maxL), collapse=""),
+		paste(rep("-", maxL), sep="", collapse=""),
 		reverseComplement(dna))
 	
 	views1 <- matchPattern("ACCTTGTTACGACTT",
@@ -481,7 +481,7 @@ FindGenes <- function(myDNAStringSet,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- detectCores()
+		processors <- .detectCores()
 	} else {
 		processors <- as.integer(processors)
 	}

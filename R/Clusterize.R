@@ -115,7 +115,7 @@ Clusterize <- function(myXStringSet,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- detectCores()
+		processors <- .detectCores()
 	} else {
 		processors <- as.integer(processors)
 	}
@@ -201,6 +201,7 @@ Clusterize <- function(myXStringSet,
 			stop("Standard amino acids missing from alphabet:  ",
 				paste(names(w), collapse=", "),
 				".")
+		words <- max(alphabet)
 		alphabet <- alphabet - 1L
 		
 		# use rounded PFASUM
@@ -211,7 +212,6 @@ Clusterize <- function(myXStringSet,
 			myXStringSet,
 			alphabet,
 			PACKAGE="DECIPHER")
-		words <- max(alphabet) + 1L
 		if (words == 1L)
 			stop("More than one grouping of amino acids is required in the alphabet.")
 		maxK <- as.integer(log(2147483647L, words)) # 2147483647L == 2^31 - 1
@@ -395,14 +395,16 @@ Clusterize <- function(myXStringSet,
 			.subset(myXStringSet, u),
 			kmerSize,
 			alphabet,
-			TRUE, # mask repeats
+			FALSE, # mask repeats
+			FALSE, # mask low complexity regions
 			processors,
 			PACKAGE="DECIPHER")
 	} else { # DNAStringSet or RNAStringSet
 		v <- .Call("enumerateSequence",
 			.subset(myXStringSet, u),
 			kmerSize,
-			TRUE, # mask repeats
+			FALSE, # mask repeats
+			FALSE, # mask low complexity regions
 			processors,
 			PACKAGE="DECIPHER")
 	}
@@ -414,10 +416,7 @@ Clusterize <- function(myXStringSet,
 	KMERS <- as.integer(words^kmerSize)
 	words <- as.integer(words^wordSize)
 	lf <- as.integer(max(KMERS^pow, mean(sizes)))
-	freqs <- .Call("sumBins",
-		v,
-		lf,
-		PACKAGE="DECIPHER")
+	freqs <- .Call("sumBins", v, lf, PACKAGE="DECIPHER")
 	
 	# record groups sharing the rarest k-mers
 	select <- as.integer(min(rareKmers,
@@ -474,7 +473,7 @@ Clusterize <- function(myXStringSet,
 			kmers[o[k]] <- length(o)
 	}
 	for (i in seq_along(o))
-		o[i] <- (o[i] - 1L) %/% select + 1L
+		o[i] <- (o[i] - 1L) %/% select + 1L # convert to sequence index
 	
 	# Phase 1: Partition into groups
 	partition <- integer(l)
@@ -669,7 +668,8 @@ Clusterize <- function(myXStringSet,
 				.subset(myXStringSet, u),
 				wordSize,
 				alphabet,
-				TRUE, # mask repeats
+				FALSE, # mask repeats
+				FALSE, # mask low complexity regions
 				processors,
 				PACKAGE="DECIPHER")
 		} else { # DNAStringSet or RNAStringSet
@@ -678,7 +678,8 @@ Clusterize <- function(myXStringSet,
 			v <- .Call("enumerateSequence",
 				.subset(myXStringSet, u),
 				wordSize,
-				TRUE, # mask repeats
+				FALSE, # mask repeats
+				FALSE, # mask low complexity regions
 				processors,
 				PACKAGE="DECIPHER")
 		}
@@ -1051,7 +1052,7 @@ Clusterize <- function(myXStringSet,
 	}
 	
 	if (maxPhase2 > 0) {
-		rm(b1, b2, bins, d, inPlay, keep, ksims, psims, ls, m1, m2, ov, ksim1, ksim2, pdist1, pdist2, res1, res2, s1, s2, var, b, rS, temp)
+		rm(b1, b2, bins, d, inPlay, keep, ksims, psims, ls, m1, m2, ov, ksim1, ksim2, pdist1, pdist2, res1, res2, s1, s2, var, b, rS)
 	} else {
 		rm(bins, inPlay, keep, ksims, psims, ls, var)
 	}
@@ -1106,7 +1107,7 @@ Clusterize <- function(myXStringSet,
 		kmers[j] <- kmers[k]
 	}
 	for (i in seq_along(o))
-		o[i] <- (o[i] - 1L) %/% select + 1L
+		o[i] <- (o[i] - 1L) %/% select + 1L # convert to sequence index
 	
 	# Phase 3: Cluster sequences
 	for (i in seq_len(lc))

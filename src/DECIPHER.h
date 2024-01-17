@@ -1,3 +1,18 @@
+// Global function definitions
+
+static void chkIntFn(void *dummy) {
+	R_CheckUserInterrupt();
+}
+
+static inline int checkInterrupt() {
+	// needed to prevent premature exit
+	if (R_ToplevelExec(chkIntFn, NULL) == FALSE) {
+		return(-1);
+	} else {
+		return(0);
+	}
+}
+
 // R_init_DECIPHER.c
 
 void R_init_DECIPHER(DllInfo *info);
@@ -108,6 +123,8 @@ SEXP sortedUnique(SEXP v);
 
 SEXP splitPartitions(SEXP order, SEXP partition, SEXP var, SEXP minSize, SEXP minSplit);
 
+SEXP detectCores();
+
 // ReplaceChars.c
 
 SEXP replaceChars(SEXP x, SEXP r, SEXP t);
@@ -144,7 +161,7 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 
 // EnumerateSequence.c
 
-SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP nThreads);
+SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP nThreads);
 
 SEXP enumerateSequenceAA(SEXP x, SEXP wordSize);
 
@@ -152,7 +169,7 @@ SEXP enumerateGappedSequence(SEXP x, SEXP wordSize, SEXP ordering);
 
 SEXP enumerateGappedSequenceAA(SEXP x, SEXP wordSize, SEXP ordering);
 
-SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP nThreads);
+SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP maskLCRs, SEXP nThreads);
 
 SEXP alphabetSizeReducedAA(SEXP x, SEXP alphabet);
 
@@ -218,7 +235,7 @@ SEXP fillOverlaps(SEXP m, SEXP n);
 
 SEXP indexByContig(SEXP starts, SEXP ends, SEXP order, SEXP index, SEXP widths);
 
-SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, SEXP y_i, SEXP y_f, SEXP weights, SEXP sepCost, SEXP gapCost, SEXP shiftCost, SEXP codingCost, SEXP maxSep, SEXP maxGap, SEXP ordering, SEXP minScore, SEXP minW, SEXP allowOverlap);
+SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, SEXP y_i, SEXP y_f, SEXP weights, SEXP sepCost, SEXP sepPower, SEXP gapCost, SEXP gapPower, SEXP shiftCost, SEXP codingCost, SEXP maxSep, SEXP maxGap, SEXP ordering, SEXP minScore, SEXP maxW, SEXP allowOverlap);
 
 SEXP extendSegments(SEXP X, SEXP W1, SEXP W2, SEXP S1, SEXP S2, SEXP O1P, SEXP O1N, SEXP O2P, SEXP O2N, SEXP S, SEXP maxDrop, SEXP INDEX1, SEXP INDEX2);
 
@@ -349,3 +366,15 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 // PairwiseAlignment.c
 
 SEXP alignPair(SEXP x, SEXP y, SEXP s1, SEXP e1, SEXP s2, SEXP e2, SEXP go, SEXP ge, SEXP tg, SEXP maxLength, SEXP type, SEXP subMatrix, SEXP nThreads);
+
+SEXP alignPairs(SEXP pattern, SEXP subject, SEXP query, SEXP target, SEXP position, SEXP bandWidth, SEXP gapOpening, SEXP gapExtension, SEXP dropScore, SEXP subMatrix, SEXP matchMatrix, SEXP letters, SEXP verbose, SEXP pBar, SEXP nThreads);
+
+// Search.c
+
+SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP output, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP verbose, SEXP pBar, SEXP nThreads);
+
+SEXP countIndex(SEXP num, SEXP query, SEXP step);
+
+SEXP updateIndex(SEXP offset, SEXP query, SEXP wordSize, SEXP step, SEXP location, SEXP index, SEXP positions, SEXP count);
+
+SEXP approxFreqs(SEXP offset, SEXP freqs, SEXP count);

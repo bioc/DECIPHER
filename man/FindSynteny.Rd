@@ -11,17 +11,20 @@ FindSynteny(dbFile,
             tblName = "Seqs",
             identifier = "",
             useFrames = TRUE,
-            alphabet = AA_REDUCED[[1]],
+            alphabet = AA_REDUCED[[12]],
             geneticCode = GENETIC_CODE,
-            sepCost = 0,
-            gapCost = -0.01,
+            sepCost = -0.5,
+            sepPower = 0.5,
+            gapCost = -5,
+            gapPower = 0.5,
             shiftCost = 0,
             codingCost = 0,
-            maxSep = 2000,
-            maxGap = 5000,
-            minScore = 30,
+            maxSep = 500,
+            maxGap = 100,
+            minScore = 20,
             dropScore = -100,
             maskRepeats = TRUE,
+            maskLCRs = TRUE,
             allowOverlap = TRUE,
             storage = 0.5,
             processors = 1,
@@ -49,8 +52,14 @@ Either a character vector giving the genetic code to use in translation, or a li
   \item{sepCost}{
 Cost per nucleotide separation between hits to apply when chaining hits into blocks.
 }
+  \item{sepPower}{
+Positive numeric specifying the power applied to the separation between hits before multiplying by \code{sepCost}.
+}
   \item{gapCost}{
 Cost for gaps between hits to apply when chaining hits into blocks.
+}
+  \item{gapPower}{
+Positive numeric specifying the power applied to the number of gaps between hits before multiplying by \code{gapCost}.
 }
   \item{shiftCost}{
 Cost for shifting between different reading frames when chaining reduced amino acid hits into blocks.
@@ -71,7 +80,10 @@ The minimum score required for a chain of hits to become a block.  Higher values
 The change from maximal score required to stop extending blocks.
 }
   \item{maskRepeats}{
-Logical specifying whether to ``soft'' mask repeats when searching for hits.
+Logical specifying whether to mask repeats when searching for hits.
+}
+  \item{maskLCRs}{
+Logical indicating whether to mask low complexity regions when searching for hits.
 }
   \item{allowOverlap}{
 Logical specifying whether to permit blocks to overlap on the same sequence.

@@ -93,6 +93,8 @@ There's no need to memor\emph{ize} the inputs to \Rfunction{Clusterize}, because
 \end{Sinput}
 \end{Schunk}
 
+Note that, while it's easy to fantas\emph{ize} about using \Rfunction{Clusterize}, if you only have a moderate number of \textbf{homologous} sequences (<< 100k) then it's more accurate to use \Rfunction{TreeLine} with a distance matrix created from a multiple sequence alignment. This function provides hierarchical clustering (i.e., single-linkage, UPGMA, or complete-linkage) that is impossible to critic\emph{ize} as inexact.
+
 %------------------------------------------------------------
 \section{Optimize your inputs to Clusterize}
 %------------------------------------------------------------

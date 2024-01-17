@@ -9,13 +9,15 @@ Detects approximate copies of sequence patterns that likely arose from duplicati
 \usage{
 DetectRepeats(myXStringSet,
               type = "tandem",
-              minScore = 15,
+              minScore = 10,
               allScores = FALSE,
+              maxCopies = 1000,
               maxPeriod = 1000,
-              maxFailures = 2,
+              maxFailures = 3,
               maxShifts = 5,
-              alphabet = AA_REDUCED[[125]],
+              alphabet = AA_REDUCED[[77]],
               useEmpirical = TRUE,
+              correctBackground = TRUE,
               processors = 1,
               verbose = TRUE,
               \dots)
@@ -33,20 +35,26 @@ Numeric giving the minimum score of repeats in \code{myXStringSet} to report.
   \item{allScores}{
 Logical specifying whether all repeats should be returned (\code{TRUE}) or only the top scoring repeat when there are multiple overlapping matches in the same region.
 }
+  \item{maxCopies}{
+Numeric defining the maximum copy number of tandem repeat.  Since alignment complexity is quadratic in the number of repeat copies, setting a limit on the repeat copy number prevents very long repeats from becoming rate limiting.
+}
   \item{maxPeriod}{
 Numeric indicating the maximum periodicity of tandem repeats to consider.  Interspersed repeats will only be detected that are at least \code{maxPeriod} nucleotides apart.
 }
   \item{maxFailures}{
-Numeric determining the maximum number of failing attempts to extend a repeat that are permitted.  Numbers greater than zero may increase accuracy at the expense of speed, with decreasing marginal returns as \code{maxFailures} gets higher and higher.
+Numeric determining the maximum number of failing attempts to extend a repeat that are permitted.  Numbers greater than zero may increase accuracy at the expense of speed, with decreasing marginal returns as \code{maxFailures} gets higher.
 }
   \item{maxShifts}{
-Numeric determining the maximum number of failing attempts to shift a repeat left or right that are permitted.  Numbers greater than zero may increase accuracy at the expense of speed, with decreasing marginal returns as \code{maxShifts} gets higher and higher.
+Numeric determining the maximum number of failing attempts to shift a repeat left or right that are permitted.  Numbers greater than zero may increase accuracy at the expense of speed, with decreasing marginal returns as \code{maxShifts} gets higher.
 }
   \item{alphabet}{
 Character vector of amino acid groupings used to reduce the 20 standard amino acids into smaller groups.  Alphabet reduction helps to find more distant homologies between sequences.  A non-reduced amino acid alphabet can be used by setting \code{alphabet} equal to \code{AA_STANDARD}.  Only applicable if \code{myXStringSet} is an \code{AAStringSet}.
 }
   \item{useEmpirical}{
 Logical specifying whether to use empirical signals of structurally-determined tandem repeats when scoring. Empirical signals include the number of repeats, their periodicity, and their amino acid composition when \code{myXStringSet} is an \code{AAStringSet}.
+}
+  \item{correctBackground}{
+Logical controlling whether to correct the substitution matrix for the background distribution of letter frequencies on a per sequence basis.
 }
   \item{processors}{
 The number of processors to use, or \code{NULL} to automatically detect and use all available processors.
@@ -111,19 +119,15 @@ reps <- AlignSeqs(reps, verbose=FALSE) # align the repeats
 reps
 BrowseSeqs(reps)
 
-aa <- translate(dna)
-y <- DetectRepeats(aa)
-y
-
 # highlight tandem repeats in the sequence
 colors <- c("deeppink", "deepskyblue")
 colors <- lapply(colors, function(x) col2rgb(x)/255)
-cols <- vector("list", length(aa))
+cols <- vector("list", length(dna))
 for (i in seq_along(cols)) {
-	cols[[i]] <- matrix(0, nrow=3, ncol=width(aa)[i])
-	for (j in which(y[, "Index"] == i)) {
-		left <- y[[j, "Left"]]
-		right <- y[[j, "Right"]]
+	cols[[i]] <- matrix(0, nrow=3, ncol=width(dna)[i])
+	for (j in which(x[, "Index"] == i)) {
+		left <- x[[j, "Left"]]
+		right <- x[[j, "Right"]]
 		n <- 0
 		for (k in seq_along(left)) {
 			r <- left[k]:right[k]
@@ -134,7 +138,7 @@ for (i in seq_along(cols)) {
 		}
 	}
 }
-BrowseSeqs(aa, patterns=cols)
+BrowseSeqs(dna, patterns=cols)
 
 # find interspersed (rather than tandem) repeats
 data(yeastSEQCHR1)

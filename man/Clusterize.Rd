@@ -113,7 +113,7 @@ head(clusters)
 clusters <- Clusterize(aa, cutoff=0.1, invertCenters=TRUE)
 aa[clusters[[1]] < 0]
 
-# cluster each cutoff within the previous cluster (slightly faster)
+# cluster each cutoff within the previous cluster (nested groups)
 clusters <- Clusterize(aa, cutoff=seq(0.7, 0, -0.1))
 head(clusters)
 apply(clusters, 2, max) # number of clusters per cutoff
@@ -131,7 +131,7 @@ unique(aa[clusters$cluster < 0]) # unique cluster centers
 apply(clusters, 2, function(x) max(abs(x))) # number of clusters
 
 # cluster nucleotide sequences
-clusters <- Clusterize(dna, cutoff=0.5, invertCenters=TRUE)
+clusters <- Clusterize(dna, cutoff=0.2, invertCenters=TRUE)
 head(clusters)
 apply(clusters, 2, function(x) max(abs(x))) # number of clusters
 }

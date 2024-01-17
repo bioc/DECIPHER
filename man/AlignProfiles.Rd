@@ -32,7 +32,7 @@ AlignProfiles(pattern,
 An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object of aligned sequences to use as the pattern.
 }
   \item{subject}{
-A \code{XStringSet} object of aligned sequences to use as the subject.  Must match the type of the pattern.
+A \code{XStringSet} object of aligned sequences to use as the subject.  Must match the type of the \code{pattern}.
 }
   \item{p.weight}{
 A numeric vector of weights for each sequence in the pattern to use in generating a profile, or a single number implying equal weights.

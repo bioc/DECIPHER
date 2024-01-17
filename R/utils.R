@@ -20,6 +20,16 @@
 	ans
 }
 
+.extractSet <- function(x, s, e) {
+	ans <- new(paste(class(x), "Set", sep=""))
+	ans@pool@.link_to_cached_object_list <- list(x@shared@.link_to_cached_object)
+	ans@pool@xp_list <- list(x@shared@xp)
+	ans@ranges@group <- rep(1L, length(s))
+	ans@ranges@start <- as.integer(s + x@offset)
+	ans@ranges@width <- as.integer(e - s + 1L)
+	ans
+}
+
 .replace <- function(x, y, index) {
 	ans <- new(class(x))
 	ans@pool <- c(x@pool,
@@ -68,3 +78,6 @@
 	ans@ranges@width <- x@ranges@width
 	ans
 }
+
+.detectCores <- function()
+	.Call("detectCores", PACKAGE="DECIPHER")

@@ -119,8 +119,9 @@ SEXP indexByContig(SEXP starts, SEXP ends, SEXP order, SEXP index, SEXP widths)
 	return ret_list;
 }
 
-SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, SEXP y_i, SEXP y_f, SEXP weights, SEXP sepCost, SEXP gapCost, SEXP shiftCost, SEXP codingCost, SEXP maxSep, SEXP maxGap, SEXP ordering, SEXP minScore, SEXP maxW, SEXP allowOverlap)
+SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, SEXP y_i, SEXP y_f, SEXP weights, SEXP sepCost, SEXP sepPower, SEXP gapCost, SEXP gapPower, SEXP shiftCost, SEXP codingCost, SEXP maxSep, SEXP maxGap, SEXP ordering, SEXP minScore, SEXP maxW, SEXP allowOverlap)
 {
+	int i, k, max, dy, dx, sep, gap, xok, xoj;
 	int *xs = INTEGER(x_s);
 	int *xe = INTEGER(x_e);
 	int *xi = INTEGER(x_i);
@@ -131,7 +132,9 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 	int *yf = INTEGER(y_f);
 	double *we = REAL(weights);
 	double sepC = asReal(sepCost);
+	double sepP = asReal(sepPower);
 	double gapC = asReal(gapCost);
+	double gapP = asReal(gapPower);
 	double shiC = asReal(shiftCost);
 	double codC = asReal(codingCost);
 	double maxS = asReal(maxSep);
@@ -141,11 +144,21 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 	double minS = asReal(minScore);
 	int aO = asInteger(allowOverlap);
 	
+	// initialize an array of sep multipliers
+	double *SEPS = Calloc(maxS + 1, double); // initialized to zero
+	// initialize an array of gap multipliers
+	double *GAPS = Calloc(maxG + 1, double); // initialized to zero
+	for (i = 1; i <= maxS; i++)
+		SEPS[i] = pow(i, sepP);
+	for (i = 1; i <= maxG; i++)
+		GAPS[i] = pow(i, gapP);
+	
 	int l = length(x_s);
-	int i = 0;
+	i = 0;
 	int j = -1;
 	int prev = 0;
-	int k, max, dy, dx, sep, gap, xok, xoj;
+	double cost = log(totW); // cost of a single search
+	minS += cost; // require additional cost removed at end
 	double temp, score;
 	
 	// initialize an array of activities
@@ -167,7 +180,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 				prev = 0; // deactivate left
 			
 			while (prev > 0 &&
-					(xs[i] - xe[xo[j - prev + 1]]) > maxS) {
+				(xs[i] - xe[xo[j - prev + 1]]) > maxS) {
 				prev--;
 			}
 			
@@ -186,6 +199,9 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 					continue;
 				
 				dx = xs[i] - xe[xok] - 1;
+				if (dx <= 0)
+					continue;
+				
 				if (dx > dy) {
 					sep = dy;
 					gap = dx - dy;
@@ -217,8 +233,8 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 					}
 				}
 				
-				temp += sep*sepC;
-				temp += gap*gapC;
+				temp += SEPS[sep]*sepC;
+				temp += GAPS[gap]*gapC;
 				temp += S[xok];
 				//temp += we[i];
 				//if (sep > 0 && gap > 0) {
@@ -228,11 +244,11 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 				//} else if (gap > 0) {
 				//	temp -= log((double)gap);
 				//}
-				if (xf[xok] == 0) { // nucleotide hit
-					temp -= log((double)(sep + gap + 1)/(xe[xok] - xs[xok] + 1)*totW);
-				} else {
-					temp -= log((double)(sep + gap + 1)/(xe[xok] - xs[xok] + 1)*totW/3);
-				}
+				//if (xf[xok] == 0) { // nucleotide hit
+				//	temp -= log((double)(sep + gap + 1)/(xe[xok] - xs[xok] + 1)*totW);
+				//} else {
+				//	temp -= log((double)(sep + gap + 1)/(xe[xok] - xs[xok] + 1)*totW/3);
+				//}
 				
 				if (temp > score) {
 					max = xok;
@@ -290,6 +306,9 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 			prev++;
 		}
 	}
+	
+	Free(SEPS);
+	Free(GAPS);
 	
 	int count = 0;
 	int *p;
@@ -623,7 +642,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 		SET_VECTOR_ELT(chains, i, chain);
 		UNPROTECT(1);
 		
-		pcs[i] = scores[i];
+		pcs[i] = scores[i] - cost; // apply cost for first search
 	}
 	
 	Free(ptrs);

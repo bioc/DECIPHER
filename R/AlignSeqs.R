@@ -111,7 +111,7 @@ AlignSeqs <- function(myXStringSet,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- detectCores()
+		processors <- .detectCores()
 	} else {
 		processors <- as.integer(processors)
 	}
@@ -431,6 +431,7 @@ AlignSeqs <- function(myXStringSet,
 				wordSize,
 				alphabet,
 				FALSE, # mask repeats
+				FALSE, # mask low complexity regions
 				processors,
 				PACKAGE="DECIPHER")
 		} else { # DNAStringSet or RNAStringSet
@@ -438,6 +439,7 @@ AlignSeqs <- function(myXStringSet,
 				myXStringSet,
 				wordSize,
 				FALSE, # mask repeats
+				FALSE, # mask low complexity regions
 				processors,
 				PACKAGE="DECIPHER")
 		}

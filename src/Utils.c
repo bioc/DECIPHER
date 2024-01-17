@@ -3,6 +3,11 @@
  *                           Author: Erik Wright                            *
  ****************************************************************************/
 
+ // for OpenMP parallel processing
+ #ifdef _OPENMP
+ #include <omp.h>
+ #endif
+
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
  * GET_DIM(), LOGICAL(), NEW_INTEGER(), PROTECT() and UNPROTECT() macros,
@@ -21,11 +26,6 @@
 
 // for math functions
 #include <math.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 // for calloc/free
 #include <stdlib.h>
@@ -1390,4 +1390,22 @@ SEXP indexPartitions(SEXP order, SEXP partition, SEXP keep)
 	UNPROTECT(3);
 	
 	return ret_list;
+}
+
+// detect the number of available cores
+SEXP detectCores()
+{
+	SEXP ans;
+	PROTECT(ans = allocVector(INTSXP, 1));
+	int *rans = INTEGER(ans);
+	
+	#ifdef _OPENMP
+	rans[0] = omp_get_num_procs();
+	#else
+	rans[0] = 1;
+	#endif
+	
+	UNPROTECT(1);
+	
+	return ans;
 }
