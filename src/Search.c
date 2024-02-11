@@ -33,11 +33,18 @@
 // for time and difftime
 #include <time.h>
 
+/*
+ * Biostrings_interface.h is needed for the DNAencode(), get_XString_asRoSeq(),
+ * init_match_reporting(), report_match() and reported_matches_asSEXP()
+ * protoypes, and for the COUNT_MRMODE and START_MRMODE constant symbols.
+ */
+#include "Biostrings_interface.h"
+
 // DECIPHER header file
 #include "DECIPHER.h"
 
 // returns hits between queries and targets in an inverted index
-SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP output, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP verbose, SEXP pBar, SEXP nThreads)
+SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP output, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP pattern, SEXP subject, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP verbose, SEXP pBar, SEXP nThreads)
 {
 	int i, j, k, p, c;
 	int n = length(query); // number of sequences in the query
@@ -55,6 +62,33 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 	double minS = asReal(minScore); // minimum score or NA to calculate
 	int sO = asInteger(scoreOnly); // FALSE to output anchor positions
 	int nthreads = asInteger(nThreads);
+	
+	// if subMatrix provided then query/target sequences present
+	XStringSet_holder p_set, s_set, l_set;
+	Chars_holder l_i;
+	double *sM, dS;
+	int *lkup_row, *lkup_col;
+	int sizeM = length(subMatrix);
+	if (sizeM > 0) {
+		l_set = hold_XStringSet(letters);
+		l_i = get_elt_from_XStringSet_holder(&l_set, 0);
+		if (l_i.length*l_i.length != sizeM)
+			error("Incorrect size of substitutionMatrix.");
+		sM = REAL(subMatrix);
+		dS = asReal(dropScore);
+		p_set = hold_XStringSet(pattern);
+		s_set = hold_XStringSet(subject);
+		lkup_row = (int *) malloc(256*sizeof(int)); // thread-safe on Windows
+		lkup_col = (int *) malloc(256*sizeof(int)); // thread-safe on Windows
+		for (i = 0; i < 256; i++) {
+			lkup_row[i] = NA_INTEGER;
+			lkup_col[i] = NA_INTEGER;
+		}
+		for (i = 0; i < l_i.length; i++) {
+			lkup_row[(unsigned char)l_i.ptr[i]] = i;
+			lkup_col[(unsigned char)l_i.ptr[i]] = i*l_i.length;
+		}
+	}
 	
 	// set up a timer to minimize interrupt checks
 	time_t start, end;
@@ -367,6 +401,123 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 			len = len2;
 			score = score2;
 			
+			double prevScore, tempScore;
+			int gap, sep;
+			if (sizeM > 0) { // rescore and extend hits
+				Chars_holder p_i, s_j;
+				p_i = get_elt_from_XStringSet_holder(&p_set, i);
+				int lkup1, lkup2; // index in substitution matrix
+				int p1, p2; // position in query or target
+				int prev = 0; // index previous sequence in target
+				int bound; // boundary in target sequence
+				for (j = 0; j < s; j++) {
+					if (prev != set[j]) {
+						s_j = get_elt_from_XStringSet_holder(&s_set, set[j] - 1);
+						prev = set[j];
+					}
+					
+					// rescore match
+					score[j] = 0;
+					p1 = posQuery[j] + len[j] - 1;
+					p2 = posTarget[j] + len[j] - 1;
+					while (p1 >= posQuery[j]) {
+						p1--;
+						p2--;
+						lkup1 = lkup_row[(unsigned char)p_i.ptr[p1]]; // never NA
+						lkup2 = lkup_col[(unsigned char)s_j.ptr[p2]]; // never NA
+						score[j] += sM[lkup1 + lkup2];
+					}
+					
+					// try extending left
+					k = j - 1;
+					bound = 0; // left bound
+					sep = maxSep; // minimum gap size
+					while (k >= 0 && set[k] == set[j]) {
+						deltaTarget = posTarget[j] - posTarget[k] - len[k];
+						if (deltaTarget >= maxSep) {
+							break;
+						} else if (deltaTarget >= 0) {
+							deltaQuery = posQuery[j] - posQuery[k] - len[k];
+							if (deltaQuery >= 0 && deltaQuery <= maxSep) {
+								if (deltaQuery > deltaTarget) {
+									gap = deltaQuery - deltaTarget;
+								} else {
+									gap = deltaTarget - deltaQuery;
+								}
+								if (gap < sep) { // new minimum gaps
+									bound = posTarget[k] + len[k];
+									sep = gap;
+								}
+							}
+						}
+						k--;
+					}
+					tempScore = 0;
+					while (p1 > 0 && p2 > bound && tempScore > dS) {
+						p1--;
+						p2--;
+						lkup1 = lkup_row[(unsigned char)p_i.ptr[p1]];
+						lkup2 = lkup_col[(unsigned char)s_j.ptr[p2]];
+						if (lkup1 != NA_INTEGER && lkup2 != NA_INTEGER) {
+							tempScore += sM[lkup1 + lkup2];
+						} else { // encountered missing character
+							break;
+						}
+						if (tempScore > 0) { // new max score
+							score[j] += tempScore;
+							tempScore = 0;
+							len[j] += posQuery[j] - p1 - 1;
+							posQuery[j] = p1 + 1;
+							posTarget[j] = p2 + 1;
+						}
+					}
+					
+					// try extending right
+					k = j + 1;
+					bound = s_j.length - 1; // right bound
+					sep = maxSep; // minimum gap size
+					while (k < s && set[k] == set[j]) {
+						deltaTarget = posTarget[k] - posTarget[j] - len[j];
+						if (deltaTarget >= maxSep) {
+							break;
+						} else if (deltaTarget >= 0) {
+							deltaQuery = posQuery[k] - posQuery[j] - len[j];
+							if (deltaQuery >= 0 && deltaQuery <= maxSep) {
+								if (deltaQuery > deltaTarget) {
+									gap = deltaQuery - deltaTarget;
+								} else {
+									gap = deltaTarget - deltaQuery;
+								}
+								if (gap < sep) { // new minimum gaps
+									bound = posTarget[k] - 2;
+									sep = gap;
+								}
+							}
+						}
+						k++;
+					}
+					tempScore = 0;
+					p1 = posQuery[j] + len[j] - 1;
+					p2 = posTarget[j] + len[j] - 1;
+					while (p1 < p_i.length && p2 <= bound && tempScore > dS) {
+						lkup1 = lkup_row[(unsigned char)p_i.ptr[p1]];
+						lkup2 = lkup_col[(unsigned char)s_j.ptr[p2]];
+						if (lkup1 != NA_INTEGER && lkup2 != NA_INTEGER) {
+							tempScore += sM[lkup1 + lkup2];
+						} else { // encountered missing character
+							break;
+						}
+						if (tempScore > 0) { // new max score
+							score[j] += tempScore;
+							tempScore = 0;
+							len[j] = p1 - posQuery[j] + 2;
+						}
+						p1++;
+						p2++;
+					}
+				}
+			}
+			
 			// determine significance of occurrences
 			int *chain = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
 			origin = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
@@ -378,8 +529,6 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 			}
 			j = 0; // last hit
 			k = 1; // current hit
-			double prevScore, tempScore;
-			int gap, sep;
 			while (k < s) {
 				if (set[k] != set[j]) { // switched index
 					j = k;
@@ -614,6 +763,10 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 	free(offset);
 	free(sepCost);
 	free(gapCost);
+	if (sizeM > 0) {
+		free(lkup_row);
+		free(lkup_col);
+	}
 	
 	int **anchors; // pointers to anchor positions
 	if (abort != 0) { // release memory

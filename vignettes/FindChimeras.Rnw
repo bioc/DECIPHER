@@ -109,7 +109,7 @@ Below is an example of building a reference database \textit{de novo} from a FAS
 
 \begin{Schunk}
 \begin{Sinput}
-> dbRef <- dbConnect(SQLite(), "<<path to reference database>>")
+> dbRef <- dbConnect(dbDriver("SQLite"), "<<path to reference database>>")
 > Seqs2DB("<<path to reference sequences>>", "FASTA", dbRef, "")
 645151 total sequences in table Seqs.
 Time difference of 172.81 secs
@@ -198,7 +198,7 @@ trainingSet <- LearnTaxa(dna, ids)
 Chimera finding requires two database tables, one for the reference sequences and one for the query sequences.  Now that we have finished creating the chimera-free reference sequence database and training a classifer to its taxonomy, it is not time to make the query sequence database.  This can be accomplished by specifying a new table within the reference sequence database or creating a new database file for the query sequences, as shown here.
 
 <<expr3,eval=FALSE>>=
-dbConn <- dbConnect(SQLite(), '<<path to query database>>')
+dbConn <- dbConnect(dbDriver("SQLite"), '<<path to query database>>')
 Seqs2DB('<<path to query sequences>>', 'FASTA', dbConn, '')
 @
 

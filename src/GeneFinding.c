@@ -2,6 +2,11 @@
  *                      Utilities for Gene Prediction                       *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
+ 
+ // for OpenMP parallel processing
+ #ifdef _OPENMP
+ #include <omp.h>
+ #endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -21,11 +26,6 @@
 
 // for math functions
 #include <math.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 // for calloc/free
 #include <stdlib.h>
@@ -3278,7 +3278,9 @@ SEXP scorePWM(SEXP pwm, SEXP x, SEXP minScore, SEXP nThreads)
 	x_holder = hold_XRaw(x);
 	
 	double *scores = calloc(x_holder.length, sizeof(double));
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,k,lkup) num_threads(nthreads)
+	#endif
 	for (i = 0; i < x_holder.length - l + 1; i++) {
 		for (j = i, k = 0; j < i + l; j++, k += 4) {
 			lkup = lookup[(int)x_holder.ptr[j]];
@@ -3356,7 +3358,9 @@ SEXP scoreTopPWM(SEXP pwm, SEXP x, SEXP begin, SEXP positions, SEXP nThreads)
 	PROTECT(ans = allocVector(REALSXP, l1));
 	double *rans = REAL(ans);
 	
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,k,m,lkup,score) num_threads(nthreads)
+	#endif
 	for (i = 0; i < l1; i++) {
 		rans[i] = -1e53;
 		
@@ -3396,7 +3400,9 @@ SEXP dist(SEXP x, SEXP nThreads)
 		PROTECT(ans = allocVector(REALSXP, nrow*(nrow - 1)/2));
 		double *rans = REAL(ans);
 		
+		#ifdef _OPENMP
 		#pragma omp parallel for private(i,j,k,d,m) num_threads(nthreads)
+		#endif
 		for (i = 0; i < nrow; i++) {
 			for (j = i + 1; j < nrow; j++) {
 				d = 0;

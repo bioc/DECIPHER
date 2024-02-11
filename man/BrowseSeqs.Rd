@@ -8,7 +8,7 @@ Opens an html file in a web browser to show the sequences in an \code{XStringSet
 }
 \usage{
 BrowseSeqs(myXStringSet,
-           htmlFile = paste(tempdir(), "/myXStringSet.html", sep = ""),
+           htmlFile = tempfile(fileext=".html"),
            openURL = interactive(),
            colorPatterns = TRUE,
            highlight = NA,
@@ -74,8 +74,8 @@ Some web browsers do not display colored characters with equal widths.  If posit
 }
 \examples{
 # load the example DNA sequences
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-dna <- SearchDB(db) # non-coding ribosomal RNA gene sequences
+fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
+dna <- readDNAStringSet(fas) # non-coding ribosomal RNA gene sequences
 
 # example of using the defaults with DNA sequences
 BrowseSeqs(dna) # view the XStringSet

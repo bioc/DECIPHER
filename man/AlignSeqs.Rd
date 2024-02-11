@@ -90,8 +90,9 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{AdjustAlignment}}, \code{\link{AlignDB}}, \code{\link{AlignProfiles}}, \code{\link{AlignSynteny}}, \code{\link{AlignTranslation}}, \code{\link{ReadDendrogram}}, \code{\link{TreeLine}}, \code{\link{StaggerAlignment}}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-dna <- SearchDB(db, remove="all")
+fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
+dna <- readDNAStringSet(fas)
+dna <- RemoveGaps(dna)
 alignedDNA <- AlignSeqs(dna)
 BrowseSeqs(alignedDNA, highlight=1)
 

@@ -1,5 +1,5 @@
 BrowseSeqs <- function(myXStringSet,
-	htmlFile=paste(tempdir(),"/myXStringSet.html",sep=""),
+	htmlFile=tempfile(fileext=".html"),
 	openURL=interactive(),
 	colorPatterns=TRUE,
 	highlight=NA,

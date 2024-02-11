@@ -1,8 +1,8 @@
-IndexSeqs <- function(myXStringSet,
+IndexSeqs <- function(subject,
 	K,
 	sensitivity,
 	percentIdentity,
-	queryLength,
+	patternLength,
 	step=1,
 	alphabet=AA_REDUCED[[171]],
 	maskRepeats=TRUE,
@@ -12,19 +12,19 @@ IndexSeqs <- function(myXStringSet,
 	verbose=TRUE) {
 	
 	# error checking
-	if (is(myXStringSet, "DNAStringSet")) {
+	if (is(subject, "DNAStringSet")) {
 		xtype <- 1L
 		
 		alphabet <- setNames(0L:3L, DNA_BASES)
 		size <- 4 # alphabet size
 		maxK <- 15L
-	} else if (is(myXStringSet, "RNAStringSet")) {
+	} else if (is(subject, "RNAStringSet")) {
 		xtype <- 2L
 		
 		alphabet <- setNames(0L:3L, RNA_BASES)
 		size <- 4 # alphabet size
 		maxK <- 15L
-	} else if (is(myXStringSet, "AAStringSet")) {
+	} else if (is(subject, "AAStringSet")) {
 		xtype <- 3L
 		
 		if (!is.character(alphabet))
@@ -56,13 +56,13 @@ IndexSeqs <- function(myXStringSet,
 		alphabet <- alphabet - 1L
 		maxK <- as.integer(log(2147483647L, size)) # 2147483647L == 2^31 - 1
 	} else {
-		stop("myXStringSet must be an AAStringSet, DNAStringSet, or RNAStringSet.")
+		stop("subject must be an AAStringSet, DNAStringSet, or RNAStringSet.")
 	}
-	l <- length(myXStringSet)
+	l <- length(subject)
 	if (l == 0L)
-		stop("myXStringSet must contain at least one sequence.")
+		stop("subject must contain at least one sequence.")
 	if (l > 2147483647L) # 2^31 - 1 == 2147483647
-		stop("myXStringSet can contain at most 2,147,483,647 sequences.")
+		stop("subject can contain at most 2,147,483,647 sequences.")
 	if (step < 1)
 		stop("step must be at least 1.")
 	if (step != floor(step))
@@ -92,32 +92,32 @@ IndexSeqs <- function(myXStringSet,
 	}
 	
 	if (missing(K)) {
-		if (missing(queryLength))
-			stop("queryLength must be specified if K is not specified.")
+		if (missing(patternLength))
+			stop("patternLength must be specified if K is not specified.")
 		if (missing(sensitivity))
 			stop("sensitivity must be specified if K is not specified.")
 		if (missing(percentIdentity))
 			stop("percentIdentity must be specified if K is not specified.")
-		if (length(queryLength) != 1L)
-			stop("queryLength must be a single number.")
+		if (length(patternLength) != 1L)
+			stop("patternLength must be a single number.")
 		if (length(sensitivity) != 1L)
 			stop("sensitivity must be a single number.")
 		if (length(percentIdentity) != 1L)
 			stop("percentIdentity must be a single number.")
-		if (!is.numeric(queryLength))
-			stop("queryLength must be a numeric.")
+		if (!is.numeric(patternLength))
+			stop("patternLength must be a numeric.")
 		if (!is.numeric(sensitivity))
 			stop("sensitivity must be a numeric.")
 		if (!is.numeric(percentIdentity))
 			stop("percentIdentity must be a numeric.")
-		if (is.na(queryLength))
-			stop("queryLength cannot be NA.")
+		if (is.na(patternLength))
+			stop("patternLength cannot be NA.")
 		if (is.na(sensitivity))
 			stop("sensitivity cannot be NA.")
 		if (is.na(percentIdentity))
 			stop("percentIdentity cannot be NA.")
-		if (queryLength < 15L)
-			stop("queryLength must be at least 15.")
+		if (patternLength < 15L)
+			stop("patternLength must be at least 15.")
 		if (sensitivity < 0.5)
 			stop("sensitivity must be at least 0.5.")
 		if (sensitivity >= 1)
@@ -126,11 +126,11 @@ IndexSeqs <- function(myXStringSet,
 			stop("percentIdentity must be greater than 1.")
 		if (percentIdentity > 100)
 			stop("percentIdentity must be less than 100.")
-		K <- ceiling(queryLength/step*log(1 - exp(log(percentIdentity/100)*log(queryLength*max(width(myXStringSet))/step)/log(size)))/log(1 - sensitivity))
+		K <- ceiling(patternLength/step*log(1 - exp(log(percentIdentity/100)*log(patternLength*max(width(subject))/step)/log(size)))/log(1 - sensitivity))
 		if (K > maxK) {
 			K <- maxK
 		} else if (K < 2) {
-			stop("The desired sensitivity is unachievable at the specified percentIdentity for queries of queryLength.")
+			stop("The desired sensitivity is unachievable at the specified percentIdentity for queries of patternLength.")
 		} else if (K < step) {
 			stop("The desired sensitivity is unachievable with the specified step.")
 		}
@@ -157,7 +157,7 @@ IndexSeqs <- function(myXStringSet,
 	num <- integer(L) # assumes fewer than 2^31 hits per k-mer
 	
 	# process k-mers in batches to conserve memory
-	cum_pos <- cumsum(as.double(width(myXStringSet)))
+	cum_pos <- cumsum(as.double(width(subject)))
 	if (verbose) {
 		pBar <- txtProgressBar(max=ifelse(cum_pos[l] <= batchSize, cum_pos[l], 2*cum_pos[l]), style=ifelse(interactive(), 3, 1))
 		time.1 <- Sys.time()
@@ -176,7 +176,7 @@ IndexSeqs <- function(myXStringSet,
 		
 		if (xtype == 3L) {
 			kmers <- .Call("enumerateSequenceReducedAA",
-				myXStringSet[prev:N],
+				subject[prev:N],
 				K,
 				alphabet,
 				maskRepeats,
@@ -185,7 +185,7 @@ IndexSeqs <- function(myXStringSet,
 				PACKAGE="DECIPHER")
 		} else {
 			kmers <- .Call("enumerateSequence",
-				myXStringSet[prev:N],
+				subject[prev:N],
 				K,
 				maskRepeats,
 				maskLCRs,
@@ -243,7 +243,7 @@ IndexSeqs <- function(myXStringSet,
 			
 			if (xtype == 3L) {
 				kmers <- .Call("enumerateSequenceReducedAA",
-					myXStringSet[prev:N],
+					subject[prev:N],
 					K,
 					alphabet,
 					maskRepeats,
@@ -252,7 +252,7 @@ IndexSeqs <- function(myXStringSet,
 					PACKAGE="DECIPHER")
 			} else {
 				kmers <- .Call("enumerateSequence",
-					myXStringSet[prev:N],
+					subject[prev:N],
 					K,
 					maskRepeats,
 					maskLCRs,

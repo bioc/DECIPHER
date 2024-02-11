@@ -24,7 +24,7 @@ SearchDB(dbFile,
 }
 \arguments{
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file.
+A database connection object or a character string specifying the path to a SQLite database file.
 }
   \item{tblName}{
 Character string specifying the table where the sequences are located.
@@ -82,14 +82,14 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{Seqs2DB}}, \code{\link{DB2Seqs}}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-# get all sequences in the default table:
-dna <- SearchDB(db)
-# select a random sequence:
-dna <- SearchDB(db, orderBy="random()", limit=1)
-# remove gaps from "Mycobacterium" sequences:
-dna <- SearchDB(db, identifier="Mycobacterium", removeGaps="all")
-# provide a more complex query:
-dna <- SearchDB(db, nameBy="description", orderBy="bases", removeGaps="common",
-                clause="nonbases is 0")
+if (require("RSQLite", quietly=TRUE)) {
+	db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
+	# get all sequences in the default table:
+	dna <- SearchDB(db)
+	# remove gaps from "Sphingomonadales" sequences:
+	dna <- SearchDB(db, identifier="Sphingomonadales", removeGaps="all")
+	# provide a more complex query:
+	dna <- SearchDB(db, nameBy="description", orderBy="standard", removeGaps="common",
+	                clause="nonstandard is 0")
+}
 }

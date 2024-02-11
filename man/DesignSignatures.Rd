@@ -39,7 +39,7 @@ DesignSignatures(dbFile,
 }
 \arguments{
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file.
+A database connection object or a character string specifying the path to a SQLite database file.
 }
   \item{tblName}{
 Character string specifying the table where the DNA sequences are located.
@@ -146,45 +146,47 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{AmplifyDNA}}, \code{\link{CalculateEfficiencyPCR}}, \code{\link{DesignPrimers}}, \code{\link{DigestDNA}}, \code{\link{Disambiguate}}, \code{\link{MeltDNA}}, \code{\link{RESTRICTION_ENZYMES}}
 }
 \examples{
-# below are suggested inputs for different types of experiments
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-
-\dontrun{
-# High Resolution Melt (HRM) assay:
-primers <- DesignSignatures(db,
-           resolution=seq(75, 100, 0.25), # degrees Celsius
-           minProductSize=55, # base pairs
-           maxProductSize=400)
-
-# Primers for next-generation sequencing:
-primers <- DesignSignatures(db,
-           type="sequence",
-           minProductSize=300, # base pairs
-           maxProductSize=700,
-           resolution=5, # 5-mers
-           levels=5)
-
-# Primers for community fingerprinting:
-primers <- DesignSignatures(db,
-           type="length",
-           levels=2, # presence/absence
-           minProductSize=200, # base pairs
-           maxProductSize=1400,
-           resolution=c(seq(200, 700, 3),
-                        seq(705, 1000, 5),
-                        seq(1010, 1400, 10)))
-
-# Primers for restriction fragment length polymorphism (RFLP):
-data(RESTRICTION_ENZYMES)
-myEnzymes <- RESTRICTION_ENZYMES[c("EcoRI", "HinfI", "SalI")]
-primers <- DesignSignatures(db,
-           type="length",
-           levels=2, # presence/absence
-           minProductSize=200, # base pairs
-           maxProductSize=600,
-           resolution=c(seq(50, 100, 3),
-                        seq(105, 200, 5),
-                        seq(210, 600, 10)),
-           enzymes=myEnzymes)
+if (require("RSQLite", quietly=TRUE)) {
+	# below are suggested inputs for different types of experiments
+	db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
+	
+	\dontrun{
+	# High Resolution Melt (HRM) assay:
+	primers <- DesignSignatures(db,
+	           resolution=seq(75, 100, 0.25), # degrees Celsius
+	           minProductSize=55, # base pairs
+	           maxProductSize=400)
+	
+	# Primers for next-generation sequencing:
+	primers <- DesignSignatures(db,
+	           type="sequence",
+	           minProductSize=300, # base pairs
+	           maxProductSize=700,
+	           resolution=5, # 5-mers
+	           levels=5)
+	
+	# Primers for community fingerprinting:
+	primers <- DesignSignatures(db,
+	           type="length",
+	           levels=2, # presence/absence
+	           minProductSize=200, # base pairs
+	           maxProductSize=1400,
+	           resolution=c(seq(200, 700, 3),
+	                        seq(705, 1000, 5),
+	                        seq(1010, 1400, 10)))
+	
+	# Primers for restriction fragment length polymorphism (RFLP):
+	data(RESTRICTION_ENZYMES)
+	myEnzymes <- RESTRICTION_ENZYMES[c("EcoRI", "HinfI", "SalI")]
+	primers <- DesignSignatures(db,
+	           type="length",
+	           levels=2, # presence/absence
+	           minProductSize=200, # base pairs
+	           maxProductSize=600,
+	           resolution=c(seq(50, 100, 3),
+	                        seq(105, 200, 5),
+	                        seq(210, 600, 10)),
+	           enzymes=myEnzymes)
+	}
 }
 }

@@ -307,18 +307,14 @@ AlignSeqs <- function(myXStringSet,
 		if (length(w) == 1L) {
 			sM <- args[[w]]
 			args[w] <- NULL
-			if (is.character(sM)) {
-				if (!(sM %in% c("BLOSUM45", "BLOSUM50", "BLOSUM62", "BLOSUM80", "BLOSUM100", "PAM30", "PAM40", "PAM70", "PAM120", "PAM250", "MIQS")))
-					stop("Invalid substitutionMatrix.")
-			}
 			AAs <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I",
 				"L", "K", "M", "F", "P", "S", "T", "W", "Y", "V", "*")
-			if (is.matrix(sM)) {
+			if (is.character(sM)) {
+				sM <- .getSubMatrix(sM)
+			} else if (is.matrix(sM)) {
 				if (any(!(AAs %in% dimnames(sM)[[1]])) ||
 					any(!(AAs %in% dimnames(sM)[[2]])))
 					stop("substitutionMatrix is incomplete.")
-			} else {
-				sM <- eval(parse(text=data(list=sM, envir=environment(), package=ifelse(sM == "MIQS", "DECIPHER", "Biostrings"))))
 			}
 			sM <- sM[AAs, AAs]
 			sM <- sM + 0 # convert to numeric matrix

@@ -11,28 +11,29 @@ FindSynteny(dbFile,
             tblName = "Seqs",
             identifier = "",
             useFrames = TRUE,
-            alphabet = AA_REDUCED[[12]],
+            alphabet = AA_REDUCED[[173]],
             geneticCode = GENETIC_CODE,
-            sepCost = -0.5,
+            sepCost = -3,
             sepPower = 0.5,
             gapCost = -5,
             gapPower = 0.5,
             shiftCost = 0,
             codingCost = 0,
-            maxSep = 500,
-            maxGap = 100,
-            minScore = 20,
-            dropScore = -100,
+            maxSep = 200,
+            maxGap = 300,
+            minScore = 100,
+            N = 10,
+            dropScore = -5,
             maskRepeats = TRUE,
             maskLCRs = TRUE,
-            allowOverlap = TRUE,
+            allowOverlap = FALSE,
             storage = 0.5,
             processors = 1,
             verbose = TRUE)
 }
 \arguments{
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file.
+A database connection object or a character string specifying the path to a SQLite database file.  The database should contain DNA sequences, typically with a distinct \code{identifier} for sequences belonging to each genome or chromosome.
 }
   \item{tblName}{
 Character string specifying the table where the sequences are located.
@@ -76,6 +77,9 @@ The maximum number of gaps between hits in the same block.
   \item{minScore}{
 The minimum score required for a chain of hits to become a block.  Higher values of \code{minScore} are less likely to yield false positives.
 }
+  \item{N}{
+Numeric indicating the approximate number of k-mers that can be randomly selected before one is found by chance on average.  For example, the default value of \code{10} will set k-mer length such that every 10th k-mer is expected to have a match by chance.
+}
   \item{dropScore}{
 The change from maximal score required to stop extending blocks.
 }
@@ -108,14 +112,16 @@ An object of class ``Synteny''.
 Erik Wright \email{eswright@pitt.edu}
 }
 \note{
-\code{FindSynteny} is intended to be used on sets of sequences with up to ~100 million nucleotides total per identifier.  For this reason, better performance can sometimes be achieved by assigning a unique identifier to each chromosome belonging to a large genome.
+\code{FindSynteny} is intended to be used on sets of sequences with up to ~200 million nucleotides total per identifier.  For this reason, better performance can sometimes be achieved by assigning a unique identifier to each chromosome belonging to a large genome.
 }
 \seealso{
 \code{\link{AlignSynteny}}, \code{\link{Synteny-class}}
 }
 \examples{
-db <- system.file("extdata", "Influenza.sqlite", package="DECIPHER")
-synteny <- FindSynteny(db)
-synteny
-pairs(synteny) # scatterplot matrix
+if (require("RSQLite", quietly=TRUE)) {
+	db <- system.file("extdata", "Influenza.sqlite", package="DECIPHER")
+	synteny <- FindSynteny(db)
+	synteny
+	pairs(synteny) # scatterplot matrix
+}
 }

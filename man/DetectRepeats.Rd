@@ -144,6 +144,8 @@ BrowseSeqs(dna, patterns=cols)
 data(yeastSEQCHR1)
 chr1 <- DNAStringSet(yeastSEQCHR1)
 
-z <- DetectRepeats(chr1, type="interspersed")
-z
+if (require("RSQLite", quietly=TRUE)) {
+	z <- DetectRepeats(chr1, type="interspersed")
+	z
+}
 }

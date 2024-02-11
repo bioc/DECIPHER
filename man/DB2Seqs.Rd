@@ -31,7 +31,7 @@ DB2Seqs(file,
 Character string giving the location where the file should be written.
 }
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file.
+A database connection object or a character string specifying the path to a SQLite database file.
 }
   \item{tblName}{
 Character string specifying the table in which to extract the data.
@@ -99,9 +99,11 @@ ES Wright (2016) "Using DECIPHER v2.0 to Analyze Big Biological Sequence Data in
 Erik Wright \email{eswright@pitt.edu}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-tf <- tempfile()
-DB2Seqs(tf, db, limit=10)
-file.show(tf) # press 'q' to exit
-unlink(tf)
+if (require("RSQLite", quietly=TRUE)) {
+	db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
+	tf <- tempfile()
+	DB2Seqs(tf, db, limit=10)
+	file.show(tf) # press 'q' to exit
+	unlink(tf)
+}
 }

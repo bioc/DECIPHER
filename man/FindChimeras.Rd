@@ -30,7 +30,7 @@ FindChimeras(dbFile,
 }
 \arguments{
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file to be checked for chimeric sequences.
+A database connection object or a character string specifying the path to a SQLite database file to be checked for chimeric sequences.
 }
   \item{tblName}{
 Character string specifying the table in which to check for chimeras.
@@ -39,7 +39,7 @@ Character string specifying the table in which to check for chimeras.
 Optional character string used to narrow the search results to those matching a specific identifier.  If "" then all identifiers are selected.
 }
   \item{dbFileReference}{
-A SQLite connection object or a character string specifying the path to the reference database file of (presumed to be) good quality sequences.  A 16S reference database is available from \url{http://DECIPHER.codes}.
+A database connection object or a character string specifying the path to a SQLite reference database file of (presumed to be) good quality sequences.  A 16S reference database is available from \url{http://DECIPHER.codes}.
 }
   \item{tblNameReference}{
 Character string specifying the table with reference sequences.
@@ -114,8 +114,10 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{CreateChimeras}}, \code{\link{Add2DB}}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-# It is necessary to set dbFileReference to the file path of the
-# 16S reference database available from http://DECIPHER.codes
-chimeras <- FindChimeras(db, dbFileReference=db)
+if (require("RSQLite", quietly=TRUE)) {
+	db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
+	# It is necessary to set dbFileReference to the file path of the
+	# 16S reference database available from http://DECIPHER.codes
+	chimeras <- FindChimeras(db, dbFileReference=db)
+}
 }

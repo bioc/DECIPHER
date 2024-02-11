@@ -230,7 +230,9 @@ SEXP matchListsDual(SEXP x, SEXP y, SEXP verbose, SEXP pBar, SEXP nThreads)
 	}
 	
 	for (i = 0; i < size_x; i++) {
+		#ifdef _OPENMP
 		#pragma omp parallel for private(j, o, p, start, count, X, Y, lx, ly) schedule(guided) num_threads(nthreads)
+		#endif
 		for (j = 0; j < size_y; j++) {
 			X = INTEGER(VECTOR_ELT(x, i));
 			Y = INTEGER(VECTOR_ELT(y, j));
@@ -332,7 +334,9 @@ SEXP matchOrder(SEXP x, SEXP verbose, SEXP pBar, SEXP nThreads)
 	}
 	
 	for (i = 0; i < size_x; i++) {
+		#ifdef _OPENMP
 		#pragma omp parallel for private(j, X, Y, lx, ly) schedule(guided) num_threads(nthreads)
+		#endif
 		for (j = i + 1; j < size_x; j++) {
 			X = INTEGER(VECTOR_ELT(x, i));
 			Y = INTEGER(VECTOR_ELT(x, j));
@@ -651,7 +655,7 @@ SEXP intMatchSelfOnce(SEXP x, SEXP o1)
 	int *v = INTEGER(x);
 	int *p = INTEGER(o1);
 	
-	int i, j, k, temp, start = 0;
+	int i, j, k, temp;
 	int size_x = length(x);
 	
 	SEXP ans;
@@ -668,16 +672,13 @@ SEXP intMatchSelfOnce(SEXP x, SEXP o1)
 		temp = NA_INTEGER;
 		for (j = i + 1; j < size_x; j++) {
 			if (v[p[i]] < v[p[j]]) {
-				start = j;
 				break;
 			} else if (v[p[i]] == v[p[j]]) {
 				k = j + 1;
 				if (k < size_x &&
 					v[p[j]] == v[p[k]]) {
-					start = k; // prevent repeated matching
 					temp = j;
 				} else {
-					start = j; // allow repeated matching
 					temp = j;
 				}
 				break;
@@ -765,11 +766,15 @@ SEXP matchOverlap(SEXP x, SEXP y, SEXP v, SEXP wordSize, SEXP nThreads)
 	int *N = (int *) calloc(l, sizeof(int)); // initialized to zero (thread-safe on Windows)
 	int **keeps = (int **) calloc(l, sizeof(int *)); // initialized to zero (thread-safe on Windows)
 	
+	#ifdef _OPENMP
 	#pragma omp parallel num_threads(nthreads)
 	{
+	#endif
 		int *m = (int *) calloc(maxX, sizeof(int)); // initialized to zero (thread-safe on Windows)
 		
+		#ifdef _OPENMP
 		#pragma omp for private(i,j,k,n,p,new,t,keep)
+		#endif
 		for (i = 0; i < l; i++) {
 			int *Y = pY[i];
 			int *OY = pOY[i];
@@ -918,7 +923,9 @@ SEXP matchOverlap(SEXP x, SEXP y, SEXP v, SEXP wordSize, SEXP nThreads)
 		}
 		
 		free(m);
+	#ifdef _OPENMP
 	}
+	#endif
 	free(ox);
 	free(pY);
 	free(pOY);
@@ -998,7 +1005,9 @@ SEXP countHits(SEXP x, SEXP v, SEXP nThreads)
 	PROTECT(ans = allocVector(INTSXP, l));
 	int *rans = INTEGER(ans);
 	
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,k) num_threads(nthreads)
+	#endif
 	for (i = 0; i < l; i++) {
 		int *Y = pY[i];
 		

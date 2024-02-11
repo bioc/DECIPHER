@@ -92,10 +92,8 @@ CorrectFrameshifts <- function(myXStringSet,
 				nrow=21,
 				ncol=21,
 				dimnames=list(AAs, AAs))
-		} else if (substitutionMatrix %in% c("BLOSUM45", "BLOSUM50", "BLOSUM62", "BLOSUM80", "BLOSUM100", "PAM30", "PAM40", "PAM70", "PAM120", "PAM250", "MIQS")) {
-			subMatrix <- eval(parse(text=data(list=substitutionMatrix, envir=environment(), package=ifelse(substitutionMatrix == "MIQS", "DECIPHER", "Biostrings"))))
 		} else {
-			stop("Invalid substitutionMatrix.")
+			subMatrix <- .getSubMatrix(substitutionMatrix)
 		}
 	} else if (is.matrix(substitutionMatrix)) {
 		if (any(!(AAs %in% dimnames(substitutionMatrix)[[1]])) ||
@@ -103,9 +101,10 @@ CorrectFrameshifts <- function(myXStringSet,
 			stop("substitutionMatrix is incomplete.")
 		subMatrix <- substitutionMatrix
 	} else {
-		stop("Invalid substitutionMatrix.")
+		stop("Invalid substitutionMatrix must be NULL, a character string, or a matrix.")
 	}
-	subMatrix <- subMatrix[AAs, AAs] + 0 # convert to numeric
+	subMatrix <- subMatrix[AAs, AAs]
+	mode(subMatrix) <- "numeric"
 	
 	# de-replicate
 	w <- which(!duplicated(myXStringSet))

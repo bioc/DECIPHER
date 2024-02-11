@@ -84,14 +84,13 @@ SearchDB <- function(dbFile,
 		time.1 <- Sys.time()
 	
 	# initialize database
-	driver = dbDriver("SQLite")
 	if (is.character(dbFile)) {
-		dbConn = dbConnect(driver, dbFile)
+		if (!requireNamespace("RSQLite", quietly=TRUE))
+			stop("Package 'RSQLite' must be installed.")
+		dbConn <- dbConnect(dbDriver("SQLite"), dbFile)
 		on.exit(dbDisconnect(dbConn))
 	} else {
-		dbConn = dbFile
-		if (!inherits(dbConn,"SQLiteConnection")) 
-			stop("'dbFile' must be a character string or SQLiteConnection.")
+		dbConn <- dbFile
 		if (!dbIsValid(dbConn))
 			stop("The connection has expired.")
 	}
@@ -99,49 +98,85 @@ SearchDB <- function(dbFile,
 	# build the search expression
 	if (countOnly) {
 		searchExpression <- paste('select count(*) from ',
-			tblName,
+			dbQuoteIdentifier(dbConn, tblName),
 			sep="")
 	} else if (nameBy == "row_names" && orderBy == "row_names") {
-		searchExpression <- paste('select row_names, sequence',
-			ifelse(type > 4 && type != 9, ', quality', ''),
-			' from _',
-			tblName,
-			" where row_names in (select row_names from ",
-			tblName,
+		searchExpression <- paste('select ',
+			dbQuoteIdentifier(dbConn, paste("_", tblName, sep="")),
+			'.',
+			dbQuoteIdentifier(dbConn, 'row_names'),
+			', ',
+			dbQuoteIdentifier(dbConn, paste("_", tblName, sep="")),
+			'.',
+			dbQuoteIdentifier(dbConn, 'sequence'),
+			ifelse(type > 4 && type != 9,
+				paste(', ',
+					dbQuoteIdentifier(dbConn, paste("_", tblName, sep="")),
+					'.',
+					dbQuoteIdentifier(dbConn, 'quality'),
+					sep=''),
+				''),
+			' from ',
+			dbQuoteIdentifier(dbConn, paste('_', tblName, sep='')),
+			' where ',
+			dbQuoteIdentifier(dbConn, paste('_', tblName, sep='')),
+			'.',
+			dbQuoteIdentifier(dbConn, 'row_names'),
+			' in (select ',
+			dbQuoteIdentifier(dbConn, tblName),
+			'.',
+			dbQuoteIdentifier(dbConn, 'row_names'),
+			' from ',
+			dbQuoteIdentifier(dbConn, tblName),
 			sep="")
 	} else {
 		searchExpression <- paste('select ',
 			ifelse(nameBy == "row_names",
-				paste(tblName, ".row_names", sep=""),
-				nameBy),
-			', _',
-			tblName,
-			'.sequence',
+				paste(dbQuoteIdentifier(dbConn, tblName),
+					dbQuoteIdentifier(dbConn, "row_names"),
+					sep="."),
+				paste(dbQuoteIdentifier(dbConn, tblName),
+					dbQuoteIdentifier(dbConn, nameBy),
+					sep=".")),
+			', ',
+			dbQuoteIdentifier(dbConn, paste("_", tblName, sep="")),
+			'.',
+			dbQuoteIdentifier(dbConn, 'sequence'),
 			ifelse(type > 4 && type != 9,
-				paste(', _',
-					tblName,
-					'.quality',
+				paste(', ',
+					dbQuoteIdentifier(dbConn, paste('_', tblName, sep='')),
+					'.',
+					dbQuoteIdentifier(dbConn, 'quality'),
 					sep=""),
 				''),
 			' from ',
-			tblName,
-			' join _',
-			tblName,
+			dbQuoteIdentifier(dbConn, tblName),
+			' join ',
+			dbQuoteIdentifier(dbConn, paste('_', tblName, sep='')),
 			' on ',
-			tblName,
-			'.row_names',
-			' = _',
-			tblName,
-			'.row_names where _',
-			tblName,
-			'.row_names in (select row_names from ',
-			tblName,
+			dbQuoteIdentifier(dbConn, tblName),
+			'.',
+			dbQuoteIdentifier(dbConn, 'row_names'),
+			' = ',
+			dbQuoteIdentifier(dbConn, paste('_', tblName, sep='')),
+			'.',
+			dbQuoteIdentifier(dbConn, 'row_names'),
+			' where ',
+			dbQuoteIdentifier(dbConn, paste('_', tblName, sep='')),
+			'.',
+			dbQuoteIdentifier(dbConn, 'row_names'),
+			' in (select ',
+			dbQuoteIdentifier(dbConn, 'row_names'),
+			' from ',
+			dbQuoteIdentifier(dbConn, tblName),
 			sep="")
 	}
 	
 	if (identifier != "")
 		searchExpression <- paste(searchExpression,
-			' where identifier is "',
+			' where ',
+			dbQuoteIdentifier(dbConn, 'identifier'),
+			' = "',
 			identifier,
 			'"',
 			sep="")
@@ -156,8 +191,11 @@ SearchDB <- function(dbFile,
 	
 	if (orderBy != "row_names") # default ordering is row_names
 		searchExpression <- paste(searchExpression,
-			'order by',
-			orderBy)
+			' order by ',
+			dbQuoteIdentifier(dbConn, tblName),
+			'.',
+			dbQuoteIdentifier(dbConn, orderBy),
+			sep='')
 	if (limit > 0)
 		searchExpression <- paste(searchExpression,
 			'limit',
@@ -174,7 +212,7 @@ SearchDB <- function(dbFile,
 	dbClearResult(rs)
 	
 	if (countOnly) {
-		count <- as.integer(searchResult)
+		count <- as.double(searchResult[[1]])
 	} else {
 		# decompress the resulting sequences
 		searchResult$sequence <- Codec(searchResult$sequence,

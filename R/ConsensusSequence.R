@@ -3,7 +3,7 @@ ConsensusSequence <- function(myXStringSet,
 	ambiguity=TRUE,
 	noConsensusChar="+",
 	minInformation=1 - threshold,
-	ignoreNonBases=FALSE,
+	includeNonLetters=FALSE,
 	includeTerminalGaps=FALSE) {
 	
 	# error checking
@@ -29,8 +29,8 @@ ConsensusSequence <- function(myXStringSet,
 		stop("noConsensusChar must be a character in the RNA_ALPHABET.")
 	if (is(myXStringSet, "AAStringSet") && is.na(pmatch(noConsensusChar, AA_ALPHABET)))
 		stop("noConsensusChar must be a character in the AA_ALPHABET.")
-	if (!is.logical(ignoreNonBases))
-		stop("ignoreNonBases must be a logical.")
+	if (!is.logical(includeNonLetters))
+		stop("includeNonLetters must be a logical.")
 	
 	if (is(myXStringSet, "AAStringSet")) {
 		seq <- .Call("consensusSequenceAA",
@@ -38,7 +38,7 @@ ConsensusSequence <- function(myXStringSet,
 			threshold,
 			ambiguity,
 			minInformation,
-			ignoreNonBases,
+			includeNonLetters,
 			includeTerminalGaps,
 			PACKAGE="DECIPHER")
 	} else { # DNAStringSet or RNAStringSet
@@ -47,7 +47,7 @@ ConsensusSequence <- function(myXStringSet,
 			threshold,
 			ambiguity,
 			minInformation,
-			ignoreNonBases,
+			includeNonLetters,
 			includeTerminalGaps,
 			PACKAGE="DECIPHER")
 		if (is(myXStringSet, "RNAStringSet"))

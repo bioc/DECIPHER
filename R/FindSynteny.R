@@ -2,21 +2,22 @@ FindSynteny <- function(dbFile,
 	tblName="Seqs",
 	identifier="",
 	useFrames=TRUE,
-	alphabet=AA_REDUCED[[12]],
+	alphabet=AA_REDUCED[[173]],
 	geneticCode=GENETIC_CODE,
-	sepCost=-0.5,
+	sepCost=-3,
 	sepPower=0.5,
 	gapCost=-5,
 	gapPower=0.5,
 	shiftCost=0,
 	codingCost=0,
-	maxSep=500,
-	maxGap=100,
-	minScore=20,
-	dropScore=-100,
+	maxSep=200,
+	maxGap=300,
+	minScore=100,
+	N=10,
+	dropScore=-5,
 	maskRepeats=TRUE,
 	maskLCRs=TRUE,
-	allowOverlap=TRUE,
+	allowOverlap=FALSE,
 	storage=0.5,
 	processors=1,
 	verbose=TRUE) {
@@ -64,6 +65,12 @@ FindSynteny <- function(dbFile,
 		stop("dropScore must be a single numeric.")
 	if (dropScore > 0)
 		stop("dropScore must be less than or equal to zero.")
+	if (is.na(N) || !is.numeric(N))
+		stop("N must be a numeric.")
+	if (length(N) > 1L)
+		stop("N must be a single numeric.")
+	if (N < 1)
+		stop("N must be at least one.")
 	if (!is.numeric(minScore))
 		stop("minScore must be a single numeric.")
 	if (minScore <= 0)
@@ -97,21 +104,22 @@ FindSynteny <- function(dbFile,
 		time.1 <- Sys.time()
 	
 	# initialize database
-	driver = dbDriver("SQLite")
 	if (is.character(dbFile)) {
-		dbConn = dbConnect(driver, dbFile)
+		if (!requireNamespace("RSQLite", quietly=TRUE))
+			stop("Package 'RSQLite' must be installed.")
+		dbConn <- dbConnect(dbDriver("SQLite"), dbFile)
 		on.exit(dbDisconnect(dbConn))
 	} else {
-		dbConn = dbFile
-		if (!inherits(dbConn,"SQLiteConnection")) 
-			stop("'dbFile' must be a character string or SQLiteConnection.")
+		dbConn <- dbFile
 		if (!dbIsValid(dbConn))
 			stop("The connection has expired.")
 	}
 	
 	ids <- dbGetQuery(dbConn,
-		paste("select distinct identifier from",
-			tblName))$identifier
+		paste("select distinct",
+			dbQuoteIdentifier(dbConn, "identifier"),
+			"from",
+			dbQuoteIdentifier(dbConn, tblName)))$identifier
 	if (identifier[1] == "") {
 		identifier <- ids
 	} else {
@@ -196,6 +204,17 @@ FindSynteny <- function(dbFile,
 		stop("More than one grouping of amino acids is required in the alphabet.")
 	n <- as.integer(floor(log(4294967295, sizeAA)))
 	alphabet <- alphabet - 1L
+	
+	# subMatrixDNA gets multiplied by log(size) to calibrate for DNA distribution
+	# -3 allows 25% transition rate and -4 allows 20% transversion rate
+	subMatrixDNA <- matrix(c(1, -4, -3, -4, -4, 1, -4, -3, -3, -4, 1, -4, -4, -3, -4, 1),
+		nrow=4L)
+	lettersDNA <- DNAStringSet("ACGT") # concatenated row/column names
+	# subMatrixAA uses PFASUM90 in units of log-odds (PFASUM90*log(2)/3)
+	# replace letter/* with dropScore to prevent extension beyond matched reading frames
+	subMatrixAA <- matrix(c(2.1531,-0.8109,-0.7551,-0.8281,0.0688,-0.4222,-0.4138,-0.083,-0.979,-0.7883,-0.8611,-0.6089,-0.5443,-1.2266,-0.4539,0.3974,-0.0709,-1.5202,-1.3301,-0.1153,dropScore,-0.8109,3.0611,-0.2391,-0.7324,-1.6635,0.5087,-0.1707,-1.2636,0.1364,-1.8352,-1.5685,1.2628,-1.14,-2.0327,-1.0208,-0.4922,-0.5567,-1.2355,-1.1356,-1.5974,dropScore,-0.7551,-0.2391,3.2811,0.8499,-1.2776,0.1577,-0.0353,-0.1961,0.4775,-2.0728,-2.0216,0.139,-1.3669,-1.9526,-0.8666,0.3896,-0.0149,-1.9669,-1.0592,-1.8046,dropScore,-0.8281,-0.7324,0.8499,3.1735,-2.2112,0.0287,1.0668,-0.5565,-0.3268,-2.7662,-2.5827,-0.2546,-2.0885,-2.7204,-0.6335,-0.0641,-0.5175,-2.4706,-1.8456,-2.2981,dropScore,0.0688,-1.6635,-1.2776,-2.2112,5.6006,-1.7383,-2.3082,-1.24,-1.1362,-0.6809,-0.7673,-2.0293,-0.5984,-0.7222,-1.9964,-0.1872,-0.4273,-1.1734,-0.8035,-0.1612,dropScore,-0.4222,0.5087,0.1577,0.0287,-1.7383,2.9961,0.8029,-1.0276,0.4654,-1.6674,-1.3027,0.6752,-0.5506,-1.8842,-0.7148,-0.142,-0.255,-1.619,-1.1273,-1.3761,dropScore,-0.4138,-0.1707,-0.0353,1.0668,-2.3082,0.8029,2.7201,-1.025,-0.3998,-2.1262,-2.0174,0.354,-1.5047,-2.5066,-0.6275,-0.2714,-0.414,-2.2105,-1.6607,-1.6411,dropScore,-0.083,-1.2636,-0.1961,-0.5565,-1.24,-1.0276,-1.025,3.3406,-1.1352,-2.5059,-2.3459,-1.0166,-1.8755,-2.1928,-1.1142,-0.1185,-0.9926,-2.0906,-2.1353,-2.0053,dropScore,-0.979,0.1364,0.4775,-0.3268,-1.1362,0.4654,-0.3998,-1.1352,4.3656,-1.7771,-1.4664,-0.1425,-1.1296,-0.6338,-0.9922,-0.4026,-0.6345,-0.6464,0.7216,-1.5571,dropScore,-0.7883,-1.8352,-2.0728,-2.7662,-0.6809,-1.6674,-2.1262,-2.5059,-1.7771,2.5416,0.9454,-1.8231,0.6983,0.0484,-1.873,-1.6653,-0.6662,-1.0454,-0.8996,1.4591,dropScore,-0.8611,-1.5685,-2.0216,-2.5827,-0.7673,-1.3027,-2.0174,-2.3459,-1.4664,0.9454,2.2779,-1.6988,1.0466,0.501,-1.782,-1.653,-1.0118,-0.576,-0.6119,0.4308,dropScore,-0.6089,1.2628,0.139,-0.2546,-2.0293,0.6752,0.354,-1.0166,-0.1425,-1.8231,-1.6988,2.7764,-1.1255,-2.2758,-0.6652,-0.2555,-0.2942,-1.8695,-1.4346,-1.5386,dropScore,-0.5443,-1.14,-1.3669,-2.0885,-0.5984,-0.5506,-1.5047,-1.8755,-1.1296,0.6983,1.0466,-1.1255,3.6813,0.2825,-1.7701,-1.0421,-0.4541,-0.6095,-0.5404,0.2329,dropScore,-1.2266,-2.0327,-1.9526,-2.7204,-0.7222,-1.8842,-2.5066,-2.1928,-0.6338,0.0484,0.501,-2.2758,0.2825,3.5507,-2.0426,-1.6262,-1.3124,0.9849,1.6772,-0.2784,dropScore,-0.4539,-1.0208,-0.8666,-0.6335,-1.9964,-0.7148,-0.6275,-1.1142,-0.9922,-1.873,-1.782,-0.6652,-1.7701,-2.0426,4.0183,-0.2166,-0.6586,-1.9473,-1.8794,-1.4024,dropScore,0.3974,-0.4922,0.3896,-0.0641,-0.1872,-0.142,-0.2714,-0.1185,-0.4026,-1.6653,-1.653,-0.2555,-1.0421,-1.6262,-0.2166,2.3526,0.8047,-1.7097,-1.2892,-1.1841,dropScore,-0.0709,-0.5567,-0.0149,-0.5175,-0.4273,-0.255,-0.414,-0.9926,-0.6345,-0.6662,-1.0118,-0.2942,-0.4541,-1.3124,-0.6586,0.8047,2.6474,-1.6094,-1.2019,-0.1755,dropScore,-1.5202,-1.2355,-1.9669,-2.4706,-1.1734,-1.619,-2.2105,-2.0906,-0.6464,-1.0454,-0.576,-1.8695,-0.6095,0.9849,-1.9473,-1.7097,-1.6094,5.8259,1.2574,-1.2247,dropScore,-1.3301,-1.1356,-1.0592,-1.8456,-0.8035,-1.1273,-1.6607,-2.1353,0.7216,-0.8996,-0.6119,-1.4346,-0.5404,1.6772,-1.8794,-1.2892,-1.2019,1.2574,4.0647,-0.9588,dropScore,-0.1153,-1.5974,-1.8046,-2.2981,-0.1612,-1.3761,-1.6411,-2.0053,-1.5571,1.4591,0.4308,-1.5386,0.2329,-0.2784,-1.4024,-1.1841,-0.1755,-1.2247,-0.9588,2.3577,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,dropScore,6.1118),
+		nrow=21L)
+	lettersAA <- AAStringSet("ARNDCQEGHILKMFPSTWYV*") # concatenated row/column names
 	
 	results <- matrix(data.frame(),
 		nrow=l,
@@ -283,7 +302,7 @@ FindSynteny <- function(dbFile,
 		}
 		
 		WIDTH1 <- cumsum(width(s1))	
-		if (length(s1) > 0) {
+		if (length(s1) > 1) {
 			seq1 <- DNAStringSet(unlist(s1))
 		} else {
 			seq1 <- s1
@@ -325,73 +344,63 @@ FindSynteny <- function(dbFile,
 			}
 			
 			WIDTH2 <- cumsum(width(s2))
-			if (length(s2) > 0) {
+			if (length(s2) > 1) {
 				seq2 <- DNAStringSet(unlist(s2))
 			} else {
 				seq2 <- s2
 			}
 			
-			# calculate the k-mer size with 10%
-			# probability of occuring by chance
-			M <- max(WIDTH1[length(WIDTH1)],
-				WIDTH2[length(WIDTH2)])*10
-			N <- as.integer(log(M, size))
-			if (N < 1L) {
-				N <- 1L
-			} else if (N > 16L) {
-				N <- 16L
+			# calculate the k-mer size likely to occur 1/N times by chance
+			M <- max(WIDTH1[length(WIDTH1)], WIDTH2[length(WIDTH2)])*N
+			K <- as.integer(log(M, size))
+			if (K < 1L) {
+				K <- 1L
+			} else if (K > 16L) {
+				K <- 16L
 			}
 			
-			E1 <- store[g1][[1L]][["E"]][["nt"]][N][[1L]]
+			E1 <- store[g1][[1L]][["E"]][["nt"]][K][[1L]]
 			if (is.null(E1)) {
 				E1 <- .Call("enumerateSequence",
 					seq1,
-					N,
+					K,
 					maskRepeats,
 					maskLCRs,
 					processors,
 					PACKAGE="DECIPHER")[[1]]
-				for (i in which(WIDTH1 > (N - 2) & WIDTH1 < length(E1)))
-					E1[(WIDTH1[i] - (N - 2)):WIDTH1[i]] <- NA
+				for (i in which(WIDTH1 > (K - 2) & WIDTH1 < length(E1)))
+					E1[(WIDTH1[i] - (K - 2)):WIDTH1[i]] <- NA
 				if ((object.size(E1) + object.size(store) + object.size(results)) < storage)
-					store[g1][[1L]][["E"]][["nt"]][[N]] <- E1
+					store[g1][[1L]][["E"]][["nt"]][[K]] <- E1
 			}
 			
-			e2 <- store[g2][[1L]][["E"]][["nt"]][N][[1L]]
+			e2 <- store[g2][[1L]][["E"]][["nt"]][K][[1L]]
 			if (is.null(e2)) {
 				e2 <- .Call("enumerateSequence",
 					seq2,
-					N,
+					K,
 					maskRepeats,
 					maskLCRs,
 					processors,
 					PACKAGE="DECIPHER")[[1]]
-				for (i in which(WIDTH2 > (N - 2) & WIDTH2 < length(e2)))
-					e2[(WIDTH2[i] - (N - 2)):WIDTH2[i]] <- NA
+				for (i in which(WIDTH2 > (K - 2) & WIDTH2 < length(e2)))
+					e2[(WIDTH2[i] - (K - 2)):WIDTH2[i]] <- NA
 				if ((object.size(e2) + object.size(store) + object.size(results)) < storage)
-					store[g2][[1L]][["E"]][["nt"]][[N]] <- e2
+					store[g2][[1L]][["E"]][["nt"]][[K]] <- e2
 			}
 			
-			O1 <- store[g1][[1L]][["O"]][["nt"]][N][[1L]]
+			O1 <- store[g1][[1L]][["O"]][["nt"]][K][[1L]]
 			if (is.null(O1)) {
-#				O1 <- .Call("radixOrder",
-#					E1,
-#					0L,
-#					PACKAGE="DECIPHER")
 				O1 <- order(E1, method="radix", na.last=FALSE) - 1L
 				if ((object.size(O1) + object.size(store) + object.size(results)) < storage)
-					store[g1][[1L]][["O"]][["nt"]][[N]] <- O1
+					store[g1][[1L]][["O"]][["nt"]][[K]] <- O1
 			}
 			
-			o2 <- store[g2][[1L]][["O"]][["nt"]][N][[1L]]
+			o2 <- store[g2][[1L]][["O"]][["nt"]][K][[1L]]
 			if (is.null(o2)) {
-#				o2 <- .Call("radixOrder",
-#					e2,
-#					0L,
-#					PACKAGE="DECIPHER")
 				o2 <- order(e2, method="radix", na.last=FALSE) - 1L
 				if ((object.size(o2) + object.size(store) + object.size(results)) < storage)
-					store[g2][[1L]][["O"]][["nt"]][[N]] <- o2
+					store[g2][[1L]][["O"]][["nt"]][[K]] <- o2
 			}
 			
 			if (identifier[g1] != identifier[g2]) {
@@ -409,15 +418,15 @@ FindSynteny <- function(dbFile,
 					O1,
 					PACKAGE="DECIPHER")
 			}
-			m <- .Call("fillOverlaps", m, N, PACKAGE="DECIPHER") # in-place change of m
+			m <- .Call("fillOverlaps", m, K, PACKAGE="DECIPHER") # in-place change of m
 			r <- Rle(.Call("intDiff", m, PACKAGE="DECIPHER"))
 			w <- which(r@values == 1)
-			widths <- r@lengths[w] + N
-			ends <- cumsum(r@lengths)[w] + N
+			widths <- r@lengths[w] + K
+			ends <- cumsum(r@lengths)[w] + K
 			
 			ends1 <- ends
 			starts1 <- ends1 - widths + 1L
-			ends2 <- m[ends - N] + N
+			ends2 <- m[ends - K] + K
 			starts2 <- ends2 - widths + 1L
 			
 			# re-index the sequences by contig
@@ -430,10 +439,6 @@ FindSynteny <- function(dbFile,
 			starts1 <- index1[[2]]
 			ends1 <- index1[[3]]
 			index1 <- index1[[1]]
-#			o <- .Call("radixOrder",
-#				starts2,
-#				1L,
-#				PACKAGE="DECIPHER")
 			o <- order(starts2, method="radix", na.last=FALSE)
 			index2 <- .Call("indexByContig",
 				starts2,
@@ -445,6 +450,29 @@ FindSynteny <- function(dbFile,
 			ends2 <- index2[[3]]
 			index2 <- index2[[1]]
 			
+			# score and extend hits
+			subScore <- .Call("extendMatches",
+				seq1,
+				seq2,
+				starts1,
+				ends1,
+				index1,
+				starts2,
+				ends2,
+				index2,
+				WIDTH1,
+				WIDTH2,
+				subMatrixDNA*log(size), # scale subMatrix
+				lettersDNA,
+				dropScore,
+				processors,
+				PACKAGE="DECIPHER")
+			starts1 <- subScore[[2L]]
+			ends1 <- subScore[[3L]]
+			starts2 <- subScore[[4L]]
+			ends2 <- subScore[[5L]]
+			subScore <- subScore[[1L]]
+			
 			if (useFrames) {
 				x.s <- list(starts1)
 				x.e <- list(ends1)
@@ -453,7 +481,7 @@ FindSynteny <- function(dbFile,
 				y.e <- list(ends2)
 				y.i <- list(index2)
 				x.f <- y.f <- list(rep(0L, length(starts1)))
-				weights <- list(widths)
+				weights <- list(subScore)
 				
 				for (rF1 in 1:3) {
 					t1 <- .Call("basicTranslate",
@@ -462,7 +490,7 @@ FindSynteny <- function(dbFile,
 						rep(rF1, length(s1)),
 						PACKAGE="DECIPHER")
 					width1 <- cumsum(width(t1))
-					if (length(t1) > 0) {
+					if (length(t1) > 1) {
 						t1 <- AAStringSet(unlist(t1))
 					}
 					
@@ -495,14 +523,9 @@ FindSynteny <- function(dbFile,
 						if ((object.size(e1) + object.size(store) + object.size(results)) < storage)
 							store[g1][[1L]][["E"]][["aa"]][[rF1]][[N_AA]] <- e1
 					}
-					width1 <- width1*3L
 					
 					o1 <- store[g1][[1L]][["O"]][["aa"]][[rF1]][N_AA][[1L]]
 					if (is.null(o1)) {
-#						o1 <- .Call("radixOrder",
-#							e1,
-#							0L,
-#							PACKAGE="DECIPHER")
 						o1 <- order(e1, method="radix", na.last=FALSE) - 1L
 						if ((object.size(o1) + object.size(store) + object.size(results)) < storage)
 							store[g1][[1L]][["O"]][["aa"]][[rF1]][[N_AA]] <- o1
@@ -515,7 +538,7 @@ FindSynteny <- function(dbFile,
 							rep(rF2, length(s2)),
 							PACKAGE="DECIPHER")
 						width2 <- cumsum(width(t2))
-						if (length(t2) > 0) {
+						if (length(t2) > 1) {
 							t2 <- AAStringSet(unlist(t2))
 						}
 						
@@ -534,14 +557,9 @@ FindSynteny <- function(dbFile,
 							if ((object.size(e2) + object.size(store) + object.size(results)) < storage)
 								store[g2][[1L]][["E"]][["aa"]][[rF2]][[N_AA]] <- e2
 						}
-						width2 <- width2*3L
 						
 						o2 <- store[g2][[1L]][["O"]][["aa"]][[rF2]][N_AA][[1L]]
 						if (is.null(o2)) {
-#							o2 <- .Call("radixOrder",
-#								e2,
-#								0L,
-#								PACKAGE="DECIPHER")
 							o2 <- order(e2, method="radix", na.last=FALSE) - 1L
 							if ((object.size(o2) + object.size(store) + object.size(results)) < storage)
 								store[g2][[1L]][["O"]][["aa"]][[rF2]][[N_AA]] <- o2
@@ -585,24 +603,55 @@ FindSynteny <- function(dbFile,
 							ends1,
 							seq_along(starts1),
 							INDEX1,
-							width1)
+							width1*3L)
 						starts1 <- index1[[2]]
 						ends1 <- index1[[3]]
 						index1 <- index1[[1]]
-#						o <- .Call("radixOrder",
-#							starts2,
-#							1L,
-#							PACKAGE="DECIPHER")
 						o <- order(starts2, method="radix", na.last=FALSE)
 						index2 <- .Call("indexByContig",
 							starts2,
 							ends2,
 							o,
 							INDEX2,
-							width2)
+							width2*3L)
 						starts2 <- index2[[2]]
 						ends2 <- index2[[3]]
 						index2 <- index2[[1]]
+						
+						# convert from nucleotide to amino acid positions
+						starts1 <- (starts1 - rF1) %/% 3L + 1L
+						ends1 <- (ends1 + 1L - rF1) %/% 3L
+						starts2 <- (starts2 - rF2) %/% 3L + 1L
+						ends2 <- (ends2 + 1L - rF2) %/% 3L
+						
+						# score and extend hits
+						subScore <- .Call("extendMatches",
+							t1,
+							t2,
+							starts1,
+							ends1,
+							index1,
+							starts2,
+							ends2,
+							index2,
+							width1,
+							width2,
+							subMatrixAA,
+							lettersAA,
+							dropScore,
+							processors,
+							PACKAGE="DECIPHER")
+						starts1 <- subScore[[2L]]
+						ends1 <- subScore[[3L]]
+						starts2 <- subScore[[4L]]
+						ends2 <- subScore[[5L]]
+						subScore <- subScore[[1L]]
+						
+						# convert from amino acid to nucleotide positions
+						starts1 <- (starts1 - 1L)*3L + rF1
+						ends1 <- ends1*3L + rF1 - 1L
+						starts2 <- (starts2 - 1L)*3L + rF2
+						ends2 <- ends2*3L + rF2 - 1L
 						
 						x.s <- c(x.s, list(starts1))
 						x.e <- c(x.e, list(ends1))
@@ -612,7 +661,7 @@ FindSynteny <- function(dbFile,
 						y.i <- c(y.i, list(index2))
 						x.f <- c(x.f, list(rep(rF1, length(starts1))))
 						y.f <- c(y.f, list(rep(rF2, length(starts1))))
-						weights <- c(weights, list(widths*3L))
+						weights <- c(weights, list(subScore))
 					}
 				}
 				
@@ -635,7 +684,7 @@ FindSynteny <- function(dbFile,
 				y.e <- ends2
 				y.i <- index2
 				x.f <- y.f <- rep(0L, length(starts1))
-				weights <- widths
+				weights <- subScore
 				maxW <- max(WIDTH1[length(WIDTH1)],
 					WIDTH2[length(WIDTH2)])
 			}
@@ -651,27 +700,6 @@ FindSynteny <- function(dbFile,
 			x.f <- x.f[o]
 			y.f <- y.f[o]
 			weights <- weights[o]
-			
-			# weight = width*log(alphabet size) - log(number of k-mers)
-			# assumes width << longest sequence (combined) width
-			# the number of k-mers in search space is approximated as
-			# the longest sequence times the number of times searched
-			# where the number of times searched is ~(sep + gap)
-			weights <- as.double(ifelse(x.f == 0L,
-				weights*log(size),
-				weights*log(sizeAA)/3))
-#			w <- which(weights <= 0)
-#			if (length(w) > 0) {
-#				x.s <- x.s[-w]
-#				x.e <- x.e[-w]
-#				x.i <- x.i[-w]
-#				y.s <- y.s[-w]
-#				y.e <- y.e[-w]
-#				y.i <- y.i[-w]
-#				x.f <- x.f[-w]
-#				y.f <- y.f[-w]
-#				weights <- weights[-w]
-#			}
 			
 			chains <- .Call("chainSegments",
 				x.s,
@@ -735,36 +763,32 @@ FindSynteny <- function(dbFile,
 			}
 			
 			s3 <- reverseComplement(s2)
-			if (length(s3) > 0) {
+			if (length(s3) > 1) {
 				seq2 <- DNAStringSet(unlist(s3))
 			} else {
 				seq2 <- s3
 			}
 			
-			e2 <- store[g2][[1L]][["E"]][["nt_rc"]][N][[1L]]
+			e2 <- store[g2][[1L]][["E"]][["nt_rc"]][K][[1L]]
 			if (is.null(e2)) {
 				e2 <- .Call("enumerateSequence",
 					seq2,
-					N,
+					K,
 					maskRepeats,
 					maskLCRs,
 					processors,
 					PACKAGE="DECIPHER")[[1]]
-				for (i in which(WIDTH2 > (N - 2) & WIDTH2 < length(e2)))
-					e2[(WIDTH2[i] - (N - 2)):WIDTH2[i]] <- NA
+				for (i in which(WIDTH2 > (K - 2) & WIDTH2 < length(e2)))
+					e2[(WIDTH2[i] - (K - 2)):WIDTH2[i]] <- NA
 				if ((object.size(e2) + object.size(store) + object.size(results)) < storage)
-					store[g2][[1L]][["E"]][["nt_rc"]][[N]] <- e2
+					store[g2][[1L]][["E"]][["nt_rc"]][[K]] <- e2
 			}
 			
-			o2 <- store[g2][[1L]][["O"]][["nt_rc"]][N][[1L]]
+			o2 <- store[g2][[1L]][["O"]][["nt_rc"]][K][[1L]]
 			if (is.null(o2)) {
-#				o2 <- .Call("radixOrder",
-#					e2,
-#					0L,
-#					PACKAGE="DECIPHER")
 				o2 <- order(e2, method="radix", na.last=FALSE) - 1L
 				if ((object.size(o2) + object.size(store) + object.size(results)) < storage)
-					store[g2][[1L]][["O"]][["nt_rc"]][[N]] <- o2
+					store[g2][[1L]][["O"]][["nt_rc"]][[K]] <- o2
 			}
 			
 			# match E1 to e2
@@ -774,15 +798,15 @@ FindSynteny <- function(dbFile,
 				O1,
 				o2,
 				PACKAGE="DECIPHER")
-			m <- .Call("fillOverlaps", m, N, PACKAGE="DECIPHER") # in-place change of m
+			m <- .Call("fillOverlaps", m, K, PACKAGE="DECIPHER") # in-place change of m
 			r <- Rle(.Call("intDiff", m, PACKAGE="DECIPHER"))
 			w <- which(r@values == 1)
-			widths <- r@lengths[w] + N
-			ends <- cumsum(r@lengths)[w] + N
+			widths <- r@lengths[w] + K
+			ends <- cumsum(r@lengths)[w] + K
 			
 			ends1 <- ends
 			starts1 <- ends1 - widths + 1L
-			ends2 <- m[ends - N] + N
+			ends2 <- m[ends - K] + K
 			starts2 <- ends2 - widths + 1L
 			
 			# re-index the sequences by contig
@@ -795,10 +819,6 @@ FindSynteny <- function(dbFile,
 			starts1 <- index1[[2]]
 			ends1 <- index1[[3]]
 			index1 <- index1[[1]]
-#			o <- .Call("radixOrder",
-#				starts2,
-#				1L,
-#				PACKAGE="DECIPHER")
 			o <- order(starts2, method="radix", na.last=FALSE)
 			index2 <- .Call("indexByContig",
 				starts2,
@@ -809,6 +829,29 @@ FindSynteny <- function(dbFile,
 			starts2 <- index2[[2]]
 			ends2 <- index2[[3]]
 			index2 <- index2[[1]]
+			
+			# score and extend hits
+			subScore <- .Call("extendMatches",
+				seq1,
+				seq2,
+				starts1,
+				ends1,
+				index1,
+				starts2,
+				ends2,
+				index2,
+				WIDTH1,
+				WIDTH2,
+				subMatrixDNA*log(size), # scale subMatrix
+				lettersDNA,
+				dropScore,
+				processors,
+				PACKAGE="DECIPHER")
+			starts1 <- subScore[[2L]]
+			ends1 <- subScore[[3L]]
+			starts2 <- subScore[[4L]]
+			ends2 <- subScore[[5L]]
+			subScore <- subScore[[1L]]
 			
 			# correct for reverse complement positioning
 			w <- w2[index2]
@@ -824,7 +867,7 @@ FindSynteny <- function(dbFile,
 				y.e <- list(ends2)
 				y.i <- list(index2)
 				x.f <- y.f <- list(rep(0L, length(starts1)))
-				weights <- list(widths)
+				weights <- list(subScore)
 				
 				for (rF1 in 1:3) {
 					t1 <- .Call("basicTranslate",
@@ -833,7 +876,7 @@ FindSynteny <- function(dbFile,
 						rep(rF1, length(s1)),
 						PACKAGE="DECIPHER")
 					width1 <- cumsum(width(t1))
-					if (length(t1) > 0) {
+					if (length(t1) > 1) {
 						t1 <- AAStringSet(unlist(t1))
 					}
 					
@@ -852,14 +895,9 @@ FindSynteny <- function(dbFile,
 						if ((object.size(e1) + object.size(store) + object.size(results)) < storage)
 							store[g1][[1L]][["E"]][["aa"]][[rF1]][[N_AA]] <- e1
 					}
-					width1 <- width1*3L
 					
 					o1 <- store[g1][[1L]][["O"]][["aa"]][[rF1]][N_AA][[1L]]
 					if (is.null(o1)) {
-#						o1 <- .Call("radixOrder",
-#							e1,
-#							0L,
-#							PACKAGE="DECIPHER")
 						o1 <- order(e1, method="radix", na.last=FALSE) - 1L
 						if ((object.size(o1) + object.size(store) + object.size(results)) < storage)
 							store[g1][[1L]][["O"]][["aa"]][[rF1]][[N_AA]] <- o1
@@ -872,7 +910,7 @@ FindSynteny <- function(dbFile,
 							rep(rF2, length(s3)),
 							PACKAGE="DECIPHER")
 						width2 <- cumsum(width(t2))
-						if (length(t2) > 0) {
+						if (length(t2) > 1) {
 							t2 <- AAStringSet(unlist(t2))
 						}
 						
@@ -891,14 +929,9 @@ FindSynteny <- function(dbFile,
 							if ((object.size(e2) + object.size(store) + object.size(results)) < storage)
 								store[g2][[1L]][["E"]][["aa_rc"]][[rF2]][[N_AA]] <- e2
 						}
-						width2 <- width2*3L
 						
 						o2 <- store[g2][[1L]][["O"]][["aa_rc"]][[rF2]][N_AA][[1L]]
 						if (is.null(o2)) {
-#							o2 <- .Call("radixOrder",
-#								e2,
-#								0L,
-#								PACKAGE="DECIPHER")
 							o2 <- order(e2, method="radix", na.last=FALSE) - 1L
 							if ((object.size(o2) + object.size(store) + object.size(results)) < storage)
 								store[g2][[1L]][["O"]][["aa_rc"]][[rF2]][[N_AA]] <- o2
@@ -934,24 +967,55 @@ FindSynteny <- function(dbFile,
 							ends1,
 							seq_along(starts1),
 							INDEX1,
-							width1)
+							width1*3L)
 						starts1 <- index1[[2]]
 						ends1 <- index1[[3]]
 						index1 <- index1[[1]]
-#						o <- .Call("radixOrder",
-#							starts2,
-#							1L,
-#							PACKAGE="DECIPHER")
 						o <- order(starts2, method="radix", na.last=FALSE)
 						index2 <- .Call("indexByContig",
 							starts2,
 							ends2,
 							o,
 							INDEX2,
-							width2)
+							width2*3L)
 						starts2 <- index2[[2]]
 						ends2 <- index2[[3]]
 						index2 <- index2[[1]]
+						
+						# convert from nucleotide to amino acid positions
+						starts1 <- (starts1 - rF1) %/% 3L + 1L
+						ends1 <- (ends1 + 1L - rF1) %/% 3L
+						starts2 <- (starts2 - rF2) %/% 3L + 1L
+						ends2 <- (ends2 + 1L - rF2) %/% 3L
+						
+						# score and extend hits
+						subScore <- .Call("extendMatches",
+							t1,
+							t2,
+							starts1,
+							ends1,
+							index1,
+							starts2,
+							ends2,
+							index2,
+							width1,
+							width2,
+							subMatrixAA,
+							lettersAA,
+							dropScore,
+							processors,
+							PACKAGE="DECIPHER")
+						starts1 <- subScore[[2L]]
+						ends1 <- subScore[[3L]]
+						starts2 <- subScore[[4L]]
+						ends2 <- subScore[[5L]]
+						subScore <- subScore[[1L]]
+						
+						# convert from amino acid to nucleotide positions
+						starts1 <- (starts1 - 1L)*3L + rF1
+						ends1 <- ends1*3L + rF1 - 1L
+						starts2 <- (starts2 - 1L)*3L + rF2
+						ends2 <- ends2*3L + rF2 - 1L
 						
 						# correct for reverse complement positioning
 						w <- w2[index2]
@@ -967,7 +1031,7 @@ FindSynteny <- function(dbFile,
 						y.i <- c(y.i, list(index2))
 						x.f <- c(x.f, list(rep(rF1, length(starts1))))
 						y.f <- c(y.f, list(rep(rF2, length(starts1))))
-						weights <- c(weights, list(widths*3L))
+						weights <- c(weights, list(subScore))
 					}
 				}
 				
@@ -988,7 +1052,7 @@ FindSynteny <- function(dbFile,
 				y.e <- ends2
 				y.i <- index2
 				x.f <- y.f <- rep(0L, length(starts1))
-				weights <- widths
+				weights <- subScore
 			}
 			
 			# order by increasing sequence index in g1
@@ -1002,22 +1066,6 @@ FindSynteny <- function(dbFile,
 			x.f <- x.f[o]
 			y.f <- y.f[o]
 			weights <- weights[o]
-			
-			weights <- as.double(ifelse(x.f == 0L,
-				weights*log(size),
-				weights*log(sizeAA)/3))
-#			w <- which(weights <= 0)
-#			if (length(w) > 0) {
-#				x.s <- x.s[-w]
-#				x.e <- x.e[-w]
-#				x.i <- x.i[-w]
-#				y.s <- y.s[-w]
-#				y.e <- y.e[-w]
-#				y.i <- y.i[-w]
-#				x.f <- x.f[-w]
-#				y.f <- y.f[-w]
-#				weights <- weights[-w]
-#			}
 			
 			if (length(y.s) > 0) {
 				d <- max(y.e) - (y.e + y.s)
@@ -1297,73 +1345,6 @@ FindSynteny <- function(dbFile,
 				starts2 <- results[g2, g1][[1]][, "start2"]
 			}
 			
-			# extend blocks
-			p <- paste(index1, index2)
-			t <- tapply(seq_along(p), p, c, simplify=FALSE)
-			index1 <- match(results[g2, g1][[1]][, "index1"],
-				INDEX1) - 1L
-			index2 <- match(results[g2, g1][[1]][, "index2"],
-				INDEX2) - 1L
-			for (i in seq_along(t)) {
-				s <- t[[i]] # subset with the same indices
-				
-				o <- order(starts1[s])
-				r <- order(o) # rank
-				o1p <- r - 1L
-				o1p[which.min(o1p)] <- NA # which is zero
-				o1p <- o[o1p] # index of previous start
-				o1n <- r + 1L
-				o1n <- o[o1n] # index of next start
-				
-				o <- order(starts2[s])
-				r <- order(o) # rank
-				o2p <- r - 1L
-				o2p[which.min(o2p)] <- NA # which is zero
-				o2p <- o[o2p] # index of previous start
-				o2n <- r + 1L
-				o2n <- o[o2n] # index of next start
-				
-				results[g2, g1][[1]] <- .Call("extendSegments",
-					results[g2, g1][[1]],
-					w1,
-					w2,
-					s1,
-					s2,
-					o1p - 1L,
-					o1n - 1L,
-					o2p - 1L,
-					o2n - 1L,
-					s - 1L,
-					dropScore,
-					index1,
-					index2,
-					PACKAGE="DECIPHER")
-			}
-			
-			# extend outer anchors to match extended blocks
-			strand <- results[g2, g1][[1]][, "strand"]
-			if (length(strand) > 0) {
-				first_hit <- results[g2, g1][[1]][, "first_hit"]
-				last_hit <- results[g2, g1][[1]][, "last_hit"]
-				starts1 <- results[g2, g1][[1]][, "start1"]
-				ends1 <- results[g2, g1][[1]][, "end1"]
-				starts2 <- results[g2, g1][[1]][, "start2"]
-				ends2 <- results[g2, g1][[1]][, "end2"]
-				
-				# adjust width, start1, and start2 of first_hit
-				results[g1, g2][[1]][first_hit, "width"] <- results[g1, g2][[1]][first_hit, "start1"] + results[g1, g2][[1]][first_hit, "width"] - starts1
-				results[g1, g2][[1]][first_hit, "start1"] <- starts1
-				results[g1, g2][[1]][first_hit, "start2"] <- ifelse(strand == 0,
-					starts2,
-					ends2)
-				
-				# adjust width and start2 of last_hit
-				results[g1, g2][[1]][last_hit, "width"] <- ends1 - results[g1, g2][[1]][last_hit, "start1"] + 1L
-				results[g1, g2][[1]][last_hit, "start2"] <- ifelse(strand == 0,
-					ends2 - results[g1, g2][[1]][last_hit, "width"] + 1L,
-					starts2 + results[g1, g2][[1]][last_hit, "width"] - 1L)
-			}
-			
 			if (verbose) {
 				its <- its + 0.5
 				setTxtProgressBar(pBar, its/tot)
@@ -1389,9 +1370,13 @@ FindSynteny <- function(dbFile,
 	
 	for (i in seq_len(l)) {
 		names(results[i, i][[1]]) <- dbGetQuery(dbConn,
-			paste('select description from ',
-				tblName,
-				' where identifier is "',
+			paste('select ',
+				dbQuoteIdentifier(dbConn, 'description'),
+				' from ',
+				dbQuoteIdentifier(dbConn, tblName),
+				' where ',
+				dbQuoteIdentifier(dbConn, 'identifier'),
+				' = "',
 				identifier[i],
 				'"',
 				sep=''))$description

@@ -18,7 +18,7 @@ Add2DB(myData,
 Data frame containing information to be added to the \code{dbFile}.
 }
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file.
+A database connection object or a character string specifying the path to a SQLite database file.
 }
   \item{tblName}{
 Character string specifying the table in which to add the data.
@@ -46,31 +46,33 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{Seqs2DB}}, \code{\link{SearchDB}}, \code{\link{BrowseDB}}
 }
 \examples{
-# Create a sequence database
-gen <- system.file("extdata", "Bacteria_175seqs.gen", package="DECIPHER")
-dbConn <- dbConnect(SQLite(), ":memory:")
-Seqs2DB(gen, "GenBank", dbConn, "Bacteria")
-
-# Identify the sequence lengths
-l <- IdLengths(dbConn)
-
-# Add lengths to the database
-Add2DB(l, dbConn)
-
-# View the added lengths
-BrowseDB(dbConn)
-
-# Change the value of existing columns
-ids <- data.frame(identifier=rep("Bacteroidetes", 18), stringsAsFactors=FALSE)
-rownames(ids) <- 10:27
-Add2DB(ids, dbConn)
-BrowseDB(dbConn)
-
-# Add data to a subset of rows using a clause
-ids[[1]][] <- "Changed"
-nrow(ids) # 18 rows
-Add2DB(ids, dbConn, clause="accession like 'EU808318\%'")
-BrowseDB(dbConn) # only 1 row effected
-
-dbDisconnect(dbConn)
+if (require("RSQLite", quietly=TRUE)) {
+	# Create a sequence database
+	gen <- system.file("extdata", "Bacteria_175seqs.gen", package="DECIPHER")
+	dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
+	Seqs2DB(gen, "GenBank", dbConn, "Bacteria")
+	
+	# Identify the sequence lengths
+	l <- IdLengths(dbConn)
+	
+	# Add lengths to the database
+	Add2DB(l, dbConn)
+	
+	# View the added lengths
+	BrowseDB(dbConn)
+	
+	# Change the value of existing columns
+	ids <- data.frame(identifier=rep("Bacteroidetes", 18), stringsAsFactors=FALSE)
+	rownames(ids) <- 10:27
+	Add2DB(ids, dbConn)
+	BrowseDB(dbConn)
+	
+	# Add data to a subset of rows using a clause
+	ids[[1]][] <- "Changed"
+	nrow(ids) # 18 rows
+	Add2DB(ids, dbConn, clause="accession like 'EU808318\%'")
+	BrowseDB(dbConn) # only 1 row effected
+	
+	dbDisconnect(dbConn)
+}
 }

@@ -89,7 +89,6 @@ static const R_CallMethodDef callMethods[] = { // method call, pointer, num args
 	{"basicTranslate", (DL_FUNC) &basicTranslate, 3},
 	{"firstSeqsGapsEqual", (DL_FUNC) &firstSeqsGapsEqual, 9},
 	{"positionWeightMatrix", (DL_FUNC) &positionWeightMatrix, 4},
-	{"extendSegments", (DL_FUNC) &extendSegments, 13},
 	{"firstSeqsPosEqual", (DL_FUNC) &firstSeqsPosEqual, 9},
 	{"collapse", (DL_FUNC) &collapse, 3},
 	{"nbit", (DL_FUNC) &nbit, 4},
@@ -163,12 +162,13 @@ static const R_CallMethodDef callMethods[] = { // method call, pointer, num args
 	{"maxGroup", (DL_FUNC) &maxGroup, 2},
 	{"sortedUnique", (DL_FUNC) &sortedUnique, 1},
 	{"splitPartitions", (DL_FUNC) &splitPartitions, 5},
-	{"searchIndex", (DL_FUNC) &searchIndex, 17},
+	{"searchIndex", (DL_FUNC) &searchIndex, 22},
 	{"detectCores", (DL_FUNC) &detectCores, 0},
 	{"countIndex", (DL_FUNC) &countIndex, 3},
 	{"updateIndex", (DL_FUNC) &updateIndex, 8},
 	{"approxFreqs", (DL_FUNC) &approxFreqs, 3},
 	{"alignPairs", (DL_FUNC) &alignPairs, 15},
+	{"extendMatches", (DL_FUNC) &extendMatches, 14},
 	{NULL, NULL, 0}
 };
 

@@ -89,7 +89,7 @@ If \Rpackage{DECIPHER} is installed on your system, the code in each example can
 \end{Sinput}
 \end{Schunk}
 
-\subsection{Creating a Sequence Database}
+\subsection{Creating a Consensus Sequence Set}
 
 We begin with a set of aligned sequences belonging to the 16S rRNA of several samples obtained from drinking water distribution systems.  Be sure to change the path names to those on your system by replacing all of the text inside quotes labeled ``$<<$path to ...$>>$'' with the actual path on your system.
 
@@ -100,38 +100,26 @@ fas <- "<<path to FASTA file>>"
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
 @
 
-Next, there are two options for importing the sequences into a database:  either save a database file or maintain the database in memory.  Here we will build the database in memory because it is a small set of sequences and we do not intend to use the database later:
+Next, we will import the sequences into memory:
 
 <<expr2,eval=TRUE>>=
-# specify a path for where to write the sequence database
-dbConn <- "<<path to write sequence database>>"
-# OR create the sequence database in memory
-dbConn <- dbConnect(SQLite(), ":memory:")
-Seqs2DB(fas, "FASTA", dbConn, "uncultured bacterium")
+dna <- readDNAStringSet(fas)
 @
 
 \subsection{Defining Groups}
 
-At this point we need to define groups of related sequences in the database we just created.  In this case we wish to cluster the sequences into groups of at most 3\% distance between sequences.
+At this point we need to define groups of related sequences among the sequences.  In this case we wish to cluster the sequences into groups of at most 3\% distance between sequences.
 
 <<expr3,eval=TRUE>>=
-dna <- SearchDB(dbConn)
 dMatrix <- DistanceMatrix(dna, verbose=FALSE)
 clusters <- TreeLine(myDistMatrix=dMatrix, type="clusters", cutoff=0.03, method="complete", verbose=FALSE)
-Add2DB(clusters, dbConn, verbose=FALSE)
 @
 
 Now that we have identified 100 operational taxonomic units (OTUs), we must form a set of consensus sequences that represent each OTU.
 
 <<expr4,eval=TRUE>>=
-conSeqs <- IdConsensus(dbConn, colName="cluster", verbose=FALSE)
-dbDisconnect(dbConn)
-# name the sequences by their cluster number
-ns <- lapply(strsplit(names(conSeqs), "_", fixed=TRUE), `[`, 1)
-names(conSeqs) <- gsub("cluster", "", unlist(ns), fixed=TRUE)
-# order the sequences by their cluster number
-o <- order(as.numeric(names(conSeqs)))
-conSeqs <- conSeqs[o]
+conSeqs <- tapply(dna, clusters$cluster, ConsensusSequence)
+conSeqs <- unlist(DNAStringSetList(conSeqs))
 @
 
 %------------------------------------------------------------

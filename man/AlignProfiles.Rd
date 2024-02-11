@@ -77,7 +77,7 @@ Numeric giving the exponent that controls the degree of normalization applied to
 Logical determining whether scores are standardized to be in units of per matching site. Standardization effectively divides the score of each possible alignment by its length so that scores are relative rather than absolute.
 }
   \item{substitutionMatrix}{
-Either a substitution matrix representing the substitution scores for an alignment or the name of the amino acid substitution matrix to use in alignment.  The latter may be one of the following:  ``BLOSUM45'', ``BLOSUM50'', ``BLOSUM62'', ``BLOSUM80'', ``BLOSUM100'', ``PAM30'', ``PAM40'', ``PAM70'', ``PAM120'', ``PAM250'', or ``MIQS''.  The default (NULL) will use the \code{perfectMatch} and \code{misMatch} penalties for DNA/RNA or \code{PFASUM50} for AA.  (See examples section below.)
+Either a substitution matrix representing the substitution scores for an alignment (in third-bits) or the name of the amino acid substitution matrix to use in alignment.  The latter may be one of the following:  ``BLOSUM45'', ``BLOSUM50'', ``BLOSUM62'', ``BLOSUM80'', ``BLOSUM100'', ``PAM30'', ``PAM40'', ``PAM70'', ``PAM120'', ``PAM250'', ``MIQS'', ``MMLSUM10'' to ``MMLSUM90'' (by tens), or ``PFASUM11'' to ``PFASUM100'' (by ones).  The default (NULL) will use the \code{perfectMatch} and \code{misMatch} penalties for DNA/RNA or \code{PFASUM50} for AA.  (See examples section below.)
 }
   \item{structureMatrix}{
 A structure matrix if \code{p.struct} and \code{s.struct} are supplied, or \code{NULL} otherwise.
@@ -125,9 +125,11 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \examples{
 # align two sets of sequences
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-dna1 <- SearchDB(db, remove="common", limit=100) # the first 100 sequences
-dna2 <- SearchDB(db, remove="common", limit="100,100") # the rest
+fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
+dna1 <- readDNAStringSet(fas, n=100) # the first 100 sequences
+dna2 <- readDNAStringSet(fas, n=100, skip=100) # the rest
+dna1 <- RemoveGaps(dna1, "common")
+dna2 <- RemoveGaps(dna2, "common")
 alignedDNA <- AlignProfiles(dna1, dna2)
 BrowseSeqs(alignedDNA, highlight=1)
 

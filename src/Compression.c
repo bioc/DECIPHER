@@ -2,6 +2,11 @@
  *                  Nucleotide compression/decompression                    *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
+ 
+ // for OpenMP parallel processing
+ #ifdef _OPENMP
+ #include <omp.h>
+ #endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -15,11 +20,6 @@
  * R_registerRoutines() prototype.
  */
 #include <R_ext/Rdynload.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 // for calloc/free
 #include <stdlib.h>
@@ -532,7 +532,9 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 	}
 	
 	// compress the sequences
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,k,p,s,pos) schedule(guided) num_threads(nthreads)
+	#endif
 	for (i = 0; i < n; i++) {
 		ptrs[i] = (unsigned char *) calloc(l[i] > 3 ? l[i] : 4, sizeof(unsigned char)); // initialized to zero (thread-safe on Windows)
 		p = ptrs[i];
@@ -1438,7 +1440,9 @@ SEXP qbit(SEXP x, SEXP y, SEXP nThreads)
 	}
 	
 	// compress the quality scores
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,p,s) schedule(guided) num_threads(nthreads)
+	#endif
 	for (i = 0; i < n; i++) {
 		ptrs[i] = (unsigned char *) calloc(l[i] > 3 ? l[i] : 4, sizeof(unsigned char)); // initialized to zero (thread-safe on Windows)
 		p = ptrs[i];
@@ -1731,7 +1735,9 @@ SEXP decompress(SEXP x, SEXP nThreads)
 			error("x contains an empty raw vector.");
 	}
 	
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,p,s) schedule(guided) num_threads(nthreads)
+	#endif
 	for (i = 0; i < n; i++) {
 		p = ptrs[i];
 		

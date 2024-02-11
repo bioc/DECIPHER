@@ -13,17 +13,6 @@ TileSeqs <- function(dbFile,
 	# error checking
 	if (!is.logical(add2tbl) && !is.character(add2tbl))
 		stop("add2tbl must be a logical or table name.")
-	driver = dbDriver("SQLite")
-	if (is.character(dbFile)) {
-		dbConn = dbConnect(driver, dbFile)
-		on.exit(dbDisconnect(dbConn))
-	} else {
-		dbConn = dbFile
-		if (!inherits(dbConn,"SQLiteConnection")) 
-			stop("'dbFile' must be a character string or SQLiteConnection.")
-		if (!dbIsValid(dbConn))
-			stop("The connection has expired.")
-	}
 	if (!is.character(tblName))
 		stop("tblName must be a character string.")
 	if (!is.logical(verbose))
@@ -64,8 +53,22 @@ TileSeqs <- function(dbFile,
 		processors <- as.integer(processors)
 	}
 	
-	searchExpression <- paste("select distinct identifier from",
-		tblName)
+	# initialize database
+	if (is.character(dbFile)) {
+		if (!requireNamespace("RSQLite", quietly=TRUE))
+			stop("Package 'RSQLite' must be installed.")
+		dbConn <- dbConnect(dbDriver("SQLite"), dbFile)
+		on.exit(dbDisconnect(dbConn))
+	} else {
+		dbConn <- dbFile
+		if (!dbIsValid(dbConn))
+			stop("The connection has expired.")
+	}
+	
+	searchExpression <- paste("select distinct",
+		dbQuoteIdentifier(dbConn, "identifier"),
+		"from",
+		dbQuoteIdentifier(dbConn, tblName))
 	rs <- dbSendQuery(dbConn, searchExpression)
 	searchResult <- dbFetch(rs, n=-1, row.names=FALSE)
 	ids <- searchResult$identifier
@@ -82,12 +85,18 @@ TileSeqs <- function(dbFile,
 	
 	if (is.character(add2tbl) || add2tbl) {
 		result <- dbListTables(dbConn)
-		w <- which(result==ifelse(is.character(add2tbl), add2tbl, tblName))
+		w <- which(result==ifelse(is.character(add2tbl),
+			dbQuoteIdentifier(dbConn, add2tbl),
+			dbQuoteIdentifier(dbConn, tblName)))
 		if (length(w)==1) { # add to existing table
-			searchExpression <- paste("select max(row_names) from ",
-				ifelse(is.character(add2tbl), add2tbl, tblName),
+			searchExpression <- paste("select max(",
+				dbQuoteIdentifier(dbConn, "row_nammes"),
+				") from ",
+				ifelse(is.character(add2tbl),
+					dbQuoteIdentifier(dbConn, add2tbl),
+					dbQuoteIdentifier(dbConn, tblName)),
 				sep="")
-			row_start <- as.integer(dbGetQuery(dbConn, searchExpression))
+			row_start <- as.integer(dbGetQuery(dbConn, searchExpression)[[1]])
 		} else { # create new table
 			row_start <- 0
 		}

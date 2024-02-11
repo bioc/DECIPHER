@@ -33,28 +33,29 @@ FormGroups <- function(dbFile,
 	if (verbose)
 		time.1 <- Sys.time()
 	
-	# initialize databases
-	driver = dbDriver("SQLite")
+	# initialize database
 	if (is.character(dbFile)) {
-		dbConn = dbConnect(driver, dbFile)
+		if (!requireNamespace("RSQLite", quietly=TRUE))
+			stop("Package 'RSQLite' must be installed.")
+		dbConn <- dbConnect(dbDriver("SQLite"), dbFile)
 		on.exit(dbDisconnect(dbConn))
 	} else {
-		dbConn = dbFile
-		if (!inherits(dbConn,"SQLiteConnection")) 
-			stop("'dbFile' must be a character string or SQLiteConnection.")
+		dbConn <- dbFile
 		if (!dbIsValid(dbConn))
 			stop("The connection has expired.")
 	}
 	
-	if (is.na(match("rank",
+	if (is.na(match("organism",
 		dbListFields(dbConn,
 			tblName))))
-		stop("No rank column in table.")
+		stop("No 'organism' column in ", tblName, ".")
 	
-	searchExpression <- paste("select rank from",
-		tblName)
+	searchExpression <- paste("select",
+		dbQuoteIdentifier(dbConn, "organism"),
+		"from",
+		dbQuoteIdentifier(dbConn, tblName))
 	rs <- dbSendQuery(dbConn, searchExpression)
-	allranks <- dbFetch(rs, n=-1, row.names=FALSE)$rank
+	allranks <- dbFetch(rs, n=-1, row.names=FALSE)$organism
 	dbClearResult(rs)
 	
 	if (includeNames) {
@@ -80,17 +81,17 @@ FormGroups <- function(dbFile,
 	taxonomy <- gsub(" *; *",
 		";",
 		taxonomy)
-	rank <- sort(table(taxonomy))
+	organism <- sort(table(taxonomy))
 	
-	searchResult <- data.frame(rank=names(rank),
-		count=as.integer(rank),
-		counts=as.integer(-rank),
+	searchResult <- data.frame(organism=names(organism),
+		count=as.integer(organism),
+		counts=as.integer(-organism),
 		origin="",
 		identifier="",
 		stringsAsFactors=FALSE)
 	
-	rank <- names(rank)
-	lineages <- strsplit(as.character(rank),
+	organism <- names(organism)
+	lineages <- strsplit(as.character(organism),
 		";",
 		fixed=TRUE)
 	
@@ -108,17 +109,22 @@ FormGroups <- function(dbFile,
 	o <- order(searchResult$count,
 		lengths(lineages),
 		decreasing=TRUE)
-	for (i in seq_along(o)) {		if (searchResult$identifier[o[i]] == "") {			lineage <- lineages[[o[i]]]
+	for (i in seq_along(o)) {
+		if (searchResult$identifier[o[i]] == "") {
+			lineage <- lineages[[o[i]]]
 			for (j in rev(seq_along(lineage))) {
-				w <- startsWith(rank,
+				w <- startsWith(organism,
 					paste(lineage[seq_len(j)],
 						collapse=";"))
 				w <- which(w)
 				w <- w[searchResult$counts[w] < 0]
-				counts <- sum(abs(searchResult$counts[w]))				
+				counts <- sum(abs(searchResult$counts[w]))
+				
 				if (counts >= goalSize) {
 					if (counts > maxGroupSize &&
-						j < length(lineage)) {						j <- j + 1 # go down one rank						w <- startsWith(rank,
+						j < length(lineage)) {
+						j <- j + 1 # go down one organism
+						w <- startsWith(organism,
 							paste(lineage[seq_len(j)],
 								collapse=";"))
 						w <- which(w)
@@ -131,62 +137,115 @@ FormGroups <- function(dbFile,
 					} else {
 						origin <- ""
 					}
-										if (counts < minGroupSize) { # mark for later inclusion						searchResult$counts[w] <- -counts					} else {
+					
+					if (counts < minGroupSize) { # mark for later inclusion
+						searchResult$counts[w] <- -counts
+					} else {
 						searchResult$counts[w] <- counts
 					}
-										searchResult$origin[w] <- origin
+					
+					searchResult$origin[w] <- origin
 					id <- .change(lineage[j])
 					if (id %in% searchResult$identifier[-w])
 						id <- paste(id, o[i], sep="_")
 					searchResult$identifier[w] <- id
-					break				} else if (j == 1) { # create singleton group
+					break
+				} else if (j == 1) { # create singleton group
 					searchResult$origin[o[i]] <- ""
 					id <- .change(lineage[j])
 					if (id %in% searchResult$identifier[-o[i]])
 						id <- paste(id, o[i], sep="_")
 					searchResult$identifier[o[i]] <- id
 				}
-			}		}
+			}
+		}
 		if (verbose)
-			setTxtProgressBar(pBar, i/length(o))	}
+			setTxtProgressBar(pBar, i/length(o))
+	}
 	
 	w <- which(!duplicated(allranks))
 	allranks <- allranks[w]
 	taxonomy <- taxonomy[w]
-	m <- match(taxonomy, rank)
+	m <- match(taxonomy, organism)
 	searchResult <- searchResult[m,]
-	searchResult$rank <- allranks
+	searchResult$organism <- allranks
 	searchResult$counts <- NULL
 	
-	if (is.character(add2tbl) || add2tbl) {		dbWriteTable(dbConn, "taxa", searchResult)		
-		if (verbose)
-			cat("\nUpdating column: \"identifier\"...")		searchExpression <- paste("update ",
-			tblName,
-			" set identifier = (select identifier from taxa where ",
-			ifelse(is.character(add2tbl), add2tbl, tblName),
-			".rank = taxa.rank)",
-			sep="")		rs <- dbSendStatement(dbConn, searchExpression)		dbClearResult(rs)
+	if (is.character(add2tbl) || add2tbl) {
+		dbWriteTable(dbConn, "temp", searchResult, overwrite=TRUE)
+		
+		searchExpression <- paste("update ",
+			ifelse(is.character(add2tbl),
+				dbQuoteIdentifier(dbConn, add2tbl),
+				dbQuoteIdentifier(dbConn, tblName)),
+			" set ",
+			dbQuoteIdentifier(dbConn, "identifier"),
+			" = (select ",
+			dbQuoteIdentifier(dbConn, "identifier"),
+			" from ",
+			dbQuoteIdentifier(dbConn, "temp"),
+			" where ",
+			ifelse(is.character(add2tbl),
+				dbQuoteIdentifier(dbConn, add2tbl),
+				dbQuoteIdentifier(dbConn, tblName)),
+			".",
+			dbQuoteIdentifier(dbConn, "organism"),
+			" = ",
+			dbQuoteIdentifier(dbConn, "temp"),
+			".",
+			dbQuoteIdentifier(dbConn, "organism"),
+			")",
+			sep="")
+		rs <- dbSendStatement(dbConn, searchExpression)
+		dbClearResult(rs)
 		
 		if (is.na(match("origin",
 			dbListFields(dbConn,
-				ifelse(is.character(add2tbl), add2tbl, tblName))))) {			searchExpression <- paste("alter table ",
-				ifelse(is.character(add2tbl), add2tbl, tblName),
-				" add column origin",
-				sep="")			rs <- dbSendStatement(dbConn, searchExpression)
-			dbClearResult(rs)		}
+				ifelse(is.character(add2tbl), add2tbl, tblName))))) {
+			searchExpression <- paste("alter table",
+			ifelse(is.character(add2tbl),
+				dbQuoteIdentifier(dbConn, add2tbl),
+				dbQuoteIdentifier(dbConn, tblName)),
+				"add column",
+				dbQuoteIdentifier(dbConn, "origin"),
+				dbDataType(dbConn, ""))
+			rs <- dbSendStatement(dbConn, searchExpression)
+			dbClearResult(rs)
+		}
 		
-		if (verbose)
-			cat("\nUpdating column: \"origin\"...")		searchExpression <- paste("update ",
-			ifelse(is.character(add2tbl), add2tbl, tblName),
-			" set origin = (select origin from taxa where ",
-			ifelse(is.character(add2tbl), add2tbl, tblName),
-			".rank = taxa.rank)",
-			sep="")		rs <- dbSendStatement(dbConn, searchExpression)
-		dbClearResult(rs)				searchExpression <- "drop table taxa"		rs <- dbSendStatement(dbConn, searchExpression)
-		dbClearResult(rs)	}
+		searchExpression <- paste("update ",
+			ifelse(is.character(add2tbl),
+				dbQuoteIdentifier(dbConn, add2tbl),
+				dbQuoteIdentifier(dbConn, tblName)),
+			" set ",
+			dbQuoteIdentifier(dbConn, "origin"),
+			" = (select ",
+			dbQuoteIdentifier(dbConn, "origin"),
+			" from ",
+			dbQuoteIdentifier(dbConn, "temp"),
+			" where ",
+			ifelse(is.character(add2tbl),
+				dbQuoteIdentifier(dbConn, add2tbl),
+				dbQuoteIdentifier(dbConn, tblName)),
+			".",
+			dbQuoteIdentifier(dbConn, "organism"),
+			" = ",
+			dbQuoteIdentifier(dbConn, "temp"),
+			".",
+			dbQuoteIdentifier(dbConn, "organism"),
+			")",
+			sep="")
+		rs <- dbSendStatement(dbConn, searchExpression)
+		dbClearResult(rs)
+		
+		searchExpression <- paste("drop table",
+			dbQuoteIdentifier(dbConn, "temp"))
+		rs <- dbSendStatement(dbConn, searchExpression)
+		dbClearResult(rs)
+	}
 	
 	if (verbose) {
-		cat("\nFormed",
+		cat("\n\nFormed",
 			length(unique(searchResult$identifier)),
 			"distinct groups.")
 		if (is.character(add2tbl) || add2tbl)

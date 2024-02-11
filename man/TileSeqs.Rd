@@ -21,7 +21,7 @@ TileSeqs(dbFile,
 }
 \arguments{
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file.
+A database connection object or a character string specifying the path to a SQLite database file.
 }
   \item{tblName}{
 Character string specifying the table of sequences to use for forming tiles.
@@ -76,6 +76,8 @@ If \code{add2tbl} is \code{TRUE} then the tiles will be added to the database ta
 \code{\link{DesignPrimers}}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-tiles <- TileSeqs(db, identifier="Pseudomonadales")
+if (require("RSQLite", quietly=TRUE)) {
+	db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
+	tiles <- TileSeqs(db, identifier="Sphingomonadales")
+}
 }

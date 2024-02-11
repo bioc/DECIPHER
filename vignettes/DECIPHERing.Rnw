@@ -90,7 +90,7 @@ Other time consuming tasks are handled efficiently.  The function \Rfunction{Fin
 
 \subsection{Stay Organized}
 
-It is no longer necessary to store related data in several different files.  \Rpackage{DECIPHER} is enabled by \Rpackage{RSQLite}, which is an \R{} interface to \underline{\href{http://www.sqlite.org/}{SQLite databases}}.  \Rpackage{DECIPHER} creates an organized collection of sequences and their associated information known as a sequence database.  \term{SQLite} databases are flat files, meaning they can be handled just like any other file.  There is no setup required since \term{SQLite} does not require a server, unlike many other database engines.  These attributes of \term{SQLite} databases make storing, backing-up, and sharing sequence databases relatively straightforward.
+It is no longer necessary to store related data in several different files.  \Rpackage{DECIPHER} is enabled by \Rpackage{DBI}, which is an \R{} interface to a variety of databases.  \Rpackage{DECIPHER} creates an organized collection of sequences and their associated information known as a sequence database.  By default, \term{SQLite} databases are used if the \Rpackage{RSQLite} package is installed.  \term{SQLite} databases are flat files, meaning they can be handled just like any other file.  There is no setup required since \term{SQLite} does not require a server, unlike many other database engines.  These attributes of \term{SQLite} databases make storing, backing-up, and sharing sequence databases relatively straightforward.  However, \Rpackage{DECIPHER} supports other \term{SQL} databases, such as \term{MariaDB} via \Rpackage{RMariaDB}, if concurrency, scalability, or performance are critical.
 
 Separate projects can be stored in distinct tables in the same sequence database.  Each new table is structured to include every sequence's description, identifier, and a unique key called the \term{row_name} all in one place.  The sequences are referenced by their \term{row_names} or \term{identifier} throughout most functions in the package.  Using \term{row_names}, new information created with \Rpackage{DECIPHER} functions can be added as additional database columns to their respective sequences' rows in the database table.  To prevent the database from seeming like a black box there is a function named \Rfunction{BrowseDB} that facilitates viewing of the database contents in a web browser.  A similar function is available to view sequences called \Rfunction{BrowseSeqs}.
 
@@ -173,7 +173,7 @@ The functions of DECIPHER can be grouped into several categories based on intend
 > BiocManager::install("Biostrings")
 \end{Sinput}
 \end{Schunk}
-\item Install \Rpackage{RSQLite} in R by entering:
+\item Optionally, install the suggested package \Rpackage{RSQLite} in R by entering:
 \begin{Schunk}
 \begin{Sinput}
 > install.packages("RSQLite")
@@ -254,24 +254,24 @@ Help for any function can be accessed through a command such as:
 To begin, we can import a FASTA, FASTQ, or GenBank file into a sequence database.  Here we will import the sequences into an in-memory database that will be removed when we disconnect from the database.  In-memory databases are useful for temporary examples, but typically we would specify the path to a file where we want to store the database.  This is especially the case when there are many sequences, as they might not all fit into memory.
 
 In this example, we will use a GenBank file that is included with \Rpackage{DECIPHER} installation.  We must set the sequences' \term{identifier} when importing with \Rfunction{Seqs2DB}.  Here we will identify the sequences with the word ``Bacteria''.  The \term{identifier} is used by many \Rpackage{DECIPHER} functions to reference a specific subset of sequences in the database, and can be reset at a later time using a number of different methods:
-<<expr1>>=
+<<expr1,eval=FALSE>>=
 # access a sequence file included in the package:
 gen <- system.file("extdata", "Bacteria_175seqs.gen", package="DECIPHER")
 
 # connect to a database:
-dbConn <- dbConnect(SQLite(), ":memory:")
+dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
 
 # import the sequences into the sequence database
 Seqs2DB(gen, "GenBank", dbConn, "Bacteria")
 @
 
 Now we can view the table of information we just added to the database in a web browser (Fig. 1):
-<<expr2>>=
+<<expr2,eval=FALSE>>=
 BrowseDB(dbConn)
 @
 
 Suppose we wanted to count the number of bases in each sequence and add that information to the database:
-<<expr3>>=
+<<expr3,eval=FALSE>>=
 l <- IdLengths(dbConn)
 head(l)
 Add2DB(l, dbConn, verbose=FALSE)
@@ -279,7 +279,7 @@ BrowseDB(dbConn, maxChars=20)
 @
 
 Next let's identify our sequences by phylum and update this information in the database:
-<<expr4>>=
+<<expr4,eval=FALSE>>=
 r <- IdentifyByRank(dbConn, level=3, add2tbl=TRUE)
 BrowseDB(dbConn, maxChars=20)
 @
@@ -294,7 +294,7 @@ BrowseDB(dbConn, maxChars=20)
 \clearpage
 
 We can now look at only those sequences that belong to the phylum \term{Bacteroidetes} (Fig. 2):
-<<expr5>>=
+<<expr5,eval=FALSE>>=
 dna <- SearchDB(dbConn, identifier="Bacteroidetes")
 BrowseSeqs(subseq(dna, 140, 240))
 @
@@ -310,7 +310,7 @@ BrowseSeqs(subseq(dna, 140, 240))
 
 Let's construct a phylogenetic tree from the \term{Bacteroidetes} sequences (Fig. 3):
 \begin{centerfig}
-<<expr6,fig=TRUE,height=3.5,width=6>>=
+<<expr6,eval=FALSE,fig=TRUE,height=3.5,width=6>>=
 d <- DistanceMatrix(dna, correction="Jukes-Cantor", verbose=FALSE)
 c <- TreeLine(myDistMatrix=d, method="NJ", cutoff=0.05, showPlot=TRUE, verbose=FALSE)
 @
@@ -328,7 +328,7 @@ Here we created the database in-memory by connecting to ``:memory:'' above.  Thi
 \end{Schunk}
 
 Finally, we should disconnect from the database connection.  Since the sequence database was created in temporary memory, all of the information will be erased:
-<<expr7>>=
+<<expr7,eval=FALSE>>=
 dbDisconnect(dbConn)
 @
 

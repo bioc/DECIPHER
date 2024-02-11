@@ -2,6 +2,11 @@
  *                         Solves SCA NNLS PROBLEM                          *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
+ 
+ // for OpenMP parallel processing
+ #ifdef _OPENMP
+ #include <omp.h>
+ #endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -24,11 +29,6 @@
 
 // for math functions
 #include <math.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 // DECIPHER header file
 #include "DECIPHER.h"
@@ -86,7 +86,9 @@ SEXP NNLS(SEXP row, SEXP col, SEXP value, SEXP nrows, SEXP ncols, SEXP b, SEXP t
 			}
 		}
 		
+		#ifdef _OPENMP
 		#pragma omp parallel for private(j) schedule(guided) num_threads(nthreads)
+		#endif
 		for (j = start; j < stop; j++)
 			H[(*(cols + i) - 1)*n + *(cols + j) - 1] += *(values + i) * *(values + j);
 	}

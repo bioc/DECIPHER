@@ -8,7 +8,7 @@
 Synteny blocks and hits
 }
 \description{
-Syntenic blocks are DNA segments composed of conserved hits occurring in the same order on two sequences.  The two sequences are typically chromosomes of different species that are hypothesized to contain homology.  Class \code{"Synteny"} provides objects and functions for storing and viewing syntenic blocks and hits that are shared between sequences.
+Syntenic blocks are DNA segments composed of conserved hits occurring in the same order on two sequences.  The two sequences are typically chromosomes of different species that are hypothesized to contain homologous regions.  Class \code{"Synteny"} provides objects and functions for storing and viewing syntenic blocks and hits that are shared between sequences.
 }
 \usage{
 \method{pairs}{Synteny}(x,
@@ -110,42 +110,44 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{AlignSynteny}}, \code{\link{FindSynteny}}
 }
 \examples{
-# a small example:
-dbConn <- dbConnect(SQLite(), ":memory:")
-s1 <- DNAStringSet("ACTAGACCCAGACCGATAAACGGACTGGACAAG")
-s3 <- reverseComplement(s1)
-s2 <- c(s1, s3)
-Seqs2DB(c(c(s1, s2), s3),
-        "XStringSet",
-        dbConn,
-        c("s1", "s2", "s2", "s3"))
-syn <- FindSynteny(dbConn, minScore=1)
-syn # Note:  > 100% hits because of sequence reuse across blocks
-pairs(syn, boxBlocks=TRUE)
-plot(syn)
-dbDisconnect(dbConn)
-
-# a larger example:
-db <- system.file("extdata", "Influenza.sqlite", package="DECIPHER")
-synteny <- FindSynteny(db, minScore=50)
-class(synteny) # 'Synteny'
-synteny
-
-# accessing parts
-i <- 1
-j <- 2
-synteny[i, i][[1]] # width of sequences in i
-synteny[j, j][[1]] # width of sequences in j
-head(synteny[i, j][[1]]) # hits between i & j
-synteny[j, i][[1]] # blocks between i & j
-
-# plotting
-pairs(synteny) # dot plots
-pairs(synteny, boxBlocks=TRUE) # boxes around blocks
-
-plot(synteny) # bar view colored by position in genome 1
-plot(synteny, barColor="#268FD6") # emphasize missing regions
-plot(synteny, "frequency") # most regions are shared by all
-plot(synteny, "frequency", colorRamp=rainbow) # change the colors
-plot(synteny, "neighbor") # connect neighbors
+if (require("RSQLite", quietly=TRUE)) {
+	# a small example:
+	dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
+	s1 <- DNAStringSet("ACTAGACCCAGACCGATAAACGGACTGGACAAG")
+	s3 <- reverseComplement(s1)
+	s2 <- c(s1, s3)
+	Seqs2DB(c(c(s1, s2), s3),
+	        "XStringSet",
+	        dbConn,
+	        c("s1", "s2", "s2", "s3"))
+	syn <- FindSynteny(dbConn, minScore=1)
+	syn # Note:  > 100% hits because of sequence reuse across blocks
+	pairs(syn, boxBlocks=TRUE)
+	plot(syn)
+	dbDisconnect(dbConn)
+	
+	# a larger example:
+	db <- system.file("extdata", "Influenza.sqlite", package="DECIPHER")
+	synteny <- FindSynteny(db, minScore=50)
+	class(synteny) # 'Synteny'
+	synteny
+	
+	# accessing parts
+	i <- 1
+	j <- 2
+	synteny[i, i][[1]] # width of sequences in i
+	synteny[j, j][[1]] # width of sequences in j
+	head(synteny[i, j][[1]]) # hits between i & j
+	synteny[j, i][[1]] # blocks between i & j
+	
+	# plotting
+	pairs(synteny) # dot plots
+	pairs(synteny, boxBlocks=TRUE) # boxes around blocks
+	
+	plot(synteny) # bar view colored by position in genome 1
+	plot(synteny, barColor="#268FD6") # emphasize missing regions
+	plot(synteny, "frequency") # most regions are shared by all
+	plot(synteny, "frequency", colorRamp=rainbow) # change the colors
+	plot(synteny, "neighbor") # connect neighbors
+}
 }

@@ -123,8 +123,9 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \examples{
 # load the example non-coding RNA sequences
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-rna <- SearchDB(db, type="RNAStringSet")
+fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
+dna <- readDNAStringSet(fas)
+rna <- RNAStringSet(dna)
 
 \dontrun{
 # predict the secondary structure in dot-bracket notation (dbn)

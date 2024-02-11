@@ -2,6 +2,11 @@
  *                         Creates Distance Marix                           *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
+ 
+ // for OpenMP parallel processing
+ #ifdef _OPENMP
+ #include <omp.h>
+ #endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -21,11 +26,6 @@
 
 // for math functions
 #include <math.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 // for calloc/free
 #include <stdlib.h>
@@ -399,7 +399,9 @@ SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP
 			x_i = get_elt_from_XStringSet_holder(&x_set, i);
 			seqLength_i = x_i.length;
 			
+			#ifdef _OPENMP
 			#pragma omp parallel for private(j,x_j,seqLength_j,start,end,index,width) schedule(guided) num_threads(nthreads)
+			#endif
 			for (j = (i+1); j < x_length; j++) {
 				// extract each jth DNAString from the DNAStringSet
 				x_j = get_elt_from_XStringSet_holder(&x_set, j);
@@ -907,7 +909,9 @@ SEXP similarities(SEXP res, SEXP widths1, SEXP widths2, SEXP terminalGaps, SEXP 
 	PROTECT(ans = allocVector(REALSXP, l));
 	double *rans = REAL(ans);
 	
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,n,s,p1,p2,t1,t2,ov,OV,off,g1,g2,g,o,count,r) schedule(guided) num_threads(nthreads)
+	#endif
 	for (i = 0; i < l; i++) {
 		r = pr[i];
 		n = pn[i];

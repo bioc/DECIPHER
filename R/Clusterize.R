@@ -12,7 +12,7 @@ Clusterize <- function(myXStringSet,
 	probability=0.99,
 	invertCenters=FALSE,
 	singleLinkage=FALSE,
-	alphabet=AA_REDUCED[[152]],
+	alphabet=AA_REDUCED[[186]],
 	processors=1,
 	verbose=TRUE) {
 	

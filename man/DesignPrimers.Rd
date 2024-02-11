@@ -157,9 +157,12 @@ To install OligoArrayAux from the downloaded source folder on Unix-like platform
 \code{\link{AmplifyDNA}}, \code{\link{CalculateEfficiencyPCR}}, \code{\link{DesignSignatures}}, \code{\link{TileSeqs}}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-# not run (must have OligoArrayAux installed first):
-\dontrun{tiles <- TileSeqs(db, identifier=c("Enterobacteriales","Pseudomonadales"))}
-\dontrun{primers <- DesignPrimers(tiles, identifier="Enterobacteriales", start=280, end=420,
-           minProductSize=50, numPrimerSets=1)}
+if (require("RSQLite", quietly=TRUE)) {
+	db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
+	# not run (must have OligoArrayAux installed first):
+	\dontrun{tiles <- TileSeqs(db,
+		identifier=c("Rhizobiales", "Sphingomonadales"))}
+	\dontrun{primers <- DesignPrimers(tiles, identifier="Rhizobiales",
+		start=280, end=420, minProductSize=50, numPrimerSets=1)}
+}
 }

@@ -98,14 +98,13 @@ DB2Seqs <- function(file,
 	}
 	
 	# initialize database
-	driver = dbDriver("SQLite")
 	if (is.character(dbFile)) {
-		dbConn = dbConnect(driver, dbFile)
+		if (!requireNamespace("RSQLite", quietly=TRUE))
+			stop("Package 'RSQLite' must be installed.")
+		dbConn <- dbConnect(dbDriver("SQLite"), dbFile)
 		on.exit(dbDisconnect(dbConn))
 	} else {
-		dbConn = dbFile
-		if (!inherits(dbConn,"SQLiteConnection")) 
-			stop("'dbFile' must be a character string or SQLiteConnection.")
+		dbConn <- dbFile
 		if (!dbIsValid(dbConn))
 			stop("The connection has expired.")
 	}
@@ -113,11 +112,12 @@ DB2Seqs <- function(file,
 	if (verbose)
 		time.1 <- Sys.time()
 	
-	searchExpression <- tblName
-	
+	searchExpression <- dbQuoteIdentifier(dbConn, tblName)
 	if (identifier != "")
 		searchExpression <- paste(searchExpression,
-			' where identifier is "',
+			' where ',
+			dbQuoteIdentifier(dbConn, "identifier"),
+			' = "',
 			identifier,
 			'"',
 			sep="")
@@ -138,7 +138,7 @@ DB2Seqs <- function(file,
 		searchExpression1,
 		sep="")
 	rs <- dbSendQuery(dbConn, searchExpression1)
-	count <- as.numeric(dbFetch(rs, n=-1, row.names=FALSE))
+	count <- as.numeric(dbFetch(rs, n=-1, row.names=FALSE)[[1]])
 	dbClearResult(rs)
 	
 	if (count < 1)
@@ -152,13 +152,16 @@ DB2Seqs <- function(file,
 	
 	if (orderBy != "row_names") # default ordering is row_names
 		searchExpression <- paste(searchExpression,
-			'order by',
-			orderBy)
+			' order by ',
+			dbQuoteIdentifier(dbConn, tblName),
+			'.',
+			dbQuoteIdentifier(dbConn, orderBy),
+			sep='')
 	
 	if (verbose)
 		pBar <- txtProgressBar(style=ifelse(interactive(), 3, 1))
 	s <- seq(1, count, chunkSize)
-	for (i in 1:length(s)) {
+	for (i in seq_along(s)) {
 		# build the search expression
 		searchExpression1 <- paste(searchExpression,
 			'limit',
@@ -166,14 +169,28 @@ DB2Seqs <- function(file,
 			'offset',
 			ifelse(i == 1, 0, s[i] - 1))
 		if (all(nameBy == "row_names")) {
-			searchExpression1 <- paste("select row_names from",
-				searchExpression1)
+			searchExpression1 <- paste("select ",
+				dbQuoteIdentifier(dbConn, tblName),
+				".",
+				dbQuoteIdentifier(dbConn, "row_names"),
+				" from ",
+				searchExpression1,
+				sep="")
 		} else {
-			temp <- 'select row_names'
-			for (j in 1:length(nameBy)) {
+			temp <- paste('select ',
+				dbQuoteIdentifier(dbConn, tblName),
+				'.',
+				dbQuoteIdentifier(dbConn, 'row_names'),
+				sep='')
+			for (j in seq_along(nameBy)) {
 				if (nameBy[j] == "row_names")
 					next
-				temp <- paste(temp, ", ", nameBy[j], sep="")
+				temp <- paste(temp,
+					", ",
+					dbQuoteIdentifier(dbConn, tblName),
+					".",
+					dbQuoteIdentifier(dbConn, nameBy[j]),
+					sep="")
 			}
 			searchExpression1 <- paste(temp,
 				"from",
@@ -184,11 +201,32 @@ DB2Seqs <- function(file,
 		searchResult <- dbFetch(rs, n=-1, row.names=FALSE)
 		dbClearResult(rs)
 		
-		searchExpression2 <- paste(ifelse(type > 4,
-				'select row_names, sequence, quality from _',
-				'select row_names, sequence from _'),
-			tblName,
-			" where row_names in (select row_names from ",
+		searchExpression2 <- paste("select ",
+			dbQuoteIdentifier(dbConn, paste("_", tblName, sep="")),
+			".",
+			dbQuoteIdentifier(dbConn, "row_names"),
+			", ",
+			dbQuoteIdentifier(dbConn, paste("_", tblName, sep="")),
+			".",
+			dbQuoteIdentifier(dbConn, "sequence"),
+			ifelse(type > 4,
+				paste(", ",
+					dbQuoteIdentifier(dbConn, paste("_", tblName, sep="")),
+					".",
+					dbQuoteIdentifier(dbConn, "quality"),
+					sep=""),
+				""),
+			" from ",
+			dbQuoteIdentifier(dbConn, paste("_", tblName, sep="")),
+			" where ",
+			dbQuoteIdentifier(dbConn, paste("_", tblName, sep="")),
+			".",
+			dbQuoteIdentifier(dbConn, "row_names"),
+			" in (select ",
+			dbQuoteIdentifier(dbConn, tblName),
+			".",
+			dbQuoteIdentifier(dbConn, "row_names"),
+			" from ",
 			searchExpression,
 			")",
 			sep="")

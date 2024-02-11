@@ -28,7 +28,7 @@ AlignDB(dbFile,
 }
 \arguments{
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file.
+A database connection object or a character string specifying the path to a SQLite database file.
 }
   \item{tblName}{
 Character string specifying the table(s) where the sequences are located.  If two \code{tblName}s are provided then the sequences in both tables will be aligned.
@@ -70,7 +70,7 @@ Numeric giving the exponent that controls the degree of normalization applied to
 Logical determining whether scores are standardized to be in units of per matching site. Standardization effectively divides the score of each possible alignment by its length so that scores are relative rather than absolute.
 }
   \item{substitutionMatrix}{
-Either a substitution matrix representing the substitution scores for an alignment or the name of the amino acid substitution matrix to use in alignment.  The latter may be one of the following:  ``BLOSUM45'', ``BLOSUM50'', ``BLOSUM62'', ``BLOSUM80'', ``BLOSUM100'', ``PAM30'', ``PAM40'', ``PAM70'', ``PAM120'', ``PAM250'', or ``MIQS''.  The default (NULL) will use the \code{perfectMatch} and \code{misMatch} penalties for DNA/RNA or \code{PFASUM50} for AA.
+Either a substitution matrix representing the substitution scores for an alignment (in third-bits) or the name of the amino acid substitution matrix to use in alignment.  The latter may be one of the following:  ``BLOSUM45'', ``BLOSUM50'', ``BLOSUM62'', ``BLOSUM80'', ``BLOSUM100'', ``PAM30'', ``PAM40'', ``PAM70'', ``PAM120'', ``PAM250'', ``MIQS'', ``MMLSUM10'' to ``MMLSUM90'' (by tens), or ``PFASUM11'' to ``PFASUM100'' (by ones).  The default (NULL) will use the \code{perfectMatch} and \code{misMatch} penalties for DNA/RNA or \code{PFASUM50} for AA.
 }
   \item{processors}{
 The number of processors to use, or \code{NULL} to automatically detect and use all available processors.
@@ -102,24 +102,26 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{AlignProfiles}}, \code{\link{AlignSeqs}}, \code{\link{AlignTranslation}}, \code{\link{PFASUM}}
 }
 \examples{
-gen <- system.file("extdata", "Bacteria_175seqs.gen", package="DECIPHER")
-fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
-
-# Align two tables and place result into a third
-dbConn <- dbConnect(SQLite(), ":memory:")
-Seqs2DB(gen, "GenBank", dbConn, "Seqs1", tblName="Set1")
-Seqs2DB(fas, "FASTA", dbConn, "Seqs2", tblName="Set2")
-AlignDB(dbConn, tblName=c("Set1", "Set2"), add2tbl="AlignedSets")
-l <- IdLengths(dbConn, "AlignedSets", add2tbl=TRUE)
-BrowseDB(dbConn, tblName="AlignedSets") # all sequences have the same width
-dbDisconnect(dbConn)
-
-# Align two identifiers and place the result in the same table
-dbConn <- dbConnect(SQLite(), ":memory:")
-Seqs2DB(gen, "GenBank", dbConn, "Seqs1")
-Seqs2DB(fas, "FASTA", dbConn, "Seqs2")
-AlignDB(dbConn, identifier=c("Seqs1", "Seqs2"))
-l <- IdLengths(dbConn, add2tbl=TRUE)
-BrowseDB(dbConn) # note the sequences with a new identifier
-dbDisconnect(dbConn)
+if (require("RSQLite", quietly=TRUE)) {
+	gen <- system.file("extdata", "Bacteria_175seqs.gen", package="DECIPHER")
+	fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
+	
+	# Align two tables and place result into a third
+	dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
+	Seqs2DB(gen, "GenBank", dbConn, "Seqs1", tblName="Set1")
+	Seqs2DB(fas, "FASTA", dbConn, "Seqs2", tblName="Set2")
+	AlignDB(dbConn, tblName=c("Set1", "Set2"), add2tbl="AlignedSets")
+	l <- IdLengths(dbConn, "AlignedSets", add2tbl=TRUE)
+	BrowseDB(dbConn, tblName="AlignedSets") # all sequences have the same width
+	dbDisconnect(dbConn)
+	
+	# Align two identifiers and place the result in the same table
+	dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
+	Seqs2DB(gen, "GenBank", dbConn, "Seqs1")
+	Seqs2DB(fas, "FASTA", dbConn, "Seqs2")
+	AlignDB(dbConn, identifier=c("Seqs1", "Seqs2"))
+	l <- IdLengths(dbConn, add2tbl=TRUE)
+	BrowseDB(dbConn) # note the sequences with a new identifier
+	dbDisconnect(dbConn)
+}
 }

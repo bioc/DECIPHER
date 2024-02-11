@@ -301,20 +301,21 @@ DesignSignatures <- function(dbFile,
 	}
 	
 	# initialize database
-	driver = dbDriver("SQLite")
 	if (is.character(dbFile)) {
-		dbConn = dbConnect(driver, dbFile)
+		if (!requireNamespace("RSQLite", quietly=TRUE))
+			stop("Package 'RSQLite' must be installed.")
+		dbConn <- dbConnect(dbDriver("SQLite"), dbFile)
 		on.exit(dbDisconnect(dbConn))
 	} else {
-		dbConn = dbFile
-		if (!inherits(dbConn,"SQLiteConnection")) 
-			stop("'dbFile' must be a character string or SQLiteConnection.")
+		dbConn <- dbFile
 		if (!dbIsValid(dbConn))
 			stop("The connection has expired.")
 	}
 	
-	searchExpression <- paste("select distinct identifier from",
-		tblName)
+	searchExpression <- paste("select distinct",
+		dbQuoteIdentifier(dbConn, "identifier"),
+		"from",
+		dbQuoteIdentifier(dbConn, tblName))
 	rs <- dbSendQuery(dbConn, searchExpression)
 	searchResult <- dbFetch(rs, n=-1, row.names=FALSE)
 	ids <- searchResult$identifier

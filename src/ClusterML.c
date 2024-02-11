@@ -2,6 +2,11 @@
  *                        Cluster Maximum Likelihood                        *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
+ 
+ // for OpenMP parallel processing
+ #ifdef _OPENMP
+ #include <omp.h>
+ #endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -24,11 +29,6 @@
 
 // for math functions
 #include <math.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 // for calloc/free
 #include <stdlib.h>
@@ -239,7 +239,9 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 		if (Z2) {
 			// neither branch can be disregarded
 			
+			#ifdef _OPENMP
 			#pragma omp simd
+			#endif
 			for (i = 0; i < s0; i++) {
 				L1[i] = *(P1++)*(*(Ls1));
 				L2[i] = *(P2++)*(*(Ls2));
@@ -247,7 +249,9 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 			for (j = 1; j < s0; j++) {
 				P1++;
 				P2++;
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++) {
 					L1[i] += *(P1++)*(*(Ls1 + j));
 					L2[i] += *(P2++)*(*(Ls2 + j));
@@ -263,7 +267,9 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 			
 			*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
 			if (Z3) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= epsilon;
 				*(Ls3 + s1) += 1;
@@ -271,13 +277,17 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 		} else {
 			// second branch can be disregarded
 			
+			#ifdef _OPENMP
 			#pragma omp simd
+			#endif
 			for (i = 0; i < s0; i++) {
 				L1[i] = *(P1++)*(*(Ls1));
 			}
 			for (j = 1; j < s0; j++) {
 				P1++;
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++) {
 					L1[i] += *(P1++)*(*(Ls1 + j));
 				}
@@ -292,7 +302,9 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 			
 			*(Ls3 + s1) = *(Ls1 + s1);
 			if (Z3) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= epsilon;
 				*(Ls3 + s1) += 1;
@@ -302,13 +314,17 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 		if (Z2) {
 			// first branch can be disregarded
 			
+			#ifdef _OPENMP
 			#pragma omp simd
+			#endif
 			for (i = 0; i < s0; i++) {
 				L2[i] = *(P2++)*(*(Ls2));
 			}
 			for (j = 1; j < s0; j++) {
 				P2++;
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++) {
 					L2[i] += *(P2++)*(*(Ls2 + j));
 				}
@@ -319,7 +335,9 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 			}
 			
 			if (root && Z1) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= *(Ls1 + i);
 				*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
@@ -336,7 +354,9 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 			}
 			
 			if (Z3) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= epsilon;
 				*(Ls3 + s1) += 1;
@@ -377,13 +397,17 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 		if (Z2) {
 			// neither branch can be disregarded
 			
+			#ifdef _OPENMP
 			#pragma omp simd
+			#endif
 			for (i = 0; i < s0; i++) {
 				L1[i] = *(P1++)*(*(Ls1));
 				L2[i] = *(P2++)*(*(Ls2));
 			}
 			for (j = 1; j < s0; j++) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++) {
 					L1[i] += *(P1++)*(*(Ls1 + j));
 					L2[i] += *(P2++)*(*(Ls2 + j));
@@ -399,7 +423,9 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 			
 			*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
 			if (Z3) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= epsilon;
 				*(Ls3 + s1) += 1;
@@ -407,12 +433,16 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 		} else {
 			// second branch can be disregarded
 			
+			#ifdef _OPENMP
 			#pragma omp simd
+			#endif
 			for (i = 0; i < s0; i++) {
 				L1[i] = *(P1++)*(*(Ls1));
 			}
 			for (j = 1; j < s0; j++) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++) {
 					L1[i] += *(P1++)*(*(Ls1 + j));
 				}
@@ -427,7 +457,9 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 			
 			*(Ls3 + s1) = *(Ls1 + s1);
 			if (Z3) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= epsilon;
 				*(Ls3 + s1) += 1;
@@ -437,12 +469,16 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 		if (Z2) {
 			// first branch can be disregarded
 			
+			#ifdef _OPENMP
 			#pragma omp simd
+			#endif
 			for (i = 0; i < s0; i++) {
 				L2[i] = *(P2++)*(*(Ls2));
 			}
 			for (j = 1; j < s0; j++) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++) {
 					L2[i] += *(P2++)*(*(Ls2 + j));
 				}
@@ -453,7 +489,9 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 			}
 			
 			if (root && Z1) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= *(Ls1 + i);
 				*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
@@ -470,7 +508,9 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 			}
 			
 			if (Z3) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= epsilon;
 				*(Ls3 + s1) += 1;
@@ -510,7 +550,9 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 		if (Z2) {
 			// neither branch can be disregarded
 			
+			#ifdef _OPENMP
 			#pragma omp simd
+			#endif
 			for (i = 0; i < s0; i++) {
 				L1[i] = *(P1++)*(*(Ls1));
 				L2[i] = *(P2++)*(*(Ls2));
@@ -518,7 +560,9 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 			for (j = 1; j < s0; j++) {
 				P1++;
 				P2++;
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++) {
 					L1[i] += *(P1++)*(*(Ls1 + j));
 					L2[i] += *(P2++)*(*(Ls2 + j));
@@ -534,7 +578,9 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 			
 			*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
 			if (Z3) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= epsilon;
 				*(Ls3 + s1) += 1;
@@ -542,13 +588,17 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 		} else {
 			// second branch can be disregarded
 			
+			#ifdef _OPENMP
 			#pragma omp simd
+			#endif
 			for (i = 0; i < s0; i++) {
 				L1[i] = *(P1++)*(*(Ls1));
 			}
 			for (j = 1; j < s0; j++) {
 				P1++;
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++) {
 					L1[i] += *(P1++)*(*(Ls1 + j));
 				}
@@ -563,7 +613,9 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 			
 			*(Ls3 + s1) = *(Ls1 + s1);
 			if (Z3) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= epsilon;
 				*(Ls3 + s1) += 1;
@@ -573,13 +625,17 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 		if (Z2) {
 			// first branch can be disregarded
 			
+			#ifdef _OPENMP
 			#pragma omp simd
+			#endif
 			for (i = 0; i < s0; i++) {
 				L2[i] = *(P2++)*(*(Ls2));
 			}
 			for (j = 1; j < s0; j++) {
 				P2++;
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++) {
 					L2[i] += *(P2++)*(*(Ls2 + j));
 				}
@@ -590,7 +646,9 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 			}
 			
 			if (root && Z1) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= *(Ls1 + i);
 				*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
@@ -607,7 +665,9 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 			}
 			
 			if (Z3) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= epsilon;
 				*(Ls3 + s1) += 1;
@@ -648,13 +708,17 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 		if (Z2) {
 			// neither branch can be disregarded
 			
+			#ifdef _OPENMP
 			#pragma omp simd
+			#endif
 			for (i = 0; i < s0; i++) {
 				L1[i] = *(P1++)*(*(Ls1));
 				L2[i] = *(P2++)*(*(Ls2));
 			}
 			for (j = 1; j < s0; j++) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++) {
 					L1[i] += *(P1++)*(*(Ls1 + j));
 					L2[i] += *(P2++)*(*(Ls2 + j));
@@ -670,7 +734,9 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 			
 			*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
 			if (Z3) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= epsilon;
 				*(Ls3 + s1) += 1;
@@ -678,12 +744,16 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 		} else {
 			// second branch can be disregarded
 			
+			#ifdef _OPENMP
 			#pragma omp simd
+			#endif
 			for (i = 0; i < s0; i++) {
 				L1[i] = *(P1++)*(*(Ls1));
 			}
 			for (j = 1; j < s0; j++) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++) {
 					L1[i] += *(P1++)*(*(Ls1 + j));
 				}
@@ -698,7 +768,9 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 			
 			*(Ls3 + s1) = *(Ls1 + s1);
 			if (Z3) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= epsilon;
 				*(Ls3 + s1) += 1;
@@ -708,12 +780,16 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 		if (Z2) {
 			// first branch can be disregarded
 			
+			#ifdef _OPENMP
 			#pragma omp simd
+			#endif
 			for (i = 0; i < s0; i++) {
 				L2[i] = *(P2++)*(*(Ls2));
 			}
 			for (j = 1; j < s0; j++) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++) {
 					L2[i] += *(P2++)*(*(Ls2 + j));
 				}
@@ -724,7 +800,9 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 			}
 			
 			if (root && Z1) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= *(Ls1 + i);
 				*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
@@ -741,7 +819,9 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 			}
 			
 			if (Z3) {
+				#ifdef _OPENMP
 				#pragma omp simd
+				#endif
 				for (i = 0; i < s0; i++)
 					*(Ls3 + i) *= epsilon;
 				*(Ls3 + s1) += 1;
@@ -1195,7 +1275,9 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 	for (k = 0; k < numRates; k++) { // for each bin of the gamma distribution determined by alpha
 		// P = expM(Q*v)
 		// transpose for cache efficiency
+		#ifdef _OPENMP
 		#pragma omp parallel for num_threads(nthreads)
+		#endif
 		for (i = 0; i < lu; i++) {
 			if (t == 3) {
 				ProbChangeExpAA(m, (P + i*s2 + k*size), ul[i] * *(m + k + params));
@@ -1207,7 +1289,9 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 	}
 	
 	double *sumL = Calloc(maxWidth*(altB + 1), double);
+	#ifdef _OPENMP
 	#pragma omp parallel for private(j,k,o,p,y_i,row) num_threads(nthreads)
+	#endif
 	for (i = 0; i < maxWidth; i++) { // for each position
 		int weight;
 		if (s > 0) { // reconstruct ancestral states

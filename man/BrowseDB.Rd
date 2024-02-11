@@ -8,7 +8,7 @@ Opens an html file in a web browser to show the contents of a table in a databas
 }
 \usage{
 BrowseDB(dbFile,
-         htmlFile = paste(tempdir(), "/db.html", sep = ""),
+         htmlFile = tempfile(fileext=".html"),
          openURL = interactive(),
          tblName = "Seqs",
          identifier = "",
@@ -19,7 +19,7 @@ BrowseDB(dbFile,
 }
 \arguments{
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file.
+A database connection object or a character string specifying the path to a SQLite database file.
 }
   \item{htmlFile}{
 Character string giving the location where the html file should be written.
@@ -64,6 +64,8 @@ If viewing a table containing sequences, the sequences are purposefully not show
 \code{\link{BrowseSeqs}}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-BrowseDB(db)
+if (require("RSQLite", quietly=TRUE)) {
+	db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
+	BrowseDB(db)
+}
 }

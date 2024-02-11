@@ -1,5 +1,5 @@
 BrowseDB <- function(dbFile,
-	htmlFile=paste(tempdir(),"/db.html",sep=""),
+	htmlFile=tempfile(fileext=".html"),
 	openURL=interactive(),
 	tblName="Seqs",
 	identifier="",
@@ -16,7 +16,7 @@ BrowseDB <- function(dbFile,
 		stop("openURL must be TRUE or FALSE.")
 	if (!is.character(tblName))
 		stop("tblName must be a character string.")
-	if (substr(tblName, 1, 1) == "_")
+	if (startsWith(tblName, "_"))
 		stop("Invalid tblName.")
 	if (!is.character(identifier))
 		stop("identifier must be a character string.")
@@ -42,40 +42,42 @@ BrowseDB <- function(dbFile,
 		stop("clause must be a character string.")
 	
 	# initialize database
-	driver = dbDriver("SQLite")
 	if (is.character(dbFile)) {
-		dbConn = dbConnect(driver, dbFile)
+		if (!requireNamespace("RSQLite", quietly=TRUE))
+			stop("Package 'RSQLite' must be installed.")
+		dbConn <- dbConnect(dbDriver("SQLite"), dbFile)
 		on.exit(dbDisconnect(dbConn))
 	} else {
-		dbConn = dbFile
-		if (!inherits(dbConn,"SQLiteConnection")) 
-			stop("'dbFile' must be a character string or SQLiteConnection.")
+		dbConn <- dbFile
 		if (!dbIsValid(dbConn))
 			stop("The connection has expired.")
 	}
 	
 	# find the number of rows
-	searchExpression <- paste('select count(*) from ',
-		tblName,
-		sep="")
+	searchExpression <- paste('select count(*) from',
+		dbQuoteIdentifier(dbConn, tblName))
 	if (identifier != "")
 		searchExpression <- paste(searchExpression,
-			' where identifier is "',
+			' where ',
+			dbQuoteIdentifier(dbConn, "identifier"),
+			' = "',
 			identifier,
 			'"',
 			sep="")
 	if (clause != "")
 		searchExpression <- paste(searchExpression,
-			ifelse(identifier == "", " where ", " and "),
-			clause,
-			sep="")
+			ifelse(identifier == "", "where", "and"),
+			clause)
 	if (orderBy != "row_names") # default ordering is row_names
 		searchExpression <- paste(searchExpression,
-			'order by',
-			orderBy)
+			' order by ',
+			dbQuoteIdentifier(dbConn, tblName),
+			'.',
+			dbQuoteIdentifier(dbConn, orderBy),
+			sep='')
 	
 	rs <- dbSendQuery(dbConn, searchExpression)
-	count <- as.integer(dbFetch(rs, n=-1, row.names=FALSE))
+	count <- as.double(dbFetch(rs, n=-1, row.names=FALSE)[[1]])
 	dbClearResult(rs)
 	
 	# count is the numer of rows in the table body
@@ -100,28 +102,23 @@ BrowseDB <- function(dbFile,
 	}
 	
 	# gets all the fields available
-	f <- dbListFields(dbConn, tblName)
+	field <- dbListFields(dbConn, tblName)
 	header <- ""
 	tds <- ""
 	tableWidth <- 0L
-	for (i in 1:length(f)) {
-		if (f[i] == "sequence")
-			next # skip sequence because it is compressed
-		
-		w <- width(f[i])
+	for (i in seq_along(field)) {
+		w <- width(field[i])
 		
 		# build the search expression
-		# substr is used for speed and viewability
-		searchExpression <- paste('select substr(',
-			f[i],
-			',1,',
-			maxChars,
-			') from ',
-			tblName,
-			sep="")
+		searchExpression <- paste('select',
+			dbQuoteIdentifier(dbConn, field[i]),
+			'from',
+			dbQuoteIdentifier(dbConn, tblName))
 		if (identifier != "")
 			searchExpression <- paste(searchExpression,
-				' where identifier is "',
+				' where ',
+				dbQuoteIdentifier(dbConn, "identifier"),
+				' = "',
 				identifier,
 				'"',
 				sep="")
@@ -132,8 +129,11 @@ BrowseDB <- function(dbFile,
 				sep="")
 		if (orderBy != "row_names") # default ordering is row_names
 			searchExpression <- paste(searchExpression,
-				'order by',
-				orderBy)
+				' order by ',
+				dbQuoteIdentifier(dbConn, tblName),
+				'.',
+				dbQuoteIdentifier(dbConn, orderBy),
+				sep='')
 		if (limit > 0)
 			searchExpression <- paste(searchExpression,
 				'limit',
@@ -143,12 +143,14 @@ BrowseDB <- function(dbFile,
 		searchResult <- dbFetch(rs, n=-1, row.names=FALSE)
 		dbClearResult(rs)
 		
-		# NAs in R are NULLs in SQL
-		# replace missing values
+		# NAs in R are NULLs in SQL: replace missing values
 		searchResult[is.na(searchResult)] <- "NULL"
 		
 		# replace newlines with html breaks
-		searchResult[, 1] <- gsub("\n", "<br>", searchResult[, 1], fixed=TRUE)
+		searchResult[, 1] <- gsub("\n",
+			"<br>",
+			substring(searchResult[, 1], 1, maxChars),
+			fixed=TRUE)
 		
 		if (max(width(searchResult[,1])) > w)
 			w <- max(width(searchResult[,1]))
@@ -174,7 +176,7 @@ BrowseDB <- function(dbFile,
 			"<td class=\"td",
 			i,
 			"\" style=\"font-weight:bold;\">",
-			f[i],
+			field[i],
 			"</td>",
 			sep="")
 		

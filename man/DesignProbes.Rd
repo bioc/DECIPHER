@@ -121,8 +121,12 @@ To install OligoArrayAux from the downloaded source folder on Unix-like platform
 \code{\link{CalculateEfficiencyFISH}}, \code{\link{TileSeqs}}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-# not run (must have OligoArrayAux installed first):
-\dontrun{tiles <- TileSeqs(db, identifier=c("Enterobacteriales","Pseudomonadales"))}
-\dontrun{probes <- DesignProbes(tiles, identifier="Enterobacteriales", start=280, end=420)}
+if (require("RSQLite", quietly=TRUE)) {
+	db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
+	# not run (must have OligoArrayAux installed first):
+	\dontrun{tiles <- TileSeqs(db,
+		identifier=c("Rhizobiales", "Sphingomonadales"))}
+	\dontrun{probes <- DesignProbes(tiles, identifier="Rhizobiales",
+		start=280, end=420)}
+}
 }

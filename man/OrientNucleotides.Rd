@@ -51,8 +51,9 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{CorrectFrameshifts}}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-dna <- SearchDB(db, remove="all")
+fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
+dna <- readDNAStringSet(fas)
+dna <- RemoveGaps(dna)
 DNA <- dna # 175 sequences
 
 # reorient subsamples of the first 169 sequences

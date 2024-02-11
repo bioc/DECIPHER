@@ -2,6 +2,11 @@
  *                Predicts 3 State Secondary RNA Structure                  *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
+ 
+ // for OpenMP parallel processing
+ #ifdef _OPENMP
+ #include <omp.h>
+ #endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -21,11 +26,6 @@
 
 // for math functions
 #include <math.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 /*
  * Biostrings_interface.h is needed for the DNAencode(), get_XString_asRoSeq(),
@@ -238,7 +238,9 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 	
 	last = tot - 1;
 	for (i = 0; i < (tot - 1); i++) {
+		#ifdef _OPENMP
 		#pragma omp parallel for private(j,l,s,x_s) schedule(guided) num_threads(nthreads)
+		#endif
 		for (j = i + 1; j < tot; j++) {
 			double AU = 0, UA = 0, GC = 0, CG = 0, GU = 0, UG = 0, other = 0, temp = 0, bg;
 			l = 0;
@@ -506,7 +508,9 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 			rowMax = Calloc(l*n, double); // initialized to zero
 			colMax = Calloc(l*n, double); // initialized to zero
 			for (d = 2; d <= l; d++) {
+				#ifdef _OPENMP
 				#pragma omp parallel for private(i,j,k,match,left,right,prevL,prevR) schedule(guided) num_threads(nthreads)
+				#endif
 				for (i = 0; i < (l - d + 1); i++) {
 					j = i + d - 1; // i <= j
 					

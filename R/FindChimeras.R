@@ -88,39 +88,44 @@ FindChimeras <- function(dbFile,
 		time.1 <- Sys.time()
 	
 	# initialize databases
-	driver = dbDriver("SQLite")
 	if (is.character(dbFile)) {
-		dbConn1 = dbConnect(driver, dbFile)
+		if (!requireNamespace("RSQLite", quietly=TRUE))
+			stop("Package 'RSQLite' must be installed.")
+		dbConn1 <- dbConnect(dbDriver("SQLite"), dbFile)
 		on.exit(dbDisconnect(dbConn1))
 	} else {
-		dbConn1 = dbFile
-		if (!inherits(dbConn1,"SQLiteConnection")) 
-			stop("'dbFile' must be a character string or SQLiteConnection.")
+		dbConn1 <- dbFile
 		if (!dbIsValid(dbConn1))
 			stop("The connection has expired.")
 	}
-	
 	if (is.character(dbFileReference)) {
-		dbConn2 = dbConnect(driver, dbFileReference)
+		if (!requireNamespace("RSQLite", quietly=TRUE))
+			stop("Package 'RSQLite' must be installed.")
+		dbConn2 <- dbConnect(dbDriver("SQLite"), dbFileReference)
 		on.exit(dbDisconnect(dbConn2), add=TRUE)
 	} else {
-		dbConn2 = dbFileReference
-		if (!inherits(dbConn2,"SQLiteConnection")) 
-			stop("'dbFileReference' must be a character string or SQLiteConnection")
+		dbConn2 <- dbFileReference
 		if (!dbIsValid(dbConn2))
 			stop("The connection has expired.")
 	}
 	
-	searchExpression <- paste("select distinct identifier, origin from",
-		tblNameReference)
+	searchExpression <- paste("select distinct ",
+		dbQuoteIdentifier(dbConn2, "identifier"),
+		", ",
+		dbQuoteIdentifier(dbConn2, "origin"),
+		" from ",
+		dbQuoteIdentifier(dbConn2, tblNameReference),
+		sep="")
 	rs <- dbSendQuery(dbConn2, searchExpression)
 	searchResult <- dbFetch(rs, n=-1, row.names=FALSE)
 	groups <- searchResult$identifier
 	origins <- searchResult$origin
 	dbClearResult(rs)
 	
-	searchExpression <- paste("select distinct identifier from",
-		tblName)
+	searchExpression <- paste("select distinct",
+		dbQuoteIdentifier(dbConn1, "identifier"),
+		"from",
+		dbQuoteIdentifier(dbConn1, tblName))
 	rs <- dbSendQuery(dbConn1, searchExpression)
 	searchResult <- dbFetch(rs, n=-1, row.names=FALSE)
 	myGroups <- searchResult$identifier
@@ -160,7 +165,7 @@ FindChimeras <- function(dbFile,
 				identifier=group,
 				processors=processors,
 				verbose=FALSE,
-				clause="nonbases < 20",
+				clause=paste(dbQuoteIdentifier(dbConn2, "nonstandard"), "< 20"),
 				countOnly=TRUE)
 		} else {
 			numG <- SearchDB(dbConn2,
@@ -168,7 +173,10 @@ FindChimeras <- function(dbFile,
 				tblName=tblNameReference,
 				processors=processors,
 				verbose=FALSE,
-				clause="chimera is NULL and nonbases < 20",
+				clause=paste(dbQuoteIdentifier(dbConn2, "chimera"),
+					"is NULL and",
+					dbQuoteIdentifier(dbConn2, "nonstandard"),
+					"< 20"),
 				countOnly=TRUE)
 		}
 		if (numG < minGroupSize) # too small
@@ -201,7 +209,7 @@ FindChimeras <- function(dbFile,
 				type="DNAStringSet",
 				limit=maxGroupSize,
 				removeGaps="all",
-				clause="nonbases < 20")
+				clause=paste(dbQuoteIdentifier(dbConn2, "nonstandard"), "< 20"))
 		} else {
 			group_dna <- SearchDB(dbConn2,
 				tblName=tblNameReference,
@@ -211,7 +219,10 @@ FindChimeras <- function(dbFile,
 				type="DNAStringSet",
 				limit=maxGroupSize,
 				removeGaps="all",
-				clause="chimera is NULL and nonbases < 20")
+				clause=paste(dbQuoteIdentifier(dbConn2, "chimera"),
+					"is NULL and",
+					dbQuoteIdentifier(dbConn2, "nonstandard"),
+					"< 20"))
 		}
 		numG <- length(group_dna)
 		
@@ -233,7 +244,7 @@ FindChimeras <- function(dbFile,
 				removeGaps="all",
 				processors=processors,
 				verbose=FALSE,
-				clause="chimera is NULL")
+				clause=paste(dbQuoteIdentifier(dbConn1, "chimera"), "is NULL"))
 		}
 		
 		# reduce to the set of unique dna sequences
@@ -527,7 +538,7 @@ FindChimeras <- function(dbFile,
 						type="DNAStringSet",
 						limit=maxGroupSize,
 						removeGaps="all",
-						clause="nonbases < 20")
+						clause=paste(dbQuoteIdentifier(dbConn2, "nonstandard"), "< 20"))
 				} else {
 					other_dna <- SearchDB(dbConn2,
 						tblName=tblNameReference,
@@ -537,7 +548,10 @@ FindChimeras <- function(dbFile,
 						type="DNAStringSet",
 						limit=maxGroupSize,
 						removeGaps="all",
-						clause="nonbases < 20 and chimera is NULL")
+						clause=paste(dbQuoteIdentifier(dbConn2, "chimera"),
+							"is NULL and",
+							dbQuoteIdentifier(dbConn2, "nonstandard"),
+							"< 20"))
 				}
 				
 				if (length(other_dna) <= multiplier)
@@ -684,7 +698,7 @@ FindChimeras <- function(dbFile,
 	if ((is.character(add2tbl) || add2tbl) && !is.null(all_results))
 		Add2DB(all_results,
 			dbConn1,
-			tblName=ifelse(is.character(add2tbl),add2tbl,tblName),
+			tblName=ifelse(is.character(add2tbl), add2tbl, tblName),
 			verbose=FALSE)
 	
 	if (verbose) {
@@ -700,7 +714,7 @@ FindChimeras <- function(dbFile,
 					"possible chimera."))
 			if ((is.character(add2tbl) || add2tbl) && !is.null(all_results))
 				cat("\nAdded to table ",
-					ifelse(is.character(add2tbl),add2tbl,tblName),
+					ifelse(is.character(add2tbl), add2tbl, tblName),
 					":  \"chimera\".",
 					sep="")
 		}

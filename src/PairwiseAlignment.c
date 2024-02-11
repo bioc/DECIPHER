@@ -1395,7 +1395,7 @@ SEXP alignPairs(SEXP pattern, SEXP subject, SEXP query, SEXP target, SEXP positi
 	PROTECT(ans11 = allocVector(VECSXP, l));
 	PROTECT(ans12 = allocVector(VECSXP, l));
 	
-	int j, k, p, p1, p2, c1, c2, ms, mms, count, count1, count2, signal;
+	int j, k, p, p1, p2, c1, c2, ms, mms, count, count1, count2;
 	int *res, *ind1, *len1, *ind2, *len2;
 	double score;
 	SEXP indels1, lengths1, indels2, lengths2;
@@ -1483,7 +1483,6 @@ SEXP alignPairs(SEXP pattern, SEXP subject, SEXP query, SEXP target, SEXP positi
 		score = 0; // alignment score
 		mms = 0; // number of mismatches
 		ms = 0; // number of matches
-		signal = 0; // completion signal (success == 0)
 		while (p1 + starts1[i] - 1 <= ends1[i] ||
 			p2 + starts2[i] - 1 <= ends2[i]) {
 			if (c1 < count1 && p1 == ind1[c1]) {

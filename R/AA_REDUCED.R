@@ -182,4 +182,12 @@ AA_REDUCED <- list(c("A", "C", "D", "E", "FY", "G", "H", "ILMV", "K", "N", "P", 
 	c("A", "C", "D", "FWY", "G", "H", "ILV", "M", "N", "P", "QE", "RK", "S", "T"),
 	c("A", "CM", "D", "E", "FWY", "G", "ILV", "NH", "P", "Q", "RK", "ST"),
 	c("A", "C", "DE", "FWY", "G", "ILV", "M", "NH", "P", "Q", "RK", "ST"),
-	c("A", "C", "D", "E", "FY", "G", "H", "ILV", "MW", "N", "P", "Q", "RK", "S", "T"))
+	c("A", "C", "D", "E", "FY", "G", "H", "ILV", "MW", "N", "P", "Q", "RK", "S", "T"),
+	c("A", "C", "E", "FWY", "G", "H", "IV", "K", "LM", "ND", "P", "Q", "R", "S", "T"),
+	c("A", "CM", "D", "FWY", "G", "H", "IV", "K", "L", "N", "P", "QE", "R", "S", "T"),
+	c("A", "C", "D", "E", "FWY", "G", "H", "IV", "K", "L", "M", "N", "P", "Q", "R", "ST"),
+	c("A", "C", "D", "E", "FWY", "G", "IV", "L", "M", "NH", "P", "Q", "RK", "S", "T"),
+	c("A", "C", "D", "E", "FY", "G", "H", "IV", "K", "L", "M", "N", "P", "Q", "R", "ST", "W"),
+	c("A", "CM", "DE", "FWY", "G", "H", "IV", "K", "L", "N", "P", "Q", "R", "S", "T"),
+	c("A", "C", "D", "E", "FY", "G", "H", "IV", "L", "M", "N", "P", "QK", "R", "S", "T", "W"),
+	c("A", "C", "DE", "FY", "G", "H", "IV", "K", "L", "M", "N", "P", "Q", "R", "ST", "W"))

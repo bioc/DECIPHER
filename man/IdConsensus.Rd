@@ -18,7 +18,7 @@ IdConsensus(dbFile,
 }
 \arguments{
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file.
+A database connection object or a character string specifying the path to a SQLite database file.
 }
   \item{tblName}{
 Character string specifying the table in which to form consensus.
@@ -55,7 +55,9 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{Seqs2DB}}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-con <- IdConsensus(db, colName="identifier", noConsensusChar="N")
-BrowseSeqs(con)
+if (require("RSQLite", quietly=TRUE)) {
+	db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
+	con <- IdConsensus(db, colName="identifier", noConsensusChar="N")
+	BrowseSeqs(con)
+}
 }

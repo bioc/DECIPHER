@@ -100,11 +100,11 @@ fas <- system.file("extdata", "IDH2.fas", package="DECIPHER")
 
 Next, there are two options for importing the sequences into a database:  either save a database file or maintain the database in memory.  Here we will build the database in memory because it is a small set of sequences and we do not intend to use the database later:
 
-<<expr2,eval=TRUE>>=
+<<expr2,eval=FALSE>>=
 # specify a path for where to write the sequence database
 dbConn <- "<<path to write sequence database>>"
 # OR create the sequence database in memory
-dbConn <- dbConnect(SQLite(), ":memory:")
+dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
 N <- Seqs2DB(fas, "FASTA", dbConn, "")
 N # number of sequences in the database
 @
@@ -117,7 +117,7 @@ In this example, we will define groups based on the allele's name, which was inc
 
 To assign group names directly from the sequence names (FASTA identifiers), simply run the code shown below.  In more complex cases, we could use the functions \Rfunction{IdentifyByRank}, \Rfunction{FormGroups}, \Rfunction{Clusterize}, or \Rfunction{TreeLine} to define groups.
 
-<<expr3,eval=TRUE>>=
+<<expr3,eval=FALSE>>=
 # if each sequence belongs to its own group,
 # then identify the sequences with a number:
 desc <- as.character(seq_len(N)) # N is the number of sequences
@@ -129,7 +129,7 @@ unique(desc)
 
 Now that we have unique names for our four variants, we must add them to the database as the identifier of each sequence.
 
-<<expr4,eval=TRUE>>=
+<<expr4,eval=FALSE>>=
 Add2DB(data.frame(identifier=desc, stringsAsFactors=FALSE), dbConn)
 @
 
@@ -141,7 +141,7 @@ Add2DB(data.frame(identifier=desc, stringsAsFactors=FALSE), dbConn)
 
 Before using our database to design primers, we must carefully consider the inputs that will be used.  These inputs can have a large impact on the outcome, and therefore should be tailored to the experimental goal.  Below are recommended inputs for sequencing, FLP, and HRM:
 
-<<expr5a,eval=TRUE>>=
+<<expr5a,eval=FALSE>>=
 # Designing primers for sequencing experiments:
 TYPE <- "sequence"
 MIN_SIZE <- 300 # base pairs
@@ -150,7 +150,7 @@ RESOLUTION <- 5 # k-mer signature
 LEVELS <- 5 # max number of each k-mer
 @
 
-<<expr5b,eval=TRUE>>=
+<<expr5b,eval=FALSE>>=
 # Designing primers for community fingerprinting (FLP):
 TYPE <- "length"
 # it is important to have a width range of lengths
@@ -166,7 +166,7 @@ RESOLUTION <- c(seq(200, 700, 3),
 LEVELS <- 2 # presence/absence of the length
 @
 
-<<expr5c,eval=TRUE>>=
+<<expr5c,eval=FALSE>>=
 # Designing primers for high resolution melting (HRM):
 TYPE <- "melt"
 MIN_SIZE <- 55 # base pairs
@@ -180,7 +180,7 @@ LEVELS <- 10
 
 The following step is not applicable to sequencing experiments (i.e., the \code{TYPE} above is \code{"sequence"}), and is optional for other types of experiments.  If using HRM or FLP analysis to differentiate amplicon signatures, a digestion step following PCR amplification may generate fragments with widely different signatures.  This is especially useful when trying to distinguish a large number of different groups based on small variations.  Potential enzymes can be selected from the built-in \Robject{RESTRICTION_ENZYMES} dataset, which includes all of the standard enzymes sold by \underline{\href{https://www.neb.com/}{New England BioLabs}}.
 
-<<expr6,eval=TRUE>>=
+<<expr6,eval=FALSE>>=
 ENZYMES <- NULL # required for sequencing
 # OR select restriction enzymes to consider
 data(RESTRICTION_ENZYMES) # load available enzymes
@@ -453,6 +453,7 @@ if (TYPE=="melt") {
             segments(i - 0.45, xaxs[w], i + 0.45, xaxs[w], lwd=2)
     }
 }
+zzz <- dbDisconnect(dbConn)
 @
 
 \begin{figure}
@@ -472,7 +473,6 @@ Finally, we can order the top scoring forward and reverse primers for synthesis 
 All of the output in this vignette was produced under the following conditions:
 
 <<sessinfo,echo=FALSE,results=tex>>=
-zzz <- dbDisconnect(dbConn)
 toLatex(sessionInfo(), locale=FALSE)
 @
 

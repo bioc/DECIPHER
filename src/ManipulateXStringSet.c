@@ -2,6 +2,11 @@
  *                         Manipulate XStringSets                           *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
+ 
+ // for OpenMP parallel processing
+ #ifdef _OPENMP
+ #include <omp.h>
+ #endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -21,11 +26,6 @@
 
 // for math functions
 #include <math.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 // strcpy
 #include <string.h>
@@ -87,7 +87,9 @@ SEXP insertGaps(SEXP x, SEXP positions, SEXP lengths, SEXP type, SEXP nThreads)
 	ans_holder = hold_XVectorList(ans);
 	Chars_holder ans_elt_holder;
 	
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,ans_elt_holder,x_s,sum,start) schedule(guided) num_threads(nthreads)
+	#endif
 	for (i = 0; i < x_length; i++) {
 		ans_elt_holder = get_elt_from_XStringSet_holder(&ans_holder, i);
 		//ans_elt_holder.length = 0;
@@ -772,7 +774,9 @@ SEXP removeCommonGaps(SEXP x, SEXP type, SEXP mask, SEXP nThreads)
 	ans_holder = hold_XVectorList(ans);
 	Chars_holder ans_elt_holder;
 	
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,ans_elt_holder,x_i,start,delta) schedule(guided) num_threads(nthreads)
+	#endif
 	for (i = 0; i < x_length; i++) {
 		ans_elt_holder = get_elt_from_XStringSet_holder(&ans_holder, i);
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
@@ -821,7 +825,9 @@ SEXP removeGaps(SEXP x, SEXP type, SEXP mask, SEXP nThreads)
 	// count the sequence lengths
 	PROTECT(ans_width = NEW_INTEGER(x_length));
 	int *width = INTEGER(ans_width);
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,x_i) schedule(guided) num_threads(nthreads)
+	#endif
 	for (i = 0; i < x_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
 		width[i] = x_i.length;
@@ -854,7 +860,9 @@ SEXP removeGaps(SEXP x, SEXP type, SEXP mask, SEXP nThreads)
 	PROTECT(ans = alloc_XRawList(ans_classname, ans_element_type, ans_width));
 	ans_holder = hold_XVectorList(ans);
 	
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,ans_elt_holder,x_i,p,sum) schedule(guided) num_threads(nthreads)
+	#endif
 	for (i = 0; i < x_length; i++) {
 		ans_elt_holder = get_elt_from_XStringSet_holder(&ans_holder, i);
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);

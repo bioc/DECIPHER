@@ -14,7 +14,7 @@ Seqs2DB(seqs,
         tblName = "Seqs",
         chunkSize = 1e7,
         replaceTbl = FALSE,
-        fields = c(accession = "ACCESSION", rank = "ORGANISM"),
+        fields = c(accession = "ACCESSION", organism = "ORGANISM"),
         processors = 1,
         verbose = TRUE,
         \dots)
@@ -27,7 +27,7 @@ A connection object or a character string specifying the file path to the file c
 The type of the sequences (\code{seqs}) being imported.  This should be (an unambiguous abbreviation of) one of \code{"FASTA"}, \code{"FASTQ"}, \code{"GenBank"}, \code{"XStringSet"}, or \code{"QualityScaledXStringSet"}.
 }
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file.  If the \code{dbFile} does not exist then a new database is created at this location.
+A database connection object or a character string specifying the path to a SQLite database file.  If the \code{tblName} does not exist then a new table is created (and file, if needed).
 }
   \item{identifier}{
 Character string specifying the \code{"id"} to give the imported sequences in the database.
@@ -42,7 +42,7 @@ Number of characters to read at a time.
 Logical indicating whether to overwrite the entire table in the database.  If \code{FALSE} (the default) then the sequences are appended to any already existing in the \code{tblName}.  If \code{TRUE} the entire table is dropped, removing any existing sequences before adding any new sequences.
 }
   \item{fields}{
-Named character vector providing the fields to import from a \code{"GenBank"} formatted file as text columns in the database (not applicable for other \code{"type"}s).  The default is to import the \code{"ACCESSION"} field as a column named \code{"accession"} and the \code{"ORGANISM"} field as a column named \code{"rank"}.  Other uppercase fields, such as \code{"LOCUS"} or \code{"VERSION"}, can be specified in similar manner.  Note that the \code{"DEFINITION"} field is automatically imported as a column named \code{"description"} in the database.
+Named character vector providing the fields to import from a \code{"GenBank"} formatted file as text columns in the database (not applicable for other \code{"type"}s).  The default is to import the \code{"ACCESSION"} field as a column named \code{"accession"} and the \code{"ORGANISM"} field as a column named \code{"organism"}.  Other uppercase fields, such as \code{"LOCUS"} or \code{"VERSION"}, can be specified in similar manner.  Note that the \code{"DEFINITION"} field is automatically imported as a column named \code{"description"} in the database.
 }
   \item{processors}{
 The number of processors to use, or \code{NULL} to automatically detect and use all available processors.
@@ -73,10 +73,12 @@ If \code{replaceTbl} is \code{TRUE} then any sequences already in the table are 
 \code{\link{BrowseDB}}, \code{\link{SearchDB}}, \code{\link{DB2Seqs}}
 }
 \examples{
-gen <- system.file("extdata", "Bacteria_175seqs.gen", package="DECIPHER")
-dbConn <- dbConnect(SQLite(), ":memory:")
-Seqs2DB(gen, "GenBank", dbConn, "Bacteria")
-BrowseDB(dbConn)
-dna <- SearchDB(dbConn, nameBy="description")
-dbDisconnect(dbConn)
+if (require("RSQLite", quietly=TRUE)) {
+	gen <- system.file("extdata", "Bacteria_175seqs.gen", package="DECIPHER")
+	dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
+	Seqs2DB(gen, "GenBank", dbConn, "Bacteria")
+	BrowseDB(dbConn)
+	dna <- SearchDB(dbConn, nameBy="description")
+	dbDisconnect(dbConn)
+}
 }

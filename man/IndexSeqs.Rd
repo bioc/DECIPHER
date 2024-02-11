@@ -7,11 +7,11 @@ Build an inverted index
 Builds an inverted index from a set of amino acid, DNA, or RNA sequences.
 }
 \usage{
-IndexSeqs(myXStringSet,
+IndexSeqs(subject,
           K,
           sensitivity,
           percentIdentity,
-          queryLength,
+          patternLength,
           step = 1,
           alphabet = AA_REDUCED[[171]],
           maskRepeats = TRUE,
@@ -21,7 +21,7 @@ IndexSeqs(myXStringSet,
           verbose = TRUE)
 }
 \arguments{
-  \item{myXStringSet}{
+  \item{subject}{
 An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object of target (unaligned) sequences to use as the subject of the search.
 }
   \item{K}{
@@ -33,7 +33,7 @@ Numeric giving the goal search sensitivity, which is used in the absence of spec
   \item{percentIdentity}{
 Numeric identifying the goal percent identity for the given \code{sensitivity}, which is used in the absence of specifying \code{K}.  Values closer to \code{100} allow for larger \code{K} and, thereby, faster searches.
 }
-  \item{queryLength}{
+  \item{patternLength}{
 Integer setting the expected (minimum) length of query sequences, which is used in the absence of specifying \code{K}.
 }
   \item{step}{
@@ -59,7 +59,7 @@ Logical indicating whether to display progress.
 }
 }
 \details{
-An \code{InvertedIndex} object functions much like a the index at the back of a book, except with the goal of finding homologous sequence regions.  It primarily contains the locations of length \code{K} subsequences (i.e., k-mers) in \code{myXStringSet}.  Only the set of unmasked k-mers separated every \code{step} positions are stored.  Masking repeats and low complexity regions helps to avoid spurious hits that are not related to sequence homology (i.e., common descent).  In general, lower values of \code{K} and, especially, \code{step} are preferable for improving search sensitivity and specificity.  If an appropriate value for \code{K} is unknown, it is possible to automatically calculate \code{K} by providing a goal search \code{sensitivity} for sequences of \code{queryLength} positions with a given \code{percentIdentity} to a target sequence.
+An \code{InvertedIndex} object functions much like a the index at the back of a book, except with the goal of finding homologous sequence regions.  It primarily contains the locations of length \code{K} subsequences (i.e., k-mers) in \code{subject}.  Only the set of unmasked k-mers separated every \code{step} positions are stored.  Masking repeats and low complexity regions helps to avoid spurious hits that are not related to sequence homology (i.e., common descent).  In general, lower values of \code{K} and, especially, \code{step} are preferable for improving search sensitivity and specificity.  If an appropriate value for \code{K} is unknown, it is possible to automatically calculate \code{K} by providing a goal search \code{sensitivity} for sequences of \code{patternLength} positions with a given \code{percentIdentity} to a target sequence.
 }
 \value{
 An object of class \code{InvertedIndex}, which is stored as a list with components:
@@ -79,13 +79,13 @@ Numeric frequencies of each letter grouping.
 The number of times every possible k-mer was observed.
 }
   \item{length}{
-An integer giving the number of (unmasked) k-mers in each sequence in \code{myXStringSet}.
+An integer giving the number of (unmasked) k-mers in each sequence in \code{subject}.
 }
   \item{location}{
-The location of each k-mer within every sequence in \code{myXStringSet}, order by k-mer.
+The location of each k-mer within every sequence in \code{subject}, order by k-mer.
 }
   \item{index}{
-The index of each k-mer within every sequence in \code{myXStringSet}, order by k-mer.
+The index of each k-mer within every sequence in \code{subject}, order by k-mer.
 }
 }
 \author{
@@ -104,6 +104,6 @@ index <- IndexSeqs(seqs, K=6L)
 index # K = 6
 
 # alternatively, determine K automatically
-index <- IndexSeqs(seqs, sensitivity=0.99, percentIdentity=60, queryLength=300)
+index <- IndexSeqs(seqs, sensitivity=0.99, percentIdentity=60, patternLength=300)
 index # K = 5
 }

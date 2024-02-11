@@ -2,6 +2,11 @@
  *                      Designs a Microarray Probe Set                      *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
+ 
+ // for OpenMP parallel processing
+ #ifdef _OPENMP
+ #include <omp.h>
+ #endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -21,11 +26,6 @@
 
 // for math functions
 #include <math.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 /*
  * Biostrings_interface.h is needed for the DNAencode(), get_XString_asRoSeq(),
@@ -253,11 +253,13 @@ SEXP designProbes(SEXP x, SEXP max_pl, SEXP min_pl, SEXP max_c, SEXP numMMs, SEX
 			}
 		}
 		
+		#ifdef _OPENMP
 		#pragma omp parallel for \
 			private(x_l, j, k, l, p, n, o) \
 			default(shared) \
 			schedule(guided) \
 			num_threads(nthreads)
+		#endif
 		for (j = 0; j <= (count - max_probeLength); j++) {
 			// score each possible oligo
 			int combos = 1; // number of ambiguities
@@ -704,8 +706,10 @@ SEXP designProbes(SEXP x, SEXP max_pl, SEXP min_pl, SEXP max_c, SEXP numMMs, SEX
 			if (specScore < minScore)
 				continue;
 			
+			#ifdef _OPENMP
 			#pragma omp critical
 			{
+			#endif
 				// determine if probe is top scorer
 				lowScore = 101;
 				num = -1; // 0 to (numProbes - 1)
@@ -847,7 +851,9 @@ SEXP designProbes(SEXP x, SEXP max_pl, SEXP min_pl, SEXP max_c, SEXP numMMs, SEX
 						rMMs[i*numProbes + num + (o + nMMs)*x_length*numProbes] = MM_seqs[o];
 					}
 				}
+			#ifdef _OPENMP
 			}
+			#endif
 		}
 		
 		if (v) {

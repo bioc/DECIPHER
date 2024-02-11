@@ -12,7 +12,7 @@ ConsensusSequence(myXStringSet,
                   ambiguity = TRUE,
                   noConsensusChar = "+",
                   minInformation = 1 - threshold,
-                  ignoreNonBases = FALSE,
+                  includeNonLetters = FALSE,
                   includeTerminalGaps = FALSE)
 }
 \arguments{
@@ -31,7 +31,7 @@ Single character from the sequence's alphabet giving the base to use when there 
   \item{minInformation}{
 Minimum fraction of information required to form consensus in each position.
 }
-  \item{ignoreNonBases}{
+  \item{includeNonLetters}{
 Logical specifying whether to count gap ("-"), mask ("+"), and unknown (".") characters towards the consensus.
 }
   \item{includeTerminalGaps}{
@@ -45,7 +45,7 @@ Two key parameters control the degree of consensus:  \code{threshold} and \code{
 
 If \code{ambiguity = TRUE} (the default) then degeneracy codes in \code{myXStringSet} are split between their respective bases according to the \code{IUPAC_CODE_MAP} for DNA/RNA and \code{AMINO_ACID_CODE} for AA.  For example, an ``R'' in a \code{DNAStringSet} would count as half an ``A'' and half a ``G''.  If \code{ambiguity = FALSE} then degeneracy codes are not considered in forming the consensus.  For an \code{AAStringSet} input, the lack of degeneracy codes generally results in ``X'' at positions with mismatches, unless the \code{threshold} is set to a higher value than the default.
 
-If \code{includeNonBases = TRUE} (the default) then gap ("-"), mask ("+"), and unknown (".") characters are counted towards the consensus, otherwise they are omitted from calculation of the consensus.  Note that gap ("-") and unknown (".") characters are treated interchangeably as gaps when forming the consensus sequence.  For this reason, the consensus of a position with all unknown (".") characters will be a gap ("-").  Also, note that if consensus is formed between different length sequences then it will represent only the longest sequences at the end.  For this reason the consensus sequence is generally based on a sequence alignment such that all of the sequences have equal lengths.
+If \code{includeNonLetters = TRUE} (the default) then gap ("-"), mask ("+"), and unknown (".") characters are counted towards the consensus, otherwise they are omitted from calculation of the consensus.  Note that gap ("-") and unknown (".") characters are treated interchangeably as gaps when forming the consensus sequence.  For this reason, the consensus of a position with all unknown (".") characters will be a gap ("-").  Also, note that if consensus is formed between different length sequences then it will represent only the longest sequences at the end.  For this reason the consensus sequence is generally based on a sequence alignment such that all of the sequences have equal lengths.
 }
 \value{
 An \code{XStringSet} with a single consensus sequence matching the input type.
@@ -57,8 +57,8 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{Disambiguate}}, \code{\link{IdConsensus}}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-dna <- SearchDB(db, limit=10)
+fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
+dna <- readDNAStringSet(fas, n=10) # limit 10 sequences for visability
 BrowseSeqs(dna) # consensus at bottom
 BrowseSeqs(dna, threshold=0.5) # consensus at bottom
 
@@ -94,7 +94,7 @@ ConsensusSequence(aa) # "ABZJX-"
 
 # internal non-bases are included by default
 ConsensusSequence(DNAStringSet(c("A-+.A", "AAAAA")), noConsensusChar="N") # "ANNNA"
-ConsensusSequence(DNAStringSet(c("A-+.A", "AAAAA")), ignoreNonBases=TRUE) # "AAAAA"
+ConsensusSequence(DNAStringSet(c("A-+.A", "AAAAA")), includeNonLetters=TRUE) # "AAAAA"
 
 # degeneracy codes in the input are considered by default
 ConsensusSequence(DNAStringSet(c("AWNDA", "AAAAA"))) # "AWNDA"

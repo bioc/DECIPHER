@@ -5,7 +5,7 @@ Seqs2DB <- function(seqs,
 	tblName="Seqs",
 	chunkSize=1e7,
 	replaceTbl=FALSE,
-	fields=c(accession="ACCESSION", rank="ORGANISM"),
+	fields=c(accession="ACCESSION", organism="ORGANISM"),
 	processors=1,
 	verbose=TRUE,
 	...) {
@@ -28,10 +28,10 @@ Seqs2DB <- function(seqs,
 		stop("Identifier must be a character.")
 	if (!is.character(tblName))
 		stop("tblName must be a character string.")
-	if (substr(tblName, 1, 1)=="_")
+	if (startsWith(tblName, "_"))
 		stop("Invalid tblName.")
-	if (tblName=="taxa")
-		stop("taxa is a reserved tblName.")
+	if (grepl("temp", tblName, ignore.case=TRUE))
+		stop(tblName, " is a reserved tblName.")
 	if (!is.numeric(chunkSize))
 		stop("chunkSize must be a numeric.")
 	if (floor(chunkSize) != chunkSize)
@@ -64,9 +64,9 @@ Seqs2DB <- function(seqs,
 			stop("fields cannot contain NA.")
 		if (is.null(names(fields)) || any(is.na(names(fields))))
 			stop("fields must be a named character vector.")
-		if (any(names(fields)==""))
+		if (any(names(fields) == ""))
 			stop("The names of fields cannot be empty.")
-		if (any(fields==""))
+		if (any(fields == ""))
 			stop("fields cannot be empty.")
 		if (any(duplicated(names(fields))))
 			stop("The names of fields must be unique.")
@@ -84,45 +84,57 @@ Seqs2DB <- function(seqs,
 	}
 	
 	# initialize database
-	driver = dbDriver("SQLite")
-	numSeq <- integer(1)
 	if (is.character(dbFile)) {
-		dbConn = dbConnect(driver, dbFile)
+		if (!requireNamespace("RSQLite", quietly=TRUE))
+			stop("Package 'RSQLite' must be installed.")
+		dbConn <- dbConnect(dbDriver("SQLite"), dbFile)
 		on.exit(dbDisconnect(dbConn))
 	} else {
-		dbConn = dbFile
-		if (!inherits(dbConn,"SQLiteConnection")) 
-			stop("'dbFile' must be a character string or connection.")
+		dbConn <- dbFile
 		if (!dbIsValid(dbConn))
 			stop("The connection has expired.")
 	}
 	result <- dbListTables(dbConn)
-	w <- which(result==tblName)
-	if (length(w)==1 && length(which(result==paste("_", tblName, sep=""))) != 1)
+	w <- which(result == tblName)
+	if (length(w) == 1L && length(which(result==paste("_", tblName, sep=""))) != 1)
 		stop("Table is corrupted")
-	f <- character(0)
-	if (length(w)==1 && !replaceTbl) {
-		searchExpression <- paste("select max(row_names) from ", tblName, sep="")
-		numSeq <- as.integer(dbGetQuery(dbConn, searchExpression))
+	f <- character()
+	fts1 <- c("BIGINT PRIMARY KEY", rep(dbDataType(dbConn, list(raw())), 2))
+	names(fts1) <- c("row_names", "sequence", "quality")
+	if (type != 3) {
+		fts2 <- c("BIGINT PRIMARY KEY", rep(dbDataType(dbConn, ""), 2))
+		names(fts2) <- c("row_names", "identifier", "description")
+	} else {
+		fts2 <- c("BIGINT PRIMARY KEY",
+			rep(dbDataType(dbConn, ""), length(fields) + 1L))
+		names(fts2) <- c("row_names", "identifier", names(fields))
+	}
+	if (length(w) == 1L && !replaceTbl) {
+		searchExpression <- paste("select max(",
+			dbQuoteIdentifier(dbConn, "row_names"),
+			") from ",
+			dbQuoteIdentifier(dbConn, tblName),
+			sep="")
+		numSeq <- as.double(dbGetQuery(dbConn, searchExpression)[[1]])
 		
-		searchExpression <- paste("select max(row_names) from _", tblName, sep="")
-		if (as.integer(dbGetQuery(dbConn, searchExpression)) != numSeq)
+		searchExpression <- paste("select max(",
+			dbQuoteIdentifier(dbConn, "row_names"),
+			") from ",
+			dbQuoteIdentifier(dbConn, paste("_", tblName, sep="")),
+			sep="")
+		if (as.double(dbGetQuery(dbConn, searchExpression)[[1]]) != numSeq)
 			stop("Table is corrupted.")
 		
 		# make sure all the necessary fields exist
 		f <- dbListFields(dbConn, paste("_", tblName, sep=""))
-		colIDs <- c("row_names", "sequence", "quality")
-		fts <- c("INTEGER PRIMARY KEY ASC", "BLOB", "BLOB")
-		for (i in 1:length(colIDs)) {
-			if (is.na(match(colIDs[i], f))) {
+		for (i in seq_along(fts1)) {
+			if (is.na(match(names(fts1)[i], f))) {
 				# first add the column if it does not already exist
-				expression1 <- paste("alter table _",
-					tblName,
-					" add column ",
-					colIDs[i],
-					" ",
-					fts[i],
-					sep="")
+				expression1 <- paste("alter table",
+					dbQuoteIdentifier(dbConn, paste("_", tblName, sep="")),
+					"add column",
+					dbQuoteIdentifier(dbConn, names(fts1)[i]),
+					fts1[i])
 				if (verbose)
 					cat("Expression:  ", expression1, "\n", sep="")
 				rs <- dbSendStatement(dbConn, expression1)
@@ -132,24 +144,14 @@ Seqs2DB <- function(seqs,
 		
 		# make sure all the necessary fields exist
 		f <- dbListFields(dbConn, tblName)
-		if (type != 3) {
-			colIDs <- c("row_names", "identifier", "description")
-			fts <- c("INTEGER PRIMARY KEY ASC", "TEXT", "TEXT")
-		} else {
-			colIDs <- c("row_names", "identifier", "description", names(fields))
-			fts <- c("INTEGER PRIMARY KEY ASC",
-				rep("TEXT", length(fields) + 2))
-		}
-		for (i in 1:length(colIDs)) {
-			if (is.na(match(colIDs[i], f))) {
+		for (i in seq_along(fts2)) {
+			if (is.na(match(names(fts2)[i], f))) {
 				# first add the column if it does not already exist
-				expression1 <- paste("alter table ",
-					tblName,
-					" add column ",
-					colIDs[i],
-					" ",
-					fts[i],
-					sep="")
+				expression1 <- paste("alter table",
+					dbQuoteIdentifier(dbConn, tblName),
+					"add column",
+					dbQuoteIdentifier(dbConn, names(fts2)[i]),
+					fts2[i])
 				if (verbose)
 					cat("Expression:  ", expression1, "\n", sep="")
 				rs <- dbSendStatement(dbConn, expression1)
@@ -308,12 +310,8 @@ Seqs2DB <- function(seqs,
 			newSeqs <- newSeqs + length(descriptions)
 			
 			if (replaceTbl) {
-				ft <- c(row_names="INTEGER PRIMARY KEY ASC",
-					identifier="TEXT",
-					description="TEXT")
-				ft_ <- c(row_names="INTEGER PRIMARY KEY ASC",
-					sequence="BLOB",
-					quality="BLOB")
+				ft <- fts2
+				ft_ <- fts1
 			} else {
 				ft <- ft_ <- NULL
 			}
@@ -457,12 +455,8 @@ Seqs2DB <- function(seqs,
 			newSeqs <- newSeqs + length(descriptions)
 			
 			if (replaceTbl) {
-				ft <- c(row_names="INTEGER PRIMARY KEY ASC",
-					identifier="TEXT",
-					description="TEXT")
-				ft_ <- c(row_names="INTEGER PRIMARY KEY ASC",
-					sequence="BLOB",
-					quality="BLOB")
+				ft <- fts2
+				ft_ <- fts1
 			} else {
 				ft <- ft_ <- NULL
 			}
@@ -631,14 +625,8 @@ Seqs2DB <- function(seqs,
 			newSeqs <- newSeqs + length(descriptions)
 			
 			if (replaceTbl) {
-				ft <- lapply(1:dim(myData)[2],
-					function(x) return("TEXT"))
-				ft[[1]] <- "INTEGER PRIMARY KEY ASC"
-				names(ft) <- names(myData)
-				ft <- unlist(ft)
-				ft_ <- c(row_names="INTEGER PRIMARY KEY ASC",
-					sequence="BLOB",
-					quality="BLOB")
+				ft <- fts2
+				ft_ <- fts1
 			} else {
 				ft <- ft_ <- NULL
 			}
@@ -708,12 +696,8 @@ Seqs2DB <- function(seqs,
 		}
 		
 		if (replaceTbl) {
-			ft <- c(row_names="INTEGER PRIMARY KEY ASC",
-				identifier="TEXT",
-				description="TEXT")
-			ft_ <- c(row_names="INTEGER PRIMARY KEY ASC",
-				sequence="BLOB",
-				quality="BLOB")
+			ft <- fts2
+			ft_ <- fts1
 		} else {
 			ft <- ft_ <- NULL
 		}
@@ -735,9 +719,9 @@ Seqs2DB <- function(seqs,
 	}
 	
 	searchExpression <- paste("select count(*) from ",
-		tblName,
+		dbQuoteIdentifier(dbConn, tblName),
 		sep="")
-	numSeq <- as.integer(dbGetQuery(dbConn, searchExpression))
+	numSeq <- as.double(dbGetQuery(dbConn, searchExpression)[[1]])
 	
 	if (verbose) { # print the elapsed time to import
 		time.2 <- Sys.time()
@@ -746,7 +730,7 @@ Seqs2DB <- function(seqs,
 			cat("\nAdded ",
 				newSeqs,
 				" new sequence",
-				ifelse(newSeqs > 1, "s", ""),
+				ifelse(newSeqs != 1, "s", ""),
 				" to table ",
 				tblName,
 				".",
@@ -754,7 +738,7 @@ Seqs2DB <- function(seqs,
 		cat("\n",
 			numSeq,
 			" total sequence",
-			ifelse(numSeq > 1, "s", ""),
+			ifelse(numSeq != 1, "s", ""),
 			" in table ",
 			tblName,
 			".",

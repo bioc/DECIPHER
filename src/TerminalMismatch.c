@@ -3,6 +3,11 @@
  *                           Author: Erik Wright                            *
  ****************************************************************************/
 
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
  * GET_DIM(), LOGICAL(), NEW_INTEGER(), PROTECT() and UNPROTECT() macros,
@@ -18,11 +23,6 @@
 
 // for math functions
 #include <math.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 // DECIPHER header file
 #include "DECIPHER.h"
@@ -44,7 +44,9 @@ SEXP terminalMismatch(SEXP p, SEXP t, SEXP cutoff, SEXP mGaps, SEXP nThreads)
 	PROTECT(ans = allocVector(REALSXP, n));
 	rans = REAL(ans);
 	
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,lp,lt,l,mm,count,end,gaps,probe,target) schedule(guided) num_threads(nthreads)
+	#endif
 	for (i = 0; i < n; i++) {
 		lp = length(STRING_ELT(p, i)) - 1;
 		lt = length(STRING_ELT(t, i)) - 1;

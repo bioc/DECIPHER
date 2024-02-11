@@ -124,11 +124,11 @@ fas <- system.file("extdata", "Streptomyces_ITS_aligned.fas", package="DECIPHER"
 
 Next, there are two options for importing the sequences into a database:  either save a database file or maintain the database in memory.  Here we will build the database in memory because it is a small set of sequences and we do not intend to use the database later:
 
-<<expr2,eval=TRUE>>=
+<<expr2,eval=FALSE>>=
 # specify a path for where to write the sequence database
 dbConn <- "<<path to write sequence database>>"
 # OR create the sequence database in memory
-dbConn <- dbConnect(SQLite(), ":memory:")
+dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
 Seqs2DB(fas, "FASTA", dbConn, "Streptomyces")
 @
 
@@ -136,7 +136,7 @@ Seqs2DB(fas, "FASTA", dbConn, "Streptomyces")
 
 At this point we need to define groups of related sequences in the database we just created.  In this case we wish to define a unique group for the sequences belonging to each species of \textit{Streptomyces}.  In order to accomplish this we must parse the information contained in the description of each FASTA sequence record that we just imported.  Alternatively we could use the functions \Rfunction{IdentifyByRank}, \Rfunction{FormGroups}, \Rfunction{Clusterize}, or \Rfunction{TreeLine} to define groups.
 
-<<expr3,eval=TRUE>>=
+<<expr3,eval=FALSE>>=
 # get the FASTA record description
 desc <- dbGetQuery(dbConn, "select description from Seqs")
 # parse the sequence description to obtain the species name
@@ -150,7 +150,7 @@ unique(desc)
 
 Now that we have our 19 different species names, we must add them to the database as the identifier of each sequence.
 
-<<expr4,eval=TRUE>>=
+<<expr4,eval=FALSE>>=
 Add2DB(data.frame(identifier=desc, stringsAsFactors=FALSE), dbConn)
 @
 
@@ -379,7 +379,7 @@ We originally designed the primers to have at least 80\% \code{minEfficiency} at
 
 Often it is useful to visualize the sequence region where the primers will anneal on both the target and non-targets side-by-side.  We can accomplish this by looking at the amplicon sequences and highlighting the region of both primers.  First we query the database for the sequences of interest and proceed to trim them to the region around the amplicon given by the \code{start_aligned_forward} and \code{start_aligned_reverse} outputs of \Rfunction{DesignPrimers}.  Next we name and order the unique sequences in the set such that the target (\textit{S. avermitilis}) appears at the top.
 
-<<expr13,eval=TRUE>>=
+<<expr13,eval=FALSE>>=
 dna <- SearchDB(dbConn)
 dbDisconnect(dbConn)
 amplicon <- subseq(dna, 247, 348)

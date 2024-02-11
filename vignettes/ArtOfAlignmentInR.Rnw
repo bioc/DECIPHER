@@ -269,9 +269,9 @@ Much like proteins, non-coding RNAs often have a conserved secondary structure t
 
 <<expr4,eval=FALSE,echo=TRUE>>=
 # database containing 16S ribosomal RNA sequences
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-
-rna <- SearchDB(db, remove="all", type="RNAStringSet")
+fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
+dna <- readDNAStringSet(fas)
+rna <- RemoveGaps(RNAStringSet(dna))
 # or if starting with DNA sequences, convert to RNA with:
 # rna <- RNAStringSet(dna)
 # or import RNA sequences directly using:
@@ -284,7 +284,7 @@ alignedRNA <- AlignSeqs(rna) # align with RNA secondary structure
 
 It is sometimes useful to align two or more previously-aligned sets of sequences.  Here we can use the function \Rfunction{AlignProfiles} to directly align profiles of the two sequence sets:
 
-<<expr6,eval=FALSE,echo=TRUE>>=
+<<expr5,eval=FALSE,echo=TRUE>>=
 half <- floor(length(dna)/2)
 dna1 <- dna[1:half] # first half
 dna2 <- dna[(half + 1):length(dna)] # second half
@@ -296,9 +296,9 @@ AA <- AlignProfiles(AA1, AA2) # align two alignments
 
 When the two sequence sets are very large it may be impossible to fit both sets of input sequences and the output alignment into memory at once.  The function \Rfunction{AlignDB} can align the sequences in two database tables, or two sets of sequences corresponding to separate \term{identifier}s in the same table.  \Rfunction{AlignDB} takes as input two \term{tblName}s and/or \term{identifier}s, and iteratively builds a profile for each of those respective sequence alignments in the database.  These profiles are aligned, and the insertions are iteratively applied to each of the input sequences until the completed alignment has been stored in \term{add2tbl}.
 
-<<expr7,eval=FALSE,echo=TRUE>>=
+<<expr6,eval=FALSE,echo=TRUE>>=
 # Align DNA sequences stored in separate tables:
-dbConn <- dbConnect(SQLite(), ":memory:")
+dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
 Seqs2DB(AA1, "DNAStringSet", dbConn, "AA1", tblName="AA1")
 Seqs2DB(AA2, "DNAStringSet", dbConn, "AA2", tblName="AA2")
 AlignDB(dbConn, tblName=c("AA1", "AA2"), add2tbl="AA",
@@ -327,7 +327,7 @@ The \Rfunction{AlignSeqs} function uses a guide tree to decide the order in whic
 
 It has been shown that reasonably accurate alignments of tens of thousands of sequences can be obtained by using a chain guide tree \cite{Boyce:2014}.  With a chained guide tree, sequences are added one-by-one to a growing profile representing all of the aligned sequences.  Figure \ref{f7} shows the result of using \Rpackage{DECIPHER} to align increasing numbers of Cytochrome P450 sequences (in accordance with the method in reference \cite{Boyce:2014}), using either a chained guide tree or the default guide tree.  A chained guide tree can be easily generated, as shown below.
 
-<<expr5,eval=FALSE,echo=TRUE>>=
+<<expr7,eval=FALSE,echo=TRUE>>=
 # form a chained guide tree
 gT <- lapply(order(width(dna), decreasing=TRUE),
 	function(x) {
@@ -378,7 +378,7 @@ DNA_staggered <- StaggerAlignment(DNA)
 
 The functions described so far have all required collinear sequences as input.  This requirement is frequently broken by genomes, which may include many sequence rearrangements such as inversion, duplication, and reordering.  \Rfunction{FindSynteny} will find homologous regions between pairs of genomes, which can then be aligned using \Rfunction{AlignSynteny}.  A database of sequences identified by their genome name is used as input to both functions.  This enables the alignment of genomes that are composed of many contigs, so long as they all share the same \code{identifier} in the database.  The example below uses a database containing five \emph{Influenza virus A} genomes, which are each composed of eight separate segments.
 
-<<expr11,eval=TRUE,echo=TRUE>>=
+<<expr11,eval=FALSE,echo=TRUE>>=
 db <- system.file("extdata", "Influenza.sqlite", package="DECIPHER")
 synteny <- FindSynteny(db, verbose=FALSE)
 synteny # an object of class `Synteny`
@@ -393,7 +393,7 @@ The output is a list, with each list component containing a \code{DNAStringSetLi
 It is also possible to display the blocks of synteny between all pairs of genomes.  Figure \ref{f8} shows the different genome segments (i.e., sequences) separated by thin horizontal and vertical lines.  The syntenic blocks are diagonal lines that are composed of many homologous ``hits'' between the genomes.
 
 \begin{centerfig}
-<<expr12,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=8.5,width=8.5>>=
+<<expr12,eval=FALSE,echo=TRUE,fig=TRUE,include=TRUE,height=8.5,width=8.5>>=
 pairs(synteny, boxBlocks=TRUE) # scatterplot matrix
 @
 \caption{\label{f8} Dot plots showing the homologous regions among five \emph{Influenza virus A} genomes.}

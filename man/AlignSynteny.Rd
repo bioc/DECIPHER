@@ -20,7 +20,7 @@ AlignSynteny(synteny,
 An object of class ``Synteny''.
 }
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file.
+A database connection object or a character string specifying the path to a SQLite database file.
 }
   \item{tblName}{
 Character string specifying the table where the sequences are located that were used to create the object \code{synteny}.
@@ -51,11 +51,13 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{FindSynteny}}, \code{\link{Synteny-class}}
 }
 \examples{
-db <- system.file("extdata", "Influenza.sqlite", package="DECIPHER")
-synteny <- FindSynteny(db, minScore=50)
-DNA <- AlignSynteny(synteny, db)
-names(DNA)
-DNA[[1]] # the first set of pairwise alignments
-DNA[[1]][[1]] # the first block of synteny between H9N2 & H5N1
-unlist(DNA[[2]]) # a DNAStringSet of synteny between H9N2 & H2N2
+if (require("RSQLite", quietly=TRUE)) {
+	db <- system.file("extdata", "Influenza.sqlite", package="DECIPHER")
+	synteny <- FindSynteny(db, minScore=50)
+	DNA <- AlignSynteny(synteny, db)
+	names(DNA)
+	DNA[[1]] # the first set of pairwise alignments
+	DNA[[1]][[1]] # the first block of synteny between H9N2 & H5N1
+	unlist(DNA[[2]]) # a DNAStringSet of synteny between H9N2 & H2N2
+}
 }

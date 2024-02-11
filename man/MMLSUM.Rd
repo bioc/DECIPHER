@@ -28,6 +28,7 @@ MMLSUM60 <- MMLSUM[,, "60"] # the MMLSUM60 matrix
 MMLSUM60["A", "R"] # score for A/R pairing
 
 data(BLOSUM62)
+BLOSUM62 <- BLOSUM62*3/2 # convert from half-bits to third-bits
 plot(BLOSUM62[1:20, 1:20], MMLSUM60[1:20, 1:20])
 abline(a=0, b=1)
 }

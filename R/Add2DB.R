@@ -1,44 +1,18 @@
-# below function from RSQLite package version 0.11.4
-.sqliteDataType <- function(obj, ...) {
-	rs.class <- data.class(obj)
-	rs.mode <- storage.mode(obj)
-	switch(rs.class,
-		numeric = if (rs.mode == "integer") "INTEGER" else "REAL",
-		character = "TEXT",
-		logical = "INTEGER",
-		factor = "TEXT",
-		ordered = "TEXT",
-		## list maps to BLOB. Although not checked, the list must
-		## either be empty or contain only raw vectors or NULLs.
-		list = "BLOB",
-		## attempt to store obj according to its storage mode if it has
-		## an unrecognized class.
-		switch(rs.mode,
-			integer = "INTEGER",
-			double = "REAL",
-			## you'll get this if class is AsIs for a list column
-			## within a data.frame
-			list = if (rs.class == "AsIs") "BLOB" else "TEXT",
-			"TEXT"))
-}
-
 Add2DB <- function(myData,
 	dbFile,
 	tblName="Seqs",
 	clause="",
 	verbose=TRUE) {
 	
-	time.1 <- Sys.time()
-	
 	# error checking
 	if (!is.data.frame(myData))
 		stop("myData must be a data frame object.")
 	if (!is.character(tblName))
 		stop("tblName must be a character string.")
-	if (substr(tblName, 1, 1) == "_")
+	if (startsWith(tblName, "_"))
 		stop("Invalid tblName.")
-	if (tblName == "taxa")
-		stop("taxa is a reserved tblName.")
+	if (grepl("temp", tblName, ignore.case=TRUE))
+		stop(tblName, " is a reserved tblName.")
 	if (!is.character(clause))
 		stop("clause must be a character string.")
 	if (!is.logical(verbose))
@@ -49,17 +23,19 @@ Add2DB <- function(myData,
 		stop("Column names cannot contain periods.")
 	
 	# initialize database
-	driver = dbDriver("SQLite")
 	if (is.character(dbFile)) {
-		dbConn = dbConnect(driver, dbFile)
+		if (!requireNamespace("RSQLite", quietly=TRUE))
+			stop("Package 'RSQLite' must be installed.")
+		dbConn <- dbConnect(dbDriver("SQLite"), dbFile)
 		on.exit(dbDisconnect(dbConn))
 	} else {
-		dbConn = dbFile
-		if (!inherits(dbConn,"SQLiteConnection")) 
-			stop("'dbFile' must be a character string or SQLiteConnection.")
+		dbConn <- dbFile
 		if (!dbIsValid(dbConn))
 			stop("The connection has expired.")
 	}
+	
+	if (verbose)
+		time.1 <- Sys.time()
 	
 	result  <- dbListTables(dbConn)
 	w <- which(result == tblName)
@@ -77,70 +53,95 @@ Add2DB <- function(myData,
 		colIDs <- names(myData)
 		
 		if (is.na(match("row_names", colIDs)))
-			myData$row_names=row.names(myData)
+			myData$row_names <- as.double(row.names(myData))
 		
-		x <- sqliteQuickColumn(dbConn, tblName, "row_names")
-		m <- match(myData$row_names, x)
+		x <- dbGetQuery(dbConn,
+			paste("select ",
+				dbQuoteIdentifier(dbConn, tblName),
+				".",
+				dbQuoteIdentifier(dbConn, "row_names"),
+				" from ",
+				dbQuoteIdentifier(dbConn, tblName),
+				sep=""))
+		m <- match(myData$row_names, x$row_names)
 		if (any(is.na(m)))
 			stop("row.names of myData are missing from '", tblName, "'.")
 		
-		# loop through each of the columns to add
-		for (i in 1:length(colIDs)) {
-			colName <- colIDs[i]
-			
-			if (is.na(match(colName, result))) {
-				# first add the column if it does not already exist
-				expression1 <- paste("alter table ",
-					tblName,
-					" add column ",
-					colName,
-					" ",
-					.sqliteDataType(myData[colIDs[i], 1]),
-					sep="")
+		dbWriteTable(dbConn, "temp", myData, overwrite=TRUE)
+		for (i in seq_along(colIDs)) {
+			if (is.na(match(colIDs[i], result))) { # add missing column
+				expression <- paste("alter table",
+					dbQuoteIdentifier(dbConn, tblName),
+					"add column",
+					dbQuoteIdentifier(dbConn, colIDs[i]),
+					dbDataType(dbConn, myData[1, i]))
 				if (verbose)
 					cat("Expression:\n",
-						paste(strwrap(expression1,
+						paste(strwrap(expression,
 								width=getOption("width") - 1L),
 							collapse="\n"),
 						"\n\n",
 						sep="")
-				rs <- dbSendStatement(dbConn, expression1)
+				rs <- dbSendStatement(dbConn, expression)
 				dbClearResult(rs)
 			}
 			
-			# next update the column with new data
-			expression2 <- paste("update ",
-				tblName,
+			expression <- paste("update ",
+				dbQuoteIdentifier(dbConn, tblName),
 				" set ",
-				colName,
-				" = :",
-				colName,
-				" where row_names = :row_names",
+				dbQuoteIdentifier(dbConn, colIDs[i]),
+				" = (select ",
+				dbQuoteIdentifier(dbConn, "temp"),
+				".",
+				dbQuoteIdentifier(dbConn, colIDs[i]),
+				" from ",
+				dbQuoteIdentifier(dbConn, "temp"),
+				" where ",
+				dbQuoteIdentifier(dbConn, "temp"),
+				".",
+				dbQuoteIdentifier(dbConn, "row_names"),
+				" = ",
+				dbQuoteIdentifier(dbConn, tblName),
+				".",
+				dbQuoteIdentifier(dbConn, "row_names"),
+				") where exists (select ",
+				dbQuoteIdentifier(dbConn, "temp"),
+				".",
+				dbQuoteIdentifier(dbConn, colIDs[i]),
+				" from ",
+				dbQuoteIdentifier(dbConn, "temp"),
+				" where ",
+				dbQuoteIdentifier(dbConn, "temp"),
+				".",
+				dbQuoteIdentifier(dbConn, "row_names"),
+				" = ",
+				dbQuoteIdentifier(dbConn, tblName),
+				".",
+				dbQuoteIdentifier(dbConn, "row_names"),
+				")",
 				sep="")
-			if (clause != "")
-				expression2 <- paste(expression2,
-					" and ",
-					clause,
-					sep="")
 			if (verbose)
 				cat("Expression:\n",
-					paste(strwrap(expression2,
+					paste(strwrap(expression,
 							width=getOption("width") - 1L),
 						collapse="\n"),
 					"\n\n",
 					sep="")
-			rs <- dbSendQuery(dbConn, expression2)
-			dbBind(rs, myData[, c("row_names", colIDs[i])])
+			rs <- dbSendStatement(dbConn, expression)
 			dbClearResult(rs)
 		}
+		expression <- "drop table temp"
+		rs <- dbSendStatement(dbConn, expression)
+		dbClearResult(rs)
+		
 		if (verbose) {
 			cat("Added to table ",
 				tblName,
-				":  \"",
+				':  "',
 				paste(names(myData)[-match("row_names",
 					names(myData))],
-				collapse="\" and \""),
-				"\".\n\n",
+				collapse='", "'),
+				'".\n\n',
 				sep="")
 		}
 	}

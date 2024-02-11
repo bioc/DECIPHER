@@ -2,6 +2,11 @@
  *                       Aligns Two Sequence Profiles                       *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
+ 
+ // for OpenMP parallel processing
+ #ifdef _OPENMP
+ #include <omp.h>
+ #endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -24,11 +29,6 @@
 
 // for math functions
 #include <math.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 // DECIPHER header file
 #include "DECIPHER.h"
@@ -375,7 +375,9 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 		}
 		//Rprintf("\nk %d START %d END %d start %d end %d top %d left %d", k, START, END, start, end, top, left);
 		max = -1e53;
+		#ifdef _OPENMP
 		#pragma omp parallel for private(i,j,gp,gs,S,M,GP,GS,tot,lGp,lGs,temp) reduction(+:totM,avgM) num_threads(nthreads)
+		#endif
 		for (i = START; i <= END; i++) {
 			// determine column index
 			if (k >= lp) {
@@ -1210,7 +1212,9 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 		}
 		
 		max = -1e53;
+		#ifdef _OPENMP
 		#pragma omp parallel for private(i,j,gp,gs,M,GP,GS,tot,lGp,lGs,temp) reduction(+:totM,avgM) num_threads(nthreads)
+		#endif
 		for (i = START; i <= END; i++) {
 			// determine column index
 			if (k >= lp) {

@@ -1,0 +1,358 @@
+%\VignetteIndexEntry{Searching biological sequences}
+%\VignettePackage{DECIPHER}
+
+\documentclass[10pt]{article}
+
+\usepackage{times}
+\usepackage{hyperref}
+\usepackage{underscore}
+\usepackage{enumerate}
+\usepackage{graphics}
+\usepackage{wrapfig}
+\usepackage{cite}
+
+\textwidth=6.5in
+\textheight=8.5in
+%\parskip=.3cm
+\oddsidemargin=-.1in
+\evensidemargin=-.1in
+\headheight=-.3in
+\setlength{\parindent}{1cm}
+
+\newcommand{\scscst}{\scriptscriptstyle}
+\newcommand{\scst}{\scriptstyle}
+
+\newcommand{\R}{{\textsf{R}}}
+\newcommand{\code}[1]{{\texttt{#1}}}
+\newcommand{\term}[1]{{\emph{#1}}}
+\newcommand{\Rpackage}[1]{\textsf{#1}}
+\newcommand{\Rfunction}[1]{\texttt{#1}}
+\newcommand{\Robject}[1]{\texttt{#1}}
+\newcommand{\Rclass}[1]{{\textit{#1}}}
+\newcommand{\Rmethod}[1]{{\textit{#1}}}
+\newcommand{\Rfunarg}[1]{{\textit{#1}}}
+
+\bibliographystyle{plainnat}
+
+\begin{document}
+%\setkeys{Gin}{width=0.55\textwidth}
+
+\title{Search for Research}
+\author{Erik S. Wright}
+\date{\today}
+\maketitle
+
+\newenvironment{centerfig}
+{\begin{figure}[htp]\centering}
+{\end{figure}}
+\renewcommand{\indent}{\hspace*{\tindent}}
+\DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em} \DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=2em} \DefineVerbatimEnvironment{Scode}{Verbatim}{xleftmargin=2em} \fvset{listparameters={\setlength{\topsep}{0pt}}} \renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
+\SweaveOpts{keep.source=TRUE}
+<<echo=false>>=
+options(continue=" ")
+options(width=80)
+@
+
+\tableofcontents
+
+%------------------------------------------------------------
+\section{Introduction}
+%------------------------------------------------------------
+
+Sequence searching is an essential part of biology research. The word \textit{research} even originates from a word in Old French meaning `to search'. Yet, the sheer amount of biological sequences to comb through can make (re)search feel like finding a needle in a haystack. To avoid heading out on a wild goose chase, it's important to master the ins and outs of searching. The goal of this vignette is to help you leave no stone unturned as you scout out homologous sequences.
+
+%------------------------------------------------------------
+\section{Getting Started}
+%------------------------------------------------------------
+
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+
+\subsection{Startup}
+
+To get started we need to load the \Rpackage{DECIPHER} package, which automatically loads a few other required packages.
+
+<<startup,results=hide>>=
+library(DECIPHER)
+@
+
+Searching makes use of the \Rfunction{IndexSeqs} and \Rfunction{SearchIndex} functions. Help can be accessed through:
+
+\begin{Schunk}
+\begin{Sinput}
+> ? SearchIndex
+\end{Sinput}
+\end{Schunk}
+
+Once \Rpackage{DECIPHER} is installed, the code in this tutorial can be obtained via:
+
+\begin{Schunk}
+\begin{Sinput}
+> browseVignettes("DECIPHER")
+\end{Sinput}
+\end{Schunk}
+
+\setlength{\parindent}{1cm}
+
+\subsection{Gathering the evidence}
+
+There are umpteen reasons to search through biological sequences. For the purposes of this vignette, we are going to focus on finding homologous proteins in a genome. In this case, our pattern (query) is the protein sequence and the subject (target) is a 6-frame translation of the genome. Feel free to follow along with your own (nucleotide or protein) sequences or use those in the vignette:
+
+<<expr1,eval=TRUE>>=
+# specify the path to your file of pattern (query) sequences:
+fas1 <- "<<path to pattern FASTA file>>"
+# OR use the example protein sequences:
+fas1 <- system.file("extdata",
+	"PlanctobacteriaNamedGenes.fas.gz",
+	package="DECIPHER")
+# read the sequences into memory
+pattern <- readAAStringSet(fas1)
+pattern
+@
+
+Protein search is more accurate than nucleotide search, so we are going to import a genome and perform 6-frame translation to get the subject sequences. Feel free to carry on without translating the sequences if you are searching nucleotides or otherwise would prefer to skip translation. Note that \Rfunction{SearchIndex} only searches the nucleotides in the direction they are provided, so if you desire to search both strands then you will need to combine with the \Rfunction{reverseComplement} as shown below.
+
+<<expr2,eval=TRUE>>=
+# specify the path to your file of subject (target) sequences:
+fas2 <- "<<path to subject FASTA file>>"
+# OR use the example subject genome:
+fas2 <- system.file("extdata",
+	"Chlamydia_trachomatis_NC_000117.fas.gz",
+	package="DECIPHER")
+# read the sequences into memory
+dna <- readDNAStringSet(fas2)
+dna
+subject <- subseq(rep(dna, 3), 1:3) # 3-frames
+subject <- c(subject, reverseComplement(subject)) # 6-frames
+subject <- suppressWarnings(translate(subject)) # 6-frame translation
+subject
+@
+
+%------------------------------------------------------------
+\section{Searching for hits between pattern and subject sequences}
+%------------------------------------------------------------
+
+Once the sequences are imported, we need to build an \Rclass{InvertedIndex} object from the \code{subject} sequences.  We can accomplish this with \Rfunction{IndexSeqs} by specifying the k-mer length (\Rfunarg{K}). If you don't know what value to use for \Rfunarg{K}, then you can specify \Rfunarg{sensitivity}, \Rfunarg{percentIdentity}, and \Rfunarg{patternLength} in lieu of \Rfunarg{K}. Here, we want to ensure we find 99\% (0.99) of sequences with at least 70\% identity to a pattern with 300 or more residues.  Note that \Rfunarg{sensitivity} is defined as a fraction, whereas \Rfunarg{percentIdentity} is defined as a percentage.
+
+<<expr3,eval=TRUE>>=
+index <- IndexSeqs(subject,
+	sensitivity=0.99,
+	percentIdentity=70,
+	patternLength=300,
+	processors=1)
+index
+@
+
+Printing the \code{index} shows that we created an \Rclass{InvertedIndex} object containing over 1 million 5-mers in a reduced amino acid alphabet with 12 symbols. Before we can find homologous hits to our protein sequences with \Rfunction{SearchIndex}, we must decide what \Rfunarg{type} of results we desire. The default \Rfunarg{type}, \code{"one"}, is to return the best hit per subject sequence (i.e., \textit{one} per subject). Alternatively, we could request only the \code{"top"} hit per pattern sequence to obtain up to a single hit per \code{pattern} sequence. For the purposes of this vignette, we are going to ask for \code{"all"} hits above the \Rfunarg{minScore}. If we do not specify \Rfunarg{minScore} then it is automatically set based on the size of the \Rclass{InvertedIndex}.
+
+<<expr4,eval=TRUE>>=
+hits <- SearchIndex(pattern,
+	index,
+	type="all",
+	processors=1)
+dim(hits)
+head(hits)
+@
+
+The result of our search is a \Rclass{data.frame} with four columns: Pattern (index in \code{pattern}), Subject (index in \code{subject}), Score, and Position (of k-mer matches). We can take a closer look at the number of hits per protein, their scores, and locations (Fig. \ref{f1}):
+
+\begin{centerfig}
+<<expr5,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=
+layout(matrix(1:4, nrow=2))
+hist(hits$Score,
+	breaks=100,
+	xlab="Score",
+	main="Distribution of scores")
+plot(NA,
+	xlim=c(0, max(width(subject))),
+	ylim=c(1, 6),
+	xlab="Genome position",
+	ylab="Genome frame",
+	main="Location of k-mer matches")
+segments(sapply(hits$Position, `[`, i=3), # third row
+	hits$Subject,
+	sapply(hits$Position, `[`, i=4), # fourth row
+	hits$Subject)
+plot(hits$Score,
+	sapply(hits$Position,
+		function(x)
+			sum(x[2,] - x[1,] + 1)),
+	xlab="Score",
+	ylab="Sum of k-mer matches",
+	main="Matches versus score",
+	log="xy")
+plot(table(tabulate(hits$Pattern, nbins=length(pattern))),
+	xlab="Hits per pattern sequence",
+	ylab="Frequency",
+	main="Number of hits per query")
+@
+\caption{\label{f1} Summary of hits found between a set of proteins and the genome's 6-frame translation.}
+\end{centerfig}
+
+\clearpage
+
+The calculated \textit{Score} for each search hit is defined by the negative log-odds of observing the hit by chance. We see that most scores were near zero, but there were many high scoring hits. Hits tended to be clustered along specific frames of the genome, with some genome regions devoid of hits. Also, most pattern (protein) sequences were found at zero or one location in the genome. As expected, a hit's score is correlated with the length of k-mer matches, although distance between matches lowers the score. One protein was found many times more than all the others. We can easily figure out which protein was found the most times:
+
+<<expr6,eval=TRUE>>=
+w <- which.max(tabulate(hits$Pattern))
+hits[hits$Pattern == w,]
+names(pattern)[w]
+@
+
+The most frequent protein turned out to be from the class polymorphic membrane proteins (i.e., \textit{pmp}) commonly found in our target genome (\textit{Chlamydia}). Likely these hits are to multiple paralogous genes on the genome, as can be seen by the wide distribution of scores.
+
+%------------------------------------------------------------
+\section{Aligning the search hits between pattern and subject}
+%------------------------------------------------------------
+
+So far, we've identified the location and score of search hits without alignment. Aligning the hits would provide us with their local start and stop boundaries, percent identity, and the locations of any insertions or deletions. Thankfully, alignment is elementary once we've completed our search.
+
+<<expr7,eval=TRUE>>=
+aligned <- AlignPairs(pattern=pattern,
+	subject=subject,
+	pairs=hits,
+	processors=1)
+head(aligned)
+@
+
+The \Rfunction{AlignPairs} function returns a \Rclass{data.frame} containing the Pattern (i.e., \code{pattern} index), Subject (i.e., \code{subject} index), their start and end positions, the number of matched and mismatched positions, the alignment length and its score, as well as the location of any gaps in the \Rfunarg{pattern} or \Rfunarg{subject}. We can use this information to calculate a percent identity, which can be defined a couple of different ways (Fig. \ref{f2}).
+
+\begin{centerfig}
+<<expr8,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=
+PID1 <- aligned$Matches/(aligned$Matches + aligned$Mismatches)
+PID2 <- aligned$Matches/aligned$AlignmentLength
+layout(matrix(1:4, ncol=2))
+plot(hits$Score, PID2,
+	xlab="Hit score",
+	ylab="Matches / (Aligned length)")
+plot(hits$Score, aligned$Score,
+	xlab="Hit score",
+	ylab="Aligned score")
+plot(aligned$Score, PID1,
+	xlab="Aligned score",
+	ylab="Matches / (Matches + Mismatches)")
+plot(PID1, PID2,
+	xlab="Matches / (Matches + Mismatches)",
+	ylab="Matches / (Aligned length)")
+@
+\caption{\label{f2} Scatterplots of different scores and methods of formulating percent identity.}
+\end{centerfig}
+
+\clearpage
+
+\Rfunction{AlignPairs} gives us everything we need to align the sequences except the alignments themselves. If needed, we can easily get the pairwise alignments using the location(s) of gaps (i.e., ``-'') in the pattern and subject sequences.
+
+<<expr9,eval=TRUE>>=
+patterns <- replaceAt(subseq(pattern[aligned$Pattern],
+		aligned$PatternStart,
+		aligned$PatternEnd),
+	aligned$PatternGapPosition,
+	lapply(aligned$PatternGapLength,
+		function(x)
+			sapply(x,
+				function(l)
+					paste(rep("-", l), collapse=""))))
+subjects <- replaceAt(subseq(subject[aligned$Subject],
+		aligned$SubjectStart,
+		aligned$SubjectEnd),
+	aligned$SubjectGapPosition,
+	lapply(aligned$SubjectGapLength,
+		function(x)
+			sapply(x,
+				function(l)
+					paste(rep("-", l), collapse=""))))
+c(patterns[1], subjects[1]) # view the first pairwise alignment
+@
+
+%------------------------------------------------------------
+\section{Calibrating an expect value (E-value) from hit scores}
+%------------------------------------------------------------
+
+\Rfunction{SearchIndex} returns a score with significant matches above \Rfunarg{minScore}. However, it is often useful to compute an expect value (E-value) representing the number of times we expect to see a hit at least as high scoring in a database of the same size. A lesser known fact is that E-values are a function of the substitution matrix, \Rfunarg{gapOpening} penalty, \Rfunarg{gapExtension} penalty, and other search parameters, so E-values must be empirically determined.
+
+There are two straightforward ways to calibrate E-values: (1) create an equivalent database of random sequences with matched composition to the input, or (2) search for the reverse of the sequences under the assumption that reverse hits are unexpected (i.e., false positives). The second approach is more conservative, because we will find more hits than expected if its underlying assumption is not true. Here, we will try the second approach:
+
+<<expr10,eval=TRUE>>=
+revhits <- SearchIndex(reverse(pattern), # reverse the query
+	index, # keep the same target database
+	minScore=10, # set low to get many hits
+	type="all", # get all hits, as in the original query
+	processors=1)
+dim(revhits)
+@
+
+Next, our goal is to fit the distribution of background scores (i.e., reverse hits), which is reasonably well-modeled by an exponential distribution. We will bin the reverse hits' scores into intervals of one score unit between \code{10} and \code{100}. Then we will use the fact that the integral of $e^{-rate*x}$ (with respect to $x$) is $e^{-rate*x}$ to fit the \textit{rate} of the distribution. Note how there is an outlying point that violated the assumption reversed sequences should not have strong hits (Fig. \ref{f3}). We can use the \textit{sum of absolute error} (L1 norm) rather than the \textit{sum of squared error} (L2 norm) to make the fit more robust to outliers. We will perform the fit in log-space to emphasize points across many orders of magnitude.
+
+\begin{centerfig}
+<<expr11,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=4,width=4>>=
+X <- 10:100 # score bins
+Y <- tabulate(.bincode(revhits$Score, X), length(X) - 1)
+Y <- Y/length(pattern) # average per query
+w <- which(Y > 0) # needed to fit in log-space
+plot(X[w], Y[w],
+	log="y",
+	xlab="Score",
+	ylab="Average false positives per query")
+fit <- function(rate) # integrate from bin start to end
+	sum(abs((log((exp(-X[w]*rate) -
+		exp(-X[w + 1]*rate))*length(subject)) -
+		log(Y[w]))))
+o <- optimize(fit, c(0.01, 2)) # optimize rate
+lines(X[-length(X)], (exp(-X[-length(X)]*o$minimum) -
+	exp(-(X[-1])*o$minimum))*length(subject))
+rate <- o$minimum
+print(rate)
+@
+\caption{\label{f3} Fitting an exponential distribution to the score background.}
+\end{centerfig}
+
+\clearpage
+
+Now that we've optimized the \textit{rate} parameter, it is feasible to convert our original scores into E-values. We are interested in the number of false positive hits expected across all queries at every value of \code{Score}. This differs from the standard definition of E-value, which is defined on a per query basis. However, since we are performing multiple queries it is preferable to apply a multiple testing correction for the number of searches. We can convert our original scores to E-values, as well as define score thresholds for a given number of acceptable false positives across all \code{pattern} sequences:
+
+<<expr12,eval=TRUE>>=
+# convert each Score to an E-value
+Evalue <- exp(-rate*hits$Score)*length(subject)*length(pattern)
+# determine minimum Score for up to 1 false positive hit expected
+log(1/length(subject)/length(pattern))/-rate
+@
+
+As can be seen, for this particular combination of dataset and parameters, a score threshold of \code{22} is sufficient to only permit one combined false positive across all queries. Since E-value is a function of the dataset's size and the specific search parameters, you should calibrate the E-value for each set of searches performed. Once you have calibrated the \textit{rate}, it is straightforward to find only those hits that are statistically significant:
+
+<<expr13,eval=TRUE>>=
+# determine minimum Score for 0.05 (total) false positive hits expected
+threshold <- log(0.05/length(subject)/length(pattern))/-rate
+hits <- hits[hits$Score > threshold,]
+@
+
+%------------------------------------------------------------
+\section{Maximizing search sensitivity to find distant hits}
+%------------------------------------------------------------
+
+We've already employed some strategies to improve search sensitivity: choosing a small value for k-mer length and step size, searching amino acids rather than nucleotides, and masking low complexity regions and repeats. Although k-mer search is very fast, sometimes k-mers alone are insufficient to find distant homologs. In these cases, search sensitivity can be improved by providing the \code{subject} (target) sequences, which causes \Rfunction{SearchIndex} to extend k-mer matches to their left and right. This is as simple as adding a single argument:
+
+<<expr14,eval=TRUE>>=
+# include the target sequences to increase search sensitivity
+hits <- SearchIndex(pattern,
+	index,
+	subject, # optional parameter
+	type="all",
+	processors=1)
+dim(hits)
+head(hits)
+@
+
+We can see that search took longer when providing \code{subject} sequences, but the number of hits also increased. The \Rfunarg{dropScore} parameter, which controls the degree of extension, can be adjusted to balance sensitivity and speed. In this manner, high sensitivity can be achieved by providing \code{subject} sequences in conjunction with a low value of k-mer length and \Rfunarg{dropScore}.
+
+%------------------------------------------------------------
+\section{Session Information}
+%------------------------------------------------------------
+
+All of the output in this vignette was produced under the following conditions:
+
+<<sessinfo,echo=FALSE,results=tex>>=
+toLatex(sessionInfo(), locale=FALSE)
+@
+
+\end{document}

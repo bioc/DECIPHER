@@ -2,6 +2,11 @@
  *                        Cluster Maximum Parsimony                         *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
+ 
+ // for OpenMP parallel processing
+ #ifdef _OPENMP
+ #include <omp.h>
+ #endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -21,11 +26,6 @@
 
 /* for Calloc/Free */
 #include <R_ext/RS.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 // for calloc/free
 #include <stdlib.h>
@@ -136,7 +136,9 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 		}
 	}
 	
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,k,m,w) num_threads(nthreads)
+	#endif
 	for (i = 0; i < l; i++) {
 		int weight;
 		if (only == 0) { // reconstruct ancestral states
@@ -181,10 +183,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 					w = j;
 			}
 			if (temp[w] != R_PosInf) {
+				#ifdef _OPENMP
 				#pragma omp critical
 				{
 					score[0] += weight*temp[w];
 				}
+				#else
+				score[0] += weight*temp[w];
+				#endif
 			}
 			
 			if (only == 0) {
@@ -243,10 +249,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 										w = m;
 								}
 								if (temp[w] != R_PosInf) {
+									#ifdef _OPENMP
 									#pragma omp critical
 									{
 										score[count] += weight*temp[w];
 									}
+									#else
+									score[count] += weight*temp[w];
+									#endif
 								}
 							} else {
 								w = 0;
@@ -256,10 +266,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 										w = m;
 								}
 								if (temp[w] != R_PosInf) {
+									#ifdef _OPENMP
 									#pragma omp critical
 									{
 										score[count] += weight*temp[w];
 									}
+									#else
+									score[count] += weight*temp[w];
+									#endif
 								}
 							}
 							
@@ -278,10 +292,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 										w = m;
 								}
 								if (temp[w] != R_PosInf) {
+									#ifdef _OPENMP
 									#pragma omp critical
 									{
 										score[count] += weight*temp[w];
 									}
+									#else
+									score[count] += weight*temp[w];
+									#endif
 								}
 							} else {
 								w = 0;
@@ -291,10 +309,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 										w = m;
 								}
 								if (temp[w] != R_PosInf) {
+									#ifdef _OPENMP
 									#pragma omp critical
 									{
 										score[count] += weight*temp[w];
 									}
+									#else
+									score[count] += weight*temp[w];
+									#endif
 								}
 							}
 						}
@@ -316,10 +338,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 										w = m;
 								}
 								if (temp[w] != R_PosInf) {
+									#ifdef _OPENMP
 									#pragma omp critical
 									{
 										score[count] += weight*temp[w];
 									}
+									#else
+									score[count] += weight*temp[w];
+									#endif
 								}
 							} else {
 								w = 0;
@@ -329,10 +355,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 										w = m;
 								}
 								if (temp[w] != R_PosInf) {
+									#ifdef _OPENMP
 									#pragma omp critical
 									{
 										score[count] += weight*temp[w];
 									}
+									#else
+									score[count] += weight*temp[w];
+									#endif
 								}
 							}
 							
@@ -351,10 +381,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 										w = m;
 								}
 								if (temp[w] != R_PosInf) {
+									#ifdef _OPENMP
 									#pragma omp critical
 									{
 										score[count] += weight*temp[w];
 									}
+									#else
+									score[count] += weight*temp[w];
+									#endif
 								}
 							} else {
 								w = 0;
@@ -364,10 +398,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 										w = m;
 								}
 								if (temp[w] != R_PosInf) {
+									#ifdef _OPENMP
 									#pragma omp critical
 									{
 										score[count] += weight*temp[w];
 									}
+									#else
+									score[count] += weight*temp[w];
+									#endif
 								}
 							}
 						}
@@ -385,10 +423,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 							w = j;
 					}
 					if (*(R + 3*c*n + c + w) != R_PosInf) {
+						#ifdef _OPENMP
 						#pragma omp critical
 						{
 							score[2*n + 1] += weight*temp[w];
 						}
+						#else
+						score[2*n + 1] += weight*temp[w];
+						#endif
 					}
 					
 					for (j = 0; j < c; j++)
@@ -417,10 +459,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 							}
 						}
 						if (temp[w] != R_PosInf) {
+							#ifdef _OPENMP
 							#pragma omp critical
 							{
 								score[j + 1] += weight*temp[w];
 							}
+							#else
+							score[j + 1] += weight*temp[w];
+							#endif
 						}
 						
 						// add to the second column of row j
@@ -445,10 +491,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 							}
 						}
 						if (temp[w] != R_PosInf) {
+							#ifdef _OPENMP
 							#pragma omp critical
 							{
 								score[n + j + 1] += weight*temp[w];
 							}
+							#else
+							score[n + j + 1] += weight*temp[w];
+							#endif
 						}
 					}
 				}
@@ -467,10 +517,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 				}
 				m *= -1;
 				m--;
+				#ifdef _OPENMP
 				#pragma omp critical
 				{
 					*(lengths + j) += *(S + w*c + m);
 				}
+				#else 
+				*(lengths + j) += *(S + w*c + m);
+				#endif
 				k = *(T + j);
 				if (k > 0) {
 					k--;
@@ -478,10 +532,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 						*(nodes + i*n + k) = m + 1;
 						w = *(nodes + i*n + j);
 						if (w != NA_INTEGER) {
+							#ifdef _OPENMP
 							#pragma omp critical
 							{
 								*(subM + c*m + w - 1) += 1;
 							}
+							#else
+							*(subM + c*m + w - 1) += 1;
+							#endif
 						}
 					} else {
 						*(nodes + i*n + k) = NA_INTEGER;
@@ -493,10 +551,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 					if (m != NA_INTEGER) {
 						w = *(nodes + i*n + j);
 						if (w != NA_INTEGER) {
+							#ifdef _OPENMP
 							#pragma omp critical
 							{
 								*(subM + c*(m - 1) + w - 1) += 1;
 							}
+							#else
+							*(subM + c*(m - 1) + w - 1) += 1;
+							#endif
 						}
 					}
 				}
@@ -508,10 +570,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 				}
 				m *= -1;
 				m--;
+				#ifdef _OPENMP
 				#pragma omp critical
 				{
 					*(lengths + n + j) += *(S + w*c + m);
 				}
+				#else
+				*(lengths + n + j) += *(S + w*c + m);
+				#endif
 				k = *(T + n + j);
 				if (k > 0) {
 					k--;
@@ -519,10 +585,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 						*(nodes + i*n + k) = m + 1;
 						w = *(nodes + i*n + j);
 						if (w != NA_INTEGER) {
+							#ifdef _OPENMP
 							#pragma omp critical
 							{
 								*(subM + c*m + w - 1) += 1;
 							}
+							#else
+							*(subM + c*m + w - 1) += 1;
+							#endif
 						}
 					} else {
 						*(nodes + i*n + k) = NA_INTEGER;
@@ -534,10 +604,14 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 					if (m != NA_INTEGER) {
 						w = *(nodes + i*n + j);
 						if (w != NA_INTEGER) {
+							#ifdef _OPENMP
 							#pragma omp critical
 							{
 								*(subM + c*(m - 1) + w - 1) += 1;
 							}
+							#else
+							*(subM + c*(m - 1) + w - 1) += 1;
+							#endif
 						}
 					}
 				}

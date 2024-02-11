@@ -28,7 +28,7 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{IdLengths}}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-dna <- SearchDB(db)
+fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
+dna <- readDNAStringSet(fas)
 t <- TerminalChar(dna)
 }

@@ -17,7 +17,7 @@ IdLengths(dbFile,
 }
 \arguments{
   \item{dbFile}{
-A SQLite connection object or a character string specifying the path to the database file.
+A database connection object or a character string specifying the path to a SQLite database file.
 }
   \item{tblName}{
 Character string specifying the table where the sequences are located.
@@ -54,7 +54,9 @@ Erik Wright \email{eswright@pitt.edu}
 \code{\link{Add2DB}}
 }
 \examples{
-db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
-l <- IdLengths(db)
-head(l)
+if (require("RSQLite", quietly=TRUE)) {
+	db <- system.file("extdata", "Bacteria_175seqs.sqlite", package="DECIPHER")
+	l <- IdLengths(db)
+	head(l)
+}
 }

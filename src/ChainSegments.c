@@ -3,6 +3,11 @@
  *                           Author: Erik Wright                            *
  ****************************************************************************/
 
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
  * GET_DIM(), LOGICAL(), NEW_INTEGER(), PROTECT() and UNPROTECT() macros,
@@ -24,6 +29,9 @@
 
 /* for Calloc/Free */
 #include <R_ext/RS.h>
+
+// for calloc/free
+#include <stdlib.h>
 
 /*
  * Biostrings_interface.h is needed for the DNAencode(), get_XString_asRoSeq(),
@@ -71,7 +79,7 @@ SEXP fillOverlaps(SEXP m, SEXP n)
 	return m;
 }
 
-// adjusts starts and ends in order to be within widths
+// adjusts starts and ends to be within widths
 SEXP indexByContig(SEXP starts, SEXP ends, SEXP order, SEXP index, SEXP widths)
 {
 	int j, k, p;
@@ -149,9 +157,9 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 	// initialize an array of gap multipliers
 	double *GAPS = Calloc(maxG + 1, double); // initialized to zero
 	for (i = 1; i <= maxS; i++)
-		SEPS[i] = pow(i, sepP);
+		SEPS[i] = pow(i, sepP)*sepC;
 	for (i = 1; i <= maxG; i++)
-		GAPS[i] = pow(i, gapP);
+		GAPS[i] = pow(i, gapP)*gapC;
 	
 	int l = length(x_s);
 	i = 0;
@@ -233,8 +241,8 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 					}
 				}
 				
-				temp += SEPS[sep]*sepC;
-				temp += GAPS[gap]*gapC;
+				temp += SEPS[sep];
+				temp += GAPS[gap];
 				temp += S[xok];
 				//temp += we[i];
 				//if (sep > 0 && gap > 0) {
@@ -306,9 +314,6 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 			prev++;
 		}
 	}
-	
-	Free(SEPS);
-	Free(GAPS);
 	
 	int count = 0;
 	int *p;
@@ -525,7 +530,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 					gap = minDx - minDy;
 				}
 				if (gap <= maxG && sep <= maxS) {
-					temp = scores[minX] + score + sepC*sep + gapC*gap;
+					temp = scores[minX] + score + SEPS[sep] + GAPS[gap];
 					if (temp >= minS &&
 						minDx > 0 &&
 						minDy > 0)
@@ -612,6 +617,8 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 		}
 	}
 	
+	Free(SEPS);
+	Free(GAPS);
 	Free(A);
 	Free(S);
 	Free(R);
@@ -658,169 +665,208 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 	return ret;
 }
 
-int extend(const Chars_holder *S1, const Chars_holder *S2, int *s1_start, int *s2_start, int s1_dir, int s2_dir, int bound, int rev, double drop) {
-	int i, v1, v2, score = 0, max = 0, max_i = 0;
-	const char *s1, *s2;
-	
-	for (i = 1, s1 = (S1->ptr + *s1_start + s1_dir - 1), s2 = (S2->ptr + *s2_start + s2_dir - 1);
-		i <= bound;
-		i++, s1 += s1_dir, s2 += s2_dir) {
-		if ((*s1) & 0x01) {
-			v1 = 0;
-		} else if ((*s1) & 0x02) {
-			v1 = 1;
-		} else if ((*s1) & 0x04) {
-			v1 = 2;
-		} else { // assume 'T'
-			v1 = 3;
-		}
-		if (rev) { // reverse complement
-			if ((*s2) & 0x01) {
-				v2 = 3;
-			} else if ((*s2) & 0x02) {
-				v2 = 2;
-			} else if ((*s2) & 0x04) {
-				v2 = 1;
-			} else { // assume 'A'
-				v2 = 0;
-			}
-		} else {
-			if ((*s2) & 0x01) {
-				v2 = 0;
-			} else if ((*s2) & 0x02) {
-				v2 = 1;
-			} else if ((*s2) & 0x04) {
-				v2 = 2;
-			} else { // assume 'T'
-				v2 = 3;
-			}
-		}
-		
-		if (v1 == v2) { // perfect match
-			score += 1; // score increases by about +1 per nucleotide
-		} else if ((v1 == 0 && v2 == 2) || // A/G
-			(v1 == 2 && v2 == 0) || // G/A
-			(v1 == 1 && v2 == 3) || // C/T
-			(v1 == 3 && v2 == 1)) { // T/C
-			score -= 2; // allow ~33% transitions
-		} else {
-			score -= 3; // allow ~25% transversions
-		}
-		
-		if (score > max) {
-			max_i = i;
-			max = score;
-		} else if ((double)score < ((double)max + drop)) {
-			break;
-		}
-	}
-	
-	//Rprintf("\nextend = %d score = %d max = %d rev = %d", max_i, score, max, rev);
-	*s1_start = *s1_start + s1_dir*max_i;
-	*s2_start = *s2_start + s2_dir*max_i;
-	
-	return(max);
-}
-
-SEXP extendSegments(SEXP X, SEXP W1, SEXP W2, SEXP S1, SEXP S2, SEXP O1P, SEXP O1N, SEXP O2P, SEXP O2N, SEXP S, SEXP maxDrop, SEXP INDEX1, SEXP INDEX2)
+SEXP extendMatches(SEXP X1, SEXP X2, SEXP starts1, SEXP ends1, SEXP index1, SEXP starts2, SEXP ends2, SEXP index2, SEXP width1, SEXP width2, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP nThreads)
 {
-	int j, b, b1, b2, d, strand, *begin, score;
-	int *w1 = INTEGER(W1); // widths of sequence set 1
-	int *w2 = INTEGER(W2); // widths of sequence set 2
-	int *o1p = INTEGER(O1P); // order of previous starts
-	int *o1n = INTEGER(O1N); // order of next starts
-	int *o2p = INTEGER(O2P); // order of previous starts
-	int *o2n = INTEGER(O2N); // order of next starts
-	int *s = INTEGER(S); // subset (rows) of results
-	int *index1 = INTEGER(INDEX1); // indices in sequence set 1
-	int *index2 = INTEGER(INDEX2); // indices in sequence set 2
-	int mD = asReal(maxDrop); // max drop score
-	int l = length(S);
-	SEXP dim = getAttrib(X, R_DimSymbol);
-	int n = INTEGER(dim)[0]; // total rows in results
+	int i, j, p1, p2, lkup1, lkup2, boundL1, boundR1, boundL2, boundR2;
 	
-	SEXP ans;
-	PROTECT(ans = duplicate(X));
-	int *x = INTEGER(ans);
+	XStringSet_holder x1_set = hold_XStringSet(X1);
+	XStringSet_holder x2_set = hold_XStringSet(X2);
+	Chars_holder x1 = get_elt_from_XStringSet_holder(&x1_set, 0);
+	Chars_holder x2 = get_elt_from_XStringSet_holder(&x2_set, 0);
 	
-	XStringSet_holder s1_set, s2_set;
-	Chars_holder s1, s2;
-	s1_set = hold_XStringSet(S1);
-	s2_set = hold_XStringSet(S2);
+	int l = length(starts1);
+	int *s1 = INTEGER(starts1);
+	int *e1 = INTEGER(ends1);
+	int *i1 = INTEGER(index1);
+	int *s2 = INTEGER(starts2);
+	int *e2 = INTEGER(ends2);
+	int *i2 = INTEGER(index2);
+	int *w1 = INTEGER(width1);
+	int *w2 = INTEGER(width2);
 	
-	for (j = 0; j < l; j++) {
-		//Rprintf("\ns[j] = %d index1 = %d index2 = %d", s[j], index1[s[j]], index2[s[j]]);
-		s1 = get_elt_from_XStringSet_holder(&s1_set, index1[s[j]]);
-		s2 = get_elt_from_XStringSet_holder(&s2_set, index2[s[j]]);
-		
-		strand = x[2*n + s[j]];
-		
-		// extend left of start1
-		if (o1p[j] == NA_INTEGER) {
-			b1 = x[4*n + s[j]] - 1; // start1 - 1
-		} else {
-			b1 = x[4*n + s[j]] - x[6*n + s[o1p[j]]] - 1; // start - end - 1
-		}
-		if (strand) { // strand == 1
-			d = 1;
-			begin = x + 7*n + s[j];
-			// extend right of end2
-			if (o2n[j] == NA_INTEGER) {
-				b2 = w2[x[n + s[j]] - 1] - *begin; // width - end
-			} else {
-				b2 = x[5*n + s[o2n[j]]] - *begin - 1; // start - end - 1
-			}
-		} else {
-			d = -1;
-			begin = x + 5*n + s[j];
-			// extend left of start2
-			if (o2p[j] == NA_INTEGER) {
-				b2 = *begin - 1; // start - 1
-			} else {
-				b2 = *begin - x[7*n + s[o2p[j]]] - 1; // start - end - 1
-			}
-		}
-		b = b1 < b2 ? b1 : b2; // max allowable extension
-		if (b > 0) {
-			score = extend(&s1, &s2, x + 4*n + s[j], begin, -1, d, b, strand, mD);
-			x[3*n + s[j]] += score;
-		}
-		//Rprintf("\nj = %d b1 = %d b2 = %d start1 = %d start2 = %d", j, b1, b2, x[4*n + s[j]], *begin);
-		
-		// extend right of end1
-		if (o1n[j] == NA_INTEGER) {
-			b1 = w1[x[s[j]] - 1] - x[6*n + s[j]]; // width - end
-		} else {
-			b1 = x[4*n + s[o1n[j]]] - x[6*n + s[j]] - 1; // start - end - 1
-		}
-		if (strand) { // strand == 1
-			d = -1;
-			begin = x + 5*n + s[j];
-			// extend left of end2
-			if (o2p[j] == NA_INTEGER) {
-				b2 = *begin - 1; // start - 1
-			} else {
-				b2 = *begin - x[7*n + s[o2p[j]]] - 1; // start - end - 1
-			}
-		} else {
-			d = 1;
-			begin = x + 7*n + s[j];
-			// extend right of start2
-			if (o2n[j] == NA_INTEGER) {
-				b2 = w2[x[n + s[j]] - 1] - *begin; // width - end
-			} else {
-				b2 = x[5*n + s[o2n[j]]] - *begin - 1; // start - end - 1
-			}
-		}
-		b = b1 < b2 ? b1 : b2; // max allowable extension
-		if (b > 0) {
-			score = extend(&s1, &s2, x + 6*n + s[j], begin, 1, d, b, strand, mD);
-			x[3*n + s[j]] += score;
-		}
-		//Rprintf("\nj = %d b1 = %d b2 = %d start1 = %d start2 = %d", j, b1, b2, x[6*n + s[j]], *begin);
+	SEXP ans0, ans1, ans2, ans3, ans4;
+	PROTECT(ans0 = allocVector(REALSXP, l));
+	double *rans0 = REAL(ans0);
+	PROTECT(ans1 = allocVector(INTSXP, l));
+	int *rans1 = INTEGER(ans1);
+	PROTECT(ans2 = allocVector(INTSXP, l));
+	int *rans2 = INTEGER(ans2);
+	PROTECT(ans3 = allocVector(INTSXP, l));
+	int *rans3 = INTEGER(ans3);
+	PROTECT(ans4 = allocVector(INTSXP, l));
+	int *rans4 = INTEGER(ans4);
+	
+	double *sM = REAL(subMatrix);
+	XStringSet_holder l_set = hold_XStringSet(letters);
+	Chars_holder l_i = get_elt_from_XStringSet_holder(&l_set, 0);
+	int *lkup_row = (int *) malloc(256*sizeof(int)); // thread-safe on Windows
+	int *lkup_col = (int *) malloc(256*sizeof(int)); // thread-safe on Windows
+	for (i = 0; i < 256; i++) {
+		lkup_row[i] = NA_INTEGER;
+		lkup_col[i] = NA_INTEGER;
+	}
+	for (i = 0; i < l_i.length; i++) {
+		lkup_row[(unsigned char)l_i.ptr[i]] = i;
+		lkup_col[(unsigned char)l_i.ptr[i]] = i*l_i.length;
 	}
 	
-	UNPROTECT(1);
+	double dS = asReal(dropScore);
+	int nthreads = asInteger(nThreads);
 	
-	return ans;
+	#ifdef _OPENMP
+	#pragma omp parallel for private(i,p1,p2,lkup1,lkup2,boundL1,boundL2,boundR1,boundR2) schedule(dynamic) num_threads(nthreads)
+	#endif
+	for (i = 0; i < l; i++) {
+		double delta;
+		
+		rans0[i] = 0; // score
+		rans1[i] = s1[i]; // starts1
+		rans2[i] = e1[i]; // ends1
+		rans3[i] = s2[i]; // starts2
+		rans4[i] = e2[i]; // ends2
+		if (i1[i] == 1) {
+			boundL1 = 0;
+		} else {
+			boundL1 = w1[i1[i] - 2];
+		}
+		if (i2[i] == 1) {
+			boundL2 = 0;
+		} else {
+			boundL2 = w2[i2[i] - 2];
+		}
+		boundR1 = w1[i1[i] - 1] - 1;
+		boundR2 = w2[i2[i] - 1] - 1;
+		
+		// accumulate score for region
+		p1 = s1[i] + boundL1 - 1;
+		p2 = s2[i] + boundL2 - 1;
+		while (p1 < e1[i] + boundL1) {
+			lkup1 = lkup_row[(unsigned char)x1.ptr[p1]];
+			lkup2 = lkup_col[(unsigned char)x2.ptr[p2]];
+			if (lkup1 != NA_INTEGER && lkup2 != NA_INTEGER)
+				rans0[i] += sM[lkup1 + lkup2];
+			p1++;
+			p2++;
+		}
+		
+		// try extending left
+		p1 = s1[i] + boundL1 - 1;
+		p2 = s2[i] + boundL2 - 1;
+		delta = 0;
+		while (p1 > boundL1 && p2 > boundL2 && delta > dS) {
+			p1--;
+			p2--;
+			lkup1 = lkup_row[(unsigned char)x1.ptr[p1]];
+			lkup2 = lkup_col[(unsigned char)x2.ptr[p2]];
+			if (lkup1 == NA_INTEGER || lkup2 == NA_INTEGER) {
+				break;
+			} else {
+				delta += sM[lkup1 + lkup2];
+			}
+			if (delta > 0) {
+				rans0[i] += delta;
+				delta = 0;
+				rans1[i] = p1 + 1 - boundL1;
+				rans3[i] = p2 + 1 - boundL2;
+			}
+		}
+		
+		// try extending right
+		p1 = e1[i] + boundL1 - 1;
+		p2 = e2[i] + boundL2 - 1;
+		delta = 0;
+		while (p1 < boundR1 && p2 < boundR2 && delta > dS) {
+			p1++;
+			p2++;
+			lkup1 = lkup_row[(unsigned char)x1.ptr[p1]];
+			lkup2 = lkup_col[(unsigned char)x2.ptr[p2]];
+			if (lkup1 == NA_INTEGER || lkup2 == NA_INTEGER) {
+				break;
+			} else {
+				delta += sM[lkup1 + lkup2];
+			}
+			if (delta > 0) {
+				rans0[i] += delta;
+				delta = 0;
+				rans2[i] = p1 + 1 - boundL1;
+				rans4[i] = p2 + 1 - boundL2;
+			}
+		}
+	}
+	
+	SEXP basePackage, order;
+	PROTECT(basePackage = eval(lang2(install("getNamespace"), ScalarString(mkChar("base"))), R_GlobalEnv));
+	order = eval(lang3(install("sort.list"), ans0, R_NilValue), basePackage);
+	UNPROTECT(1);
+	int *o = INTEGER(order);
+	
+	char *pos1 = (char *) calloc(x1.length, sizeof(char)); // initialized to zero (thread-safe on Windows)
+	char *pos2 = (char *) calloc(x2.length, sizeof(char)); // initialized to zero (thread-safe on Windows)
+	for (j = l - 1; j >= 0; j--) {
+		i = o[j] - 1; // index
+		if (i1[i] == 1) {
+			boundL1 = 0;
+		} else {
+			boundL1 = w1[i1[i] - 2];
+		}
+		if (i2[i] == 1) {
+			boundL2 = 0;
+		} else {
+			boundL2 = w2[i2[i] - 2];
+		}
+		
+		// pull back overlapping start
+		p1 = rans1[i] + boundL1 - 1;
+		p2 = rans3[i] + boundL2 - 1;
+		while (p1 < rans2[i] + boundL1 - 1 && (pos1[p1] == 1 || pos2[p2] == 1)) {
+			lkup1 = lkup_row[(unsigned char)x1.ptr[p1]];
+			lkup2 = lkup_col[(unsigned char)x2.ptr[p2]];
+			if (lkup1 != NA_INTEGER && lkup2 != NA_INTEGER)
+				rans0[i] -= sM[lkup1 + lkup2];
+			p1++;
+			p2++;
+		}
+		rans1[i] = p1 + 1 - boundL1;
+		rans3[i] = p2 + 1 - boundL2;
+		
+		// pull back overlapping end
+		p1 = rans2[i] + boundL1 - 1;
+		p2 = rans4[i] + boundL2 - 1;
+		while (p1 >= rans1[i] + boundL1 && (pos1[p1] == 1 || pos2[p2] == 1)) {
+			lkup1 = lkup_row[(unsigned char)x1.ptr[p1]];
+			lkup2 = lkup_col[(unsigned char)x2.ptr[p2]];
+			if (lkup1 != NA_INTEGER && lkup2 != NA_INTEGER)
+				rans0[i] -= sM[lkup1 + lkup2];
+			p1--;
+			p2--;
+		}
+		rans2[i] = p1 + 1 - boundL1;
+		rans4[i] = p2 + 1 - boundL2;
+		
+		// mark positions as occupied
+		p1 = rans2[i] + boundL1;
+		p2 = rans4[i] + boundL2;
+		while (p1 >= rans1[i] + boundL1) {
+			p1--;
+			pos1[p1] = 1;
+			p2--;
+			pos2[p2] = 1;
+		}
+	}
+	free(lkup_row);
+	free(lkup_col);
+	free(pos1);
+	free(pos2);
+	
+	SEXP ret_list;
+	PROTECT(ret_list = allocVector(VECSXP, 5));
+	SET_VECTOR_ELT(ret_list, 0, ans0);
+	SET_VECTOR_ELT(ret_list, 1, ans1);
+	SET_VECTOR_ELT(ret_list, 2, ans2);
+	SET_VECTOR_ELT(ret_list, 3, ans3);
+	SET_VECTOR_ELT(ret_list, 4, ans4);
+	
+	UNPROTECT(6);
+	
+	return ret_list;
 }

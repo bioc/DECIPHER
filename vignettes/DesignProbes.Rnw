@@ -116,7 +116,7 @@ If \Rpackage{DECIPHER} is installed on your system, the code in each example can
 
 We begin with a set of aligned 16S sequences representing a variety of bacteria collected from drinking water samples.  We wish to design probes targeting only the genus \textit{Sphingopyxis}, which is a common organism detected in drinking water distribution systems.  This example uses a GenBank sequence file included as part of the \Rpackage{DECIPHER} package, but you could follow along with your own GenBank, FASTA, or FASTQ file of aligned sequences.  Be sure to change the path names to those on your system by replacing all of the text inside quotes labeled ``$<<$path to ...$>>$'' with the actual path on your system.
 
-<<expr1,eval=TRUE>>=
+<<expr1,eval=FALSE>>=
 # specify the path to your sequence file:
 gb <- "<<path to GenBank file>>"
 # OR find the example sequence file used in this tutorial:
@@ -125,11 +125,11 @@ gb <- system.file("extdata", "Bacteria_175seqs.gen", package="DECIPHER")
 
 Next, there are two options for importing the sequences into a database:  either save a database file or maintain the database in memory.  Here we will build the database in memory because it is a small set of sequences and we do not intend to use the database later:
 
-<<expr2,eval=TRUE>>=
+<<expr2,eval=FALSE>>=
 # specify a path for where to write the sequence database
 dbConn <- "<<path to write sequence database>>"
 # OR create the sequence database in memory
-dbConn <- dbConnect(SQLite(), ":memory:")
+dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
 Seqs2DB(gb, "GenBank", dbConn, "Bacteria")
 @
 
@@ -137,7 +137,7 @@ Seqs2DB(gb, "GenBank", dbConn, "Bacteria")
 
 At this point we need to define groups of related sequences in the database we just created.  In this case we wish to define phylogenetic groups based on the taxonomic information included in the original GenBank file.  The advantage of using a GenBank file is that the taxonomic information is automatically imported from the ORGANISM field into a ``rank'' column in the sequence database.  When importing from a FASTA or FASTQ file the taxonomic information must come from another source, such as parsing the sequence identifiers or by building a tree with the function \Rfunction{TreeLine}.  In the case of a GenBank file, the ``rank'' column can be used by the function \Rfunction{IdentifyByRank} to identify the groups at any taxonomic level (e.g., genus).
 
-<<expr3,eval=TRUE>>=
+<<expr3,eval=FALSE>>=
 ids <- IdentifyByRank(dbConn, level=Inf, add2tbl=TRUE)
 @
 
@@ -260,7 +260,7 @@ legend("topright", legend=c("Targets", "Non-Targets", "50% Efficiency",
 It is now important to find potential non-targets not included in the sequence set used for design.  For this purpose we can either build a new comprehensive reference database, or download one online from \underline{\url{http://DECIPHER.cee.wisc.edu/Download.html}}.  The reference database must be unzipped after download.  Each database includes a pre-processed set of tiles, generated in the same manner as shown above, that can be found in the table named ``Tiles''.  Be sure to change the path names to those on your system by replacing all of the text inside quotes labeled ``$<<$path to ...$>>$'' with the actual path on your system.
 
 <<expr9,eval=FALSE>>=
-dbConn_ref <- dbConnect(SQLite(), "<<path to reference database>>")
+dbConn_ref <- dbConnect(dbDriver("SQLite"), "<<path to reference database>>")
 # select the most common k-mers
 ref_tiles <- dbGetQuery(dbConn_ref,
 	"select * from Tiles where groupCoverage > 0.2 and coverage > 0.01")

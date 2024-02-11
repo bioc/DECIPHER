@@ -3,6 +3,11 @@
  *                           Author: Erik Wright                            *
  ****************************************************************************/
 
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
  * GET_DIM(), LOGICAL(), NEW_INTEGER(), PROTECT() and UNPROTECT() macros,
@@ -18,11 +23,6 @@
 
 /* for R_CheckUserInterrupt */
 #include <R_ext/Utils.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 // for calloc/free
 #include <stdlib.h>
@@ -104,11 +104,15 @@ SEXP parallelMatch(SEXP x, SEXP y, SEXP indices, SEXP a, SEXP b, SEXP pos, SEXP 
 	for (i = 0; i < n; i++)
 		cS[i] = 0;
 	
+	#ifdef _OPENMP
 	#pragma omp parallel num_threads(nthreads)
 	{
+	#endif
 		int *temp = (int *) malloc(size_x*sizeof(int)); // thread-safe on Windows
 		
+		#ifdef _OPENMP
 		#pragma omp for private(i, j, k) schedule(guided)
+		#endif
 		for (k = 0; k < n; k++) {
 			int *w = ptrs[k];
 			
@@ -137,7 +141,9 @@ SEXP parallelMatch(SEXP x, SEXP y, SEXP indices, SEXP a, SEXP b, SEXP pos, SEXP 
 		}
 		
 		free(temp);
+	#ifdef _OPENMP
 	}
+	#endif
 	
 	Free(ptrs);
 	Free(size_y);

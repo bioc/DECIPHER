@@ -2,6 +2,11 @@
  *                       Converts Sequence To Numbers                       *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
+ 
+ // for OpenMP parallel processing
+ #ifdef _OPENMP
+ #include <omp.h>
+ #endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -21,11 +26,6 @@
 
 /* for Calloc/Free */
 #include <R_ext/RS.h>
-
-// for OpenMP parallel processing
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
 
 // for math functions
 #include <math.h>
@@ -266,7 +266,9 @@ SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP nTh
 		UNPROTECT(1);
 	}
 	
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,k,x_i,rans,sum,ambiguous) num_threads(nthreads)
+	#endif
 	for (i = 0; i < x_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
 		if ((x_i.length - wS + 1) >= 1) {
@@ -842,7 +844,9 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask,
 		UNPROTECT(1);
 	}
 	
+	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,k,x_i,rans,sum,ambiguous) num_threads(nthreads)
+	#endif
 	for (i = 0; i < x_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
 		if ((x_i.length - wS + 1) >= 1) {

@@ -17,25 +17,27 @@ IdentifyByRank <- function(dbFile,
 	if (verbose)
 		time.1 <- Sys.time()
 	
-	# initialize databases
-	driver = dbDriver("SQLite")
+	# initialize database
 	if (is.character(dbFile)) {
-		dbConn = dbConnect(driver, dbFile)
+		if (!requireNamespace("RSQLite", quietly=TRUE))
+			stop("Package 'RSQLite' must be installed.")
+		dbConn <- dbConnect(dbDriver("SQLite"), dbFile)
 		on.exit(dbDisconnect(dbConn))
 	} else {
-		dbConn = dbFile
-		if (!inherits(dbConn,"SQLiteConnection")) 
-			stop("'dbFile' must be a character string or SQLiteConnection.")
+		dbConn <- dbFile
 		if (!dbIsValid(dbConn))
 			stop("The connection has expired.")
 	}
 	
-	if (is.na(match("rank",
+	if (is.na(match("organism",
 		dbListFields(dbConn,
 			tblName))))
-		stop("No rank column in table.")
+		stop("No 'organism' column in ", tblName, ".")
 	
-	searchExpression <- paste("select distinct rank from", tblName)
+	searchExpression <- paste("select distinct",
+		dbQuoteIdentifier(dbConn, "organism"),
+		"from",
+		dbQuoteIdentifier(dbConn, tblName))
 	rs <- dbSendQuery(dbConn, searchExpression)
 	x <- dbFetch(rs, n=-1, row.names=FALSE)
 	dbClearResult(rs)
@@ -50,21 +52,21 @@ IdentifyByRank <- function(dbFile,
 	
 	z <- x
 	if (level == 0) {
-		x <- strsplit(x$rank, "\n", fixed=TRUE)
+		x <- strsplit(x$organism, "\n", fixed=TRUE)
 		z$origin <- unlist(lapply(x,
 			function (x) {
 				x <- paste(x[-1], collapse=" ")
 			}))
 		z$identifier <- .change(unlist(lapply(x, `[`, 1L)))
 	} else {
-		x$rank <- unlist(lapply(strsplit(x$rank,
+		x$organism <- unlist(lapply(strsplit(x$organism,
 				"\n",
 				fixed=TRUE),
 			function (x) {
 				x <- paste(x[-1], collapse=" ")
 			}))
-		for (j in seq_along(x$rank)) {
-			a <- strsplit(x$rank[j], ";")[[1]]
+		for (j in seq_along(x$organism)) {
+			a <- strsplit(x$organism[j], ";")[[1]]
 			l <- length(a)
 			if (level < 0) {
 				temp_level <- l + level + 1L
@@ -79,7 +81,7 @@ IdentifyByRank <- function(dbFile,
 			} else {
 				id <- as.character(a[temp_level])
 			}
-			z$origin[j] <- unlist(strsplit(as.character(x$rank[j]),
+			z$origin[j] <- unlist(strsplit(as.character(x$organism[j]),
 				id,
 				fixed=TRUE))[1]
 			
@@ -88,21 +90,35 @@ IdentifyByRank <- function(dbFile,
 	}
 	
 	if (is.character(add2tbl) || add2tbl) {
-		dbWriteTable(dbConn, "taxa", z)
-		
-		if (verbose)
-			cat("\nUpdating column: \"identifier\"...")
+		dbWriteTable(dbConn, "temp", z, overwrite=TRUE)
 		
 		searchExpression <- paste("update ",
-			ifelse(is.character(add2tbl),add2tbl,tblName),
-			" set identifier = (select identifier from taxa where ",
-			ifelse(is.character(add2tbl),add2tbl,tblName),
-			".rank = taxa.rank)",
+			ifelse(is.character(add2tbl),
+				dbQuoteIdentifier(dbConn, add2tbl),
+				dbQuoteIdentifier(dbConn, tblName)),
+			" set ",
+			dbQuoteIdentifier(dbConn, "identifier"),
+			" = (select ",
+			dbQuoteIdentifier(dbConn, "identifier"),
+			" from ",
+			dbQuoteIdentifier(dbConn, "temp"),
+			" where ",
+			ifelse(is.character(add2tbl),
+				dbQuoteIdentifier(dbConn, add2tbl),
+				dbQuoteIdentifier(dbConn, tblName)),
+			".",
+			dbQuoteIdentifier(dbConn, "organism"),
+			" = ",
+			dbQuoteIdentifier(dbConn, "temp"),
+			".",
+			dbQuoteIdentifier(dbConn, "organism"),
+			")",
 			sep="")
 		rs <- dbSendStatement(dbConn, searchExpression)
 		dbClearResult(rs)
 		
-		searchExpression <- "drop table taxa"
+		searchExpression <- paste("drop table",
+			dbQuoteIdentifier(dbConn, "temp"))
 		rs <- dbSendStatement(dbConn, searchExpression)
 		dbClearResult(rs)
 	}
@@ -113,7 +129,7 @@ IdentifyByRank <- function(dbFile,
 			"distinct groups.")
 		if (is.character(add2tbl) || add2tbl)
 			cat("\nAdded to table ",
-				ifelse(is.character(add2tbl),add2tbl,tblName),
+				ifelse(is.character(add2tbl), add2tbl, tblName),
 				": \"identifier\".",
 				sep="")
 		
@@ -126,6 +142,6 @@ IdentifyByRank <- function(dbFile,
 		cat("\n")
 	}
 	
-	names(z)[1] <- "rank"
+	names(z)[1] <- "organism"
 	return(z)
 }

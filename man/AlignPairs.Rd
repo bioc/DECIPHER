@@ -28,7 +28,7 @@ An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object of (un
 A \code{XStringSet} object of (unaligned) sequences matching the type of the \code{pattern}.
 }
   \item{pairs}{
-Either \code{NULL} or a \code{data.frame} with \code{Pattern} and \code{Subject} indices to align and, optionally, a \code{Position} column containing matrices of anchor ranges.  If \code{Position} is provided then local alignment is performed around the anchors, unless virtual anchors are provided (see examples) to force global alignment with terminal gap penalties.  If \code{pairs} is \code{NULL} (the default) then global alignment of respective \code{pattern} and \code{subject} sequences is performed without terminal gap penalties.
+Either \code{NULL} or a \code{data.frame} with \code{Pattern} and \code{Subject} indices to align and, optionally, a \code{Position} column containing matrices of anchor ranges.  If \code{Position} is provided then local alignment is performed around the anchors, unless virtual anchors are provided to force global alignment with terminal gap penalties.  If \code{pairs} is \code{NULL} (the default) then global alignment of respective \code{pattern} and \code{subject} sequences is performed without terminal gap penalties.  (See examples section below.)
 }
   \item{perfectMatch}{
 Numeric giving the reward for aligning matching nucleotides, which is used in the absence of a \code{substitutionMatrix} when the \code{pattern} is a \code{DNAStringSet} or \code{RNAStringSet}.
@@ -43,7 +43,7 @@ Numeric giving the cost for opening a gap in the alignment.
 Numeric giving the cost for extending an open gap in the alignment.
 }
   \item{substitutionMatrix}{
-Either a substitution matrix representing the substitution scores for an alignment or the name of the amino acid substitution matrix to use in alignment.  The latter may be one of the following:  ``BLOSUM45'', ``BLOSUM50'', ``BLOSUM62'', ``BLOSUM80'', ``BLOSUM100'', ``PAM30'', ``PAM40'', ``PAM70'', ``PAM120'', ``PAM250'', or ``MIQS''.  The default (NULL) will use the \code{perfectMatch} and \code{misMatch} penalties for DNA/RNA or \code{PFASUM50} for AA.
+Either a substitution matrix representing the substitution scores for an alignment (in third-bits) or the name of the amino acid substitution matrix to use in alignment.  The latter may be one of the following:  ``BLOSUM45'', ``BLOSUM50'', ``BLOSUM62'', ``BLOSUM80'', ``BLOSUM100'', ``PAM30'', ``PAM40'', ``PAM70'', ``PAM120'', ``PAM250'', ``MIQS'', ``MMLSUM10'' to ``MMLSUM90'' (by tens), or ``PFASUM11'' to ``PFASUM100'' (by ones).  The default (NULL) will use the \code{perfectMatch} and \code{misMatch} penalties for DNA/RNA or \code{PFASUM50} for AA.
 }
   \item{bandWidth}{
 Integer determining the number of positions included in the adaptive band, which should be at least as large as the largest expected insertion or deletion (i.e., gap).  Smaller values will accelerate alignment, potentially at the expense of accuracy.

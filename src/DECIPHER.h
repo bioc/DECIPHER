@@ -237,7 +237,7 @@ SEXP indexByContig(SEXP starts, SEXP ends, SEXP order, SEXP index, SEXP widths);
 
 SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, SEXP y_i, SEXP y_f, SEXP weights, SEXP sepCost, SEXP sepPower, SEXP gapCost, SEXP gapPower, SEXP shiftCost, SEXP codingCost, SEXP maxSep, SEXP maxGap, SEXP ordering, SEXP minScore, SEXP maxW, SEXP allowOverlap);
 
-SEXP extendSegments(SEXP X, SEXP W1, SEXP W2, SEXP S1, SEXP S2, SEXP O1P, SEXP O1N, SEXP O2P, SEXP O2N, SEXP S, SEXP maxDrop, SEXP INDEX1, SEXP INDEX2);
+SEXP extendMatches(SEXP X1, SEXP X2, SEXP starts1, SEXP ends1, SEXP index1, SEXP starts2, SEXP ends2, SEXP index2, SEXP width1, SEXP width2, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP nThreads);
 
 // Translate.c
 
@@ -371,7 +371,7 @@ SEXP alignPairs(SEXP pattern, SEXP subject, SEXP query, SEXP target, SEXP positi
 
 // Search.c
 
-SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP output, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP verbose, SEXP pBar, SEXP nThreads);
+SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP output, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP pattern, SEXP subject, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP verbose, SEXP pBar, SEXP nThreads);
 
 SEXP countIndex(SEXP num, SEXP query, SEXP step);
 
