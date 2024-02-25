@@ -145,15 +145,16 @@ Clusterize <- function(myXStringSet,
 		stop("All sequences in myXStringSet are zero width.")
 	
 	# initialize parameters
+	keys <- c(8L, 16L) # size of radix keys for short and possibly long vectors (2^(0 to 5))
 	minCount <- 10L # minimum number of replicate timings to stop optimizing processors (>= 1)
-	quantile <- 0.99 # width quantile determining k-mer size (>> 0 and <= 1)
 	fracRandom <- 0.1 # target fraction of random occurrences per rare k-mer (> 0 and << 1)
 	pow <- 0.5 # power (> 0 and <= 1) applied to the number of k-mers to randomly project into a smaller space
-	N <- 100L # approximate frequency of random k-mers (1 per every N on average)
+	N <- 500L # approximate frequency of random k-mers (1 per every N sequences on average)
 	threshold <- 0.9 # inverse of false discovery rate for partly disjoint set inclusion in phase 1 (>> 0 and <= 1)
+	dropScore <- -10 # extend anchors until score decreases below dropScore (<= 0)
 	maxSample <- 100L # number of k-mers to sample in phase 3 (>> 1 and ideally <= cache size)
 	alpha1 <- 0.05 # weight of exponential moving average to smooth changes in variance of rank order (>= 0 and <= 1)
-	split <- maxPhase3/2 # decrease in rank order variance required to split partitions (> 0 and < maxPhase3)
+	halfMax <- maxPhase3/2 # decrease in rank order variance required to split partitions (> 0 and < maxPhase3)
 	attempts <- 20L # alignment attempts before possibly skipping (>> 0)
 	binSize <- 0.05 # size of bins for distributing k-mer similarities (> 0 and << 1)
 	minSimilarities <- 1000L # minimum similarities per cutoff to stop collecting data (>> 0)
@@ -161,7 +162,7 @@ Clusterize <- function(myXStringSet,
 	minAlignments <- 1L # minimum alignments to perform per sequence in phase 3 (> 0)
 	batchSize <- maxPhase3 # number of k-mer similarities to compute per batch (ideally >> processors)
 	boundComparisons <- 10 # fold-limit on variation beyond maxPhase3 (average comparisons per sequence)
-	numRandom <- as.integer(maxPhase1/rareKmers*fracRandom) # expected number of random occurrences of rare k-mers
+	numRandom <- maxPhase1/rareKmers*fracRandom # expected number of random occurrences of rare k-mers
 	minFraction <- 0.1 # minimum fraction of hits to consider further comparison in phase 3 (>= 0 and <= 1)
 	stdDevs <- 1.96 # standard deviations above the mean to continue looking for a cluster (> 0)
 	alpha2 <- 0.01 # weight of exponential moving average to smooth proportions in phase 3 (>= 0 and <= 1)
@@ -204,10 +205,15 @@ Clusterize <- function(myXStringSet,
 		words <- max(alphabet)
 		alphabet <- alphabet - 1L
 		
-		# use rounded PFASUM
+		# use integer PFASUM50 for alignment
 		sM <- matrix(c(4L, -1L, -1L, -1L, 0L, -1L, -1L, 0L, -2L, -1L, -1L, -1L, -1L, -2L, -1L, 1L, 0L, -3L, -2L, 0L, -1L, 6L, 0L, -1L, -3L, 2L, 1L, -2L, 1L, -4L, -3L, 3L, -2L, -4L, -1L, 0L, -1L, -2L, -2L, -3L, -1L, 0L, 6L, 2L, -3L, 1L, 1L, 0L, 1L, -4L, -4L, 1L, -3L, -4L, -1L, 1L, 0L, -4L, -2L, -4L, -1L, -1L, 2L, 7L, -4L, 1L, 3L, -1L, 0L, -5L, -5L, 0L, -4L, -5L, -1L, 0L, -1L, -5L, -3L, -5L, 0L, -3L, -3L, -4L, 14L, -3L, -4L, -2L, -2L, -1L, -1L, -4L, -1L, -1L, -4L, 0L, -1L, -2L, -1L, 0L, -1L, 2L, 1L, 1L, -3L, 6L, 2L, -2L, 1L, -3L, -3L, 2L, -1L, -4L, -1L, 0L, 0L, -3L, -2L, -3L, -1L, 1L, 1L, 3L, -4L, 2L, 6L, -2L, 0L, -4L, -4L, 1L, -3L, -5L, -1L, 0L, 0L, -4L, -3L, -3L, 0L, -2L, 0L, -1L, -2L, -2L, -2L, 8L, -2L, -5L, -4L, -2L, -3L, -4L, -1L, 0L, -1L, -4L, -4L, -4L, -2L, 1L, 1L, 0L, -2L, 1L, 0L, -2L, 10L, -3L, -3L, 0L, -2L, -1L, -2L, 0L, -1L, -1L, 2L, -3L, -1L, -4L, -4L, -5L, -1L, -3L, -4L, -5L, -3L, 5L, 3L, -4L, 2L, 1L, -3L, -3L, -1L, -2L, -1L, 3L, -1L, -3L, -4L, -5L, -1L, -3L, -4L, -4L, -3L, 3L, 5L, -3L, 3L, 2L, -3L, -3L, -2L, -1L, -1L, 1L, -1L, 3L, 1L, 0L, -4L, 2L, 1L, -2L, 0L, -4L, -3L, 6L, -2L, -4L, -1L, 0L, 0L, -4L, -2L, -3L, -1L, -2L, -3L, -4L, -1L, -1L, -3L, -3L, -2L, 2L, 3L, -2L, 7L, 1L, -3L, -2L, -1L, -1L, 0L, 1L, -2L, -4L, -4L, -5L, -1L, -4L, -5L, -4L, -1L, 1L, 2L, -4L, 1L, 7L, -4L, -3L, -2L, 3L, 4L, 0L, -1L, -1L, -1L, -1L, -4L, -1L, -1L, -1L, -2L, -3L, -3L, -1L, -3L, -4L, 9L, 0L, -1L, -3L, -3L, -3L, 1L, 0L, 1L, 0L, 0L, 0L, 0L, 0L, 0L, -3L, -3L, 0L, -2L, -3L, 0L, 4L, 2L, -3L, -2L, -2L, 0L, -1L, 0L, -1L, -1L, 0L, 0L, -1L, -1L, -1L, -2L, 0L, -1L, -2L, -1L, 2L, 5L, -3L, -2L, 0L, -3L, -2L, -4L, -5L, -2L, -3L, -4L, -4L, -1L, -2L, -1L, -4L, -1L, 3L, -3L, -3L, -3L, 14L, 3L, -2L, -2L, -2L, -2L, -3L, -1L, -2L, -3L, -4L, 2L, -1L, -1L, -2L, 0L, 4L, -3L, -2L, -2L, 3L, 9L, -1L, 0L, -3L, -4L, -5L, 0L, -3L, -3L, -4L, -3L, 3L, 1L, -3L, 1L, 0L, -3L, -2L, 0L, -2L, -1L, 5L),
 			nrow=20,
 			ncol=20)
+		# use numeric PFASUM90 for k-mer extension
+		sM2 <- matrix(c(5.6366, -2.123, -1.9768, -2.1678, 0.18, -1.1054, -1.0832, -0.2172, -2.5629, -2.0637, -2.2542, -1.594, -1.4248, -3.2112, -1.1882, 1.0404, -0.1857, -3.9798, -3.4821, -0.3018, -2.123, 8.0136, -0.626, -1.9175, -4.3548, 1.3317, -0.447, -3.308, 0.357, -4.8042, -4.1062, 3.3058, -2.9844, -5.3213, -2.6724, -1.2885, -1.4572, -3.2343, -2.9728, -4.1818, -1.9768, -0.626, 8.5894, 2.2248, -3.3447, 0.413, -0.0924, -0.5133, 1.2501, -5.4264, -5.2923, 0.3639, -3.5783, -5.1117, -2.2686, 1.0198, -0.039, -5.1492, -2.7728, -4.7241, -2.1678, -1.9175, 2.2248, 8.3078, -5.7885, 0.0752, 2.7927, -1.4569, -0.8555, -7.2416, -6.7611, -0.6666, -5.4674, -7.1216, -1.6584, -0.1678, -1.3548, -6.4677, -4.8316, -6.0162, 0.18, -4.3548, -3.3447, -5.7885, 14.6616, -4.5505, -6.0425, -3.2461, -2.9744, -1.7826, -2.0088, -5.3126, -1.5666, -1.8906, -5.2263, -0.49, -1.1187, -3.0718, -2.1034, -0.4219, -1.1054, 1.3317, 0.413, 0.0752, -4.5505, 7.8434, 2.102, -2.6903, 1.2185, -4.3652, -3.4102, 1.7676, -1.4415, -4.9326, -1.8713, -0.3718, -0.6675, -4.2382, -2.9511, -3.6024, -1.0832, -0.447, -0.0924, 2.7927, -6.0425, 2.102, 7.1209, -2.6834, -1.0465, -5.5661, -5.2814, 0.9267, -3.939, -6.562, -1.6426, -0.7106, -1.0839, -5.7867, -4.3474, -4.2962, -0.2172, -3.308, -0.5133, -1.4569, -3.2461, -2.6903, -2.6834, 8.7451, -2.9718, -6.5601, -6.1413, -2.6614, -4.9098, -5.7403, -2.9168, -0.3102, -2.5985, -5.4729, -5.5899, -5.2497, -2.5629, 0.357, 1.2501, -0.8555, -2.9744, 1.2185, -1.0465, -2.9718, 11.4285, -4.6521, -3.8389, -0.373, -2.9571, -1.6592, -2.5976, -1.0539, -1.6611, -1.6923, 1.8891, -4.0764, -2.0637, -4.8042, -5.4264, -7.2416, -1.7826, -4.3652, -5.5661, -6.5601, -4.6521, 6.6537, 2.475, -4.7727, 1.828, 0.1268, -4.9032, -4.3595, -1.7439, -2.7368, -2.3551, 3.8197, -2.2542, -4.1062, -5.2923, -6.7611, -2.0088, -3.4102, -5.2814, -6.1413, -3.8389, 2.475, 5.9633, -4.4472, 2.7399, 1.3114, -4.6652, -4.3274, -2.6488, -1.508, -1.602, 1.1279, -1.594, 3.3058, 0.3639, -0.6666, -5.3126, 1.7676, 0.9267, -2.6614, -0.373, -4.7727, -4.4472, 7.2682, -2.9463, -5.9577, -1.7413, -0.6688, -0.7702, -4.8942, -3.7555, -4.028, -1.4248, -2.9844, -3.5783, -5.4674, -1.5666, -1.4415, -3.939, -4.9098, -2.9571, 1.828, 2.7399, -2.9463, 9.637, 0.7396, -4.6338, -2.728, -1.1887, -1.5956, -1.4148, 0.6098, -3.2112, -5.3213, -5.1117, -7.1216, -1.8906, -4.9326, -6.562, -5.7403, -1.6592, 0.1268, 1.3114, -5.9577, 0.7396, 9.2952, -5.3473, -4.2571, -3.4356, 2.5784, 4.3908, -0.7288, -1.1882, -2.6724, -2.2686, -1.6584, -5.2263, -1.8713, -1.6426, -2.9168, -2.5976, -4.9032, -4.6652, -1.7413, -4.6338, -5.3473, 10.5195, -0.567, -1.7243, -5.0979, -4.92, -3.6712, 1.0404, -1.2885, 1.0198, -0.1678, -0.49, -0.3718, -0.7106, -0.3102, -1.0539, -4.3595, -4.3274, -0.6688, -2.728, -4.2571, -0.567, 6.1587, 2.1066, -4.4757, -3.3748, -3.0999, -0.1857, -1.4572, -0.039, -1.3548, -1.1187, -0.6675, -1.0839, -2.5985, -1.6611, -1.7439, -2.6488, -0.7702, -1.1887, -3.4356, -1.7243, 2.1066, 6.9305, -4.2132, -3.1464, -0.4594, -3.9798, -3.2343, -5.1492, -6.4677, -3.0718, -4.2382, -5.7867, -5.4729, -1.6923, -2.7368, -1.508, -4.8942, -1.5956, 2.5784, -5.0979, -4.4757, -4.2132, 15.2516, 3.2918, -3.2061, -3.4821, -2.9728, -2.7728, -4.8316, -2.1034, -2.9511, -4.3474, -5.5899, 1.8891, -2.3551, -1.602, -3.7555, -1.4148, 4.3908, -4.92, -3.3748, -3.1464, 3.2918, 10.6408, -2.51, -0.3018, -4.1818, -4.7241, -6.0162, -0.4219, -3.6024, -4.2962, -5.2497, -4.0764, 3.8197, 1.1279, -4.028, 0.6098, -0.7288, -3.6712, -3.0999, -0.4594, -3.2061, -2.51, 6.1721),
+			nrow=20,
+			ncol=20)
+		lkup <- AAStringSet("ARNDCQEGHILKMFPSTWYV")
 		entropy <- .Call("alphabetSizeReducedAA",
 			myXStringSet,
 			alphabet,
@@ -216,10 +222,15 @@ Clusterize <- function(myXStringSet,
 			stop("More than one grouping of amino acids is required in the alphabet.")
 		maxK <- as.integer(log(2147483647L, words)) # 2147483647L == 2^31 - 1
 	} else { # DNAStringSet or RNAStringSet
-		# penalize transitions less than transversions
+		# use integer substitution matrix for alignment
 		sM <- matrix(c(3L, -3L, 0L, -3L, -3L, 3L, -3L, 0L, 0L, -3L, 3L, -3L, -3L, 0L, -3L, 3L),
 			nrow=4,
 			ncol=4)
+		# use numeric substitution matrix for k-mer extension
+		sM2 <- matrix(c(3, -6, -3, -6, -6, 3, -6, -3, -3, -6, 3, -6, -6, -3, -6, 3),
+			nrow=4,
+			ncol=4)
+		lkup <- AAStringSet("ACGT")
 		entropy <- .Call("alphabetSize",
 			myXStringSet,
 			PACKAGE="DECIPHER")
@@ -234,7 +245,7 @@ Clusterize <- function(myXStringSet,
 	t <- tabulate(x, L)[u]
 	wu <- widths[u]
 	
-	wordSizeQuantile <- quantile(wu, quantile, names=FALSE)
+	wordSizeQuantile <- max(wu)
 	wordSize <- ceiling(log(N*wordSizeQuantile, entropy))
 	if (wordSize < 1)
 		wordSize <- 1L
@@ -251,8 +262,6 @@ Clusterize <- function(myXStringSet,
 	if (maxPhase1 < minPhase1)
 		stop("maxPhase1 must be at least ", minPhase1, ".")
 	rm(minPhase1)
-	if (rareKmers > 2147483647/l)
-		stop("rareKmers can be at most ", floor(2147483647/l), ".")
 	
 	if (verbose) {
 		cat("Partitioning sequences by ",
@@ -279,21 +288,21 @@ Clusterize <- function(myXStringSet,
 	incBins <- unique(which(tabulate(incBins, length(counts)) > 0))
 	cutoff <- 1 - cutoff
 	
-	overlap <- function(x, y, processors=1L) {
-		.Call("matchOverlap",
+	overlapSimilarity <- function(x, y, processors=1L, coverage=minCoverage) {
+		.Call("computeOverlap",
 			x,
 			y,
 			v,
 			wordSize,
-			processors,
-			PACKAGE="DECIPHER")
-	}
-	
-	similarity <- function(res, w1, w2, processors=1L, coverage=minCoverage) {
-		.Call("similarities",
-			res,
-			w1,
-			w2,
+			N,
+			entropy,
+			words,
+			u[P[x]],
+			u[P[y]],
+			myXStringSet,
+			dropScore,
+			sM2,
+			lkup,
 			includeTerminalGaps,
 			penalizeGapLetterMatches,
 			minCoverage,
@@ -333,7 +342,6 @@ Clusterize <- function(myXStringSet,
 		GE=-2, # gap extension
 		TG=0, # terminal gap
 		maxLength=5, # maximum length to skip alignment in equal length regions
-		perProcessor=5L, # minimum number of regions to align per processor
 		processors=1L) {
 		n <- as.integer(length(anchor)/4) # ncol(anchor) but works when anchor is NULL
 		start1 <- start2 <- end1 <- end2 <- integer(n + 1L)
@@ -353,11 +361,6 @@ Clusterize <- function(myXStringSet,
 		start2[n + 1L] <- l2 + 1L
 		end2[n + 1L] <- widths[pair[2L]]
 		
-		if (processors > 1L) {
-			l <- as.integer(length(start1)/perProcessor)
-			if (l < processors)
-				processors <- max(1L, l)
-		}
 		.Call("alignPair",
 			myXStringSet,
 			pair,
@@ -397,6 +400,7 @@ Clusterize <- function(myXStringSet,
 			alphabet,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			0L, # right is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
 	} else { # DNAStringSet or RNAStringSet
@@ -405,16 +409,17 @@ Clusterize <- function(myXStringSet,
 			kmerSize,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			0L, # right is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
 	}
 	sizes <- lengths(v)
 	for (i in seq_along(v)) {
-		o <- .Call("radixOrder", v[[i]], 1L, 0L, PACKAGE="DECIPHER")
+		o <- .Call("radixOrder", v[[i]], 1L, 0L, keys[1L], processors, PACKAGE="DECIPHER")
 		v[[i]] <- list(v[[i]][o], seq_along(v[[i]])[o])
 	}
 	KMERS <- as.integer(words^kmerSize)
-	words <- as.integer(words^wordSize)
+	WORDS <- as.integer(words^wordSize)
 	lf <- as.integer(max(KMERS^pow, mean(sizes)))
 	freqs <- .Call("sumBins", v, lf, PACKAGE="DECIPHER")
 	
@@ -422,58 +427,51 @@ Clusterize <- function(myXStringSet,
 	select <- as.integer(min(rareKmers,
 		lf, # bounded by number of possible mapped k-mers
 		max(sizes))) # bounded by number of possible k-mers
-	j <- 0L
+	j <- 0 # needs to be a double
 	z <- seq_len(select)
-	y <- rep(KMERS, select) # use max k-mer + 1 as placeholder
-	kmers <- integer(l*select)
+	y <- lapply(seq_len(select), function(x) rep(NA_integer_, x)) # placeholder
+	kmers <- integer(l*as.double(select))
 	for (i in seq_len(l)) {
 		s <- v[[i]][[1L]]
 		s <- .Call("sortedUnique", s, PACKAGE="DECIPHER") # fast unique(s)
 		if (length(s) == 0) {
-			s <- y
+			s <- y[[select]]
 		} else {
 			if (length(s) > select) {
 				o <- .Call("xorShift", s, lf, PACKAGE="DECIPHER")
-				o <- .Call("radixOrder", freqs[o], 1L, 1L, PACKAGE="DECIPHER")
+				o <- .Call("radixOrder", freqs[o], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
 				s <- s[o[z]]
 			} else if (length(s) < select) {
-				s <- c(s, rep(KMERS, select - length(s)))
+				s <- c(s, y[[select - length(s)]])
 			} # else length(s) == select
 		}
 		kmers[j + z] <- s
 		j <- j + select
 	}
-	rm(y, z)
-	
-	o <- order(kmers, method="radix")
-	ini <- integer(length(kmers)) # index of initial k-mer
+	o <- .Call("radixOrder", kmers, 1L, 0L, keys[2L], processors, PACKAGE="DECIPHER") # returns integers or doubles depending on length of kmers
+	if (is.integer(o)) {
+		ini <- integer(KMERS)
+	} else {
+		ini <- numeric(KMERS)
+	}
+	len <- integer(KMERS)
 	prev <- -1L
 	j <- 0L
 	for (i in seq_along(o)) {
 		curr <- kmers[o[i]]
 		if (curr != prev) {
-			if (prev == KMERS) { # placeholder group
-				for (k in j:(i - 1L))
-					kmers[o[k]] <- ini[o[k]] # length 1 group
-			} else {
-				prev <- i - 1L
-				for (k in j:prev)
-					kmers[o[k]] <- prev # reuse for fin
-			}
+			ini[prev + 1L] <- j
+			len[prev + 1L] <- as.integer(i - j)
 			prev <- curr
 			j <- i
 		}
-		ini[o[i]] <- j
 	}
-	if (kmers[o[j]] == KMERS) { # placeholder group
-		for (k in j:length(o))
-			kmers[o[k]] <- ini[o[k]] # length 1 group
-	} else {
-		for (k in j:length(o))
-			kmers[o[k]] <- length(o)
-	}
+	rm(kmers)
+	ini[prev + 1L] <- j
+	len[prev + 1L] <- as.integer(i - j + 1L)
 	for (i in seq_along(o))
 		o[i] <- (o[i] - 1L) %/% select + 1L # convert to sequence index
+	o <- as.integer(o)
 	
 	# Phase 1: Partition into groups
 	partition <- integer(l)
@@ -513,16 +511,20 @@ Clusterize <- function(myXStringSet,
 			first <- FALSE
 		}
 		
-		w <- (i - 1L)*select + seq_len(select)
-		w <- w[.Call("radixOrder", kmers[w] - ini[w], 1L, 1L, PACKAGE="DECIPHER")]
+		s <- v[[i]][[1L]]
+		s <- .Call("sortedUnique", s, PACKAGE="DECIPHER") # fast unique(s)
+		w <- .Call("xorShift", s, lf, PACKAGE="DECIPHER")
+		w <- .Call("radixOrder", freqs[w], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
+		w <- s[w] + 1L
+		
 		groups <- .Call("selectGroups",
 			o,
 			ini[w],
-			kmers[w],
+			len[w],
 			maxPhase1,
+			0L,
 			PACKAGE="DECIPHER")
-		
-		d <- .Call("radixOrder", groups, 1L, 1L, PACKAGE="DECIPHER")
+		d <- .Call("radixOrder", groups, 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
 		d <- .Call("dereplicate", groups, d, PACKAGE="DECIPHER")
 		
 		# fit exponential decrease in probability due to chance
@@ -557,7 +559,7 @@ Clusterize <- function(myXStringSet,
 		d[[2L]] <- d[[2L]][w]
 		
 		# apply multiple testing correction
-		w <- .Call("radixOrder", d[[2L]], 0L, 1L, PACKAGE="DECIPHER")
+		w <- .Call("radixOrder", d[[2L]], 0L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
 		d[[1L]] <- d[[1L]][w]
 		d[[2L]] <- d[[2L]][w]
 		d[[2L]] <- probs[d[[2L]]] # convert to probabilities
@@ -570,11 +572,9 @@ Clusterize <- function(myXStringSet,
 		if (length(w) == 0L) {
 			if (first && # singleton
 				length(groups) > 1L) { # related groups already exist
-				# assign singleton to highest weighted existing group
+				# assign singleton to closest existing group
 				w <- which(groups != i)
-				w <- w[.Call("radixOrder", partition[groups[w]], 0L, 1L, PACKAGE="DECIPHER")]
-				groups <- partition[groups[w]]
-				partition[i] <- .Call("maxGroup", groups, d[[2L]][w], PACKAGE="DECIPHER")
+				partition[i] <- partition[groups[w[which.max(d[[2L]][w])]]]
 				group <- group - 1L
 			}
 		} else {
@@ -584,7 +584,7 @@ Clusterize <- function(myXStringSet,
 			pos <- pos + length(groups)
 		}
 	}
-	rm(o, ini, kmers, stack, probs, sufficient)
+	rm(ini, len, o, stack, probs, sufficient)
 	
 	keep <- sizes > 0L
 	O <- order(partition, decreasing=TRUE, method="radix")
@@ -596,6 +596,7 @@ Clusterize <- function(myXStringSet,
 	if (verbose) {
 		close(pBar)
 		
+		cat("\n")
 		time.2 <- Sys.time()
 		print(round(difftime(time.2,
 			time.1,
@@ -624,22 +625,21 @@ Clusterize <- function(myXStringSet,
 	rm(temp)
 	freqs <- as.integer(freqs)
 	
-	j <- 0L
-	z <- seq_len(select)
-	y <- rep(KMERS, select) # use max k-mer + 1 as placeholder
-	kmers <- integer(l*select)
+	# record groups sharing the rarest k-mers
+	j <- 0 # needs to be a double
+	kmers <- integer(l*as.double(select))
 	for (i in seq_len(l)) {
 		s <- v[[i]][[1L]]
-		s <- .Call("sortedUnique", s, PACKAGE="DECIPHER")
+		s <- .Call("sortedUnique", s, PACKAGE="DECIPHER") # fast unique(s)
 		if (length(s) == 0) {
-			s <- y
+			s <- y[[select]]
 		} else {
 			if (length(s) > select) {
 				o <- .Call("xorShift", s, lf, PACKAGE="DECIPHER")
-				o <- .Call("radixOrder", freqs[o], 1L, 1L, PACKAGE="DECIPHER")
+				o <- .Call("radixOrder", freqs[o], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
 				s <- s[o[z]]
 			} else if (length(s) < select) {
-				s <- c(s, rep(KMERS, select - length(s)))
+				s <- c(s, y[[select - length(s)]])
 			} # else length(s) == select
 		}
 		kmers[j + z] <- s
@@ -662,7 +662,7 @@ Clusterize <- function(myXStringSet,
 				wordSize <- 1L
 			if (wordSize > maxK)
 				wordSize <- maxK
-			words <- as.integer(20L^wordSize)
+			words <- 20L
 			
 			v <- .Call("enumerateSequenceReducedAA",
 				.subset(myXStringSet, u),
@@ -670,25 +670,26 @@ Clusterize <- function(myXStringSet,
 				alphabet,
 				FALSE, # mask repeats
 				FALSE, # mask low complexity regions
+				0L, # right is fast moving side
 				processors,
 				PACKAGE="DECIPHER")
 		} else { # DNAStringSet or RNAStringSet
-			words <- as.integer(4L^wordSize)
-			
 			v <- .Call("enumerateSequence",
 				.subset(myXStringSet, u),
 				wordSize,
 				FALSE, # mask repeats
 				FALSE, # mask low complexity regions
+				0L, # right is fast moving side
 				processors,
 				PACKAGE="DECIPHER")
 		}
+		WORDS <- as.integer(words^wordSize)
 		sizes <- lengths(v)
 		for (i in seq_along(v)) {
-			o <- .Call("radixOrder", v[[i]], 1L, 0L, PACKAGE="DECIPHER")
+			o <- .Call("radixOrder", v[[i]], 1L, 0L, keys[1L], processors, PACKAGE="DECIPHER")
 			v[[i]] <- list(v[[i]][o], seq_along(v[[i]])[o])
 		}
-		lf <- as.integer(words^pow)
+		lf <- as.integer(WORDS^pow)
 		freqs <- numeric(lf)
 		for (i in seq_along(ls)) {
 			temp <- .Call("sumBins", v[G[[i]]], lf, PACKAGE="DECIPHER")
@@ -711,12 +712,13 @@ Clusterize <- function(myXStringSet,
 	}
 	ksims <- psims <- vector("list", maxPhase2)
 	var <- pmin(maxPhase3, ls[partition]/2) # doubles to avoid overflow
-	avg_cor <- sum(var < maxPhase3/2)/l # initialize to expected value by chance
+	avg_cor <- sum(var < halfMax)/l # initialize to expected value by chance
 	resTime1 <- resTime2 <- rep(NA_real_, processors)
 	count1 <- count2 <- integer(processors)
 	optProcessors1 <- processors
 	optProcessors2 <- 1L # assume 1 is most efficient for alignment
 	alignments <- integer(length(cutoff))
+	P <- seq_along(myXStringSet)
 	for (i in seq_len(maxPhase2)) {
 		if (verbose && interactive()) {
 			cat("\riteration ",
@@ -764,13 +766,14 @@ Clusterize <- function(myXStringSet,
 			for (j in seq_len(length(batches[[k]]) - 1L)) {
 				b <- (batches[[k]][j] + 1L):batches[[k]][j + 1L]
 				s <- G[[k]][b]
-				res1 <- overlap(rand[k, 1L], s, optProcessors1)
+				res1 <- overlapSimilarity(rand[k, 1L], s, optProcessors1, coverage=0)
+				m1[s] <- res1[[length(res1)]]
+				res1 <- res1[-length(res1)]
 				ov[b] <- .Call("overlap",
 					res1,
 					wu[rand[k, 1L]],
 					wu[s],
 					PACKAGE="DECIPHER")
-				m1[s] <- similarity(res1, wu[rand[k, 1L]], wu[s], optProcessors1, coverage=0)
 			}
 			
 			rand[k, 2L] <- G[[k]][sample(ls[k], 1L, replace=TRUE, prob=(1.001 - m1[G[[k]]])*keep[G[[k]]]/ov)] # maximize distance and overlap to other random sequence
@@ -779,8 +782,8 @@ Clusterize <- function(myXStringSet,
 			# process sequences in batches to reduce memory
 			for (j in seq_len(length(batches[[k]]) - 1L)) {
 				s <- G[[k]][(batches[[k]][j] + 1L):batches[[k]][j + 1L]]
-				res2 <- overlap(rand[k, 2L], s, optProcessors1)
-				m2[s] <- similarity(res2, wu[rand[k, 2L]], wu[s], optProcessors1, coverage=0)
+				res2 <- overlapSimilarity(rand[k, 2L], s, optProcessors1, coverage=0)
+				m2[s] <- res2[[length(res2)]]
 			}
 		}
 		time.4 <- Sys.time()
@@ -842,9 +845,8 @@ Clusterize <- function(myXStringSet,
 			pdist1 <- numeric(length(s1))
 			time.5 <- Sys.time()
 			for (j in seq_along(s1)) {
-				res <- overlap(rand[partition[s1[j]], 1L], s1[j], optProcessors1) # recompute
-				if (minCoverage != 0) # need to replace k-mer similarity
-					ksim1[j] <- similarity(res, wu[rand[partition[s1[j]], 1L]], wu[s1[j]], optProcessors1)
+				res <- overlapSimilarity(rand[partition[s1[j]], 1L], s1[j], optProcessors1) # recompute
+				ksim1[j] <- res[[length(res)]]
 				ali <- align(c(u[rand[partition[s1[j]], 1L]], u[s1[j]]),
 					anchor=res[[1L]],
 					processors=optProcessors2)
@@ -856,9 +858,8 @@ Clusterize <- function(myXStringSet,
 			pdist2 <- numeric(length(s2))
 			time.7 <- Sys.time()
 			for (j in seq_along(s2)) {
-				res <- overlap(rand[partition[s2[j]], 2L], s2[j], optProcessors1) # recompute
-				if (minCoverage != 0) # need to replace k-mer similarity
-					ksim2[j] <- similarity(res, wu[rand[partition[s2[j]], 2L]], wu[s2[j]], optProcessors1)
+				res <- overlapSimilarity(rand[partition[s2[j]], 2L], s2[j], optProcessors1) # recompute
+				ksim2[j] <- res[[length(res)]]
 				ali <- align(c(u[rand[partition[s2[j]], 2L]], u[s2[j]]),
 					anchor=res[[1L]],
 					processors=optProcessors2)
@@ -921,7 +922,7 @@ Clusterize <- function(myXStringSet,
 			
 			w <- which(d != 0) # only update positions that could have moved
 			var[w] <- alpha1*pmin(maxPhase3, abs(R[w] - r[w])) + (1 - alpha1)*var[w] # exponential moving average of change in rank order
-			avg_cor <- sum(var*keep < maxPhase3/2)/l # exponential moving average of fraction stabilized in rank order
+			avg_cor <- sum(var*keep < halfMax)/l # exponential moving average of fraction stabilized in rank order
 			
 			O <- o
 			R <- r
@@ -945,7 +946,7 @@ Clusterize <- function(myXStringSet,
 				partition, # maybe in-place change of `partition`
 				var, # split when var <= split
 				maxPhase3, # minimum split partition size
-				split, # split threshold
+				halfMax, # split threshold
 				PACKAGE="DECIPHER")
 			
 			G <- .Call("indexPartitions", O, partition, keep, PACKAGE="DECIPHER")
@@ -956,7 +957,7 @@ Clusterize <- function(myXStringSet,
 		
 		for (k in which(inPlay)) {
 			if (all(alignments >= minSimilarities) &&
-				all(var[G[[k]]] < maxPhase3/2)) {
+				all(var[G[[k]]] < halfMax)) {
 				inPlay[k] <- FALSE # 100% stability
 			}
 		}
@@ -1016,8 +1017,8 @@ Clusterize <- function(myXStringSet,
 	var[var > maxComparisons] <- maxComparisons
 	var[var < minComparisons] <- minComparisons
 	var <- var[O]/mean(var) # normalized variability
-	bL <- seq_len(l) - as.integer(var*(maxPhase3/2))
-	bR <- seq_len(l) + as.integer(var*(maxPhase3/2))
+	bL <- seq_len(l) - as.integer(var*(halfMax))
+	bR <- seq_len(l) + as.integer(var*(halfMax))
 	bL[bL < 1L] <- 1L
 	bR[bR > l] <- l
 	
@@ -1043,10 +1044,24 @@ Clusterize <- function(myXStringSet,
 			time.1 <- time.2
 		}
 		lastValue <- 0
-		cat("Clustering sequences by ",
-			wordSize,
-			"-mer similarity:\n",
-			sep="")
+		
+		wordSizeMin <- ceiling(log(N*min(wu), entropy))
+		if (wordSizeMin < 1)
+			wordSizeMin <- 1
+		if (wordSizeMin < wordSize) {
+			cat("Clustering sequences by ",
+				wordSizeMin,
+				"-mer to ",
+				wordSize,
+				"-mer similarity:\n",
+				sep="")
+		} else {
+			cat("Clustering sequences by ",
+				wordSize,
+				"-mer similarity:\n",
+				sep="")
+		}
+		rm(wordSizeMin)
 		flush.console()
 		pBar <- txtProgressBar(style=ifelse(interactive(), 3, 1))
 	}
@@ -1069,45 +1084,50 @@ Clusterize <- function(myXStringSet,
 	Q <- R[P]
 	
 	# order rare k-mers into groups
+	o <- .Call("radixOrder", kmers, 1L, 0L, keys[2L], processors, PACKAGE="DECIPHER") # returns integers or doubles depending on length of kmers
 	E <- seq_len(l)
-	E[P] <- E
-	E <- rep(E, each=select)
-	o <- order(kmers, E, method="radix")
-	rm(E)
-	ini <- integer(length(kmers)) # index of initial k-mer
+	E[P] <- E # order within rare k-mer groups by E
 	prev <- -1L
 	j <- 0L
 	for (i in seq_along(o)) {
 		curr <- kmers[o[i]]
 		if (curr != prev) {
+			w <- j:(i - 1L)
+			o[w] <- o[w[.Call("radixOrder", E[(o[w] - 1L) %/% select + 1L], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")]]
 			prev <- curr
 			j <- i
 		}
-		ini[o[i]] <- j
 	}
+	w <- j:i
+	o[w] <- o[w[.Call("radixOrder", E[(o[w] - 1L) %/% select + 1L], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")]]
+	rm(E)
+	if (is.integer(o)) {
+		ini <- integer(KMERS)
+	} else {
+		ini <- numeric(KMERS)
+	}
+	len <- integer(KMERS)
 	prev <- -1L
+	j <- 0L
 	for (i in seq_along(o)) {
-		curr <- ini[o[i]]
+		curr <- kmers[o[i]]
 		if (curr != prev) {
-			j <- 0L
+			ini[prev + 1L] <- j
+			len[prev + 1L] <- as.integer(i - j)
 			prev <- curr
-		} else {
-			j <- j + 1L
-		}
-		if (kmers[o[i]] == KMERS) { # missing k-mer
-			kmers[o[i]] <- 0L # zero length group
-		} else{
-			kmers[o[i]] <- j # reuse as fin
+			j <- i
 		}
 	}
-	for (i in seq_len(l)) { # prioritize smaller k-mer groups
-		j <- seq((i - 1L)*select + 1L, length.out=select)
-		k <- j[.Call("radixOrder", kmers[j], 1L, 1L, PACKAGE="DECIPHER")]
-		ini[j] <- ini[k]
-		kmers[j] <- kmers[k]
-	}
+	ini[prev + 1L] <- j
+	len[prev + 1L] <- as.integer(i - j + 1L)
 	for (i in seq_along(o))
 		o[i] <- (o[i] - 1L) %/% select + 1L # convert to sequence index
+	o <- as.integer(o)
+	for (i in seq_len(l)) { # prioritize smaller k-mer groups
+		j <- seq((i - 1)*select + 1, length.out=select)
+		k <- j[.Call("radixOrder", len[kmers[j] + 1L], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")]
+		kmers[j] <- kmers[k]
+	}
 	
 	# Phase 3: Cluster sequences
 	for (i in seq_len(lc))
@@ -1116,7 +1136,7 @@ Clusterize <- function(myXStringSet,
 	origin <- c(1, 1) # origin of existing clusters
 	subsetRate <- 0 # rate of subsetting
 	if (verbose) {
-		matches <- integer(maxPhase3) # relative location of cluster matches
+		matches <- integer(halfMax) # relative location of cluster matches
 		totals <- integer(4L) # count of match origins
 	}
 	for (i in seq_len(lc)) {
@@ -1202,23 +1222,24 @@ Clusterize <- function(myXStringSet,
 			
 			compare <-  c(bL[Q[j]]:bR[Q[j]], # surrounding centers
 				Q[recent]) # most recent centers
-			compare <- compare[.Call("radixOrder", abs(Q[j] - compare), 1L, 1L, PACKAGE="DECIPHER")] # order by proximity
+			compare <- compare[.Call("radixOrder", abs(Q[j] - compare), 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")] # order by proximity
 			compare <- seeds.index[compare]
 			compare <- compare[compare != 0L] # remove unvisited seeds
 			compare <- compare[!duplicated(compare)]
 			
 			# choose the most frequent sequences sharing rare k-mers
-			groups <- .Call("selectIndices",
-				P[j], # focal sequence
-				select, # number of k-mers possible
-				ini, # initial index of each k-mer group
-				kmers, # number of k-mers to record in each group
-				o, # ordering of k-mers
-				maxPhase1, # maximum number of sequences to select
+			w <- (P[j] - 1)*select + seq_len(select)
+			w <- kmers[w] + 1L
+			groups <- .Call("selectGroups",
+				o,
+				ini[w],
+				len[w],
+				maxPhase1,
+				P[j],
 				PACKAGE="DECIPHER")
-			d <- .Call("radixOrder", groups, 1L, 1L, PACKAGE="DECIPHER")
+			d <- .Call("radixOrder", groups, 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
 			d <- .Call("dereplicate", groups, d, PACKAGE="DECIPHER")
-			d <- d[[1L]][.Call("radixOrder", d[[2L]], 0L, 1L, PACKAGE="DECIPHER")]
+			d <- d[[1L]][.Call("radixOrder", d[[2L]], 0L, 1L, keys[1L], processors, PACKAGE="DECIPHER")]
 			if (length(d) > maxPhase3)
 				length(d) <- maxPhase3
 			groups <- groups[d]
@@ -1268,14 +1289,15 @@ Clusterize <- function(myXStringSet,
 			combined <- combined[!duplicated(combined)]
 			
 			# narrow to comparisons with most hits
-			s <- unique(v[[j]][[1L]])
+			s <- v[[j]][[1L]]
+			s <- .Call("sortedUnique", s, PACKAGE="DECIPHER") # fast unique(s)
 			if (length(s) > maxSample/(1 - subsetRate) || # worthwhile
 				(j %% updateRate == 0 && length(s) > maxSample)) { # need to update
 				m <- .Call("xorShift", s, lf, PACKAGE="DECIPHER")
-				m <- .Call("radixOrder", freqs[m], 1L, 1L, PACKAGE="DECIPHER")
+				m <- .Call("radixOrder", freqs[m], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
 				length(m) <- maxSample
 				s <- s[m]
-				s <- s[.Call("radixOrder", s, 1L, 1L, PACKAGE="DECIPHER")]
+				s <- s[.Call("radixOrder", s, 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")]
 				counts <- countHits(s, v[combined], processors)
 				counts <- counts/sizes[Q[combined]]
 				w <- which(!is.na(counts))
@@ -1286,8 +1308,8 @@ Clusterize <- function(myXStringSet,
 				}
 			}
 			
-			res <- overlap(j, combined, optProcessors1)
-			m <- similarity(res, wu[P[j]], wu[P[combined]], optProcessors1)
+			res <- overlapSimilarity(j, combined, optProcessors1)
+			m <- res[[length(res)]]
 			w <- sort.list(m, method="radix", decreasing=TRUE)
 			if (length(w) > maxAlignments)
 				length(w) <- maxAlignments
@@ -1344,7 +1366,7 @@ Clusterize <- function(myXStringSet,
 						totals[1L] <- totals[1L] + 1L
 						if (isna[2L])
 							totals[3L] <- totals[3L] + 1L
-						if (num[1L] <= maxPhase3 &&
+						if (num[1L] <= halfMax &&
 							(num[1L] < num[2L] || isna[2L]))
 							matches[num[1L]] <- matches[num[1L]] + 1L
 					}
@@ -1352,7 +1374,7 @@ Clusterize <- function(myXStringSet,
 						totals[2L] <- totals[2L] + 1L
 						if (isna[1L])
 							totals[4L] <- totals[4L] + 1L
-						if (num[2L] <= maxPhase3 &&
+						if (num[2L] <= halfMax &&
 							(num[2L] <= num[1L] || isna[1L]))
 							matches[num[2L]] <- matches[num[2L]] + 1L
 					}
@@ -1383,7 +1405,7 @@ Clusterize <- function(myXStringSet,
 		
 		C[[i]] <- c[x]
 	}
-	rm(P, O, R, Q, ini, kmers, partition)
+	rm(P, O, R, Q, ini, len, kmers, o, partition)
 	
 	C <- as.data.frame(C)
 	if (!is.null(names(myXStringSet))) {

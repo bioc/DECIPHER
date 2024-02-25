@@ -47,7 +47,7 @@ SEXP firstSeqsGapsEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, 
 
 SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, SEXP end_y, SEXP t, SEXP first_x, SEXP first_y);
 
-SEXP similarities(SEXP res, SEXP widths1, SEXP widths2, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP minCoverage, SEXP method, SEXP nThreads);
+SEXP computeOverlap(SEXP x, SEXP y, SEXP v, SEXP wordSize, SEXP mult, SEXP entropy, SEXP maxAlpha, SEXP u1, SEXP u2, SEXP seqs, SEXP dropScore, SEXP subMatrix, SEXP letters, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP minCoverage, SEXP method, SEXP nThreads);
 
 SEXP overlap(SEXP res, SEXP widths1, SEXP widths2);
 
@@ -103,21 +103,15 @@ SEXP matchListsDual(SEXP x, SEXP y, SEXP verbose, SEXP pBar, SEXP nThreads);
 
 SEXP groupMax(SEXP x, SEXP y, SEXP z);
 
-SEXP matchOverlap(SEXP x, SEXP y, SEXP v, SEXP wordSize, SEXP nThreads);
-
 SEXP countHits(SEXP x, SEXP v, SEXP nThreads);
 
 SEXP sumBins(SEXP v, SEXP bins);
 
 SEXP xorShift(SEXP seed, SEXP base);
 
-SEXP selectIndices(SEXP P, SEXP select, SEXP initial, SEXP final, SEXP ordering, SEXP num);
-
-SEXP selectGroups(SEXP ordering, SEXP initial, SEXP final, SEXP num);
+SEXP selectGroups(SEXP ordering, SEXP initial, SEXP final, SEXP num, SEXP next);
 
 SEXP firstHit(SEXP x, SEXP y);
-
-SEXP maxGroup(SEXP groups, SEXP weights);
 
 SEXP sortedUnique(SEXP v);
 
@@ -161,7 +155,7 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 
 // EnumerateSequence.c
 
-SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP nThreads);
+SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP fastMovingSide, SEXP nThreads);
 
 SEXP enumerateSequenceAA(SEXP x, SEXP wordSize);
 
@@ -169,7 +163,7 @@ SEXP enumerateGappedSequence(SEXP x, SEXP wordSize, SEXP ordering);
 
 SEXP enumerateGappedSequenceAA(SEXP x, SEXP wordSize, SEXP ordering);
 
-SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP maskLCRs, SEXP nThreads);
+SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP maskLCRs, SEXP fastMovingSide, SEXP nThreads);
 
 SEXP alphabetSizeReducedAA(SEXP x, SEXP alphabet);
 
@@ -225,7 +219,7 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 
 // Order.c
 
-SEXP radixOrder(SEXP x, SEXP ascending, SEXP keepNAs);
+SEXP radixOrder(SEXP x, SEXP ascending, SEXP keepNAs, SEXP keySize, SEXP nThreads);
 
 SEXP dereplicate(SEXP x, SEXP o);
 

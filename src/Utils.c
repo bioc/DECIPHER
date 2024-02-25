@@ -229,15 +229,22 @@ SEXP matchListsDual(SEXP x, SEXP y, SEXP verbose, SEXP pBar, SEXP nThreads)
 		PROTECT(utilsPackage = eval(lang2(install("getNamespace"), ScalarString(mkChar("utils"))), R_GlobalEnv));
 	}
 	
+	int **py = (int **) malloc(size_y*sizeof(int *)); // thread-safe on Windows
+	int *l = (int *) malloc(size_y*sizeof(int)); // thread-safe on Windows
+	for (i = 0; i < size_y; i++) {
+		py[i] = INTEGER(VECTOR_ELT(y, i));
+		l[i] = length(VECTOR_ELT(y, i));
+	}
+	
 	for (i = 0; i < size_x; i++) {
+		X = INTEGER(VECTOR_ELT(x, i));
+		lx = length(VECTOR_ELT(x, i));
 		#ifdef _OPENMP
-		#pragma omp parallel for private(j, o, p, start, count, X, Y, lx, ly) schedule(guided) num_threads(nthreads)
+		#pragma omp parallel for private(j,o,p,start,count,Y,ly) schedule(guided) num_threads(nthreads)
 		#endif
 		for (j = 0; j < size_y; j++) {
-			X = INTEGER(VECTOR_ELT(x, i));
-			Y = INTEGER(VECTOR_ELT(y, j));
-			lx = length(VECTOR_ELT(x, i));
-			ly = length(VECTOR_ELT(y, j));
+			Y = py[j];
+			ly = l[j];
 			
 			if (lx > 0 && ly > 0) {
 				int first = -1;
@@ -301,6 +308,8 @@ SEXP matchListsDual(SEXP x, SEXP y, SEXP verbose, SEXP pBar, SEXP nThreads)
 			R_CheckUserInterrupt();
 		}
 	}
+	free(py);
+	free(l);
 	
 	if (v) {
 		UNPROTECT(3);
@@ -333,15 +342,22 @@ SEXP matchOrder(SEXP x, SEXP verbose, SEXP pBar, SEXP nThreads)
 		PROTECT(utilsPackage = eval(lang2(install("getNamespace"), ScalarString(mkChar("utils"))), R_GlobalEnv));
 	}
 	
+	int **px = (int **) malloc(size_x*sizeof(int *)); // thread-safe on Windows
+	int *l = (int *) malloc(size_x*sizeof(int)); // thread-safe on Windows
 	for (i = 0; i < size_x; i++) {
+		px[i] = INTEGER(VECTOR_ELT(x, i));
+		l[i] = length(VECTOR_ELT(x, i));
+	}
+	
+	for (i = 0; i < size_x; i++) {
+		X = px[i];
+		lx = l[i];
 		#ifdef _OPENMP
-		#pragma omp parallel for private(j, X, Y, lx, ly) schedule(guided) num_threads(nthreads)
+		#pragma omp parallel for private(j,Y,ly) schedule(guided) num_threads(nthreads)
 		#endif
 		for (j = i + 1; j < size_x; j++) {
-			X = INTEGER(VECTOR_ELT(x, i));
-			Y = INTEGER(VECTOR_ELT(x, j));
-			lx = length(VECTOR_ELT(x, i));
-			ly = length(VECTOR_ELT(x, j));
+			Y = px[j];
+			ly = l[j];
 			
 			int link_x = -1, link_y = -1; // last established link between X and Y
 			int matches = 0; // running number of matches
@@ -418,6 +434,8 @@ SEXP matchOrder(SEXP x, SEXP verbose, SEXP pBar, SEXP nThreads)
 			R_CheckUserInterrupt();
 		}
 	}
+	free(px);
+	free(l);
 	
 	if (v) {
 		UNPROTECT(3);
@@ -727,262 +745,6 @@ SEXP groupMax(SEXP x, SEXP y, SEXP z)
 	return ans;
 }
 
-// ranges of exact overlap between indicies x (length == 1) and y (length >= 1)
-SEXP matchOverlap(SEXP x, SEXP y, SEXP v, SEXP wordSize, SEXP nThreads)
-{
-	int i, j, k, l, n, p, d, lx, new, *t, *keep, *I, *X, *OX;
-	
-	int i1 = asInteger(x) - 1;
-	I = INTEGER(y);
-	X = INTEGER(VECTOR_ELT(VECTOR_ELT(v, i1), 0));
-	OX = INTEGER(VECTOR_ELT(VECTOR_ELT(v, i1), 1));
-	lx = length(VECTOR_ELT(VECTOR_ELT(v, i1), 0));
-	int wS = asInteger(wordSize);
-	int nthreads = asInteger(nThreads);
-	l = length(y);
-	
-	SEXP ret_list;
-	PROTECT(ret_list = allocVector(VECSXP, l));
-	
-	int **pY = (int **) calloc(l, sizeof(int *)); // initialized to zero (thread-safe on Windows)
-	int **pOY = (int **) calloc(l, sizeof(int *)); // initialized to zero (thread-safe on Windows)
-	int *ly = (int *) calloc(l, sizeof(int)); // initialized to zero (thread-safe on Windows)
-	
-	for (i = 0; i < l; i++) {
-		pY[i] = INTEGER(VECTOR_ELT(VECTOR_ELT(v, I[i] - 1), 0));
-		pOY[i] = INTEGER(VECTOR_ELT(VECTOR_ELT(v, I[i] - 1), 1));
-		ly[i] = length(VECTOR_ELT(VECTOR_ELT(v, I[i] - 1), 0));
-	}
-	
-	int maxX = 0;
-	int *ox = (int *) malloc(lx*sizeof(int)); // thread-safe on Windows
-	for (i = 0; i < lx; i++) {
-		if (OX[i] > maxX)
-			maxX = OX[i];
-		ox[i] = OX[i] - 1;
-	}
-	
-	int **pt = (int **) calloc(l, sizeof(int *)); // initialized to zero (thread-safe on Windows)
-	int *N = (int *) calloc(l, sizeof(int)); // initialized to zero (thread-safe on Windows)
-	int **keeps = (int **) calloc(l, sizeof(int *)); // initialized to zero (thread-safe on Windows)
-	
-	#ifdef _OPENMP
-	#pragma omp parallel num_threads(nthreads)
-	{
-	#endif
-		int *m = (int *) calloc(maxX, sizeof(int)); // initialized to zero (thread-safe on Windows)
-		
-		#ifdef _OPENMP
-		#pragma omp for private(i,j,k,n,p,new,t,keep)
-		#endif
-		for (i = 0; i < l; i++) {
-			int *Y = pY[i];
-			int *OY = pOY[i];
-			
-			j = 0;
-			k = 0;
-			while (j < lx && k < ly[i]) {
-				if (X[j] == Y[k]) {
-					m[ox[j]] = OY[k];
-					j++;
-					k++;
-				} else if (X[j] < Y[k]) {
-					do {
-						j++;
-					} while (j < lx && X[j] < Y[k]);
-				} else {
-					do {
-						k++;
-					} while (k < ly[i] && Y[k] < X[j]);
-				}
-			}
-			
-			// count the number of anchors
-			n = 0;
-			new = 1;
-			int one, two;
-			for (j = 0; j < maxX; j++) {
-				two = m[j];
-				if (two > 0) {
-					if (new) {
-						new = 0;
-						n++;
-					} else if (two != one) {
-						n++;
-					}
-					one = two + 1;
-				} else {
-					new = 1;
-				}
-			}
-			
-			// record anchor ranges
-			t = (int *) malloc(3*n*sizeof(int)); // thread-safe on Windows
-			k = -1;
-			new = 1;
-			p = -1;
-			for (j = 0; j < maxX; j++) {
-				two = m[j];
-				if (two > 0) {
-					if (new ||
-						two != one) {
-						new = 0;
-						k++;
-						t[++p] = j + 1;
-						t[++p] = m[j];
-						t[++p] = wS;
-					} else {
-						t[p]++;
-					}
-					one = two + 1;
-					m[j] = 0; // clear memory for next i
-				} else {
-					if (k == n - 1)
-						break;
-					new = 1;
-				}
-			}
-			
-			// separate overlapping regions
-			j = 1;
-			while (j < n) {
-				k = j - 1;
-				while (k >= 0 && k > j - wS) {
-					int d1 = t[0 + 3*j] - t[0 + 3*k] - t[2 + 3*k];
-					int d2 = t[1 + 3*j] - t[1 + 3*k] - t[2 + 3*k];
-					if (d1 < 0 || d2 < 0) {
-						if (d1 < d2) {
-							if (t[2 + 3*k] > -d1)
-								t[2 + 3*k] += d1;
-						} else if (t[2 + 3*k] > -d2) {
-							t[2 + 3*k] += d2;
-						}
-					}
-					k--;
-				}
-				j++;
-			}
-			
-			N[i] = n;
-			pt[i] = t;
-			
-			// chain anchors
-			int *b = (int *) malloc(n*sizeof(int)); // thread-safe on Windows
-			int *s = (int *) malloc(n*sizeof(int)); // thread-safe on Windows
-			for (j = 0; j < n; j++) {
-				b[j] = -1;
-				s[j] = t[2 + 3*j];
-			}
-			j = 1;
-			p = 0;
-			while (j < n) {
-				for (k = 0; k < j; k++) {
-					if (t[1 + 3*k] < t[1 + 3*j] && // starts within bounds
-						((t[1 + 3*k] + t[2 + 3*k] <= t[1 + 3*j] &&
-						t[0 + 3*k] + t[2 + 3*k] <= t[0 + 3*j]) ||
-						t[0 + 3*j] - t[0 + 3*k] == t[1 + 3*j] - t[1 + 3*k])) { // ends are compatible
-						if (s[k] + t[2 + 3*j] > s[j]) { // extend chain
-							s[j] = s[k] + t[2 + 3*j];
-							b[j] = k;
-						}
-					}
-				}
-				if (s[j] > s[p]) // higher score
-					p = j;
-				j++;
-			}
-			free(s);
-			
-			// rectify anchors
-			keep = (int *) calloc(n, sizeof(int)); // initialized to zero (thread-safe on Windows)
-			if (n > 0) {
-				while (p >= 0) { // traceback
-					keep[p] = 1;
-					p = b[p];
-				}
-			}
-			free(b);
-			k = -1;
-			j = 0;
-			while (j < n) {
-				if (keep[j]) {
-					if (k >= 0 &&
-						t[0 + 3*k] + t[2 + 3*k] >= t[0 + 3*j] &&
-						t[0 + 3*j] - t[0 + 3*k] == t[1 + 3*j] - t[1 + 3*k]) {
-						// merge anchors
-						keep[j] = 0;
-						t[2 + 3*k] = t[2 + 3*j] + t[0 + 3*j] - t[0 + 3*k];
-					} else {
-						k = j;
-					}
-				}
-				j++;
-			}
-			
-			keeps[i] = keep;
-		}
-		
-		free(m);
-	#ifdef _OPENMP
-	}
-	#endif
-	free(ox);
-	free(pY);
-	free(pOY);
-	free(ly);
-	
-	// second loop not tread-safe
-	for (i = 0; i < l; i++) {
-		t = pt[i];
-		n = N[i];
-		keep = keeps[i];
-		
-		// record final anchors
-		k = 0;
-		for (j = 0; j < n; j++)
-			if (keep[j])
-				k++;
-		SEXP ans;
-		PROTECT(ans = allocMatrix(INTSXP, 4, k));
-		int *rans = INTEGER(ans);
-		k = -1;
-		for (j = 0; j < n; j++) {
-			if (keep[j]) {
-				k++;
-				rans[0 + 4*k] = t[0 + 3*j];
-				rans[1 + 4*k] = t[0 + 3*j] + t[2 + 3*j] - 1;
-				rans[2 + 4*k] = t[1 + 3*j];
-				rans[3 + 4*k] = t[1 + 3*j] + t[2 + 3*j] - 1;
-				// remove overlap
-				if (k > 0) {
-					d = rans[1 + 4*(k - 1)] - rans[0 + 4*k];
-					if (d >= 0) {
-						rans[0 + 4*k] = rans[0 + 4*k] + d + 1;
-						rans[2 + 4*k] = rans[2 + 4*k] + d + 1;
-					}
-					d = rans[3 + 4*(k - 1)] - rans[2 + 4*k];
-					if (d >= 0) {
-						rans[0 + 4*k] = rans[0 + 4*k] + d + 1;
-						rans[2 + 4*k] = rans[2 + 4*k] + d + 1;
-					}
-				}
-			}
-		}
-		free(keep);
-		free(t);
-		
-		SET_VECTOR_ELT(ret_list, i, ans);
-		UNPROTECT(1);
-	}
-	free(pt);
-	free(N);
-	free(keeps);
-	
-	UNPROTECT(1);
-	
-	return ret_list;
-}
-
 // count of hits between x (vector) and elements of v (list)
 SEXP countHits(SEXP x, SEXP v, SEXP nThreads)
 {
@@ -1102,71 +864,58 @@ SEXP xorShift(SEXP seed, SEXP base)
 	return ans;
 }
 
-// selects indices from an index vector
-SEXP selectIndices(SEXP P, SEXP select, SEXP initial, SEXP final, SEXP ordering, SEXP num)
+// selects groups from a grouping vector (stopping when reaching next)
+SEXP selectGroups(SEXP ordering, SEXP initial, SEXP final, SEXP num, SEXP next)
 {
-	int i, k, j, g, c;
-	int p = asInteger(P);
-	int sel = asInteger(select);
-	int *ini = INTEGER(initial);
-	int *fin = INTEGER(final);
+	int i, g, k = 0;
+	R_xlen_t j, end;
+	
 	int *o = INTEGER(ordering);
+	int *fin = INTEGER(final);
 	int N = asInteger(num);
+	int l = length(initial);
+	int n = asInteger(next);
 	
 	int M = 0;
-	for (i = (p - 1)*sel; i < p*sel; i++)
-		M += fin[i];
+	for (i = 0; i < l; i++)
+		if (fin[i] != NA_INTEGER)
+			M += fin[i];
 	if (M > N)
 		M = N;
 	
 	int *groups = (int *) malloc(M*sizeof(int)); // thread-safe on Windows
 	
-	k = 0;
-	for (i = (p - 1)*sel; i < p*sel && k < M; i++) {
-		j = ini[i] - 1;
-		for (c = 0; c < fin[i]; c++) {
-			g = o[j++];
-			if (g == p)
-				break;
-			groups[k++] = g;
-			if (k == M)
-				break;
+	i = 0;
+	if (isInteger(initial)) {
+		int *ini = INTEGER(initial);
+		while (i < l && k < M) {
+			if (fin[i] != NA_INTEGER) {
+				j = (R_xlen_t)ini[i] - 1;
+				end = j + fin[i];
+				while (j < end && k < M) {
+					g = o[j++];
+					if (g == n)
+						break;
+					groups[k++] = g;
+				}
+			}
+			i++;
 		}
-	}
-	
-	SEXP ans;
-	PROTECT(ans = allocVector(INTSXP, k));
-	int *rans = INTEGER(ans);
-	
-	for (i = 0; i < k; i++)
-		rans[i] = groups[i];
-	free(groups);
-	
-	UNPROTECT(1);
-	
-	return ans;
-}
-
-// selects groups from a grouping vector
-SEXP selectGroups(SEXP ordering, SEXP initial, SEXP final, SEXP num)
-{
-	int i = 0, j, k = 0;
-	
-	int *o = INTEGER(ordering);
-	int *ini = INTEGER(initial);
-	int *fin = INTEGER(final);
-	int N = asInteger(num);
-	int l = length(initial);
-	
-	int *groups = (int *) malloc(N*sizeof(int)); // thread-safe on Windows
-	
-	while (i < l) {
-		j = ini[i] - 1;
-		while (j < fin[i] && k < N)
-			groups[k++] = o[j++];
-		if (k == N)
-			break;
-		i++;
+	} else {
+		double *ini = REAL(initial);
+		while (i < l && k < M) {
+			if (fin[i] != NA_INTEGER) {
+				j = (R_xlen_t)ini[i] - 1;
+				end = j + fin[i];
+				while (j < end && k < M) {
+					g = o[j++];
+					if (g == n)
+						break;
+					groups[k++] = g;
+				}
+			}
+			i++;
+		}
 	}
 	
 	SEXP ans;
@@ -1220,42 +969,6 @@ SEXP firstHit(SEXP x, SEXP y)
 			}
 		}
 	}
-	
-	UNPROTECT(1);
-	
-	return ans;
-}
-
-// calculates the maximum weighted group
-// for sorted groups and positive weights
-SEXP maxGroup(SEXP groups, SEXP weights)
-{
-	int i;
-	int *g = INTEGER(groups);
-	int l = length(groups);
-	double *w = REAL(weights);
-	
-	SEXP ans;
-	PROTECT(ans = allocVector(INTSXP, 1));
-	int *rans = INTEGER(ans);
-	rans[0] = g[0];
-	
-	double tot = 0, max = 0;
-	int prev = NA_INTEGER;
-	for (i = 0; i < l; i++) {
-		if (g[i] == prev) {
-			tot += w[i];
-		} else {
-			if (tot > max) {
-				rans[0] = prev;
-				max = tot;
-			}
-			prev = g[i];
-			tot = w[i];
-		}
-	}
-	if (tot > max)
-		rans[0] = prev;
 	
 	UNPROTECT(1);
 	

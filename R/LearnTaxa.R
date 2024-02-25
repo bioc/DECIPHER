@@ -180,6 +180,7 @@ LearnTaxa <- function(train,
 			alphabet,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			1L, # left is fast moving side
 			1L, # processors
 			PACKAGE="DECIPHER")
 	} else {
@@ -188,6 +189,7 @@ LearnTaxa <- function(train,
 			K,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			1L, # left is fast moving side
 			1L, # processors
 			PACKAGE="DECIPHER")
 	}
@@ -289,8 +291,13 @@ LearnTaxa <- function(train,
 				if (length(w) == 0)
 					stop("All values of Parent in rank must have a corresponding Index.")
 				if (rank$Name[w] != taxa[parents[i]])
-					stop("rank contains an unexpected Parent for Name: ",
-						taxa[i])
+					stop("rank contains an unexpected Parent for ",
+						taxa[i],
+						": ",
+						rank$Name[w],
+						" (expected ",
+						taxa[parents[i]],
+						")")
 			}
 		}
 	}

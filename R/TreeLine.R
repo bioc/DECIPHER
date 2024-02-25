@@ -2212,6 +2212,9 @@ TreeLine <- function(myXStringSet=NULL,
 	if (verbose && method != 3 && method != 7) {
 		setTxtProgressBar(pBar, 100)
 		close(pBar)
+		
+		if (reconstruct && type > 1)
+			cat("\n")
 	}
 	
 	if (method == 3 ||

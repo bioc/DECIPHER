@@ -10,7 +10,7 @@ Orients nucleotide sequences to match the directionality and complementarity of 
 OrientNucleotides(myXStringSet,
                   reference = which.max(width(myXStringSet)),
                   type = "sequences",
-                  orientation = "all",
+                  orientation = "both",
                   threshold = 0.05,
                   verbose = TRUE,
                   processors = 1)
@@ -39,7 +39,7 @@ The number of processors to use, or \code{NULL} to automatically detect and use 
 }
 }
 \details{
-Biological sequences can sometimes have inconsistent orientation that interferes with their analysis.  \code{OrientNucleotides} will reorient sequences by changing their directionality and/or complementarity to match specified \code{reference} sequences in the same set.  The process works by finding the k-mer distance between the reference sequence(s) and each allowed \code{orientation} of the sequences.  Alternative orientations that lessen the distance by at least \code{threshold} are adopted.  Note that this procedure requires a moderately similar \code{reference} sequence be available for each sequence that needs to be reoriented.  Sequences for which a corresponding reference is unavailable will most likely be left alone because alternative orientations will not pass the \code{threshold}.  For this reason, it is recommended to specify several markedly different sequences as \code{reference}s.
+Biological sequences can sometimes have inconsistent orientation that interferes with their analysis.  \code{OrientNucleotides} will reorient sequences by changing their directionality and/or complementarity to match specified \code{reference} sequences in the same set, which are assume to have the same orientation.  The process works by finding the k-mer distance between the reference sequence(s) and each allowed \code{orientation} of the sequences.  Alternative orientations that lessen the distance by at least \code{threshold} are adopted.  Note that this procedure requires a moderately similar \code{reference} sequence be available for each sequence that needs to be reoriented.  Sequences for which a corresponding reference is unavailable will most likely be left alone because alternative orientations will not pass the \code{threshold}.  For this reason, it is recommended to specify several diverse sequences as \code{reference}s.
 }
 \value{
 \code{OrientNucleotides} can return two types of results:  the relative orientations of sequences and/or the reoriented sequences.  If \code{type} is \code{"sequences"} (the default) then the reoriented sequences are returned.  If \code{type} is \code{"orientations"} then a character vector is returned that specifies whether sequences were reversed (\code{"r"}), complemented (\code{"c"}), reversed complemented (\code{"rc"}), or in the same orientation (\code{""}) as the reference sequences (marked by \code{NA}).  If \code{type} is \code{"both"} then the output is a list with the first component containing the \code{"orientations"} and the second component containing the \code{"sequences"}.

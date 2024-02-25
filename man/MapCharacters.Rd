@@ -50,22 +50,17 @@ Erik Wright \email{eswright@pitt.edu}
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
 dna <- readDNAStringSet(fas)
 
-# align the sequences
-rna <- RNAStringSet(RemoveGaps(dna))
-rna <- AlignSeqs(rna)
-rna # input alignment
-
-d <- DistanceMatrix(rna, type="dist", correction="JC")
+d <- DistanceMatrix(dna, type="dist", correction="JC")
 tree <- TreeLine(myDistMatrix=d,
                  method="NJ",
                  type="dendrogram",
-                 myXStringSet=rna,
+                 myXStringSet=dna,
                  reconstruct=TRUE)
 
 out <- MapCharacters(tree,
                      labelEdges=TRUE,
                      type="both",
-                     chars=RNA_BASES)
+                     chars=DNA_BASES)
 
 # plot the tree with defaults
 tree <- out[[1]]

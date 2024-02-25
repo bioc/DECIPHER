@@ -428,6 +428,7 @@ AlignSeqs <- function(myXStringSet,
 				alphabet,
 				FALSE, # mask repeats
 				FALSE, # mask low complexity regions
+				1L, # left is fast moving side
 				processors,
 				PACKAGE="DECIPHER")
 		} else { # DNAStringSet or RNAStringSet
@@ -436,6 +437,7 @@ AlignSeqs <- function(myXStringSet,
 				wordSize,
 				FALSE, # mask repeats
 				FALSE, # mask low complexity regions
+				1L, # left is fast moving side
 				processors,
 				PACKAGE="DECIPHER")
 		}

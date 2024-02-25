@@ -216,11 +216,12 @@ static void maskSimple(int *x, int n, double *E, int l1, int l2, double l3, int 
 	}
 }
 
-SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP nThreads)
+SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP fastMovingSide, SEXP nThreads)
 {
 	XStringSet_holder x_set;
 	Chars_holder x_i;
 	int x_length, i, j, k, wS, maskReps, sum, ambiguous, *rans;
+	int fast = asInteger(fastMovingSide);
 	int nthreads = asInteger(nThreads);
 	
 	// initialize the XStringSet
@@ -243,11 +244,15 @@ SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP nTh
 	PROTECT(ret_list = allocVector(VECSXP, x_length));
 	
 	// fill the position weight vector
-	int pwv[wS]; // wS[0] is ignored
-	if (wS > 1)
-		pwv[1] = 4;
-	for (i = 2; i < wS; i++) {
-		pwv[i] = pwv[i - 1]*4;
+	int pwv[wS];
+	if (fast) { // left side moves faster
+		pwv[0] = 1;
+		for (i = 1; i < wS; i++)
+			pwv[i] = pwv[i - 1]*4;
+	} else { // right side moves faster
+		pwv[wS - 1] = 1;
+		for (i = wS - 2; i >= 0; i--)
+			pwv[i] = pwv[i + 1]*4;
 	}
 	
 	// build a vector of thread-safe pointers
@@ -279,7 +284,7 @@ SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP nTh
 			}
 			for (j = wS - 1; j < x_i.length; j++) {
 				alphabetFrequency(&x_i, &bases[wS - 1], j);
-				sum = bases[0];
+				sum = bases[0]*pwv[0];
 				ambiguous = 0;
 				if (bases[0] < 0)
 					ambiguous = 1;
@@ -769,12 +774,13 @@ static void alphabetFrequencyReducedAA(const Chars_holder *P, int *bits, int pos
 	}
 }
 
-SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP maskLCRs, SEXP nThreads)
+SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP maskLCRs, SEXP fastMovingSide, SEXP nThreads)
 {
 	XStringSet_holder x_set;
 	Chars_holder x_i;
 	int x_length, i, j, k, wS, maskReps, sum, ambiguous, *rans;
 	int *alpha = INTEGER(alphabet);
+	int fast = asInteger(fastMovingSide);
 	int nthreads = asInteger(nThreads);
 	
 	// initialize the XStringSet
@@ -821,11 +827,15 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask,
 	}
 	
 	// fill the position weight vector
-	int pwv[wS]; // wS[0] is ignored
-	if (wS > 1)
-		pwv[1] = m;
-	for (i = 2; i < wS; i++) {
-		pwv[i] = pwv[i - 1]*m;
+	int pwv[wS];
+	if (fast) { // left side moves faster
+		pwv[0] = 1;
+		for (i = 1; i < wS; i++)
+			pwv[i] = pwv[i - 1]*m;
+	} else { // right side moves faster
+		pwv[wS - 1] = 1;
+		for (i = wS - 2; i >= 0; i--)
+			pwv[i] = pwv[i + 1]*m;
 	}
 	
 	// build a vector of thread-safe pointers
@@ -857,7 +867,7 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask,
 			}
 			for (j = wS - 1; j < x_i.length; j++) {
 				alphabetFrequencyReducedAA(&x_i, &bases[wS - 1], j, alpha);
-				sum = bases[0];
+				sum = bases[0]*pwv[0];;
 				ambiguous = 0;
 				if (bases[0] < 0)
 					ambiguous = 1;

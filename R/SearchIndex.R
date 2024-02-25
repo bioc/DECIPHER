@@ -139,6 +139,7 @@ SearchIndex <- function(pattern,
 			alphabet,
 			maskRepeats,
 			maskLCRs,
+			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
 	} else {
@@ -147,6 +148,7 @@ SearchIndex <- function(pattern,
 			K,
 			maskRepeats,
 			maskLCRs,
+			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
 	}

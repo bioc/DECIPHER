@@ -169,6 +169,7 @@ IdTaxa <- function(test,
 			trainingSet$alphabet,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
 	} else {
@@ -177,6 +178,7 @@ IdTaxa <- function(test,
 			K,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
 	}
@@ -240,6 +242,7 @@ IdTaxa <- function(test,
 			K,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
 		revkmers <- lapply(revkmers,

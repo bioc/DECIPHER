@@ -180,6 +180,7 @@ SEXP alignPair(SEXP x, SEXP y, SEXP s1, SEXP e1, SEXP s2, SEXP e2, SEXP go, SEXP
 	int *SM = INTEGER(subMatrix);
 	int GO = asInteger(go); // gap opening
 	int GE = asInteger(ge); // gap extension
+	int GB = GO + GE;
 	int TG = asInteger(tg); // terminal gaps
 	int ML = asInteger(maxLength); // maximum length to skip alignment of equal-length regions
 	int t = asInteger(type); // type of XStringSet
@@ -211,7 +212,7 @@ SEXP alignPair(SEXP x, SEXP y, SEXP s1, SEXP e1, SEXP s2, SEXP e2, SEXP go, SEXP
 	}
 	
 	#ifdef _OPENMP
-	#pragma omp parallel for private(i,l1,l2,i1,j1,i2,j2,d,l,u,p1,p2,p3,p4) num_threads(nthreads)
+	#pragma omp parallel for private(i,l1,l2,i1,j1,i2,j2,d,l,u,p1,p2,p3,p4) schedule(dynamic) num_threads(nthreads)
 	#endif
 	for (i = 0; i < n; i++) { // each region
 		l1 = E1[i] - S1[i];
@@ -303,6 +304,7 @@ SEXP alignPair(SEXP x, SEXP y, SEXP s1, SEXP e1, SEXP s2, SEXP e2, SEXP go, SEXP
 		
 		j2 = 1;
 		j1 = 0;
+		int uGaps, lGaps;
 		while (j2 <= l2) {
 			i2 = 1;
 			i1 = 0;
@@ -310,30 +312,26 @@ SEXP alignPair(SEXP x, SEXP y, SEXP s1, SEXP e1, SEXP s2, SEXP e2, SEXP go, SEXP
 				d = m[i1 + index[j1]] + SM[v1[i1] + square[v2[j1]]];
 				if (o[i1 + index[j2]] < 0) {
 					u = m[i1 + index[j2]] + GE;
+					uGaps = o[i1 + index[j2]] - 1;
 				} else {
-					u = m[i1 + index[j2]] + GO + GE;
+					u = m[i1 + index[j2]] + GB;
+					uGaps = -1;
 				}
 				if (o[i2 + index[j1]] > 0) {
 					l = m[i2 + index[j1]] + GE;
+					lGaps = o[i2 + index[j1]] + 1;
 				} else {
-					l = m[i2 + index[j1]] + GO + GE;
+					l = m[i2 + index[j1]] + GB;
+					lGaps = 1;
 				}
 				if (d >= u && d >= l) { // diagonal
 					o[i2 + index[j2]] = 0;
 					m[i2 + index[j2]] = d;
 				} else if (u >= l) { // up
-					if (o[i1 + index[j2]] < 0) {
-						o[i2 + index[j2]] = o[i1 + index[j2]] - 1;
-					} else {
-						o[i2 + index[j2]] = -1;
-					}
+					o[i2 + index[j2]] = uGaps;
 					m[i2 + index[j2]] = u;
 				} else { // left
-					if (o[i2 + index[j1]] > 0) {
-						o[i2 + index[j2]] = o[i2 + index[j1]] + 1;
-					} else {
-						o[i2 + index[j2]] = 1;
-					}
+					o[i2 + index[j2]] = lGaps;
 					m[i2 + index[j2]] = l;
 				}
 				i1 = i2;

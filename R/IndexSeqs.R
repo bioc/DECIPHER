@@ -181,6 +181,7 @@ IndexSeqs <- function(subject,
 				alphabet,
 				maskRepeats,
 				maskLCRs,
+				1L, # left is fast moving side
 				processors,
 				PACKAGE="DECIPHER")
 		} else {
@@ -189,6 +190,7 @@ IndexSeqs <- function(subject,
 				K,
 				maskRepeats,
 				maskLCRs,
+				1L, # left is fast moving side
 				processors,
 				PACKAGE="DECIPHER")
 		}
@@ -248,6 +250,7 @@ IndexSeqs <- function(subject,
 					alphabet,
 					maskRepeats,
 					maskLCRs,
+					1L, # left is fast moving side
 					processors,
 					PACKAGE="DECIPHER")
 			} else {
@@ -256,6 +259,7 @@ IndexSeqs <- function(subject,
 					K,
 					maskRepeats,
 					maskLCRs,
+					1L, # left is fast moving side
 					processors,
 					PACKAGE="DECIPHER")
 			}

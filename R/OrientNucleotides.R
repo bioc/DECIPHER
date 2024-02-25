@@ -1,7 +1,7 @@
 OrientNucleotides <- function(myXStringSet,
 	reference=which.max(width(myXStringSet)),
 	type="sequences",
-	orientation="all",
+	orientation="both",
 	threshold=0.05,
 	verbose=TRUE,
 	processors=1) {
@@ -99,6 +99,7 @@ OrientNucleotides <- function(myXStringSet,
 		wordSize,
 		FALSE, # mask repeats
 		FALSE, # mask low complexity regions
+		1L, # left is fast moving side
 		processors,
 		PACKAGE="DECIPHER")
 	v <- lapply(v, sort)
@@ -131,6 +132,7 @@ OrientNucleotides <- function(myXStringSet,
 			wordSize,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
 		v <- lapply(v, sort.int)
@@ -162,6 +164,7 @@ OrientNucleotides <- function(myXStringSet,
 			wordSize,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
 		v <- lapply(v, sort.int)
@@ -193,6 +196,7 @@ OrientNucleotides <- function(myXStringSet,
 			wordSize,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
 		v <- lapply(v, sort.int)

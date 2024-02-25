@@ -877,12 +877,20 @@ SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, S
 	}
 }
 
-// approximate similarity from anchor ranges
-SEXP similarities(SEXP res, SEXP widths1, SEXP widths2, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP minCoverage, SEXP method, SEXP nThreads)
+// compute overlap between indicies x (length == 1) and y (length >= 1)
+SEXP computeOverlap(SEXP x, SEXP y, SEXP v, SEXP wordSize, SEXP mult, SEXP entropy, SEXP maxAlpha, SEXP u1, SEXP u2, SEXP seqs, SEXP dropScore, SEXP subMatrix, SEXP letters, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP minCoverage, SEXP method, SEXP nThreads)
 {
-	int i, j, n, s, p1, p2, t1, t2, ov, OV, off, g1, g2, g, o, count, *r, useMax;
-	int w1 = asInteger(widths1);
-	int *w2 = INTEGER(widths2);
+	int i, j, k, l, n, p, d, lx, new, *t, *keep, *I, *X, *OX, pos, p1, p2, t1, t2, ov, OV, off, g1, g2, g, o, count, useMax;
+	
+	int i1 = asInteger(x) - 1;
+	I = INTEGER(y);
+	X = INTEGER(VECTOR_ELT(VECTOR_ELT(v, i1), 0));
+	OX = INTEGER(VECTOR_ELT(VECTOR_ELT(v, i1), 1));
+	lx = length(VECTOR_ELT(VECTOR_ELT(v, i1), 0));
+	int wS = asInteger(wordSize);
+	double logN = log2(asReal(mult));
+	double logE = log2(asReal(entropy));
+	int maxA = asInteger(maxAlpha);
 	int tGaps = asLogical(terminalGaps);
 	int pGapLetters = asLogical(penalizeGapLetters);
 	double coverage = asReal(minCoverage);
@@ -893,187 +901,551 @@ SEXP similarities(SEXP res, SEXP widths1, SEXP widths2, SEXP terminalGaps, SEXP 
 		coverage *= -1;
 	}
 	int mode = asInteger(method);
-	int nthreads = asInteger(nThreads);
 	int global = tGaps != 0 && pGapLetters != 0;
+	int nthreads = asInteger(nThreads);
+	l = length(y);
 	
-	int l = length(res);
-	int **pr = (int **) calloc(l, sizeof(int *)); // initialized to zero (thread-safe on Windows)
-	int *pn = (int *) calloc(l, sizeof(int)); // initialized to zero (thread-safe on Windows)
+	XStringSet_holder s_set = hold_XStringSet(seqs);
+	Chars_holder s_x = get_elt_from_XStringSet_holder(&s_set, asInteger(u1) - 1);
+	int *u = INTEGER(u2); // sequences indices
+	int w1 = s_x.length;
 	
-	for (i = 0; i < l; i++) {
-		pr[i] = INTEGER(VECTOR_ELT(res, i)); // matrix of anchor ranges
-		pn[i] = length(VECTOR_ELT(res, i));
+	// fill the vector of divisors
+	int divisors[wS];
+	divisors[0] = 1;
+	for (i = 1; i < wS; i++)
+		divisors[i] = divisors[i - 1]*maxA;
+	
+	double *sM = REAL(subMatrix);
+	double dS = asReal(dropScore);
+	XStringSet_holder l_set = hold_XStringSet(letters);
+	Chars_holder l_i = get_elt_from_XStringSet_holder(&l_set, 0);
+	int *lkup_row = (int *) malloc(256*sizeof(int)); // thread-safe on Windows
+	int *lkup_col = (int *) malloc(256*sizeof(int)); // thread-safe on Windows
+	for (i = 0; i < 256; i++) {
+		lkup_row[i] = NA_INTEGER;
+		lkup_col[i] = NA_INTEGER;
+	}
+	for (i = 0; i < l_i.length; i++) {
+		lkup_row[(unsigned char)l_i.ptr[i]] = i;
+		lkup_col[(unsigned char)l_i.ptr[i]] = i*l_i.length;
 	}
 	
-	SEXP ans;
-	PROTECT(ans = allocVector(REALSXP, l));
-	double *rans = REAL(ans);
+	SEXP sims;
+	PROTECT(sims = allocVector(REALSXP, l));
+	double *sim = REAL(sims);
+	SEXP ret_list;
+	PROTECT(ret_list = allocVector(VECSXP, l + 1));
+	
+	int **pY = (int **) malloc(l*sizeof(int *)); // thread-safe on Windows
+	int **pOY = (int **) malloc(l*sizeof(int *)); // thread-safe on Windows
+	int *ly = (int *) malloc(l*sizeof(int)); // thread-safe on Windows
+	
+	for (i = 0; i < l; i++) {
+		pY[i] = INTEGER(VECTOR_ELT(VECTOR_ELT(v, I[i] - 1), 0));
+		pOY[i] = INTEGER(VECTOR_ELT(VECTOR_ELT(v, I[i] - 1), 1));
+		ly[i] = length(VECTOR_ELT(VECTOR_ELT(v, I[i] - 1), 0));
+	}
+	
+	int maxX = 0;
+	int *ox = (int *) malloc(lx*sizeof(int)); // thread-safe on Windows
+	for (i = 0; i < lx; i++) {
+		if (OX[i] > maxX)
+			maxX = OX[i];
+		ox[i] = OX[i] - 1;
+	}
+	
+	int **pt = (int **) malloc(l*sizeof(int *)); // thread-safe on Windows
+	int *N = (int *) malloc(l*sizeof(int)); // thread-safe on Windows
+	int **keeps = (int **) malloc(l*sizeof(int *)); // thread-safe on Windows
 	
 	#ifdef _OPENMP
-	#pragma omp parallel for private(i,j,n,s,p1,p2,t1,t2,ov,OV,off,g1,g2,g,o,count,r) schedule(guided) num_threads(nthreads)
+	#pragma omp parallel num_threads(nthreads)
+	{
 	#endif
-	for (i = 0; i < l; i++) {
-		r = pr[i];
-		n = pn[i];
+		int *m = (int *) calloc(maxX, sizeof(int)); // initialized to zero (thread-safe on Windows)
 		
-		if (n > 0) { // any anchors
-			n /= 4; // number of columns
+		#ifdef _OPENMP
+		#pragma omp for private(i,j,k,n,p,new,t,keep,d,pos,p1,p2,t1,t2,ov,OV,off,g1,g2,g,o,count)
+		#endif
+		for (i = 0; i < l; i++) {
+			int *Y = pY[i];
+			int *OY = pOY[i];
+			Chars_holder s_y = get_elt_from_XStringSet_holder(&s_set, u[i] - 1);
+			int w2 = s_y.length;
 			
-			s = 0; // positions in anchors
-			for (j = 0; j < n; j++)
-				s += r[j*4 + 1] - r[j*4] + 1;
+			int goalSize = (int)ceil((logN + log2((w1 > w2) ? w1 : w2))/logE);
+			int divisor;
+			if (goalSize > wS) {
+				goalSize = wS;
+				divisor = 1;
+			} else if (goalSize < 1) {
+				goalSize = 1;
+				divisor = divisors[wS - 1];
+			} else { // 1 <= goalSize <= wordSize
+				divisor = divisors[wS - goalSize];
+			}
 			
-			p1 = r[0]; // starting position in 1
-			p2 = r[2]; // starting position in 2
-			t1 = w1 - r[(n - 1)*4 + 1]; // remaining positions in 1
-			t2 = w2[i] - r[(n - 1)*4 + 3]; // remaining positions in 2
-			
-			if (global &&
-				pGapLetters == 1) {
-				if (mode == 1) { // overlap
-					if (p1 >= p2) {
-						o = 1;
-						if (t1 >= t2) { // 2 within 1
-							ov = w1;
-						} else { // end of 1 overlaps start of 2
-							ov = w1 + t2 - t1;
-						}
+			j = 0;
+			k = 0;
+			if (divisor == 1) { // goalSize == wordSize
+				while (j < lx && k < ly[i]) {
+					if (X[j] == Y[k]) {
+						m[ox[j]] = OY[k];
+						j++;
+						k++;
+					} else if (X[j] < Y[k]) {
+						do {
+							j++;
+						} while (j < lx && X[j] < Y[k]);
 					} else {
-						o = 2;
-						if (t2 >= t1) { // 1 within 2
-							ov = w2[i];
-						} else { // end of 2 overlaps start of 1
-							ov = w2[i] + t1 - t2;
-						}
+						do {
+							k++;
+						} while (k < ly[i] && Y[k] < X[j]);
 					}
-				} else if (mode == 2) { // shortest
-					if (w1 < w2[i]) {
-						ov = w1;
-						o = 1;
+				}
+			} else {
+				while (j < lx && k < ly[i]) {
+					if (X[j]/divisor == Y[k]/divisor) {
+						m[ox[j]] = OY[k];
+						j++;
+						k++;
+					} else if (X[j]/divisor < Y[k]/divisor) {
+						do {
+							j++;
+						} while (j < lx && X[j]/divisor < Y[k]/divisor);
 					} else {
-						ov = w2[i];
-						o = 2;
-					}
-				} else { // longest
-					if (w1 < w2[i]) {
-						ov = w2[i];
-						o = 2;
-					} else {
-						ov = w1;
-						o = 1;
+						do {
+							k++;
+						} while (k < ly[i] && Y[k]/divisor < X[j]/divisor);
 					}
 				}
 			}
 			
+			// count the number of anchors
+			n = 0;
+			new = 1;
+			int one, two;
+			for (j = 0; j < maxX; j++) {
+				two = m[j];
+				if (two > 0) {
+					if (new) {
+						new = 0;
+						n++;
+					} else if (two != one) {
+						n++;
+					}
+					one = two + 1;
+				} else {
+					new = 1;
+				}
+			}
+			
+			// record anchor ranges
+			t = (int *) malloc(3*n*sizeof(int)); // thread-safe on Windows
+			k = -1;
+			new = 1;
+			p = -1;
+			for (j = 0; j < maxX; j++) {
+				two = m[j];
+				if (two > 0) {
+					if (new ||
+						two != one) {
+						new = 0;
+						k++;
+						t[++p] = j + 1;
+						t[++p] = m[j];
+						t[++p] = goalSize;
+					} else {
+						t[p]++;
+					}
+					one = two + 1;
+					m[j] = 0; // clear memory for next i
+				} else {
+					if (k == n - 1)
+						break;
+					new = 1;
+				}
+			}
+			
+			// separate overlapping regions
+			j = 1;
+			while (j < n) {
+				k = j - 1;
+				while (k >= 0 && k > j - goalSize) {
+					int d1 = t[0 + 3*j] - t[0 + 3*k] - t[2 + 3*k];
+					int d2 = t[1 + 3*j] - t[1 + 3*k] - t[2 + 3*k];
+					if (d1 < 0 || d2 < 0) {
+						if (d1 < d2) {
+							if (t[2 + 3*k] > -d1)
+								t[2 + 3*k] += d1;
+						} else if (t[2 + 3*k] > -d2) {
+							t[2 + 3*k] += d2;
+						}
+					}
+					k--;
+				}
+				j++;
+			}
+			
+			N[i] = n;
+			pt[i] = t;
+			
+			// chain anchors
+			int *b = (int *) malloc(n*sizeof(int)); // thread-safe on Windows
+			int *s = (int *) malloc(n*sizeof(int)); // thread-safe on Windows
+			for (j = 0; j < n; j++) {
+				b[j] = -1;
+				s[j] = t[2 + 3*j];
+			}
+			j = 1;
+			p = 0;
+			while (j < n) {
+				for (k = 0; k < j; k++) {
+					if (t[1 + 3*k] < t[1 + 3*j] && // starts within bounds
+						((t[1 + 3*k] + t[2 + 3*k] <= t[1 + 3*j] &&
+						t[0 + 3*k] + t[2 + 3*k] <= t[0 + 3*j]) ||
+						t[0 + 3*j] - t[0 + 3*k] == t[1 + 3*j] - t[1 + 3*k])) { // ends are compatible
+						if (s[k] + t[2 + 3*j] > s[j]) { // extend chain
+							s[j] = s[k] + t[2 + 3*j];
+							b[j] = k;
+						}
+					}
+				}
+				if (s[j] > s[p]) // higher score
+					p = j;
+				j++;
+			}
+			free(s);
+			
+			// rectify anchors
+			keep = (int *) calloc(n, sizeof(int)); // initialized to zero (thread-safe on Windows)
+			keeps[i] = keep;
+			if (n > 0) {
+				while (p >= 0) { // traceback
+					keep[p] = 1;
+					p = b[p];
+				}
+			}
+			free(b);
+			k = -1;
+			j = 0;
+			pos = 0; // number of matching positions in anchors
 			g1 = 0;
 			g2 = 0;
 			count = 0;
-			if (n > 1) {
-				for (j = 1; j < n; j++) {
-					g = r[j*4 + 2] - r[(j - 1)*4 + 3] - r[j*4] + r[(j - 1)*4 + 1];
-					if (g > 0) {
-						g2 -= g;
-						count++;
-					} else if (g < 0) {
-						g1 += g;
-						count++;
-					} // else g = 0
+			double tempScore;
+			int matches, c1, c2, lkup1, lkup2, bound1 = 0, bound2 = 0;
+			while (j < n) {
+				if (keep[j]) {
+					if (k >= 0 &&
+						t[0 + 3*k] + t[2 + 3*k] >= t[0 + 3*j] &&
+						t[0 + 3*j] - t[0 + 3*k] == t[1 + 3*j] - t[1 + 3*k]) {
+						// merge anchors
+						keep[j] = 0;
+						pos -= t[2 + 3*k];
+						t[2 + 3*k] = t[2 + 3*j] + t[0 + 3*j] - t[0 + 3*k];
+						pos += t[2 + 3*k];
+					} else {
+						if (k >= 0) { // previous range
+							// remove overlap
+							d = t[0 + 3*k] + t[2 + 3*k] - t[0 + 3*j];
+							if (d > 0) {
+								t[0 + 3*j] += d;
+								t[1 + 3*j] += d;
+								t[2 + 3*j] -= d;
+							}
+							d = t[1 + 3*k] + t[2 + 3*k] - t[1 + 3*j];
+							if (d > 0) {
+								t[0 + 3*j] += d;
+								t[1 + 3*j] += d;
+								t[2 + 3*j] -= d;
+							}
+							
+							// record gaps
+							g = t[1 + 3*j]; // seq2 current start
+							g -= t[1 + 3*k] + t[2 + 3*k] - 1; // seq2 previous end
+							g -= t[0 + 3*j]; // seq1 current start
+							g += t[0 + 3*k] + t[2 + 3*k] - 1; // seq1 previous end
+							if (g > 0) {
+								g2 -= g;
+								count++;
+							} else if (g < 0) {
+								g1 += g;
+								count++;
+							} // else g = 0
+						} else {
+							p1 = t[0 + 3*j]; // starting position in seq1
+							p2 = t[1 + 3*j]; // starting position in seq2
+						}
+						pos += t[2 + 3*j];
+						
+						// try extending left
+						c1 = t[0 + 3*j] - 1;
+						c2 = t[1 + 3*j] - 1;
+						tempScore = 0;
+						matches = 0;
+						while (c1 > bound1 && c2 > bound2 && tempScore > dS) {
+							c1--;
+							c2--;
+							lkup1 = lkup_row[(unsigned char)s_x.ptr[c1]];
+							lkup2 = lkup_col[(unsigned char)s_y.ptr[c2]];
+							if (lkup1 != NA_INTEGER && lkup2 != NA_INTEGER) {
+								tempScore += sM[lkup1 + lkup2];
+								if (s_x.ptr[c1] == s_y.ptr[c2])
+									matches++;
+							} else { // encountered missing character
+								break;
+							}
+							if (tempScore > 0) {
+								tempScore = 0;
+								pos += matches;
+								matches = 0;
+								t[2 + 3*j] += t[0 + 3*j] - 1 - c1;
+								t[0 + 3*j] = c1 + 1;
+								t[1 + 3*j] = c2 + 1;
+							}
+						}
+						
+						if (k >= 0) { // try extending right
+							bound1 = t[0 + 3*j] - 2;
+							bound2 = t[1 + 3*j] - 2;
+							c1 = t[0 + 3*k] + t[2 + 3*k] - 2;
+							c2 = t[1 + 3*k] + t[2 + 3*k] - 2;
+							tempScore = 0;
+							matches = 0;
+							while (c1 < bound1 && c2 < bound2 && tempScore > dS) {
+								c1++;
+								c2++;
+								lkup1 = lkup_row[(unsigned char)s_x.ptr[c1]];
+								lkup2 = lkup_col[(unsigned char)s_y.ptr[c2]];
+								if (lkup1 != NA_INTEGER && lkup2 != NA_INTEGER) {
+									tempScore += sM[lkup1 + lkup2];
+									if (s_x.ptr[c1] == s_y.ptr[c2])
+										matches++;
+								} else { // encountered missing character
+									break;
+								}
+								if (tempScore > 0) {
+									tempScore = 0;
+									pos += matches;
+									matches = 0;
+									t[2 + 3*k] = c1 - t[0 + 3*k] + 2;
+								}
+							}
+						}
+						
+						k = j;
+					}
+					bound1 = t[0 + 3*k] + t[2 + 3*k] - 1;
+					bound2 = t[1 + 3*k] + t[2 + 3*k] - 1;
 				}
+				j++;
 			}
 			
-			if (coverage != 0 ||
-				global == 0 ||
-				pGapLetters != 1) {
-				if (t1 > t2) {
-					t1 = t1 - t2;
-					t2 = 0;
-				} else if (t2 > t1) {
-					t2 = t2 - t1;
-					t1 = 0;
-				} else {
-					t1 = 0;
-					t2 = 0;
-				}
-				if (global && pGapLetters != 0) // pGapLetters = NA
-					count += (t1 != t2) + (p1 != p2);
-				if (p1 <= p2 && t1 <= t2) { // 1 within 2
-					OV = w1;
-					off = g1;
-					if (global == 0 || pGapLetters != 1)
-						o = 1;
-				} else if (p2 <= p1 && t2 <= t1) { // 2 within 1
-					OV = w2[i];
-					off = g2;
-					if (global == 0 || pGapLetters != 1)
-						o = 2;
-				} else if (p1 > p2) { // end of 1 overlaps start of 2
-					if (w1 - p1 + p2 > w2[i] - t2) {
-						OV = w1 - p1 + p2;
-						off = g1;
-						if (global == 0 || pGapLetters != 1)
-							o = 1;
-					} else {
-						OV = w2[i] - t2;
-						off = g2;
-						if (global == 0 || pGapLetters != 1)
-							o = 2;
+			// compute similarity
+			if (k >= 0) { // at least one range
+				bound1 = w1 - 1;
+				bound2 = w2 - 1;
+				c1 = t[0 + 3*k] + t[2 + 3*k] - 2;
+				c2 = t[1 + 3*k] + t[2 + 3*k] - 2;
+				tempScore = 0;
+				matches = 0;
+				while (c1 < bound1 && c2 < bound2 && tempScore > dS) {
+					c1++;
+					c2++;
+					lkup1 = lkup_row[(unsigned char)s_x.ptr[c1]];
+					lkup2 = lkup_col[(unsigned char)s_y.ptr[c2]];
+					if (lkup1 != NA_INTEGER && lkup2 != NA_INTEGER) {
+						tempScore += sM[lkup1 + lkup2];
+						if (s_x.ptr[c1] == s_y.ptr[c2])
+							matches++;
+					} else { // encountered missing character
+						break;
 					}
-				} else { // end of 2 overlaps start of 1
-					if (w2[i] - p2 + p1 > w1 - t1) {
-						OV = w2[i] - p2 + p1;
-						off = g2;
-						if (global == 0 || pGapLetters != 1)
-							o = 2;
-					} else {
-						OV = w1 - t1;
-						off = g1;
-						if (global == 0 || pGapLetters != 1)
-							o = 1;
+					if (tempScore > 0) {
+						tempScore = 0;
+						pos += matches;
+						matches = 0;
+						t[2 + 3*k] = c1 - t[0 + 3*k] + 2;
 					}
 				}
 				
-				if (global == 0 || pGapLetters != 1)
-					ov = OV;
-			}
-			
-			if ((useMax == 0 &&
-				((w2[i] <= w1 && (double)(OV + off)/(double)w2[i] < coverage) ||
-				(w1 <= w2[i] && (double)(OV + off)/(double)w1 < coverage))) ||
-				(useMax == 1 &&
-				((w2[i] <= w1 && (double)(OV + off)/(double)w1 < coverage) ||
-				(w1 <= w2[i] && (double)(OV + off)/(double)w2[i] < coverage)))) {
-				rans[i] = 0;
-			} else {
-				if (pGapLetters == 1) {
-					if (o == 1) {
-						rans[i] = (double)s/((double)(ov - g2));
-					} else {
-						rans[i] = (double)s/((double)(ov - g1));
-					}
-				} else if (pGapLetters == 0) {
-					if (o == 1) {
-						rans[i] = (double)s/((double)(ov + g1));
-					} else {
-						rans[i] = (double)s/((double)(ov + g2));
-					}
-				} else {
-					if (o == 1) {
-						rans[i] = (double)s/((double)(ov + count + g1));
-					} else {
-						rans[i] = (double)s/((double)(ov + count + g2));
+				t1 = w1 - (t[0 + 3*k] + t[2 + 3*k] - 1); // remaining positions in seq1
+				t2 = w2 - (t[1 + 3*k] + t[2 + 3*k] - 1); // remaining positions in seq2
+				
+				if (global &&
+					pGapLetters == 1) {
+					if (mode == 1) { // overlap
+						if (p1 >= p2) {
+							o = 1;
+							if (t1 >= t2) { // 2 within 1
+								ov = w1;
+							} else { // end of 1 overlaps start of 2
+								ov = w1 + t2 - t1;
+							}
+						} else {
+							o = 2;
+							if (t2 >= t1) { // 1 within 2
+								ov = w2;
+							} else { // end of 2 overlaps start of 1
+								ov = w2 + t1 - t2;
+							}
+						}
+					} else if (mode == 2) { // shortest
+						if (w1 < w2) {
+							ov = w1;
+							o = 1;
+						} else {
+							ov = w2;
+							o = 2;
+						}
+					} else { // longest
+						if (w1 < w2) {
+							ov = w2;
+							o = 2;
+						} else {
+							ov = w1;
+							o = 1;
+						}
 					}
 				}
+				
+				if (coverage != 0 ||
+					global == 0 ||
+					pGapLetters != 1) {
+					if (t1 > t2) {
+						t1 = t1 - t2;
+						t2 = 0;
+					} else if (t2 > t1) {
+						t2 = t2 - t1;
+						t1 = 0;
+					} else {
+						t1 = 0;
+						t2 = 0;
+					}
+					if (global && pGapLetters != 0) // pGapLetters = NA
+						count += (t1 != t2) + (p1 != p2);
+					if (p1 <= p2 && t1 <= t2) { // 1 within 2
+						OV = w1;
+						off = g1;
+						if (global == 0 || pGapLetters != 1)
+							o = 1;
+					} else if (p2 <= p1 && t2 <= t1) { // 2 within 1
+						OV = w2;
+						off = g2;
+						if (global == 0 || pGapLetters != 1)
+							o = 2;
+					} else if (p1 > p2) { // end of 1 overlaps start of 2
+						if (w1 - p1 + p2 > w2 - t2) {
+							OV = w1 - p1 + p2;
+							off = g1;
+							if (global == 0 || pGapLetters != 1)
+								o = 1;
+						} else {
+							OV = w2 - t2;
+							off = g2;
+							if (global == 0 || pGapLetters != 1)
+								o = 2;
+						}
+					} else { // end of 2 overlaps start of 1
+						if (w2 - p2 + p1 > w1 - t1) {
+							OV = w2 - p2 + p1;
+							off = g2;
+							if (global == 0 || pGapLetters != 1)
+								o = 2;
+						} else {
+							OV = w1 - t1;
+							off = g1;
+							if (global == 0 || pGapLetters != 1)
+								o = 1;
+						}
+					}
+					
+					if (global == 0 || pGapLetters != 1)
+						ov = OV;
+				}
+				
+				if ((useMax == 0 &&
+					((w2 <= w1 && (double)(OV + off)/(double)w2 < coverage) ||
+					(w1 <= w2 && (double)(OV + off)/(double)w1 < coverage))) ||
+					(useMax == 1 &&
+					((w2 <= w1 && (double)(OV + off)/(double)w1 < coverage) ||
+					(w1 <= w2 && (double)(OV + off)/(double)w2 < coverage)))) {
+					sim[i] = 0;
+				} else {
+					if (pGapLetters == 1) {
+						if (o == 1) {
+							sim[i] = (double)pos/((double)(ov - g2));
+						} else {
+							sim[i] = (double)pos/((double)(ov - g1));
+						}
+					} else if (pGapLetters == 0) {
+						if (o == 1) {
+							sim[i] = (double)pos/((double)(ov + g1));
+						} else {
+							sim[i] = (double)pos/((double)(ov + g2));
+						}
+					} else {
+						if (o == 1) {
+							sim[i] = (double)pos/((double)(ov + count + g1));
+						} else {
+							sim[i] = (double)pos/((double)(ov + count + g2));
+						}
+					}
+				}
+			} else {
+				sim[i] = 0;
 			}
-		} else {
-			rans[i]= 0;
 		}
+		
+		free(m);
+	#ifdef _OPENMP
 	}
-	free(pr);
-	free(pn);
+	#endif
+	free(ox);
+	free(pY);
+	free(pOY);
+	free(ly);
 	
-	UNPROTECT(1);
+	// second loop not tread-safe
+	for (i = 0; i < l; i++) {
+		t = pt[i];
+		n = N[i];
+		keep = keeps[i];
+		
+		// record final anchors
+		k = 0;
+		for (j = 0; j < n; j++)
+			if (keep[j])
+				k++;
+		SEXP ans;
+		PROTECT(ans = allocMatrix(INTSXP, 4, k));
+		int *rans = INTEGER(ans);
+		k = -1;
+		for (j = 0; j < n; j++) {
+			if (keep[j]) {
+				k++;
+				rans[0 + 4*k] = t[0 + 3*j];
+				rans[1 + 4*k] = t[0 + 3*j] + t[2 + 3*j] - 1;
+				rans[2 + 4*k] = t[1 + 3*j];
+				rans[3 + 4*k] = t[1 + 3*j] + t[2 + 3*j] - 1;
+			}
+		}
+		free(keep);
+		free(t);
+		
+		SET_VECTOR_ELT(ret_list, i, ans);
+		UNPROTECT(1);
+	}
+	free(pt);
+	free(N);
+	free(keeps);
 	
-	return ans;
+	SET_VECTOR_ELT(ret_list, l, sims);
+	UNPROTECT(2);
+	
+	return ret_list;
 }
 
 // difference in overlap between pairs

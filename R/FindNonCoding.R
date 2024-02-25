@@ -136,6 +136,7 @@ FindNonCoding <- function(x,
 				K[[k]],
 				TRUE, # mask repeats
 				FALSE, # mask low complexity regions
+				1L, # left is fast moving side
 				processors,
 				PACKAGE="DECIPHER")[[1L]]
 			

@@ -366,6 +366,7 @@ FindSynteny <- function(dbFile,
 					K,
 					maskRepeats,
 					maskLCRs,
+					1L, # left is fast moving side
 					processors,
 					PACKAGE="DECIPHER")[[1]]
 				for (i in which(WIDTH1 > (K - 2) & WIDTH1 < length(E1)))
@@ -381,6 +382,7 @@ FindSynteny <- function(dbFile,
 					K,
 					maskRepeats,
 					maskLCRs,
+					1L, # left is fast moving side
 					processors,
 					PACKAGE="DECIPHER")[[1]]
 				for (i in which(WIDTH2 > (K - 2) & WIDTH2 < length(e2)))
@@ -516,6 +518,7 @@ FindSynteny <- function(dbFile,
 							alphabet,
 							maskRepeats,
 							maskLCRs,
+							1L, # left is fast moving side
 							processors,
 							PACKAGE="DECIPHER")[[1]]
 						for (i in which(width1 > (N_AA - 2) & width1 < length(e1)))
@@ -550,6 +553,7 @@ FindSynteny <- function(dbFile,
 								alphabet,
 								maskRepeats,
 								maskLCRs,
+								1L, # left is fast moving side
 								processors,
 								PACKAGE="DECIPHER")[[1]]
 							for (i in which(width2 > (N_AA - 2) & width2 < length(e2)))
@@ -776,6 +780,7 @@ FindSynteny <- function(dbFile,
 					K,
 					maskRepeats,
 					maskLCRs,
+					1L, # left is fast moving side
 					processors,
 					PACKAGE="DECIPHER")[[1]]
 				for (i in which(WIDTH2 > (K - 2) & WIDTH2 < length(e2)))
@@ -888,6 +893,7 @@ FindSynteny <- function(dbFile,
 							alphabet,
 							maskRepeats,
 							maskLCRs,
+							1L, # left is fast moving side
 							processors,
 							PACKAGE="DECIPHER")[[1]]
 						for (i in which(width1 > (N_AA - 2) & width1 < length(e1)))
@@ -922,6 +928,7 @@ FindSynteny <- function(dbFile,
 								alphabet,
 								maskRepeats,
 								maskLCRs,
+								1L, # left is fast moving side
 								processors,
 								PACKAGE="DECIPHER")[[1]]
 							for (i in which(width2 > (N_AA - 2) & width2 < length(e2)))
