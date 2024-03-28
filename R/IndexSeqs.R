@@ -7,6 +7,7 @@ IndexSeqs <- function(subject,
 	alphabet=AA_REDUCED[[171]],
 	maskRepeats=TRUE,
 	maskLCRs=TRUE,
+	maskNumerous=TRUE,
 	batchSize=1e+07,
 	processors=1,
 	verbose=TRUE) {
@@ -67,6 +68,8 @@ IndexSeqs <- function(subject,
 		stop("step must be at least 1.")
 	if (step != floor(step))
 		stop("step must be a whole number.")
+	if (step > maxK)
+		stop("step can be at most ", maxK, ".")
 	if (!isTRUEorFALSE(maskRepeats))
 		stop("maskRepeats must be TRUE or FALSE.")
 	if (!isTRUEorFALSE(maskLCRs))
@@ -116,8 +119,8 @@ IndexSeqs <- function(subject,
 			stop("sensitivity cannot be NA.")
 		if (is.na(percentIdentity))
 			stop("percentIdentity cannot be NA.")
-		if (patternLength < 15L)
-			stop("patternLength must be at least 15.")
+		if (patternLength < maxK)
+			stop("patternLength must be at least ", maxK, ".")
 		if (sensitivity < 0.5)
 			stop("sensitivity must be at least 0.5.")
 		if (sensitivity >= 1)
@@ -126,14 +129,14 @@ IndexSeqs <- function(subject,
 			stop("percentIdentity must be greater than 1.")
 		if (percentIdentity > 100)
 			stop("percentIdentity must be less than 100.")
-		K <- ceiling(patternLength/step*log(1 - exp(log(percentIdentity/100)*log(patternLength*max(width(subject))/step)/log(size)))/log(1 - sensitivity))
-		if (K > maxK) {
-			K <- maxK
-		} else if (K < 2) {
+		targetSize <- max(width(subject))
+		databaseSize <- sum(width(subject))
+		K <- max(step, 2L):maxK
+		sens <- (1 - (1 - (percentIdentity/100)^K)^(patternLength/K))^ceiling((max(0, log((databaseSize + targetSize - 1)/step)) + log(patternLength*targetSize/step) + sqrt(patternLength*(1 - percentIdentity/100)))/(K*log(size)))
+		K <- K[sens > sensitivity] # values of K that achieve desired sensitivity
+		if (length(K) == 0L)
 			stop("The desired sensitivity is unachievable at the specified percentIdentity for queries of patternLength.")
-		} else if (K < step) {
-			stop("The desired sensitivity is unachievable with the specified step.")
-		}
+		K <- K[which.min(abs(targetSize - size^K))]
 	} else {
 		if (length(K) != 1L)
 			stop("K must be a single number.")
@@ -151,6 +154,22 @@ IndexSeqs <- function(subject,
 	if (step > K)
 		stop("step can be at most K.")
 	
+	if (length(maskNumerous) != 1)
+		stop("maskNumerous must be a single value.")
+	if (is.na(maskNumerous))
+		stop("maskNumerous cannot be NA.")
+	if (isTRUEorFALSE(maskNumerous)) {
+		if (maskNumerous) {
+			maskNumerous <- -4e3
+		} else {
+			maskNumerous <- 0
+		}
+	} else if (maskNumerous <= 0) {
+		stop("maskNumerous must be greater than zero.")
+	} else {
+		maskNumerous <- -maskNumerous
+	}
+	
 	K <- as.integer(K)
 	step <- as.integer(step)
 	L <- as.integer(size^K) # number of possible k-mers
@@ -165,6 +184,7 @@ IndexSeqs <- function(subject,
 	last <- 0 # number of positions processed
 	prev <- 0L # previous index
 	batches <- 0L
+	mN <- integer() # maximum allowable k-mer count
 	while (prev < l) {
 		batches <- batches + 1L
 		# determine number of sequences to process
@@ -174,6 +194,9 @@ IndexSeqs <- function(subject,
 			N <- N + 1L
 		last <- cum_pos[N]
 		
+		if (maskNumerous < 0)
+			mN <- as.integer(qbinom(maskNumerous, width(subject)[prev:N], size^-K, lower.tail=FALSE, log.p=TRUE))
+		
 		if (xtype == 3L) {
 			kmers <- .Call("enumerateSequenceReducedAA",
 				subject[prev:N],
@@ -181,6 +204,7 @@ IndexSeqs <- function(subject,
 				alphabet,
 				maskRepeats,
 				maskLCRs,
+				mN, # maskNumerous
 				1L, # left is fast moving side
 				processors,
 				PACKAGE="DECIPHER")
@@ -190,6 +214,7 @@ IndexSeqs <- function(subject,
 				K,
 				maskRepeats,
 				maskLCRs,
+				mN, # maskNumerous
 				1L, # left is fast moving side
 				processors,
 				PACKAGE="DECIPHER")
@@ -243,6 +268,9 @@ IndexSeqs <- function(subject,
 				N <- N + 1L
 			last <- cum_pos[N]
 			
+			if (maskNumerous < 0)
+				mN <- as.integer(qbinom(maskNumerous, width(subject)[prev:N], size^-K, lower.tail=FALSE, log.p=TRUE))
+			
 			if (xtype == 3L) {
 				kmers <- .Call("enumerateSequenceReducedAA",
 					subject[prev:N],
@@ -250,6 +278,7 @@ IndexSeqs <- function(subject,
 					alphabet,
 					maskRepeats,
 					maskLCRs,
+					mN, # maskNumerous
 					1L, # left is fast moving side
 					processors,
 					PACKAGE="DECIPHER")
@@ -259,6 +288,7 @@ IndexSeqs <- function(subject,
 					K,
 					maskRepeats,
 					maskLCRs,
+					mN, # maskNumerous
 					1L, # left is fast moving side
 					processors,
 					PACKAGE="DECIPHER")

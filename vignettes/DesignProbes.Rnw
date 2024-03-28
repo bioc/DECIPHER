@@ -678,7 +678,7 @@ Examining the output, it is clear why these target sites were chosen for the dua
 
 \subsection{Finishing Up}
 
-Finally, we can order the first and second probe and try them out in an experiment!  The probes should be labeled with different fluorphores (e.g., fluorescein and Cy3).  In cases where all non-targets cannot be eliminated, it may be possible to further increase specificity by using a competitor oligonucleotide complementary to the non-target permutations given in the \textit{mismatches} columns.  Hybridization conditions could be further optimized based on the results of a formamide gradient experiment.  If the two probes have markedly different optimal formamide concentrations then a dual-hybridization approach can be employed by washing with the more stringent condition followed by the second.
+Finally, we can order the first and second probe and try them out in an experiment!  The probes should be labeled with different fluorophores (e.g., fluorescein and Cy3).  In cases where all non-targets cannot be eliminated, it may be possible to further increase specificity by using a competitor oligonucleotide complementary to the non-target permutations given in the \textit{mismatches} columns.  Hybridization conditions could be further optimized based on the results of a formamide gradient experiment.  If the two probes have markedly different optimal formamide concentrations then a dual-hybridization approach can be employed by washing with the more stringent condition followed by the second.
 
 \section{Session Information}
 All of the output in this vignette was produced under the following conditions:

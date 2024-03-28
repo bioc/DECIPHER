@@ -1,6 +1,7 @@
 AlignPairs <- function(pattern,
 	subject,
 	pairs=NULL,
+	type="values",
 	perfectMatch=2,
 	misMatch=-2,
 	gapOpening=-16,
@@ -65,6 +66,12 @@ AlignPairs <- function(pattern,
 				stop("The 'Position' column of pairs must be a list.")
 		}
 	}
+	TYPES <- c("values", "sequences", "both")
+	type <- pmatch(type[1], TYPES)
+	if (is.na(type))
+		stop("Invalid type.")
+	if (type == -1)
+		stop("Ambiguous type.")
 	if (!is.numeric(gapOpening))
 		stop("gapOpening must be a numeric.")
 	if (length(gapOpening) > 1L)
@@ -195,20 +202,52 @@ AlignPairs <- function(pattern,
 		processors,
 		PACKAGE="DECIPHER")
 	
-	results <- data.frame(Pattern=pairs$Pattern,
-		PatternStart=ans[[1L]],
-		PatternEnd=ans[[2L]],
-		Subject=pairs$Subject,
-		SubjectStart=ans[[3L]],
-		SubjectEnd=ans[[4L]],
-		Matches=ans[[5L]],
-		Mismatches=ans[[6L]],
-		AlignmentLength=ans[[7L]],
-		Score=ans[[8L]])
-	results$PatternGapPosition <- ans[[9L]]
-	results$PatternGapLength <- ans[[10L]]
-	results$SubjectGapPosition <- ans[[11L]]
-	results$SubjectGapLength <- ans[[12L]]
+	if (type != 2L) {
+		results <- data.frame(Pattern=pairs$Pattern,
+			PatternStart=ans[[1L]],
+			PatternEnd=ans[[2L]],
+			Subject=pairs$Subject,
+			SubjectStart=ans[[3L]],
+			SubjectEnd=ans[[4L]],
+			Matches=ans[[5L]],
+			Mismatches=ans[[6L]],
+			AlignmentLength=ans[[7L]],
+			Score=ans[[8L]])
+		results$PatternGapPosition <- ans[[9L]]
+		results$PatternGapLength <- ans[[10L]]
+		results$SubjectGapPosition <- ans[[11L]]
+		results$SubjectGapLength <- ans[[12L]]
+	}
+	
+	if (type > 1L) {
+		gaps <- tabulate(unlist(c(ans[[10L]], ans[[12L]])))
+		gaps <- lapply(seq_along(gaps)*(gaps > 0),
+			function(l)
+				if (l > 0) {
+					paste(rep("-", l), collapse="")
+				} else {
+					""
+				})
+		patterns <- replaceAt(subseq(pattern[pairs$Pattern],
+				ans[[1L]],
+				ans[[2L]]),
+			ans[[9L]],
+			lapply(ans[[10L]],
+				function(x)
+					unlist(gaps[x])))
+		subjects <- replaceAt(subseq(subject[pairs$Subject],
+				ans[[3L]],
+				ans[[4L]]),
+			ans[[11L]],
+			lapply(ans[[12L]],
+				function(x)
+					unlist(gaps[x])))
+		if (type == 2L) {
+			results <- list(patterns, subjects)
+		} else if (type == 3L) {
+			results <- list(results, patterns, subjects)
+		}
+	}
 	
 	if (verbose) {
 		setTxtProgressBar(pBar, 100)

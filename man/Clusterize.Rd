@@ -92,7 +92,7 @@ Multiple cutoffs can be provided in sorted order, which saves time because phase
 Note, the clustering algorithm is stochastic.  Hence, clusters can vary from run-to-run unless the random number seed is set for repeatability (i.e., with \code{set.seed}).  Also, \code{invertCenters} can be used to determine the center sequence of each cluster from the output.  Since identical sequences will always be assigned the same cluster numbers, it is possible for more than one input sequence in \code{myXStringSet} to be assigned as the center of a cluster if they are identical.
 }
 \value{
-A data.frame is returned with dimensions \eqn{N*M}, where each one of \eqn{N} sequences is assigned to a cluster at the \eqn{M}-level of cutoff.  The row.names of the data.frame correspond to the \emph{names} of \code{myXStingSet}.
+A data.frame is returned with dimensions \eqn{N*M}, where each one of \eqn{N} sequences is assigned to a cluster at the \eqn{M}-level of cutoff.  The row.names of the data.frame correspond to the \emph{names} of \code{myXStringSet}.
 }
 \author{
 Erik Wright \email{eswright@pitt.edu}

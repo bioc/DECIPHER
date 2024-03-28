@@ -1,8 +1,9 @@
 SearchIndex <- function(pattern,
 	invertedIndex,
 	subject=NULL,
-	type="one",
 	minScore=NA,
+	perPatternLimit=0,
+	perSubjectLimit=1,
 	scoreOnly=FALSE,
 	sepCost=-0.4,
 	gapCost=-2.5,
@@ -15,16 +16,33 @@ SearchIndex <- function(pattern,
 	# error checking
 	if (!is(invertedIndex, "InvertedIndex"))
 		stop("invertedIndex must be an InvertedIndex object.")
-	TYPES <- c("all", "one", "top")
-	type <- pmatch(type[1], TYPES)
-	if (is.na(type))
-		stop("Invalid type.")
-	if (type == -1)
-		stop("Ambiguous type.")
 	if (length(minScore) != 1L)
 		stop("minScore must be a single numeric.")
-	if (!is.na(minScore) && !is.numeric(minScore))
-		stop("minScore must be a numeric.")
+	if (!is.na(minScore)) {
+		if (!is.numeric(minScore)) {
+			stop("minScore must be a numeric.")
+		} else if (minScore < 0) {
+			stop("minScore must be at least zero.")
+		}
+	}
+	if (length(perSubjectLimit) != 1L)
+		stop("perSubjectLimit must be a single numeric.")
+	if (is.na(perSubjectLimit) || !is.numeric(perSubjectLimit))
+		stop("perSubjectLimit must be a numeric.")
+	if (perSubjectLimit < 0)
+		stop("perSubjectLimit must be at least zero.")
+	if (floor(perSubjectLimit) != perSubjectLimit)
+		stop("perSubjectLimit must be a whole number.")
+	perSubjectLimit <- as.integer(perSubjectLimit)
+	if (length(perPatternLimit) != 1L)
+		stop("perPatternLimit must be a single numeric.")
+	if (is.na(perPatternLimit) || !is.numeric(perPatternLimit))
+		stop("perPatternLimit must be a numeric.")
+	if (perPatternLimit < 0)
+		stop("perPatternLimit must be at least zero.")
+	if (floor(perPatternLimit) != perPatternLimit)
+		stop("perPatternLimit must be a whole number.")
+	perPatternLimit <- as.integer(perPatternLimit)
 	if (!isTRUEorFALSE(scoreOnly))
 		stop("scoreOnly must be TRUE or FALSE.")
 	if (length(sepCost) != 1L)
@@ -92,10 +110,10 @@ SearchIndex <- function(pattern,
 			subMatrix <- nucleotideSubstitutionMatrix(match=1.386294, # log(4)
 				mismatch=-5.545177, # -4*log(4) allows 20% distance
 				type="DNA")
-			subMatrix["A", "A"] <- -log(freqs["A"])
-			subMatrix["C", "C"] <- -log(freqs["C"])
-			subMatrix["G", "G"] <- -log(freqs["G"])
-			subMatrix["T", "T"] <- -log(freqs[!(names(freqs) %in% c("A", "C", "G"))])
+			subMatrix["A", "A"] <- -log(freqs[1L]) # A
+			subMatrix["C", "C"] <- -log(freqs[2L]) # C
+			subMatrix["G", "G"] <- -log(freqs[3L]) # G
+			subMatrix["T", "T"] <- -log(freqs[4L]) # T
 			chars <- DNAStringSet(paste(rownames(subMatrix), collapse=""))
 		} else if (xtype == 2L) {
 			if (!is(subject, "RNAStringSet"))
@@ -103,10 +121,10 @@ SearchIndex <- function(pattern,
 			subMatrix <- nucleotideSubstitutionMatrix(match=1.386294, # log(4)
 				mismatch=-5.545177, # -4*log(4) allows 20% distance
 				type="RNA")
-			subMatrix["A", "A"] <- -log(freqs["A"])
-			subMatrix["C", "C"] <- -log(freqs["C"])
-			subMatrix["G", "G"] <- -log(freqs["G"])
-			subMatrix["U", "U"] <- -log(freqs[!(names(freqs) %in% c("A", "C", "G"))])
+			subMatrix["A", "A"] <- -log(freqs[1L]) # A
+			subMatrix["C", "C"] <- -log(freqs[2L]) # C
+			subMatrix["G", "G"] <- -log(freqs[3L]) # G
+			subMatrix["U", "U"] <- -log(freqs[4L]) # U
 			chars <- RNAStringSet(paste(rownames(subMatrix), collapse=""))
 		} else { # xtype == 3L
 			if (!is(subject, "AAStringSet"))
@@ -139,6 +157,7 @@ SearchIndex <- function(pattern,
 			alphabet,
 			maskRepeats,
 			maskLCRs,
+			integer(), # mask numerous k-mers
 			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
@@ -148,6 +167,7 @@ SearchIndex <- function(pattern,
 			K,
 			maskRepeats,
 			maskLCRs,
+			integer(), # mask numerous k-mers
 			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
@@ -164,7 +184,6 @@ SearchIndex <- function(pattern,
 		len, # positions
 		sepCost, # sepC
 		gapCost, # gapC
-		type, # output
 		sum(len) + 1, # size of target database
 		minScore, # minimum score or NA to calculate
 		scoreOnly, # FALSE to output anchor positions
@@ -173,6 +192,8 @@ SearchIndex <- function(pattern,
 		subMatrix, # substitution matrix
 		chars, # concatenated row/column names of subMatrix
 		dropScore, # to terminate extension
+		perSubjectLimit, # maximum number of results per target (per query)
+		perPatternLimit, # maximum number of results per query
 		verbose,
 		pBar,
 		processors,

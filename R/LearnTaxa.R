@@ -180,6 +180,7 @@ LearnTaxa <- function(train,
 			alphabet,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			integer(), # mask numerous k-mers
 			1L, # left is fast moving side
 			1L, # processors
 			PACKAGE="DECIPHER")
@@ -189,6 +190,7 @@ LearnTaxa <- function(train,
 			K,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			integer(), # mask numerous k-mers
 			1L, # left is fast moving side
 			1L, # processors
 			PACKAGE="DECIPHER")

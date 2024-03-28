@@ -216,7 +216,79 @@ static void maskSimple(int *x, int n, double *E, int l1, int l2, double l3, int 
 	}
 }
 
-SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP fastMovingSide, SEXP nThreads)
+// changes k-mers that are too numerous to NAs
+static void maskNumerous(int *x, int n, int tot, int l, int wS)
+{
+	// n: mask k-mers more numerous
+	// tot: number of k-mers possible
+	// l: number of k-mers in x
+	// wS: word size (minimum mask length)
+	
+	int i;
+	unsigned int j, k, mod;
+	int maxCollisions = 100;
+	if (l < tot) {
+		mod = (unsigned int)l; // collisions possible
+	} else {
+		mod = (unsigned int)tot; // collisions impossible
+	}
+	int *counts = Calloc(mod, int); // initialized to zero
+	int *keys = Calloc(mod, int); // initialized to zero
+	
+	// count k-mers (assumes most frequent occur before maxCollisions)
+	for (i = 0; i < l; i++) {
+		if (x[i] != NA_INTEGER) {
+			k = 0;
+			do {
+				j = (unsigned int)x[i] + k*(k + 1)/2;
+				j %= mod;
+				if (counts[j] == 0) { // new key
+					counts[j] = 1;
+					keys[j] = x[i];
+					break;
+				} else if (x[i] == keys[j]) { // existing key
+					counts[j]++;
+					break;
+				} // else collision
+				k++;
+			} while (k < maxCollisions);
+		}
+	}
+	
+	// convert k-mers that are too numerous to NA
+	int count = 0;
+	for (i = 0; i < l; i++) {
+		if (x[i] == NA_INTEGER) { // already masked
+			count++;
+		} else {
+			k = 0;
+			do {
+				j = (unsigned int)x[i] + k*(k + 1)/2;
+				j %= mod;
+				if (x[i] == keys[j]) { // matching key
+					if (counts[j] > n) {
+						count++;
+						if (count == wS) {
+							for (j = 0; j < wS; j++)
+								x[i - j] = NA_INTEGER;
+						} else if (count > wS) {
+							x[i] = NA_INTEGER;
+						}
+					} else {
+						count = 0;
+					}
+					break;
+				}
+				k++;
+			} while (k < maxCollisions);
+		}
+	}
+	
+	Free(counts);
+	Free(keys);
+}
+
+SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP maskNum, SEXP fastMovingSide, SEXP nThreads)
 {
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -239,6 +311,17 @@ SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP fas
 	int maskSimp = (asInteger(maskLCRs) == 0) ? 0 : 20; // window size
 	int maskSimp2 = (asInteger(maskLCRs) == 0) ? 0 : 95; // window size
 	double E[4] = {0.25, 0.25, 0.25, 0.25}; // expected frequency
+	
+	// initialize variables for masking numerous k-mers
+	int l = length(maskNum);
+	int *mN;
+	int tot; // total number of k-mers
+	if (l > 0) {
+		mN = INTEGER(maskNum);
+		tot = 1;
+		for (i = 0; i < wS; i++)
+			tot *= 4;
+	}
 	
 	SEXP ret_list;
 	PROTECT(ret_list = allocVector(VECSXP, x_length));
@@ -308,6 +391,9 @@ SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP fas
 				maskSimple(rans, wS, E, 4, maskSimp, threshold, x_i.length - wS + 1);
 			if (maskSimp2)
 				maskSimple(rans, wS, E, 4, maskSimp2, threshold2, x_i.length - wS + 1);
+			
+			if (l == x_length)
+				maskNumerous(rans, mN[i], tot, x_i.length - wS + 1, wS);
 		}
 	}
 	
@@ -774,7 +860,7 @@ static void alphabetFrequencyReducedAA(const Chars_holder *P, int *bits, int pos
 	}
 }
 
-SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP maskLCRs, SEXP fastMovingSide, SEXP nThreads)
+SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP maskLCRs, SEXP maskNum, SEXP fastMovingSide, SEXP nThreads)
 {
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -815,6 +901,17 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask,
 	int SIZE[20] = {0, 54, 34, 27, 23, 21, 19, 18, 17, 16, 16, 15, 15, 14, 14, 14, 13, 13, 13, 13};
 	int n = SIZE[m]; // minimum length of significant repeat
 	m++; // start at 1
+	
+	// initialize variables for masking numerous k-mers
+	int l = length(maskNum);
+	int *mN;
+	int tot; // total number of k-mers
+	if (l > 0) {
+		mN = INTEGER(maskNum);
+		tot = 1;
+		for (i = 0; i < wS; i++)
+			tot *= m;
+	}
 	
 	double E[m]; // expected frequency
 	if (maskSimp) { // assume uniform frequency distribution
@@ -891,6 +988,9 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask,
 				maskSimple(rans, wS, E, m, maskSimp, threshold, x_i.length - wS + 1);
 			if (maskSimp2)
 				maskSimple(rans, wS, E, m, maskSimp2, threshold2, x_i.length - wS + 1);
+			
+			if (l == x_length)
+				maskNumerous(rans, mN[i], tot, x_i.length - wS + 1, wS);
 		}
 	}
 	

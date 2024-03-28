@@ -290,6 +290,7 @@ DetectRepeats <- function(myXStringSet,
 				alphabet,
 				FALSE, # mask repeats
 				FALSE, # mask low complexity regions
+				integer(), # mask numerous k-mers
 				1L, # left is fast moving side
 				processors,
 				PACKAGE="DECIPHER")
@@ -301,6 +302,7 @@ DetectRepeats <- function(myXStringSet,
 				K,
 				FALSE, # mask repeats
 				FALSE, # mask low complexity regions
+				integer(), # mask numerous k-mers
 				1L, # left is fast moving side
 				processors,
 				PACKAGE="DECIPHER")

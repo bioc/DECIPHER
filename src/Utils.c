@@ -745,61 +745,6 @@ SEXP groupMax(SEXP x, SEXP y, SEXP z)
 	return ans;
 }
 
-// count of hits between x (vector) and elements of v (list)
-SEXP countHits(SEXP x, SEXP v, SEXP nThreads)
-{
-	int i, j, k, lx, *X;
-	
-	X = INTEGER(x);
-	lx = length(x);
-	int l = length(v);
-	int nthreads = asInteger(nThreads);
-	
-	int **pY = (int **) malloc(l*sizeof(int *)); // thread-safe on Windows
-	int *ly = (int *) malloc(l*sizeof(int)); // thread-safe on Windows
-	
-	for (i = 0; i < l; i++) {
-		pY[i] = INTEGER(VECTOR_ELT(VECTOR_ELT(v, i), 0));
-		ly[i] = length(VECTOR_ELT(VECTOR_ELT(v, i), 0));
-	}
-	
-	SEXP ans;
-	PROTECT(ans = allocVector(INTSXP, l));
-	int *rans = INTEGER(ans);
-	
-	#ifdef _OPENMP
-	#pragma omp parallel for private(i,j,k) num_threads(nthreads)
-	#endif
-	for (i = 0; i < l; i++) {
-		int *Y = pY[i];
-		
-		j = 0;
-		k = 0;
-		rans[i] = 0;
-		while (j < lx && k < ly[i]) {
-			if (X[j] == Y[k]) {
-				rans[i]++;
-				j++;
-				k++;
-			} else if (Y[k] < X[j]) {
-				do {
-					k++;
-				} while (k < ly[i] && Y[k] < X[j]);
-			} else {
-				do {
-					j++;
-				} while (j < lx && X[j] < Y[k]);
-			}
-		}
-	}
-	free(pY);
-	free(ly);
-	
-	UNPROTECT(1);
-	
-	return ans;
-}
-
 // sum integers randomly projected within bins
 SEXP sumBins(SEXP v, SEXP bins)
 {

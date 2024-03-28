@@ -43,8 +43,42 @@
 // DECIPHER header file
 #include "DECIPHER.h"
 
+void heapSelect(double *score, int *A, int l, int k)
+{
+	int p, c, temp;
+	int end = l;
+	int start = end/2;
+	while (end > l - k) {
+		if (start > 0) {
+			start--;
+		} else {
+			end--;
+			// swap
+			temp = A[0];
+			A[0] = A[end];
+			A[end] = temp;
+		}
+		p = start;
+		c = 2*p + 1;
+		while (c < end) {
+			if (c + 1 < end && score[A[c]] < score[A[c + 1]])
+				c++;
+			if (score[A[p]] < score[A[c]]) {
+				// swap
+				temp = A[p];
+				A[p] = A[c];
+				A[c] = temp;
+				p = c;
+			} else {
+				break;
+			}
+			c = 2*p + 1;
+		}
+	}
+}
+
 // returns hits between queries and targets in an inverted index
-SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP output, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP pattern, SEXP subject, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP verbose, SEXP pBar, SEXP nThreads)
+SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP pattern, SEXP subject, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP limitTarget, SEXP limitQuery, SEXP verbose, SEXP pBar, SEXP nThreads)
 {
 	int i, j, k, p, c;
 	int n = length(query); // number of sequences in the query
@@ -57,10 +91,11 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 	int *ind = INTEGER(index); // index of target sequence
 	int *pos = INTEGER(positions); // number of matchable positions in target
 	int L = length(count); // number of possible of k-mers
-	int type = asInteger(output); // 1 = all hits, 2 = one hit per target, 3 = top hit
 	double tot = asReal(total); // total size of target database
 	double minS = asReal(minScore); // minimum score or NA to calculate
 	int sO = asInteger(scoreOnly); // FALSE to output anchor positions
+	int limitT = asInteger(limitTarget);
+	int limitQ = asInteger(limitQuery);
 	int nthreads = asInteger(nThreads);
 	
 	// if subMatrix provided then query/target sequences present
@@ -112,7 +147,7 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 	// determine cost for the distance between k-mer matches
 	double sC = asReal(sepC); // cost for separation between k-mers
 	double gC = asReal(gapC); // cost for minimum gaps between k-mers
-	int maxSep = (int)sqrt((double)L); // at least one match expected by chance
+	int maxSep = (int)sqrt((double)L); // one match expected by chance every maxSep unmasked k-mers
 	double *sepCost = (double *) malloc((maxSep + 1)*sizeof(double)); // thread-safe on Windows
 	double *gapCost = (double *) malloc((maxSep + 1)*sizeof(double)); // thread-safe on Windows
 	for (i = 0; i <= maxSep; i++) {
@@ -167,6 +202,7 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 	if (sO == 0)
 		matrices = (int ***) malloc(n*sizeof(int **)); // thread-safe on Windows
 	
+	int negK = -1*K;
 	int abort = 0;
 	#ifdef _OPENMP
 	#pragma omp parallel for private(i,j,k,p,c) schedule(dynamic) num_threads(nthreads)
@@ -402,7 +438,7 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 			score = score2;
 			
 			double prevScore, tempScore;
-			int gap, sep;
+			int gap, sep, temp;
 			if (sizeM > 0) { // rescore and extend hits
 				Chars_holder p_i, s_j;
 				p_i = get_elt_from_XStringSet_holder(&p_set, i);
@@ -410,10 +446,12 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 				int p1, p2; // position in query or target
 				int prev = 0; // index previous sequence in target
 				int bound; // boundary in target sequence
+				int maxLen; // maximum observed length
 				for (j = 0; j < s; j++) {
 					if (prev != set[j]) {
 						s_j = get_elt_from_XStringSet_holder(&s_set, set[j] - 1);
 						prev = set[j];
+						maxLen = 0;
 					}
 					
 					// rescore match
@@ -434,7 +472,7 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 					sep = maxSep; // minimum gap size
 					while (k >= 0 && set[k] == set[j]) {
 						deltaTarget = posTarget[j] - posTarget[k] - len[k];
-						if (deltaTarget >= maxSep) {
+						if (deltaTarget >= maxSep + maxLen) {
 							break;
 						} else if (deltaTarget >= 0) {
 							deltaQuery = posQuery[j] - posQuery[k] - len[k];
@@ -515,6 +553,31 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 						p1++;
 						p2++;
 					}
+					
+					if (len[j] > maxLen)
+						maxLen = len[j];
+					
+					// (re)order by posTarget
+					p2 = j;
+					p1 = p2 - 1;
+					while (p2 > 0 && // within bounds
+						set[p1] == set[p2] && // same index
+						posTarget[p2] < posTarget[p1]) { // out of order
+						temp = len[p1];
+						len[p1] = len[p2];
+						len[p2] = temp;
+						temp = posQuery[p1];
+						posQuery[p1] = posQuery[p2];
+						posQuery[p2] = temp;
+						temp = posTarget[p1];
+						posTarget[p1] = posTarget[p2];
+						posTarget[p2] = temp;
+						tempScore = score[p1];
+						score[p1] = score[p2];
+						score[p2] = tempScore;
+						p2 = p1;
+						p1--;
+					}
 				}
 			}
 			
@@ -529,6 +592,7 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 			}
 			j = 0; // last hit
 			k = 1; // current hit
+			int delta;
 			while (k < s) {
 				if (set[k] != set[j]) { // switched index
 					j = k;
@@ -538,26 +602,59 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 					while (p < k) {
 						deltaTarget = posTarget[k] - posTarget[p] - len[p];
 						if (deltaTarget > maxSep) {
-							j = p; // limit search space
-						} else if (deltaTarget >= 0) {
+							if (p == j)
+								j = p + 1; // limit search space
+						} else if (deltaTarget > negK) {
 							deltaQuery = posQuery[k] - posQuery[p] - len[p];
-							if (deltaQuery >= 0 && deltaQuery <= maxSep) {
-								tempScore = score[p] + prevScore;
-								if (tempScore > score[k]) {
-									if (deltaQuery > deltaTarget) {
-										gap = deltaQuery - deltaTarget;
-										sep = deltaTarget;
+							if (deltaQuery > negK && deltaQuery <= maxSep) {
+								if (deltaTarget < 0 || deltaQuery < 0) { // overlap due to indels
+									if (deltaQuery < deltaTarget) {
+										delta = deltaQuery;
 									} else {
-										gap = deltaTarget - deltaQuery;
-										sep = deltaQuery;
+										delta = deltaTarget;
 									}
-									tempScore = tempScore + gapCost[gap];
-									tempScore = tempScore + sepCost[sep];
+									deltaQuery -= delta;
+									deltaTarget -= delta;
+									
+									if (deltaQuery <= maxSep && deltaTarget <= maxSep) {
+										// deduct the approximate score of removed positions
+										tempScore = score[p] + prevScore*(double)(len[k] + delta)/(double)len[k];
+										if (tempScore > score[k]) {
+											if (deltaQuery > deltaTarget) {
+												gap = deltaQuery - deltaTarget;
+												sep = deltaTarget;
+											} else {
+												gap = deltaTarget - deltaQuery;
+												sep = deltaQuery;
+											}
+											tempScore = tempScore + gapCost[gap];
+											tempScore = tempScore + sepCost[sep];
+											if (tempScore > score[k]) {
+												score[k] = tempScore;
+												chain[k] = p;
+												origin[k] = origin[p];
+												cov[k] = len[k] - 1 + cov[p] + delta;
+											}
+										}
+									}
+								} else {
+									tempScore = score[p] + prevScore;
 									if (tempScore > score[k]) {
-										score[k] = tempScore;
-										chain[k] = p;
-										origin[k] = origin[p];
-										cov[k] = len[k] - 1 + cov[p];
+										if (deltaQuery > deltaTarget) {
+											gap = deltaQuery - deltaTarget;
+											sep = deltaTarget;
+										} else {
+											gap = deltaTarget - deltaQuery;
+											sep = deltaQuery;
+										}
+										tempScore = tempScore + gapCost[gap];
+										tempScore = tempScore + sepCost[sep];
+										if (tempScore > score[k]) {
+											score[k] = tempScore;
+											chain[k] = p;
+											origin[k] = origin[p];
+											cov[k] = len[k] - 1 + cov[p];
+										}
 									}
 								}
 							}
@@ -568,95 +665,115 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 				k++;
 			}
 			
-			// correct for size of target search space
+			// correct for size of k-mer search space
 			for (j = 0; j < s; j++) {
-				score[j] -= log(((double)(pos[set[j] - 1] - cov[j]))/((double)step));
-				score[j] -= log((double)(width - cov[j]));
+				temp = pos[set[j] - 1] - cov[j];
+				if (temp > step) // correct for multiple target k-mers
+					score[j] -= log(((double)temp)/((double)step));
+				if (width > cov[j]) // correct for multiple query k-mers
+					score[j] -= log((double)(width - cov[j]));
 			}
 			free(cov);
 			
-			// determine the candidate results set
-			int *res; // indices of results
-			if (type == 1) { // all hits
-				// eliminate lower scoring chains with same origin
-				int *maxOrigin; // pointer to maximum origin
-				maxOrigin = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-				for (j = 0; j < s; j++) {
-					if (origin[j] == j) {
-						maxOrigin[j] = j;
-					} else if (score[maxOrigin[origin[j]]] < score[j]) {
-						maxOrigin[origin[j]] = j;
-						maxOrigin[j] = NA_INTEGER;
-					} else {
-						maxOrigin[j] = NA_INTEGER;
-					}
+			// eliminate lower scoring chains with same origin
+			int *maxOrigin; // pointer to maximum origin
+			maxOrigin = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+			for (j = 0; j < s; j++) {
+				if (origin[j] == j) {
+					maxOrigin[j] = j;
+				} else if (score[maxOrigin[origin[j]]] < score[j]) {
+					maxOrigin[origin[j]] = j;
+					maxOrigin[j] = NA_INTEGER;
+				} else {
+					maxOrigin[j] = NA_INTEGER;
 				}
-				keep = calloc(s, sizeof(char)); // initialized to zero (thread-safe on Windows)
-				c = 0; // count of results
-				for (j = 0; j < s; j++) {
-					if (maxOrigin[j] != NA_INTEGER) {
-						keep[maxOrigin[j]] = 1;
-						c++;
-					}
-				}
-				free(maxOrigin);
-				res = (int *) malloc(c*sizeof(int)); // thread-safe on Windows
-				p = 0;
-				for (j = 0; j < s; j++)
-					if (keep[j])
-						res[p++] = j;
-				free(keep);
-			} else if (type == 2) { // one hit per target
-				keep = calloc(s, sizeof(char)); // initialized to zero (thread-safe on Windows)
-				p = NA_INTEGER; // current set
-				k = 0; // position of max per set
-				c = 0; // count of results
-				for (j = 0; j < s; j++) {
-					if (p != set[j]) {
-						p = set[j];
-						k = j;
-						keep[k] = 1;
-						c++;
-					} else {
-						if (score[j] > score[k]) {
-							keep[k] = 0;
-							k = j;
-							keep[k] = 1;
-						}
-					}
-				}
-				res = (int *) malloc(c*sizeof(int)); // thread-safe on Windows
-				p = 0;
-				for (j = 0; j < s; j++)
-					if (keep[j])
-						res[p++] = j;
-				free(keep);
-			} else { // top hit
-				c = 1; // count of results
-				res = (int *) malloc(c*sizeof(int)); // thread-safe on Windows
-				res[0] = 0;
-				for (j = 1; j < s; j++)
-					if (score[j] > score[res[0]])
-						res[0] = j;
 			}
 			free(origin);
+			keep = calloc(s, sizeof(char)); // initialized to zero (thread-safe on Windows)
+			c = 0; // count of results
+			for (j = 0; j < s; j++) {
+				if (maxOrigin[j] != NA_INTEGER) {
+					keep[maxOrigin[j]] = 1;
+					c++;
+				}
+			}
+			free(maxOrigin);
+			int *res; // indices of results
+			res = (int *) malloc(c*sizeof(int)); // thread-safe on Windows
+			p = 0;
+			for (j = 0; j < s; j++)
+				if (keep[j])
+					res[p++] = j;
+			free(keep);
 			
-			// determine the minimum score per target
+			// eliminate chains below the minimum score
 			k = 0;
-			if (ISNA(minS)) {
+			if (ISNA(minS)) { // determine the minimum score per target
 				double mS;
 				for (j = 0; j < c; j++) {
 					mS = log((tot - (double)pos[set[res[j]] - 1])/(double)step);
 					if (score[res[j]] >= mS)
 						res[k++] = res[j];
 				}
-			} else {
+			} else { // apply minimum score threshold
 				for (j = 0; j < c; j++) {
 					if (score[res[j]] >= minS)
 						res[k++] = res[j];
 				}
 			}
 			c = k; // count passing minScore
+			
+			// select top scores within each set
+			int *res2;
+			if (limitT > 0) {
+				res2 = (int *) malloc(c*sizeof(int)); // thread-safe on Windows
+				k = 0;
+				p = 0;
+				for (j = 1; j < c; j++) {
+					if (set[res[j]] != set[res[p]]) {
+						s = j - p; // number to select
+						if (s > limitT) {
+							heapSelect(score, res + p, s, limitT);
+							s = limitT;
+						}
+						p = 0;
+						while (p < s) {
+							p++;
+							res2[k++] = res[j - p];
+						}
+						p = j;
+					}
+				}
+				s = c - p; // number to select
+				if (s > limitT) {
+					heapSelect(score, res + p, s, limitT);
+					s = limitT;
+				}
+				p = 0;
+				while (p < s) {
+					p++;
+					res2[k++] = res[c - p];
+				}
+				c = k;
+				free(res);
+				res = res2;
+			}
+			
+			// select top scores overall
+			if (limitQ > 0 && c > limitQ) {
+				res2 = (int *) malloc(c*sizeof(int)); // thread-safe on Windows
+				heapSelect(score, res, c, limitQ);
+				k = 0;
+				p = 0;
+				while (p < limitQ) {
+					p++;
+					res2[k++] = res[c - p];
+				}
+				c = limitQ;
+				free(res);
+				res = res2;
+			}
+			
 			set2 = (int *) malloc(c*sizeof(int)); // thread-safe on Windows
 			score2 = (double *) malloc(c*sizeof(double)); // thread-safe on Windows
 			for (j = 0; j < c; j++) {
@@ -828,11 +945,24 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 				PROTECT(ans = allocMatrix(INTSXP, 4, c));
 				int *rans = INTEGER(ans);
 				p = 0;
+				int e1 = 0, e2 = 0; // ends
 				while (c > 0) { // reverse anchor order
-					rans[p++] = anchor[4*c - 3];
-					rans[p++] = anchor[4*c - 2];
-					rans[p++] = anchor[4*c - 1];
-					rans[p++] = anchor[4*c];
+					// pull-back anchor overlap due to indels
+					int d1 = anchor[4*c - 3] - e1;
+					int d2 = anchor[4*c - 1] - e2;
+					if (d2 < d1)
+						d1 = d2;
+					if (d1 <= 0) {
+						d1 = 1 - d1;
+					} else {
+						d1 = 0;
+					}
+					rans[p++] = anchor[4*c - 3] + d1;
+					e1 = anchor[4*c - 2];
+					rans[p++] = e1;
+					rans[p++] = anchor[4*c - 1] + d1;
+					e2 = anchor[4*c];
+					rans[p++] = e2;
 					c--;
 				}
 				free(anchor);

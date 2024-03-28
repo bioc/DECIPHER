@@ -4,7 +4,7 @@
 Simulate Melting of DNA
 }
 \description{
-The denaturation of double-stranded DNA occurs over a range of temperatures.  Beginning from a helical state, DNA will transition to a random-coil state as temperature is increased.  \code{MeltDNA} predicts the positional helicity, melt curve, or its negative derivate at different temperatures.
+The denaturation of double-stranded DNA occurs over a range of temperatures.  Beginning from a helical state, DNA will transition to a random-coil state as temperature is increased.  \code{MeltDNA} predicts the positional helicity, melt curve, or its negative derivative at different temperatures.
 }
 \usage{
 MeltDNA(myDNAStringSet,

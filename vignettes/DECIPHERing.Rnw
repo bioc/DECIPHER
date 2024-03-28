@@ -193,7 +193,7 @@ The functions of DECIPHER can be grouped into several categories based on intend
 \end{Schunk}
 \end{enumerate}
 
-For parallelization on Mac OS X, extra steps are required to \underline{\url{http://mac.r-project.org/openmp/}{enable OpenMP}} before install.  In summary, run "clang -v" and then download the corresponding LLVM tar.gz file.  Run the sudo tar command as shown, and then add these two lines to your $\sim$/.R/Makevars file:
+For parallelization on Mac OS X, extra steps are required to \underline{\url{http://mac.r-project.org/openmp/}{enable OpenMP}} before install.  In summary, run "clang -v" and then download the corresponding LLVM tar.gz file.  Run the sudo tar command as shown, and then add these two lines to your $\sim$/.R/MAKEVARS file:
 
 CPPFLAGS += -Xclang -fopenmp\\
 LDFLAGS += -lomp

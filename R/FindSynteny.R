@@ -366,6 +366,7 @@ FindSynteny <- function(dbFile,
 					K,
 					maskRepeats,
 					maskLCRs,
+					integer(), # mask numerous k-mers
 					1L, # left is fast moving side
 					processors,
 					PACKAGE="DECIPHER")[[1]]
@@ -382,6 +383,7 @@ FindSynteny <- function(dbFile,
 					K,
 					maskRepeats,
 					maskLCRs,
+					integer(), # mask numerous k-mers
 					1L, # left is fast moving side
 					processors,
 					PACKAGE="DECIPHER")[[1]]
@@ -518,6 +520,7 @@ FindSynteny <- function(dbFile,
 							alphabet,
 							maskRepeats,
 							maskLCRs,
+							integer(), # mask numerous k-mers
 							1L, # left is fast moving side
 							processors,
 							PACKAGE="DECIPHER")[[1]]
@@ -553,6 +556,7 @@ FindSynteny <- function(dbFile,
 								alphabet,
 								maskRepeats,
 								maskLCRs,
+								integer(), # mask numerous k-mers
 								1L, # left is fast moving side
 								processors,
 								PACKAGE="DECIPHER")[[1]]
@@ -780,6 +784,7 @@ FindSynteny <- function(dbFile,
 					K,
 					maskRepeats,
 					maskLCRs,
+					integer(), # mask numerous k-mers
 					1L, # left is fast moving side
 					processors,
 					PACKAGE="DECIPHER")[[1]]
@@ -893,6 +898,7 @@ FindSynteny <- function(dbFile,
 							alphabet,
 							maskRepeats,
 							maskLCRs,
+							integer(), # mask numerous k-mers
 							1L, # left is fast moving side
 							processors,
 							PACKAGE="DECIPHER")[[1]]
@@ -928,6 +934,7 @@ FindSynteny <- function(dbFile,
 								alphabet,
 								maskRepeats,
 								maskLCRs,
+								integer(), # mask numerous k-mers
 								1L, # left is fast moving side
 								processors,
 								PACKAGE="DECIPHER")[[1]]

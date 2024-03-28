@@ -428,6 +428,7 @@ AlignSeqs <- function(myXStringSet,
 				alphabet,
 				FALSE, # mask repeats
 				FALSE, # mask low complexity regions
+				integer(), # mask numerous k-mers
 				1L, # left is fast moving side
 				processors,
 				PACKAGE="DECIPHER")
@@ -437,6 +438,7 @@ AlignSeqs <- function(myXStringSet,
 				wordSize,
 				FALSE, # mask repeats
 				FALSE, # mask low complexity regions
+				integer(), # mask numerous k-mers
 				1L, # left is fast moving side
 				processors,
 				PACKAGE="DECIPHER")

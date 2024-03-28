@@ -103,8 +103,6 @@ SEXP matchListsDual(SEXP x, SEXP y, SEXP verbose, SEXP pBar, SEXP nThreads);
 
 SEXP groupMax(SEXP x, SEXP y, SEXP z);
 
-SEXP countHits(SEXP x, SEXP v, SEXP nThreads);
-
 SEXP sumBins(SEXP v, SEXP bins);
 
 SEXP xorShift(SEXP seed, SEXP base);
@@ -155,7 +153,7 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 
 // EnumerateSequence.c
 
-SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP fastMovingSide, SEXP nThreads);
+SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP maskNum, SEXP fastMovingSide, SEXP nThreads);
 
 SEXP enumerateSequenceAA(SEXP x, SEXP wordSize);
 
@@ -163,7 +161,7 @@ SEXP enumerateGappedSequence(SEXP x, SEXP wordSize, SEXP ordering);
 
 SEXP enumerateGappedSequenceAA(SEXP x, SEXP wordSize, SEXP ordering);
 
-SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP maskLCRs, SEXP fastMovingSide, SEXP nThreads);
+SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask, SEXP maskLCRs, SEXP maskNum, SEXP fastMovingSide, SEXP nThreads);
 
 SEXP alphabetSizeReducedAA(SEXP x, SEXP alphabet);
 
@@ -365,7 +363,7 @@ SEXP alignPairs(SEXP pattern, SEXP subject, SEXP query, SEXP target, SEXP positi
 
 // Search.c
 
-SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP output, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP pattern, SEXP subject, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP verbose, SEXP pBar, SEXP nThreads);
+SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP pattern, SEXP subject, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP limitTarget, SEXP limitQuery, SEXP verbose, SEXP pBar, SEXP nThreads);
 
 SEXP countIndex(SEXP num, SEXP query, SEXP step);
 

@@ -99,6 +99,7 @@ OrientNucleotides <- function(myXStringSet,
 		wordSize,
 		FALSE, # mask repeats
 		FALSE, # mask low complexity regions
+		integer(), # mask numerous k-mers
 		1L, # left is fast moving side
 		processors,
 		PACKAGE="DECIPHER")
@@ -132,6 +133,7 @@ OrientNucleotides <- function(myXStringSet,
 			wordSize,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			integer(), # mask numerous k-mers
 			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
@@ -164,6 +166,7 @@ OrientNucleotides <- function(myXStringSet,
 			wordSize,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			integer(), # mask numerous k-mers
 			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")
@@ -196,6 +199,7 @@ OrientNucleotides <- function(myXStringSet,
 			wordSize,
 			FALSE, # mask repeats
 			FALSE, # mask low complexity regions
+			integer(), # mask numerous k-mers
 			1L, # left is fast moving side
 			processors,
 			PACKAGE="DECIPHER")

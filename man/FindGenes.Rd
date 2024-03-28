@@ -22,7 +22,7 @@ FindGenes(myDNAStringSet,
 A \code{DNAStringSet} object of unaligned sequences representing a genome.
 }
   \item{geneticCode}{
-A named character vector defining the translation from codons to amino acids.  Optionally, an \code{"alt_init_codons"} attribute can be used to specify alternative initiation codons.  By default, the bacterial and archael genetic code is used, which has seven possible initiation codons: ATG, GTG, TTG, CTG, ATA, ATT, and ATC.
+A named character vector defining the translation from codons to amino acids.  Optionally, an \code{"alt_init_codons"} attribute can be used to specify alternative initiation codons.  By default, the bacterial and archaeal genetic code is used, which has seven possible initiation codons: ATG, GTG, TTG, CTG, ATA, ATT, and ATC.
 }
   \item{minGeneLength}{
 Integer specifying the minimum length of genes to find in the genome.
