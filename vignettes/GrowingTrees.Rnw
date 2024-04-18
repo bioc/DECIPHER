@@ -105,7 +105,7 @@ Many of these sequences are redundant or from the same genome.  We can de-replic
 seqs <- unique(seqs) # remove duplicated sequences
 
 ns <- gsub("^.*Streptomyces( subsp\\. | sp\\. | | sp_)([^ ]+).*$", "\\2", names(seqs))
-names(seqs) <- ns # name by species
+names(seqs) <- ns # name by species (or any other preferred names)
 seqs <- seqs[!duplicated(ns)] # remove redundant sequences from the same species
 seqs
 @
@@ -144,11 +144,18 @@ plot(tree)
 Maybe it was just beginner's luck, but we already have a reasonable looking starting tree!  \Rfunction{TreeLine} automatically returns a variety of information about the tree that can be accessed with the \Rfunction{attributes} and \Rfunction{attr} functions:
 
 <<expr4,eval=TRUE,echo=TRUE>>=
-attributes(tree) # view all attributes
-attr(tree, "score") # best score
+#attributes(tree) # view all attributes
+attr(tree, "members") # number of leaves below this (root) node
+attr(tree, "height") # height of the node (in this case, the midpoint root)
+attr(tree, "state") # ancestral state reconstruction (if reconstruct=TRUE)
+attr(tree, "siteLnLs") # LnL for every alignment column (site)
+attr(tree, "score") # best score (in this case, the -LnL)
+attr(tree, "model") # either the specified or automatically select transition model
+attr(tree, "parameters") # the free model parameters (or NA if unoptimized)
+attr(tree, "midpoint") # center of the edge (for plotting)
 @
 
-The tree is (virtually) rooted at its midpoint by default.  For maximum likelihood trees, all internal nodes include aBayes branch support values \cite{Anisimova:2011}.  These are given as probabilities that can be used in plotting on top of each edge.  We can also italicize the species names.
+The tree is (virtually) rooted at its midpoint by default.  For maximum likelihood trees, all internal nodes include aBayes branch support values \cite{Anisimova:2011}.  These are given as probabilities that can be used in plotting on top of each edge.  We can also italicize the leaf labels (species names).
 
 \begin{centerfig}
 <<expr5,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
@@ -166,7 +173,7 @@ plot(dendrapply(tree,
 	}),
 	horiz=TRUE,
 	yaxt='n')
-# add a scale bar
+# add a scale bar (placed manually)
 arrows(0, 0, 0.4, 0, code=3, angle=90, len=0.05, xpd=TRUE)
 text(0.2, 0, "0.4 subs./site", pos=3, xpd=TRUE)
 @
@@ -207,7 +214,7 @@ abline(a=0, b=1, lty=2) # line of identity (y=x)
 \section{Ancestral State Reconstruction}
 %------------------------------------------------------------
 
-We're in luck \textemdash one of the advantages of maximum likelihood and maximum parsimony tree building methods is that they automatically predict states at each internal node on the tree \cite{Joy:2016}.  This feature is enabled when \Rfunarg{reconstruct} is set to \code{TRUE}.  These character states can be used by the function \Rfunction{MapCharacters} to determine state transitions along each edge of the tree.
+We're in luck \textemdash one of the advantages of maximum likelihood and maximum parsimony tree building methods is that they automatically predict states at each internal node on the tree \cite{Joy:2016}.  This feature is enabled when \Rfunarg{reconstruct} is set to \code{TRUE}.  These character states can be used by the function \Rfunction{MapCharacters} to determine state transitions along each edge of the tree. This information enables us to plot the total number of substitutions occurring along each edge. The state transitions can be accessed along each edge by querying a new ``change'' attribute.
 
 \begin{centerfig}
 <<expr7,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=

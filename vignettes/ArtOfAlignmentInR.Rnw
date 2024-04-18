@@ -248,11 +248,23 @@ DNA <- AlignTranslation(dna) # align the translation then reverse translate
 writeXStringSet(DNA, file="<<path to output file>>")
 @
 
-Note that frameshift errors can greatly disrupt the alignment of protein coding sequences.  Frameshifts can be corrected by first using \Rfunction{CorrectFrameshifts} on the nucleotide sequences, and then using the corrected sequences as input to \Rfunction{AlignTranslation} with the argument \Rfunarg{readingFrame} equal to \code{1}.
+Note that frameshift errors can greatly disrupt the alignment of protein coding sequences.  Frameshifts can be corrected by first using \Rfunction{CorrectFrameshifts} on the nucleotide sequences, and then using the corrected sequences as input to \Rfunction{AlignTranslation} with the argument \Rfunarg{readingFrame} equal to \code{1}.  It is also feasible to obtain the amino acid alignment or specify a non-standard genetic code, if needed:
+
+<<expr3,eval=FALSE,echo=TRUE>>=
+# using a mixture of standard and non-standard genetic codes
+gC1 <- getGeneticCode(id_or_name2="1", full.search=FALSE, as.data.frame=FALSE)
+# Mollicutes use an alternative genetic code
+gC2 <- getGeneticCode(id_or_name2="4", full.search=FALSE, as.data.frame=FALSE)
+w <- grep("Mycoplasma|Ureaplasma", names(dna))
+gC <- vector("list", length(dna))
+gC[-w] <- list(gC1)
+gC[w] <- list(gC2)
+AA <- AlignTranslation(dna, geneticCode=gC, type="AAStringSet")
+@
 
 If the input sequences include exact replicates, then alignment can be accelerated by de-replicating the sequences before alignment.  The sequences can then be re-replicated after alignment to create a larger alignment of all the original sequences.  \Rfunction{AlignSeqs} does not automatically handle redundancy in the input sequences, but doing so is fairly straightforward.  In this case there aren't any exact duplicates in the example \code{dna} sequences.  Nonetheless, the process to de-replicate before alignment and re-replicate after alignment would look like:
 
-<<expr3,eval=FALSE,echo=TRUE>>=
+<<expr4,eval=FALSE,echo=TRUE>>=
 u_dna <- unique(dna) # the unique input sequences
 index <- match(dna, u_dna) # de-replication index
 
@@ -267,7 +279,7 @@ Also, when aligning nucleotide sequences (or their translations), it may be the 
 
 Much like proteins, non-coding RNAs often have a conserved secondary structure that can be used to improve their alignment.  The \Rfunction{PredictDBN} function will predict base pairings from a sequence alignment by calculating the mutual information between pairs of positions.  If RNA sequences are given as input, \Rfunction{AlignSeqs} will automatically use the output of \Rfunction{PredictDBN} to iteratively improve the alignment.  Providing an \Rclass{RNAStringSet} also causes single-base and double-base substitution matrices to be used, and is preferable to providing a \Rclass{DNAStringSet} when the sequences are non-coding RNA.  The type of the input sequences can easily be converted to RNA, as shown below.
 
-<<expr4,eval=FALSE,echo=TRUE>>=
+<<expr5,eval=FALSE,echo=TRUE>>=
 # database containing 16S ribosomal RNA sequences
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
 dna <- readDNAStringSet(fas)
@@ -284,7 +296,7 @@ alignedRNA <- AlignSeqs(rna) # align with RNA secondary structure
 
 It is sometimes useful to align two or more previously-aligned sets of sequences.  Here we can use the function \Rfunction{AlignProfiles} to directly align profiles of the two sequence sets:
 
-<<expr5,eval=FALSE,echo=TRUE>>=
+<<expr6,eval=FALSE,echo=TRUE>>=
 half <- floor(length(dna)/2)
 dna1 <- dna[1:half] # first half
 dna2 <- dna[(half + 1):length(dna)] # second half
@@ -296,7 +308,7 @@ AA <- AlignProfiles(AA1, AA2) # align two alignments
 
 When the two sequence sets are very large it may be impossible to fit both sets of input sequences and the output alignment into memory at once.  The function \Rfunction{AlignDB} can align the sequences in two database tables, or two sets of sequences corresponding to separate \term{identifier}s in the same table.  \Rfunction{AlignDB} takes as input two \term{tblName}s and/or \term{identifier}s, and iteratively builds a profile for each of those respective sequence alignments in the database.  These profiles are aligned, and the insertions are iteratively applied to each of the input sequences until the completed alignment has been stored in \term{add2tbl}.
 
-<<expr6,eval=FALSE,echo=TRUE>>=
+<<expr7,eval=FALSE,echo=TRUE>>=
 # Align DNA sequences stored in separate tables:
 dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
 Seqs2DB(AA1, "DNAStringSet", dbConn, "AA1", tblName="AA1")
@@ -327,7 +339,7 @@ The \Rfunction{AlignSeqs} function uses a guide tree to decide the order in whic
 
 It has been shown that reasonably accurate alignments of tens of thousands of sequences can be obtained by using a chain guide tree \cite{Boyce:2014}.  With a chained guide tree, sequences are added one-by-one to a growing profile representing all of the aligned sequences.  Figure \ref{f7} shows the result of using \Rpackage{DECIPHER} to align increasing numbers of Cytochrome P450 sequences (in accordance with the method in reference \cite{Boyce:2014}), using either a chained guide tree or the default guide tree.  A chained guide tree can be easily generated, as shown below.
 
-<<expr7,eval=FALSE,echo=TRUE>>=
+<<expr8,eval=FALSE,echo=TRUE>>=
 # form a chained guide tree
 gT <- lapply(order(width(dna), decreasing=TRUE),
 	function(x) {
@@ -354,13 +366,13 @@ It is also possible to read a Newick formatted tree into \R{} using the function
 
 There are several steps that can be taken after alignment to verify or improve the alignment.  The most important step is to look at the result to ensure that it meets expectations.  Spurious (unalignable) sequences can then be removed and the alignment process repeated as desired.  The simplest way to view sequences with \Rpackage{DECIPHER} is by using the function \Rfunction{BrowseSeqs}.  The \Rfunarg{highlight} parameter controls which sequence, if any, is in focus (highlighted).  A value of zero highlights the consensus sequence as shown below.
 
-<<expr8,eval=FALSE,echo=TRUE>>=
+<<expr9,eval=FALSE,echo=TRUE>>=
 BrowseSeqs(DNA, highlight=0)
 @
 
 All \Rpackage{DECIPHER} multiple sequence alignments are optimized using \Rfunction{AdjustAlignment} (unless the input argument \Rfunarg{FUN} is changed), with the goal of removing artifacts of the progressive alignment process.  This function will efficiently correct most obvious inaccuracies that could be found by-eye.  Therefore, making manual corrections is not recommended unless additional expert knowledge of the sequences is available.  The advantage of using \Rfunction{AdjustAlignment} is that it is a repeatable process that is not subjective, unlike most manual adjustments.  In order to further refine an existing alignment, \Rfunction{AdjustAlignment} can be called directly.
 
-<<expr9,eval=FALSE,echo=TRUE>>=
+<<expr10,eval=FALSE,echo=TRUE>>=
 DNA_adjusted <- AdjustAlignment(DNA)
 @
 
@@ -368,7 +380,7 @@ It is common to use alignment as a preliminary step before the creation of a phy
 
 To mitigate the problem of false homologies, \Rfunction{StaggerAlignment} will automatically generate a staggered version of an existing alignment.  Staggered alignments separate potentially non-homologous regions into separate columns of the alignment.  The result is an alignment that is less visually appealing, but likely more accurate from a phylogenetic perspective.
 
-<<expr10,eval=FALSE,echo=TRUE>>=
+<<expr11,eval=FALSE,echo=TRUE>>=
 DNA_staggered <- StaggerAlignment(DNA)
 @
 
@@ -378,7 +390,7 @@ DNA_staggered <- StaggerAlignment(DNA)
 
 The functions described so far have all required collinear sequences as input.  This requirement is frequently broken by genomes, which may include many sequence rearrangements such as inversion, duplication, and reordering.  \Rfunction{FindSynteny} will find homologous regions between pairs of genomes, which can then be aligned using \Rfunction{AlignSynteny}.  A database of sequences identified by their genome name is used as input to both functions.  This enables the alignment of genomes that are composed of many contigs, so long as they all share the same \code{identifier} in the database.  The example below uses a database containing five \emph{Influenza virus A} genomes, which are each composed of eight separate segments.
 
-<<expr11,eval=FALSE,echo=TRUE>>=
+<<expr12,eval=FALSE,echo=TRUE>>=
 db <- system.file("extdata", "Influenza.sqlite", package="DECIPHER")
 synteny <- FindSynteny(db, verbose=FALSE)
 synteny # an object of class `Synteny`
@@ -393,7 +405,7 @@ The output is a list, with each list component containing a \code{DNAStringSetLi
 It is also possible to display the blocks of synteny between all pairs of genomes.  Figure \ref{f8} shows the different genome segments (i.e., sequences) separated by thin horizontal and vertical lines.  The syntenic blocks are diagonal lines that are composed of many homologous ``hits'' between the genomes.
 
 \begin{centerfig}
-<<expr12,eval=FALSE,echo=TRUE,fig=TRUE,include=TRUE,height=8.5,width=8.5>>=
+<<expr13,eval=FALSE,echo=TRUE,fig=TRUE,include=TRUE,height=8.5,width=8.5>>=
 pairs(synteny, boxBlocks=TRUE) # scatterplot matrix
 @
 \caption{\label{f8} Dot plots showing the homologous regions among five \emph{Influenza virus A} genomes.}

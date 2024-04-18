@@ -8,6 +8,8 @@
 \usepackage{underscore}
 \usepackage{enumerate}
 \usepackage{graphics}
+\usepackage{wrapfig}
+\usepackage{cite}
 
 \textwidth=6.5in
 \textheight=8.5in
@@ -29,6 +31,9 @@
 \newcommand{\Rclass}[1]{{\textit{#1}}}
 \newcommand{\Rmethod}[1]{{\textit{#1}}}
 \newcommand{\Rfunarg}[1]{{\textit{#1}}}
+
+\newcommand\ytl[2]{
+\parbox[b]{8em}{\hfill{\bfseries\sffamily #1}~$\cdots\cdots$~}\makebox[0pt][c]{$\bullet$}\vrule\quad \parbox[c]{13cm}{\vspace{7pt}\raggedright\sffamily #2.\\[7pt]}\\[-3pt]}
 
 \bibliographystyle{plainnat}
 
@@ -57,9 +62,10 @@ options(width=80)
 \section{About DECIPHER}
 %------------------------------------------------------------
 
-\Rpackage{DECIPHER} is a software toolset that can be used for deciphering and managing biological sequences efficiently using the \R{} statistical programming language.  The program features tools falling into five categories:
+\Rpackage{DECIPHER} is a software toolset that can be used for deciphering and managing biological sequences efficiently using the \R{} statistical programming language.  The program features tools falling into seven categories:
 \begin{itemize}
-\item Sequence databases: import, maintain, view, index, search, and export a massive number of sequences.
+\item Sequence databases: import, maintain, view, export, and interact with a massive number of sequences.
+\item Homology finding: rapidly query sequences for homologous hits among a set of target sequences or genomes.  Cluster into groups of related sequences.
 \item Sequence alignment: accurately align thousands of DNA, RNA, or amino acid sequences. Quickly find and align the syntenic regions of multiple genomes.
 \item Oligo design: test oligos in silico, or create new primer and probe sequences optimized for a variety of objectives.
 \item Manipulate sequences: trim low quality regions, correct frameshifts, reorient nucleotides, determine consensus, or digest with restriction enzymes.
@@ -72,9 +78,13 @@ options(width=80)
 \section{Design Philosophy}
 %------------------------------------------------------------
 
+\Rpackage{DECIPHER} is designed for large-scale comparison of nucleotide and protein sequences.  The package is build upon a foundation of sequence databases to curate large volumes of biological sequences and dependent on the \Rpackage{Biostrings} package for low-level sequence storage.  The guiding inspiration behind \Rpackage{DECIPHER} is to empower users with powerful tools that help to convert biological sequences into results.  To this end, the package strives to be well-documented, well-maintained, multi-functional, state-of-the-art, scalable, and fast.
+
 \subsection{Curators Protect the Originals}
 
-One of the core principles of \Rpackage{DECIPHER} is the idea of the non-destructive workflow.  This revolves around the concept that the original sequence information should never be altered:  sequences are exported looking identical to how they were when they were first imported.  Essentially, the sequence information in the database is thought of as a backup of the original sequence file and no function is able to directly alter the sequence data.  All of the workflows simply \term{add} information to the database, which can be used to analyze, organize, and maintain the sequences.  When it comes time to export all or part of the sequences they are preserved in their original state without alteration.
+One of the core principles of \Rpackage{DECIPHER} is the idea of the non-destructive workflow.  This concept revolves around the view that the original sequence information should never be altered.  Essentially, the sequence information in the database is thought of as a backup of the original sequence file and no function is able to directly alter the sequence data.  All of the workflows simply \term{add} information to the database, which can be used to analyze, organize, and maintain the sequences.  When it comes time to export all or part of the sequences they are preserved in their original state without alteration.
+
+Interaction with \Rpackage{DECIPHER} represents a different paradigm than typical bioinformatics pipelines.  Data in \R{} is typically moved between functions without writing files.  This avoids the clutter associated with most bioinformatics pipelines.  Using \R{} packages, including \Rpackage{DECIPHER}, it is possible to go from input data to output results in a single series of commands, often without ever needing to leave \R{} or write intermediate results to files.  This keeps the overall workflow tidier than traditional pipelines and supports repeatability and reproducibility.
 
 \subsection{Don't Reinvent the Wheel}
 
@@ -84,7 +94,7 @@ A wide variety of user objectives necessitates that \Rpackage{DECIPHER} be exten
 
 \subsection{That Which is the Most Difficult, Make Fastest}
 
-A core objective of \Rpackage{DECIPHER} is to make massive tasks feasible in minimal time.  To this end, many of the most time consuming functions are parallelized to make use of multiple processors.  For example, the function \Rfunction{DistanceMatrix} gets almost a 1x speed boost for each processor core.  A modern processor with 8 cores can see a factor of close to eight times speed improvement.  Similar speedups can be achieved in many other \Rpackage{DECIPHER} functions by setting the \Rfunarg{processors} argument.  This is all made possible through the use of OpenMP in \C{}-level code.
+A core objective of \Rpackage{DECIPHER} is to make massive tasks feasible in minimal time.  To this end, many of the most time consuming functions are parallelized to make use of multiple processors.  For example, the function \Rfunction{DistanceMatrix} gets almost an additional 1-fold speed boost for each processor core.  A modern processor with \textit{N} cores can see a factor of close to \textit{N}-fold speed improvement.  Similar speedups can be achieved in many other \Rpackage{DECIPHER} functions by setting the \Rfunarg{processors} argument.  This is all made possible through the use of OpenMP in \C{}-level code.
 
 Other time consuming tasks are handled efficiently.  The function \Rfunction{FindChimeras} can uncover sequence chimeras by searching through a reference database of over a million sequences for thousands of 30-mer fragments in a number of minutes.  This incredible feat is accomplished by using the \Rclass{PDict} class provided by \Rpackage{Biostrings}.  Similarly, the \Rfunction{SearchDB} function can obtain the one-in-a-million sequences that match a targeted query in a matter of seconds.  Such high-speed functions enable the user to find solutions to problems that previously would have been extremely difficult or nearly impossible to solve using antiquated methods.
 
@@ -92,49 +102,9 @@ Other time consuming tasks are handled efficiently.  The function \Rfunction{Fin
 
 It is no longer necessary to store related data in several different files.  \Rpackage{DECIPHER} is enabled by \Rpackage{DBI}, which is an \R{} interface to a variety of databases.  \Rpackage{DECIPHER} creates an organized collection of sequences and their associated information known as a sequence database.  By default, \term{SQLite} databases are used if the \Rpackage{RSQLite} package is installed.  \term{SQLite} databases are flat files, meaning they can be handled just like any other file.  There is no setup required since \term{SQLite} does not require a server, unlike many other database engines.  These attributes of \term{SQLite} databases make storing, backing-up, and sharing sequence databases relatively straightforward.  However, \Rpackage{DECIPHER} supports other \term{SQL} databases, such as \term{MariaDB} via \Rpackage{RMariaDB}, if concurrency, scalability, or performance are critical.
 
-Separate projects can be stored in distinct tables in the same sequence database.  Each new table is structured to include every sequence's description, identifier, and a unique key called the \term{row_name} all in one place.  The sequences are referenced by their \term{row_names} or \term{identifier} throughout most functions in the package.  Using \term{row_names}, new information created with \Rpackage{DECIPHER} functions can be added as additional database columns to their respective sequences' rows in the database table.  To prevent the database from seeming like a black box there is a function named \Rfunction{BrowseDB} that facilitates viewing of the database contents in a web browser.  A similar function is available to view sequences called \Rfunction{BrowseSeqs}.
+Separate projects can be stored in distinct tables in the same sequence database.  Each new table is structured to include every sequence's description, identifier, and a unique key (called \term{row_names}) all in one place.  The sequences are referenced by their \term{row_names} or \term{identifier} throughout most functions in the package.  Using \term{row_names}, new information created with \Rpackage{DECIPHER} functions can be added as additional database columns to their respective sequences' rows in the database table.  To prevent the database from seeming like a black box there is a function named \Rfunction{BrowseDB} that facilitates viewing of the database contents in a web browser.  A similar function is available to view sequences called \Rfunction{BrowseSeqs}.
 
 The amount of DNA sequence information available is currently increasing at a phenomenal rate.  \Rpackage{DECIPHER} stores individual sequences using a custom compression format, called \term{nbit}, so that the database file takes up much less drive space than a standard text file of sequences.  The compressed sequences are stored in a hidden table that is linked to the main information table that the user interacts with regularly.  For example, by default sequence information is stored in the table ``Seqs'', and the associated sequences are stored in the table ``_Seqs''.  Storing the sequences in a separate table greatly improves access speed when there is a large amount of sequence information.  Separating projects into distinct tables further increases query speed over that of storing every project in a single table.
-
-%------------------------------------------------------------
-\section{Functionality}
-%------------------------------------------------------------
-
-The functions of DECIPHER can be grouped into several categories based on intended use:
-\begin{enumerate}
-\item Primary functions for interacting with a sequence database:
-\begin{enumerate} \item \Rfunction{Add2DB} \item \Rfunction{DB2Seqs} \item \Rfunction{SearchDB} \item \Rfunction{Seqs2DB} \end{enumerate}
-\item Secondary functions for typical database tasks:
-\begin{enumerate} \item \Rfunction{IdentifyByRank} \item \Rfunction{IdLengths} \end{enumerate}
-\item Functions related to forming consensus:
-\begin{enumerate} \item \Rfunction{ConsensusSequence} \item \Rfunction{Disambiguate} \item \Rfunction{IdConsensus} \end{enumerate}
-\item Phylogenetics and sequence comparison:
-\begin{enumerate} \item \Rfunction{DistanceMatrix} \item \Rfunction{Clusterize} \item \Rfunction{MaskAlignment} \item \Rfunction{ReadDendrogram} \item \Rfunction{StaggerAlignment} \item \Rfunction{TreeLine} \item \Rfunction{WriteDendrogram} \end{enumerate}
-\item Visualization with a web browser:
-\begin{enumerate} \item \Rfunction{BrowseDB} \item \Rfunction{BrowseSeqs} \end{enumerate}
-\item Manipulating sequences:
-\begin{enumerate} \item \Rfunction{CorrectFrameshifts} \item \Rfunction{OrientNucleotides} \item \Rfunction{RemoveGaps} \item \Rfunction{TrimDNA} \end{enumerate}
-\item Analyzing sequences:
-\begin{enumerate} \item \Rfunction{DetectRepeats} \item \Rfunction{DigestDNA} \item \Rfunction{PredictDBN} \item \Rfunction{PredictHEC} \end{enumerate}
-\item Multiple sequence alignment:
-\begin{enumerate} \item \Rfunction{AdjustAlignment} \item \Rfunction{AlignDB} \item \Rfunction{AlignProfiles} \Rfunction{AlignPairs} \item \Rfunction{AlignSeqs} \item \Rfunction{AlignTranslation} \item \Rfunction{ScoreAlignment} \end{enumerate}
-\item Comparison of sequences that are not collinear (i.e., genomes):
-\begin{enumerate} \item \Rfunction{AlignSynteny} \item \Rfunction{FindSynteny} \item \Rclass{Synteny-class} \end{enumerate}
-\item Functions related to chimeras (PCR artifacts):
-\begin{enumerate} \item \Rfunction{CreateChimeras} \item \Rfunction{FindChimeras} \item \Rfunction{FormGroups} \end{enumerate}
-\item Functions related to DNA microarrays:
-\begin{enumerate} \item \Rfunction{Array2Matrix} \item \Rfunction{CalculateEfficiencyArray} \item \Rfunction{DesignArray} \item \Rfunction{NNLS} \end{enumerate}
-\item Functions related to probes for fluorescence \textit{in situ} hybridization (FISH):
-\begin{enumerate} \item \Rfunction{CalculateEfficiencyFISH} \item \Rfunction{DesignProbes} \item \Rfunction{TileSeqs} \end{enumerate}
-\item Functions related to primers for polymerase chain reaction (PCR):
-\begin{enumerate} \item \Rfunction{AmplifyDNA} \item \Rfunction{CalculateEfficiencyPCR} \item \Rfunction{DesignPrimers} \item \Rfunction{DesignSignatures} \item \Rfunction{MeltDNA} \end{enumerate}
-\item Classifying sequences into a taxonomy:
-\begin{enumerate} \item \Rfunction{LearnTaxa} \item \Rfunction{IdTaxa} \item \Rclass{Taxa-class} \end{enumerate}
-\item Gene calling (a.k.a. gene finding):
-\begin{enumerate} \item \Rfunction{ExtractGenes} \item \Rfunction{FindGenes} \item \Rfunction{FindNonCoding} \item \Rclass{Genes-class} \item \Rfunction{LearnNonCoding} \item \Rclass{NonCoding-class} \item \Rfunction{WriteGenes} \end{enumerate}
-\item Functions for searching or mapping sequences and homology inference:
-\begin{enumerate} \item \Rfunction{IndexSeqs} \item \Rclass{InvertedIndex-class} \item \Rfunction{SearchIndex} \end{enumerate}
-\end{enumerate}
 
 %------------------------------------------------------------
 \section{Installation}
@@ -148,8 +118,8 @@ The functions of DECIPHER can be grouped into several categories based on intend
 \subsection{Typical Installation (recommended)}
 
 \begin{enumerate}
-\item Install the latest version of \R{} from \underline{\url{http://www.r-project.org/}}.
-\item Install \Rpackage{DECIPHER} in R by entering:
+\item Install the latest version of \R{} from \underline{\url{http://www.r-project.org/}}, because the version of \Rpackage{DECIPHER} that will be installed from Bioconductor is dependent on the version of \R{}.
+\item Install the pre-built version of \Rpackage{DECIPHER} in R by entering:
 \begin{Schunk}
 \begin{Sinput}
 > if (!requireNamespace("BiocManager", quietly=TRUE))
@@ -158,6 +128,8 @@ The functions of DECIPHER can be grouped into several categories based on intend
 \end{Sinput}
 \end{Schunk}
 \end{enumerate}
+
+Note that this automatic installation method does not enable multi-threading on macOS, where use of multiple processors requires manual installation.
 
 \subsection{Manual Installation}
 
@@ -179,26 +151,26 @@ The functions of DECIPHER can be grouped into several categories based on intend
 > install.packages("RSQLite")
 \end{Sinput}
 \end{Schunk}
-\item Download \Rpackage{DECIPHER} from \underline{\url{http://DECIPHER.codes}}.
+\item Download \Rpackage{DECIPHER} from \underline{\url{http://DECIPHER.codes}} or \underline{\url{https://doi.org/doi:10.18129/B9.bioc.DECIPHER}{Bioconductor}}.
 \end{enumerate}
 
-\subsubsection{Mac OS X}
+\subsubsection{macOS}
 
 \begin{enumerate}
 \item First install Command Line Tools from Apple, which contains compliers that are required to build packages on the Mac.  Then, in \R{} run:
 \begin{Schunk}
 \begin{Sinput}
-> install.packages("<<path to Mac OS X DECIPHER.tgz>>", repos=NULL)
+> install.packages("<<path to macOS DECIPHER.tgz>>", repos=NULL)
 \end{Sinput}
 \end{Schunk}
 \end{enumerate}
 
-For parallelization on Mac OS X, extra steps are required to \underline{\url{http://mac.r-project.org/openmp/}{enable OpenMP}} before install.  In summary, run "clang -v" and then download the corresponding LLVM tar.gz file.  Run the sudo tar command as shown, and then add these two lines to your $\sim$/.R/MAKEVARS file:
+For parallelization on macOS, extra steps are required to \underline{\url{http://mac.r-project.org/openmp/}{enable OpenMP}} before install.  In summary, run "clang -v" and then download the corresponding LLVM tar.gz file.  Run the sudo tar command as shown in the OpenMP instructions, and then add these two lines to your $\sim$/.R/MAKEVARS file:
 
 CPPFLAGS += -Xclang -fopenmp\\
 LDFLAGS += -lomp
 
-Then \Rpackage{DECIPHER} can be built and installed the usual way via the command line.
+Then \Rpackage{DECIPHER} can be built and installed the usual way via the command line, as shown below for linux-alikes.
 
 \subsubsection{Linux}
 In a shell enter:
@@ -234,7 +206,7 @@ R CMD INSTALL "<<path to newly built DECIPHER.zip>>"
 \end{enumerate}
 
 %------------------------------------------------------------
-\section{Example Workflow}
+\section{Getting help}
 %------------------------------------------------------------
 
 To get started we need to load the \Rpackage{DECIPHER} package, which automatically loads several other required packages:
@@ -251,93 +223,132 @@ Help for any function can be accessed through a command such as:
 \end{Sinput}
 \end{Schunk}
 
-To begin, we can import a FASTA, FASTQ, or GenBank file into a sequence database.  Here we will import the sequences into an in-memory database that will be removed when we disconnect from the database.  In-memory databases are useful for temporary examples, but typically we would specify the path to a file where we want to store the database.  This is especially the case when there are many sequences, as they might not all fit into memory.
-
-In this example, we will use a GenBank file that is included with \Rpackage{DECIPHER} installation.  We must set the sequences' \term{identifier} when importing with \Rfunction{Seqs2DB}.  Here we will identify the sequences with the word ``Bacteria''.  The \term{identifier} is used by many \Rpackage{DECIPHER} functions to reference a specific subset of sequences in the database, and can be reset at a later time using a number of different methods:
-<<expr1,eval=FALSE>>=
-# access a sequence file included in the package:
-gen <- system.file("extdata", "Bacteria_175seqs.gen", package="DECIPHER")
-
-# connect to a database:
-dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
-
-# import the sequences into the sequence database
-Seqs2DB(gen, "GenBank", dbConn, "Bacteria")
-@
-
-Now we can view the table of information we just added to the database in a web browser (Fig. 1):
-<<expr2,eval=FALSE>>=
-BrowseDB(dbConn)
-@
-
-Suppose we wanted to count the number of bases in each sequence and add that information to the database:
-<<expr3,eval=FALSE>>=
-l <- IdLengths(dbConn)
-head(l)
-Add2DB(l, dbConn, verbose=FALSE)
-BrowseDB(dbConn, maxChars=20)
-@
-
-Next let's identify our sequences by phylum and update this information in the database:
-<<expr4,eval=FALSE>>=
-r <- IdentifyByRank(dbConn, level=3, add2tbl=TRUE)
-BrowseDB(dbConn, maxChars=20)
-@
-
-\begin{figure}
-\begin{center}
-\includegraphics[width=1\textwidth]{BrowseDBOutput}
-\caption{\label{f1} Database table shown in web browser}
-\end{center}
-\end{figure}
-
-\clearpage
-
-We can now look at only those sequences that belong to the phylum \term{Bacteroidetes} (Fig. 2):
-<<expr5,eval=FALSE>>=
-dna <- SearchDB(dbConn, identifier="Bacteroidetes")
-BrowseSeqs(subseq(dna, 140, 240))
-@
-
-\begin{figure}
-\begin{center}
-\includegraphics[width=1\textwidth]{BrowseSeqsOutput}
-\caption{\label{f2} Sequences shown in web browser}
-\end{center}
-\end{figure}
-
-\clearpage
-
-Let's construct a phylogenetic tree from the \term{Bacteroidetes} sequences (Fig. 3):
-\begin{centerfig}
-<<expr6,eval=FALSE,fig=TRUE,height=3.5,width=6>>=
-d <- DistanceMatrix(dna, correction="Jukes-Cantor", verbose=FALSE)
-c <- TreeLine(myDistMatrix=d, method="NJ", cutoff=0.05, showPlot=TRUE, verbose=FALSE)
-@
-\caption{Neighbor-joining tree showing the relationships between sequences.}
-\end{centerfig}
-
-\clearpage
-
-Here we created the database in-memory by connecting to ``:memory:'' above.  This works fine for small databases, but it is necessary to initialize larger databases with a quoted file path rather than ``:memory:''.  Optionally, we could use the command below to save an in-memory database to a file for long term storage.  Be sure to change the path names to those on your system by replacing all of the text inside quotes labeled ``$<<$path to ...$>>$'' with the actual path on your system.
+Once \Rpackage{DECIPHER} is installed, a list of package vignettes (tutorials) can be found via:
 
 \begin{Schunk}
 \begin{Sinput}
-> sqliteCopyDatabase(dbConn, "<<path to database>>")
+> browseVignettes("DECIPHER")
 \end{Sinput}
 \end{Schunk}
 
-Finally, we should disconnect from the database connection.  Since the sequence database was created in temporary memory, all of the information will be erased:
-<<expr7,eval=FALSE>>=
-dbDisconnect(dbConn)
-@
+%------------------------------------------------------------
+\section{Functionality}
+%------------------------------------------------------------
 
-\section{Session Information}
-All of the output in this vignette was produced under the following
-conditions:
+The \Rpackage{DECIPHER} package contains many different functions.  Figure \ref{f1} shows the relationships among functions based on how often they co-occur in the same \R{} script.  Functions listed in the same color appear together in one of the package vignettes.  Table \ref{t1} shows the timeline of publications associated with the flagship functions within \Rpackage{DECIPHER}.
 
-<<sessinfo,echo=FALSE,results=tex>>=
-toLatex(sessionInfo(), locale=FALSE)
-@
+\begin{wrapfigure}{r}{1\textwidth}
+\includegraphics[width=1\textwidth]{FunctionalRelationships}
+\caption{\label{f1} Depiction of relationships among all functions in the package.  Those near the center of tree are less related to any other function in particular, while the functions further from the center along the same branch are more related to each other.}
+\end{wrapfigure}
+
+\clearpage
+
+\begin{table}
+\caption{\label{t1} Evolution of the \Rpackage{DECIPHER} package for \R{}}
+\centering
+\begin{minipage}[t]{1.0\linewidth}
+\rule{\linewidth}{1pt}
+\ytl{2011}{\Rpackage{DECIPHER} first released in Bioconductor}
+\ytl{2012}{Chimera finding published \cite{Wright:2012} (\Rfunction{FindChimeras}, \Rfunction{FormGroups}, \Rfunction{FindChimeras})}
+\ytl{2012}{ProbeMelt published \cite{Yilmaz:2012} (\Rfunction{CalculateEfficiencyArray})}
+\ytl{2013}{Array design function published \cite{Wright:2013} (\Rfunction{DesignArray})}
+\ytl{2014}{Primer design functions published \cite{Wright:2014a} (\Rfunction{DesignPrimers}, \Rfunction{CalculateEfficiencyPCR}, \Rfunction{AmplifyDNA})}
+\ytl{2014}{FISH probe design functions published \cite{Wright:2014b} (\Rfunction{DesignProbes}, \Rfunction{CalculateEfficiencyFISH})}
+\ytl{2014}{Array analysis functions published \cite{Noguera:2014} (\Rfunction{Array2Matrix}, \Rfunction{NNLS})}
+\ytl{2015}{Protein alignment functions published \cite{Wright:2015} (\Rfunction{AlignSeqs}, \Rfunction{AlignProfiles}, \Rfunction{AlignTranslation}, \Rfunction{PredictHEC})}
+\ytl{2016}{Sequence databases published \cite{Wright:2016a} (\Rfunction{SearchDB}, \Rfunction{Codec}, \Rfunction{Add2DB}, \Rfunction{Seqs2DB}, \Rfunction{DB2Seqs}, \Rfunction{BrowseDB})}
+\ytl{2016}{General purpose primer design published \cite{Wright:2016b} (\Rfunction{DesignSignatures}, \Rfunction{MeltDNA}, \Rfunction{DigestDNA})}
+\ytl{2018}{IDTAXA for nucleotides published \cite{Murali:2018} (\Rfunction{IdTaxa}, \Rfunction{LearnTaxa})}
+\ytl{2020}{Nucleotide alignment functions published \cite{Wright:2020} (\Rfunction{AlignSeqs}, \Rfunction{PredictDBN})}
+\ytl{2021}{IDTAXA for proteins published \cite{Cooley:2021} (\Rfunction{IdTaxa}, \Rfunction{LearnTaxa})}
+\ytl{2022}{\Rfunction{FindNonCoding} published \cite{Wright:2022} (\Rfunction{FindNonCoding}, \Rfunction{LearnNonCoding})}
+\ytl{2024}{\Rfunction{Clusterize} published \cite{Wright:2024a} (\Rfunction{Clusterize})}
+\ytl{2024}{Search and mapping functions published \cite{Wright:2024b} (\Rfunction{IndexSeqs}, \Rfunction{SearchIndex}, \Rfunction{AlignPairs})}
+\bigskip
+\rule{\linewidth}{1pt}%
+\end{minipage}%
+\end{table}
+
+\clearpage
+
+\begin{thebibliography}{}
+
+\bibitem{Cooley:2021}
+{NP Cooley \& ES Wright}
+\newblock Accurate annotation of protein coding sequences with IDTAXA
+\newblock {\em NAR Genomics and Bioinformatics}, 3(3), lqab080, 2021.
+
+\bibitem{Murali:2018}
+{A Murali, A Bhargava, \& ES Wright}
+\newblock IDTAXA: a novel approach for accurate taxonomic classification of microbiome sequences
+\newblock {\em Microbiome}, 6, 1-14, 2018.
+
+\bibitem{Noguera:2014}
+{DR Noguera, ES Wright, P Camejo, \& LS Yilmaz}
+\newblock Mathematical tools to optimize the design of oligonucleotide probes and primers
+\newblock {\em Applied Microbiology and Biotechnology}, 98, 9595-9608, 2014.
+
+\bibitem{Wright:2012}
+{ES Wright, LS Yilmaz, \& DR Noguera}
+\newblock DECIPHER, a search-based approach to chimera identification for 16S rRNA sequences
+\newblock {\em Applied and Environmental Microbiology}, 78(3), 717-725, 2012.
+
+\bibitem{Wright:2013}
+{ES Wright, JM Strait, LS Yilmaz, GW Harrington, \& DR Noguera}
+\newblock Identification of Bacterial and Archaeal Communities From Source to Tap
+\newblock {\em Water Research Foundation}, 1-76.
+
+\bibitem{Wright:2014a}
+{ES Wright, LS Yilmaz, S Ram, JM Gasser, GW Harrington, \& DR Noguera}
+\newblock DECIPHER, a search-based approach to chimera identification for 16S rRNA sequences
+\newblock {\em Environmental Microbiology}, 16(5), 1354-1365, 2014.
+
+\bibitem{Wright:2014b}
+{ES Wright, LS Yilmaz, AM Corcoran, HE \"{O}kten, \& DR Noguera}
+\newblock Automated Design of Probes for rRNA-Targeted Fluorescence In Situ Hybridization Reveals the Advantages of Using Dual Probes for Accurate Identification
+\newblock {\em Applied and Environmental Microbiology}, 80(16), 5124-5133, 2014.
+
+\bibitem{Wright:2015}
+{ES Wright}
+\newblock DECIPHER: harnessing local sequence context to improve protein multiple sequence alignment
+\newblock {\em BMC Bioinformatics}, 16(322), 1-14, 2015.
+
+\bibitem{Wright:2016a}
+{ES Wright}
+\newblock Using DECIPHER v2.0 to Analyze Big Biological Sequence Data in R
+\newblock {\em The R Journal}, 8(1), 352-359, 2016.
+
+\bibitem{Wright:2016b}
+{ES Wright \& KH Vetsigian}
+\newblock DesignSignatures: a tool for designing primers that yields amplicons with distinct signatures
+\newblock {\em Bioinformatics}, 32(10), 1565-1567, 2016.
+
+\bibitem{Wright:2020}
+{ES Wright}
+\newblock RNAconTest: comparing tools for noncoding RNA multiple sequence alignment based on structural consistency
+\newblock {\em RNA}, 26(5), 531-540, 2020.
+
+\bibitem{Wright:2022}
+{ES Wright}
+\newblock FindNonCoding: rapid and simple detection of non-coding RNAs in genomes
+\newblock {\em Bioinformatics}, 38(3), 841-843, 2022.
+
+\bibitem{Wright:2024a}
+{ES Wright}
+\newblock Accurately clustering biological sequences in linear time by relatedness sorting
+\newblock {\em Nature Communications}, 15, 1-13, 2024.
+
+\bibitem{Wright:2024b}
+{ES Wright}
+\newblock Fast and Flexible Search for Homologous Biological Sequences with DECIPHER v3
+\newblock {\em The R Journal}, \textit{in Press}.
+
+\bibitem{Yilmaz:2012}
+{LS Yilmaz, A Loy, ES Wright, M Wagner, \& DR Noguera}
+\newblock Modeling formamide denaturation of probe-target hybrids for improved microarray probe design in microbial diagnostics
+\newblock {\em PLOS ONE}, 7(8), e43862.
+
+\end{thebibliography}
 
 \end{document}

@@ -57,18 +57,19 @@ set.seed(123)
 \tableofcontents
 
 %------------------------------------------------------------
-\section{Introduction to supersize clustering}
+\section{Introduction to supersized clustering}
 %------------------------------------------------------------
 
 You may have found yourself in a familiar predicament for many bioinformaticians: you have a lot of sequences and you need to downs\emph{ize} before you can get going. You may also theor\emph{ize} that this must be an easy problem to solve \textemdash given sequences, output clusters. But what can you util\emph{ize} to solve this problem? This vignette will familiar\emph{ize} you with the \Rfunction{Clusterize} function in the \Rpackage{DECIPHER} package. Clusterize will revolution\emph{ize} all your clustering needs!
-\par
+\newline \smallskip
+\noindent
 Why \Rfunction{Clusterize}?:
 \begin{itemize}
   \item Scalability - \Rfunction{Clusterize} will linear\emph{ize} the search space so that many sequences can be clustered in a reasonable amount of time.
   \item Simplicity - Although you can individual\emph{ize} \Rfunction{Clusterize}, the defaults are straightforward and should meet most of your needs.
   \item Accuracy - \Rfunction{Clusterize} will maxim\emph{ize} your ability to extract biologically meaningful results from your sequences.
 \end{itemize}
-
+\noindent
 This vignette will summar\emph{ize} the use of \Rfunction{Clusterize} to cluster DNA, RNA, or protein sequences.
 
 %------------------------------------------------------------
@@ -251,12 +252,40 @@ table(abs(c3)) # cluster sizes
 @
 
 %------------------------------------------------------------
+\section{Clustering both nucleotide strands}
+%------------------------------------------------------------
+
+Sometimes the input sequences are present in different orientations and it is necessary to harmon\emph{ize} the clusterings from both strands. Without trying to hyperbol\emph{ize} how easy this is to do, here's an example of clustering both strands:
+
+<<expr11,eval=TRUE>>=
+# simulate half of strands having opposite orientation
+s <- sample(c(TRUE, FALSE), length(dna), replace=TRUE)
+dna[s] <- reverseComplement(dna[s])
+
+# cluster both strands at the same time
+clus <- Clusterize(c(dna, reverseComplement(dna)), cutoff=0.2, processors=1)
+clus <- match(clus[[1]], clus[[1]]) # renumber clusters ascending
+
+# if needed, reorient all clustered sequences to have the same orientation
+strand <- clus[seq_len(length(clus)/2)] >= clus[-seq_len(length(clus)/2)]
+dna[strand] <- reverseComplement(dna[strand])
+
+# renumber clusters across both strands and compare to original clustering
+clus <- pmin(clus[seq_len(length(clus)/2)], clus[-seq_len(length(clus)/2)])
+org <- match(abs(c1[[1]]), abs(c1[[1]])) # renumber original clustering
+mean(clus == org) # some differences expected due to algorithm stochasticity
+
+# verify the largest cluster is now back in the same orientation
+dna[clus == which.max(tabulate(clus))]
+@
+
+%------------------------------------------------------------
 \section{Finalize your use of Clusterize}
 %------------------------------------------------------------
 
 Notably, \Rfunction{Clusterize} is a stochastic algorithm, meaning it will random\emph{ize} which sequences are selected during pre-sorting. Even though the clusters will typically stabil\emph{ize} with enough iterations, you can set the random number seed (before every run) to guarantee reproducibility of the clusters:
 
-<<expr11,eval=TRUE>>=
+<<expr12,eval=TRUE>>=
 set.seed(123) # initialize the random number generator
 clusters <- Clusterize(seqs, cutoff=0.1, processors=1)
 set.seed(NULL) # reset the seed

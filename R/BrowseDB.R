@@ -6,6 +6,7 @@ BrowseDB <- function(dbFile,
 	limit=-1,
 	orderBy="row_names",
 	maxChars=50,
+	title="",
 	clause="") {
 	
 	# error checking
@@ -40,6 +41,8 @@ BrowseDB <- function(dbFile,
 		stop("maxChars must be greater than zero.")
 	if (!is.character(clause))
 		stop("clause must be a character string.")
+	if (length(title) != 1L)
+		stop("title must be length one.")
 	
 	# initialize database
 	if (is.character(dbFile)) {
@@ -229,6 +232,7 @@ BrowseDB <- function(dbFile,
 	
 	html <- c("<html>",
 		styles,
+		title,
 		# creates a table just for the header row so that it aligns
 		"\n<div class=\"table_div\"><div class=\"thead\"><table>",
 		header,

@@ -15,6 +15,7 @@ BrowseDB(dbFile,
          limit = -1,
          orderBy = "row_names",
          maxChars = 50,
+         title = "",
          clause="")
 }
 \arguments{
@@ -41,6 +42,9 @@ Character string giving the column name for sorting the results.  Defaults to th
 }
   \item{maxChars}{
 Maximum number of characters to display in each column.
+}
+  \item{title}{
+Character string denoting a title that should appear at the top of the output or \code{""} (the default) for no title.
 }
   \item{clause}{
 An optional character string to append to the query as part of a ``where clause''.

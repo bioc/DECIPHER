@@ -16,6 +16,7 @@ BrowseSeqs(myXStringSet,
            colors = substring(rainbow(length(patterns),
                               v=0.8, start=0.9, end=0.7), 1, 7),
            colWidth = Inf,
+           title = "",
            \dots)
 }
 \arguments{
@@ -42,6 +43,9 @@ Character vector providing the color for each of the matched \code{patterns}.  T
 }
   \item{colWidth}{
 Integer giving the maximum number of nucleotides wide the display can be before starting a new page.  Must be a multiple of \code{20} (e.g., \code{100}), or \code{Inf} (the default) to display all the sequences in one set of rows.
+}
+  \item{title}{
+Character string denoting a title that should appear at the top of the output or \code{""} (the default) for no title.
 }
   \item{\dots}{
 Additional arguments to adjust the appearance of the consensus sequence at the base of the display.  Passed directly to \code{ConsensusSequence} for an \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet}, or to \code{consensusString} for a \code{BStringSet}.
@@ -100,6 +104,9 @@ BrowseSeqs(dna, colorPatterns=c(100, 200, 250, 500))
 
 # example of calling attention to letters by coloring gaps black
 BrowseSeqs(dna, patterns="-", colors="black")
+
+# add a title to the top of the page
+BrowseSeqs(dna, title="Title")
 
 \dontrun{
 # color according to base-pairing by supplying the fraction RGB for every position

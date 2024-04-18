@@ -112,7 +112,7 @@ patternGaps <- sapply(aligned$PatternGapLength, sum)
 plot(subjectGaps, patternGaps, pch=16, col="#00000011")
 abline(a=0, b=1) # identity line (y = x)
 
-# extract the aligned regions and insert gaps
+# extract the pairwise aligned regions
 alignments <- AlignPairs(query, target, hits, type="sequences")
 BrowseSeqs(c(alignments[[1]][1], alignments[[2]][1])) # view the first pair
 

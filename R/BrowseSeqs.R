@@ -6,6 +6,7 @@ BrowseSeqs <- function(myXStringSet,
 	patterns=c("-", alphabet(myXStringSet, baseOnly=TRUE)),
 	colors=substring(rainbow(length(patterns), v=0.8, start=0.9, end=0.7), 1, 7),
 	colWidth=Inf,
+	title="",
 	...) {
 	
 	# error checking
@@ -188,6 +189,8 @@ BrowseSeqs <- function(myXStringSet,
 	}
 	if (is.numeric(colorPatterns) & !is.infinite(colWidth))
 		stop("colWidth must be Inf if colorPatterns is numeric.")
+	if (length(title) != 1L)
+		stop("title must be length one.")
 	if (is.null(names(myXStringSet))) {
 		names(myXStringSet) <- 1:length(myXStringSet)
 	} else {
@@ -421,7 +424,7 @@ BrowseSeqs <- function(myXStringSet,
 			styles,
 			"</style>",
 			sep="")
-		html <- c('<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head>',styles,"<pre>", html, "</pre></html>")
+		html <- c('<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head>', styles, title, "<pre>", html, "</pre></html>")
 	} else {
 		html <- paste(html,
 			myLengths,
@@ -434,7 +437,7 @@ BrowseSeqs <- function(myXStringSet,
 			html,
 			sep="    ")
 		
-		html <- c("<html>","<pre>", html, "</pre></html>")
+		html <- c("<html>", title, "<pre>", html, "</pre></html>")
 	}
 	
 	# replace unicode 'middle dot' with html entity

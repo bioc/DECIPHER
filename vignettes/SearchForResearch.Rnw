@@ -168,30 +168,20 @@ The result of our search is a \Rclass{data.frame} with four columns: Pattern (in
 <<expr5,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=
 layout(matrix(1:4, nrow=2))
 hist(hits$Score,
-	breaks=100,
-	xlab="Score",
-	main="Distribution of scores")
-plot(NA,
-	xlim=c(0, max(width(subject))),
-	ylim=c(1, 6),
-	xlab="Genome position",
-	ylab="Genome frame",
+	breaks=100, xlab="Score", main="Distribution of scores")
+plot(NA, xlim=c(0, max(width(subject))), ylim=c(1, 6),
+	xlab="Genome position", ylab="Genome frame",
 	main="Location of k-mer matches")
 segments(sapply(hits$Position, `[`, i=3), # third row
 	hits$Subject,
 	sapply(hits$Position, `[`, i=4), # fourth row
 	hits$Subject)
 plot(hits$Score,
-	sapply(hits$Position,
-		function(x)
-			sum(x[2,] - x[1,] + 1)),
-	xlab="Score",
-	ylab="Sum of k-mer matches",
-	main="Matches versus score",
-	log="xy")
+	sapply(hits$Position, function(x) sum(x[2,] - x[1,] + 1)),
+	xlab="Score", ylab="Sum of k-mer matches",
+	main="Matches versus score", log="xy")
 plot(table(tabulate(hits$Pattern, nbins=length(pattern))),
-	xlab="Hits per pattern sequence",
-	ylab="Frequency",
+	xlab="Hits per pattern sequence", ylab="Frequency",
 	main="Number of hits per query")
 @
 \caption{\label{f2} Summary of hits found between a set of proteins and the genome's 6-frame translation.}
