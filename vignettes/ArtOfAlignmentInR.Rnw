@@ -162,7 +162,7 @@ points(N, predict(c3,
 		data.frame(N3 = N)),
 	type="l", lty=3, col="green")
 legend("topright",
-	c("Biostrings::pairwiseAlignment",
+	c("pwalign::pairwiseAlignment",
 		"AlignProfiles (unrestricted, unanchored)",
 		"AlignProfiles (restricted, unanchored)",
 		"AlignProfiles (restricted, anchored)"),
