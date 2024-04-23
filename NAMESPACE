@@ -5,6 +5,7 @@ import(S4Vectors)
 import(IRanges)
 import(XVector)
 import(Biostrings)
+import(pwalign)
 import(DBI)
 
 importFrom("grDevices", "colorRampPalette", "colors", "dev.flush", "dev.hold", "dev.size", "rainbow", "rgb", "as.graphicsAnnot", "col2rgb")
