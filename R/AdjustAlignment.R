@@ -10,10 +10,10 @@
 	}
 	if (!(substitutionMatrix %in% c("BLOSUM45", "BLOSUM50", "BLOSUM62", "BLOSUM80", "BLOSUM100", "PAM30", "PAM40", "PAM70", "PAM120", "PAM250", "MIQS", "PFASUM", "MMLSUM")))
 		stop("Invalid substitutionMatrix.")
-	subMatrix <- eval(parse(text=data(list=substitutionMatrix, envir=environment(), package=ifelse(substitutionMatrix %in% c("MIQS", "PFASUM", "MMLSUM"), "DECIPHER", "Biostrings"))))
+	subMatrix <- eval(parse(text=data(list=substitutionMatrix, envir=environment(), package=ifelse(substitutionMatrix %in% c("MIQS", "PFASUM", "MMLSUM"), "DECIPHER", "pwalign"))))
 	if (substitutionMatrix %in% c("PFASUM", "MMLSUM")) {
 		subMatrix <- subMatrix[,, sim]
-	} else if (substitutionMatrix != "MIQS") { # substitution matrix from Biostrings
+	} else if (substitutionMatrix != "MIQS") { # substitution matrix from pwalign
 		# need to convert from half-bits to third-bits
 		subMatrix <- subMatrix*3/2
 	}
