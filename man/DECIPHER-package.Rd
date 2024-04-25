@@ -12,7 +12,7 @@ DECIPHER is a software toolset that can be used for deciphering and managing bio
 \tabular{ll}{
 Package: \tab DECIPHER\cr
 Type: \tab Package\cr
-Depends: \tab R (>= 3.5.0), Biostrings (>= 2.59.1), stats, parallel\cr
+Depends: \tab R (>= 3.5.0), Biostrings (>= 2.59.1), pwalign, stats\cr
 Imports: \tab methods, DBI, S4Vectors, IRanges, XVector\cr
 Suggests: \tab RSQLite (>= 1.1)\cr
 LinkingTo: \tab Biostrings, S4Vectors, IRanges, XVector\cr
