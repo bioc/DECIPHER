@@ -12,7 +12,7 @@ DECIPHER is a software toolset that can be used for deciphering and managing bio
 \tabular{ll}{
 Package: \tab DECIPHER\cr
 Type: \tab Package\cr
-Depends: \tab R (>= 3.5.0), Biostrings (>= 2.59.1), pwalign, stats\cr
+Depends: \tab R (>= 3.5.0), Biostrings (>= 2.59.1), stats, parallel\cr
 Imports: \tab methods, DBI, S4Vectors, IRanges, XVector\cr
 Suggests: \tab RSQLite (>= 1.1)\cr
 LinkingTo: \tab Biostrings, S4Vectors, IRanges, XVector\cr
@@ -35,6 +35,7 @@ AlignSynteny             Pairwise Aligns Syntenic Blocks
 AlignTranslation         Align Sequences By Their Amino Acid Translation
 AmplifyDNA               Simulate Amplification of DNA by PCR
 Array2Matrix             Create a Matrix Representation of a Microarray
+BLOSUM                   BLOSUM Amino Acid Substitution Matrices
 BrowseDB                 View a Database Table in a Web Browser
 BrowseSeqs               View Sequences in a Web Browser
 CalculateEfficiencyArray Predict the Hybridization Efficiency of
@@ -102,6 +103,7 @@ NNLS                     Sequential Coordinate-wise Algorithm for the
 NonCoding                NonCoding Models for Common Non-Coding RNA Families
 NonCoding-class          NonCoding Objects and Methods
 OrientNucleotides        Orient Nucleotide Sequences
+PAM                      PAM Amino Acid Substitution Matrices
 PFASUM                   PFASUM Amino Acid Substitution Matrices
 PredictDBN               Predict RNA Secondary Structure in Dot-Bracket
                          Notation

@@ -61,38 +61,18 @@
 	}))
 	
 	primer2 <- reverseComplement(DNAStringSet(primer2))
-	primer2 <- sapply(strsplit(toString(primer2), ", ", fixed=TRUE), `[`)
-	primer2 <- paste("------------------------------", primer2, "------------------------------", sep="")
-	
-	mapping <- matrix(0.05, nrow=16, ncol=16)
-	dimnames(mapping) <- list(c(names(IUPAC_CODE_MAP), "-"), c(names(IUPAC_CODE_MAP), "-"))
-	mapping["A", c("A","M","R","W","V","H","D","N")] <- .7
-	mapping["G", c("G","R","S","K","V","D","D","N")] <- 1
-	mapping["C", c("C","M","S","Y","V","H","B","N")] <- 1
-	mapping["T", c("T","W","Y","K","H","D","B","N")] <- .7
-	mapping["G", "T"] <- .2
-	mapping["T", "G"] <- .2
-	w <- which(mapping == 0)
-	mapping[w] <- 0
-	mapping[,"-"] <- 0.2
-	mapping["-",] <- 0.2
-	
-	p <- pairwiseAlignment(primer1,
-		primer2,
-		type="global-local",
-		gapOpen=-5, gapExt=-5, fuzzyMatrix=mapping)
-	
-	primer1 <- sapply(strsplit(toString(pattern(p)), ", ", fixed=TRUE), `[`)
-	primer2 <- sapply(strsplit(toString(subject(p)), ", ", fixed=TRUE), `[`)
-	primer2 <- reverseComplement(DNAStringSet(as.vector(primer2)))
+	p <- .pairwiseAlignment(primer1, primer2, TRUE)
+	primer1 <- p$pattern
+	primer2 <- p$subject
+	primer2 <- reverseComplement(DNAStringSet(primer2))
 	
 	t <- TerminalChar(primer2)
-	primer2 <- sapply(strsplit(toString(primer2), ", ", fixed=TRUE), `[`)
+	primer2 <- as.character(primer2)
 	primer1 <- substr(primer1, t[,2] + 1, t[,2] + t[,3])
 	primer2 <- substr(primer2, t[,1] + 1, t[,1] + t[,3])
 	
-	eff1 <- .Call("terminalMismatch", primer1, primer2, .2, 0, processors, PACKAGE="DECIPHER")
-	eff2 <- .Call("terminalMismatch", primer2, primer1, .2, 0, processors, PACKAGE="DECIPHER")
+	eff1 <- .Call("terminalMismatch", primer1, primer2, 0.2, 0, processors, PACKAGE="DECIPHER")
+	eff2 <- .Call("terminalMismatch", primer2, primer1, 0.2, 0, processors, PACKAGE="DECIPHER")
 	eff_taq <- sqrt(eff1*eff2)
 	
 	n <- nchar(primer1)
@@ -346,7 +326,9 @@ DesignPrimers <- function(tiles,
 	for (id in identifier) {
 		if (verbose) {
 			time.1 <- Sys.time()
-			cat("\n", id, sep="")
+			if (id != identifier[1L])
+				cat("\n")
+			cat(id)
 			flush.console()
 		}
 		
@@ -1004,9 +986,9 @@ DesignPrimers <- function(tiles,
 			if (verbose) {
 				close(pBar)
 				if (numPrimerSets > 1) {
-					cat("Determining Best Primer Pairs:\n")
+					cat("\nDetermining Best Primer Pairs:\n")
 				} else {
-					cat("Determining Best Primer Pair:\n")
+					cat("\nDetermining Best Primer Pair:\n")
 				}
 				flush.console()
 				pBar <- txtProgressBar(min=0, max=100, initial=0, style=ifelse(interactive(), 3, 1))
@@ -1201,13 +1183,9 @@ DesignPrimers <- function(tiles,
 					if (eff_max > .0001) {
 						s1 <- targets[w_max]
 						s2 <- reverseComplement(DNAStringSet(nontargets[w_max]))
-						p <- pairwiseAlignment(s1,
-							paste("----", s2, "----", sep=""),
-							type="global-local",
-							gapOpen=-5,
-							gapExtension=-5)
-						s1 <- toString(pattern(p))
-						s2 <- toString(subject(p))
+						p <- .pairwiseAlignment(s1, s2, TRUE)
+						s1 <- p$pattern
+						s2 <- p$subject
 						s2 <- toString(reverseComplement(DNAString(s2)))
 						primers$mismatches_forward[f_F[o_F][g_F[i]]] <- paste(primers$mismatches_forward[f_F[o_F][g_F[i]]],
 							ids[k],
@@ -1280,13 +1258,9 @@ DesignPrimers <- function(tiles,
 					if (eff_max > .0001) {
 						s1 <- targets[w_max]
 						s2 <- reverseComplement(DNAStringSet(nontargets[w_max]))
-						p <- pairwiseAlignment(s1,
-							paste("----", s2, "----", sep=""),
-							type="global-local",
-							gapOpen=-5,
-							gapExtension=-5)
-						s1 <- toString(pattern(p))
-						s2 <- toString(subject(p))
+						p <- .pairwiseAlignment(s1, s2, TRUE)
+						s1 <- p$pattern
+						s2 <- p$subject
 						s2 <- toString(reverseComplement(DNAString(s2)))
 						primers$mismatches_reverse[f_R[o_R][g_R[i]]] <- paste(primers$mismatches_reverse[f_R[o_R][g_R[i]]],
 							ids[k],

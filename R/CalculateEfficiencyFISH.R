@@ -1,3 +1,50 @@
+.pairwiseAlignment <- function(pattern, subject, sequencesOnly=FALSE) {
+	if (!is(pattern, "DNAStringSet"))
+		pattern <- DNAStringSet(pattern)
+	if (!is(subject, "DNAStringSet"))
+		subject <- DNAStringSet(subject)
+	pairs <- data.frame(Pattern=seq_along(pattern),
+		Subject=seq_along(subject))
+	p <- AlignPairs(pattern,
+		subject,
+		pairs,
+		type="both",
+		verbose=FALSE)
+	t <- TerminalChar(p[[2L]])
+	mode(t) <- "integer"
+	begin <- t[, "leadingChar"] + 1L
+	end <- t[, "leadingChar"] + t[, "difference"]
+	if (sequencesOnly)
+		return(list(pattern=substring(p[[2L]], begin, end),
+			subject=substring(p[[3L]], begin, end),
+			patternStart=p[[1L]]$PatternStart,
+			patternWidth=p[[1L]]$PatternEnd - p[[1L]]$PatternStart + 1L,
+			subjectStart=unname(begin),
+			subjectWidth=unname(width(subject) - t[, "leadingChar"] - t[, "trailingChar"])))
+	for (i in seq_len(nrow(p[[1L]]))) {
+		w <- which(p[[1L]][[i, "patternGapPosition"]] > 1 &
+			p[[1L]][[i, "PatternGapPosition"]] < width(pattern)[pairs$Pattern[i]])
+		p[[1L]][[i, "PatternGapPosition"]] <- p[[1L]][[i, "PatternGapPosition"]][w]
+		p[[1L]][[i, "PatternGapLength"]] <- p[[1L]][[i, "PatternGapLength"]][w]
+		
+		w <- which(p[[1L]][[i, "SubjectGapPosition"]] > 1 &
+			p[[1L]][[i, "SubjectGapPosition"]] < width(subject)[pairs$Subject[i]])
+		p[[1L]][[i, "SubjectGapPosition"]] <- p[[1L]][[i, "SubjectGapPosition"]][w] - begin[i] + 1L
+		p[[1L]][[i, "SubjectGapLength"]] <- p[[1L]][[i, "SubjectGapLength"]][w]
+	}
+	list(pattern=substring(p[[2L]], begin, end),
+		subject=substring(p[[3L]], begin, end),
+		patternStart=p[[1L]]$PatternStart,
+		patternWidth=p[[1L]]$PatternEnd - p[[1L]]$PatternStart + 1L,
+		subjectStart=unname(begin),
+		subjectWidth=unname(width(subject) - t[, "leadingChar"] - t[, "trailingChar"]),
+		deletionStart=p[[1L]]$PatternGapPosition,
+		deletionWidth=p[[1L]]$PatternGapLength,
+		insertionStart=p[[1L]]$SubjectGapPosition,
+		insertionWidth=p[[1L]]$SubjectGapLength,
+		score=p[[1L]]$Score)
+}
+
 CalculateEfficiencyFISH <- function(probe,
 	target,
 	temp,
@@ -55,15 +102,9 @@ CalculateEfficiencyFISH <- function(probe,
 	
 	# align probe and target
 	seqs2 <- reverseComplement(DNAStringSet(target))
-	seqs2 <- unlist(strsplit(toString(seqs2), ", ", fixed=TRUE))
-	seqs2 <- paste("----", seqs2, "----", sep="")
-	p <- pairwiseAlignment(probe,
-		seqs2,
-		type="global-local",
-		gapOpen=-10,
-		gapExtension=-10)
-	seqs1 <- unlist(strsplit(toString(pattern(p)), ", ", fixed=TRUE))
-	seqs2 <- unlist(strsplit(toString(subject(p)), ", ", fixed=TRUE))
+	p <- .pairwiseAlignment(probe, seqs2, TRUE)
+	seqs1 <- p$pattern
+	seqs2 <- p$subject
 	
 	deltas <- .Call("calculateFISH", seqs1, seqs2, PACKAGE="DECIPHER")
 	dG1_PM_DNARNA <- deltas[,1] - (273.15 + temp)/1000*(deltas[,2] + 0.368*n*log(ions))

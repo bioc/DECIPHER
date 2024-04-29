@@ -726,6 +726,11 @@ static int alignRegion(const Chars_holder *s1, const Chars_holder *s2, int pos1,
 		// initialize location
 		c1 = m1 - half; // current position in first sequence
 		c2 = m2 + half; // current position in second sequence
+		if (c1 + bandWidth > l1) {
+			temp = l1 - bandWidth - c1;
+			c2 -= temp;
+			c1 += temp;
+		}
 		if (c1 < pos1) { // out of bounds in pattern
 			c2 = c2 - pos1 + c1;
 			c1 = pos1;
@@ -1484,17 +1489,23 @@ SEXP alignPairs(SEXP pattern, SEXP subject, SEXP query, SEXP target, SEXP positi
 		while (p1 + starts1[i] - 1 <= ends1[i] ||
 			p2 + starts2[i] - 1 <= ends2[i]) {
 			if (c1 < count1 && p1 == ind1[c1]) {
-				count += len1[c1]; // add gap to count
-				score += GO;
-				if (len1[c1] > 1)
-					score += GE*(len1[c1] - 1);
+				if (N > 0 || // anchored alignment
+					(p1 > 1 && p2 > 1 && p1 <= ends1[i] && p2 <= ends2[i])) { // internal gap
+					count += len1[c1]; // add gap to count
+					score += GO;
+					if (len1[c1] > 1)
+						score += GE*(len1[c1] - 1);
+				}
 				p2 += len1[c1]; // skip subject positions
 				c1++; // advance to next gap in pattern
 			} else if (c2 < count2 && p2 == ind2[c2]) {
-				count += len2[c2]; // add gap to count
-				score += GO;
-				if (len2[c2] > 1)
-					score += GE*(len2[c2] - 1);
+				if (N > 0 || // anchored alignment
+					(p1 > 1 && p2 > 1 && p1 <= ends1[i] && p2 <= ends2[i])) { // internal gap
+					count += len2[c2]; // add gap to count
+					score += GO;
+					if (len2[c2] > 1)
+						score += GE*(len2[c2] - 1);
+				}
 				p1 += len2[c2]; // skip pattern positions
 				c2++; // advance to next gap in subject
 			} else {

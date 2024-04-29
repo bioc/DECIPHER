@@ -78,7 +78,7 @@ options(width=80)
 \section{Design Philosophy}
 %------------------------------------------------------------
 
-\Rpackage{DECIPHER} is designed for large-scale comparison of nucleotide and protein sequences.  The package is build upon a foundation of sequence databases to curate large volumes of biological sequences and dependent on the \Rpackage{Biostrings} package for low-level sequence storage.  The guiding inspiration behind \Rpackage{DECIPHER} is to empower users with powerful tools that help to convert biological sequences into results.  To this end, the package strives to be well-documented, well-maintained, multi-functional, state-of-the-art, scalable, and fast.
+\Rpackage{DECIPHER} is designed for large-scale comparison of nucleotide and protein sequences.  The package is built upon a foundation of sequence databases to curate large volumes of biological sequences and is dependent on the \Rpackage{Biostrings} package for low-level sequence storage.  The guiding inspiration behind \Rpackage{DECIPHER} is to empower users with powerful tools that help to convert biological sequences into results.  To this end, the package strives to be well-documented, well-maintained, multi-functional, state-of-the-art, scalable, and fast.
 
 \subsection{Curators Protect the Originals}
 

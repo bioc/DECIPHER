@@ -1,8 +1,26 @@
+.nucleotideSubstitutionMatrix <- function(match, mismatch, type="DNA") {
+	ns <- names(IUPAC_CODE_MAP)
+	s <- strsplit(unname(IUPAC_CODE_MAP), "", fixed=TRUE)
+	group <- lapply(DNA_BASES, grep, IUPAC_CODE_MAP)
+	s <- lapply(s, match, ns)
+	l <- length(s)
+	if (type == "RNA")
+		ns[ns == "T"] <- "U"
+	m <- matrix(mismatch, l, l, dimnames=list(ns, ns))
+	for (i in seq_len(l)) {
+		for (j in seq_along(s[[i]])) {
+			m[i, group[[s[[i]][j]]]] <- match
+			m[group[[s[[i]][j]]], i] <- match
+		}
+	}
+	m
+}
+
 AlignPairs <- function(pattern,
 	subject,
 	pairs=NULL,
 	type="values",
-	perfectMatch=2,
+	perfectMatch=1,
 	misMatch=-2,
 	gapOpening=-16,
 	gapExtension=-1.2,
@@ -111,7 +129,9 @@ AlignPairs <- function(pattern,
 				stop("perfectMatch must be a numeric.")
 			if (!is.numeric(misMatch))
 				stop("misMatch must be a numeric.")
-			substitutionMatrix <- nucleotideSubstitutionMatrix(match=perfectMatch,
+			perfectMatch <- as.double(perfectMatch)
+			misMatch <- as.double(misMatch)
+			substitutionMatrix <- .nucleotideSubstitutionMatrix(match=perfectMatch,
 				mismatch=misMatch,
 				type=ifelse(xtype == 1L, "DNA", "RNA"))
 		}
@@ -132,6 +152,7 @@ AlignPairs <- function(pattern,
 			stop("Row and column names of substitutionMatrix must be the same.")
 		if (any(nchar(rownames(substitutionMatrix)) != 1L))
 			stop("All row and column names of substitutionMatrix must be a single character.")
+		mode(substitutionMatrix) <- "double"
 	} else {
 		stop("Invalid substitutionMatrix.")
 	}
@@ -173,10 +194,10 @@ AlignPairs <- function(pattern,
 	lkup <- paste(rownames(substitutionMatrix), collapse="")
 	if (xtype == 1L) {
 		lkup <- DNAStringSet(lkup)
-		matchMatrix <- nucleotideSubstitutionMatrix(type="DNA") > 0
+		matchMatrix <- .nucleotideSubstitutionMatrix(match=1L, mismatch=0L, type="DNA")
 	} else if (xtype == 2L) {
 		lkup <- RNAStringSet(lkup)
-		matchMatrix <- nucleotideSubstitutionMatrix(type="RNA") > 0
+		matchMatrix <- .nucleotideSubstitutionMatrix(match=1L, mismatch=0L, type="RNA")
 	} else { # xtype == 3L
 		lkup <- AAStringSet(lkup)
 		matchMatrix <- matrix(FALSE, nrow=nrow(substitutionMatrix), ncol=ncol(substitutionMatrix), dimnames=dimnames(substitutionMatrix))

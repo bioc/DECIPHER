@@ -24,7 +24,7 @@ IdTaxa(test,
 An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} of unaligned sequences.
 }
   \item{trainingSet}{
-An object of class \code{Taxa} and subclass {Train} compatible with the class of \code{test}.
+An object of class \code{Taxa} and subclass \code{Train} compatible with the class of \code{test}.
 }
   \item{type}{
 Character string indicating the type of output desired.  This should be (an abbreviation of) one of \code{"extended"} or \code{"collapsed"}.  (See value section below.)
@@ -58,7 +58,7 @@ Logical indicating whether to display progress.
 Sequences in \code{test} are each assigned a taxonomic classification based on the \code{trainingSet} created with \code{\link{LearnTaxa}}.  Each taxonomic level is given a confidence between 0\% and 100\%, and the taxonomy is truncated where confidence drops below \code{threshold}.  If the taxonomic classification was truncated, the last group is labeled with ``unclassified_'' followed by the final taxon's name.  Note that the reported confidence is not a p-value but does directly relate to a given classification's probability of being wrong.  The default \code{threshold} of \code{60\%} is intended to minimize the rate of incorrect classifications.  Lower values of \code{threshold} (e.g., \code{50\%}) may be preferred to increase the taxonomic depth of classifications.  Values of \code{60\%} or \code{50\%} are recommended for nucleotide sequences and \code{50\%} or \code{40\%} for amino acid sequences.
 }
 \value{
-If \code{type} is \code{"extended"} (the default) then an object of class \code{Taxa} and subclass {Train} is returned.  This is stored as a list with elements corresponding to their respective sequence in \code{test}.  Each list element contains components:
+If \code{type} is \code{"extended"} (the default) then an object of class \code{Taxa} and subclass \code{Train} is returned.  This is stored as a list with elements corresponding to their respective sequence in \code{test}.  Each list element contains components:
   \item{taxon}{
 A character vector containing the taxa to which the sequence was assigned.
 }

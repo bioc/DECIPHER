@@ -49,15 +49,9 @@ CalculateEfficiencyPCR <- function(primer,
 	
 	# align primer and target
 	seqs2 <- reverseComplement(DNAStringSet(target))
-	seqs2 <- unlist(strsplit(toString(seqs2), ", ", fixed=TRUE))
-	seqs2 <- paste("----", seqs2, "----", sep="")
-	p <- pairwiseAlignment(primer,
-		seqs2,
-		type="global-local",
-		gapOpen=-5,
-		gapExtension=-5)
-	t_START <- nchar(seqs2) - p@subject@range@start - p@subject@range@width - 2
-	t_END <- nchar(seqs2) - p@subject@range@start - 3
+	p <- .pairwiseAlignment(primer, seqs2, TRUE)
+	t_START <- width(seqs2) - p$subjectStart - p$subjectWidth - 2
+	t_END <- width(seqs2) - p$subjectStart - 3
 	
 	if (taqEfficiency) {
 		if (!is.numeric(maxDistance))
@@ -82,10 +76,10 @@ CalculateEfficiencyPCR <- function(primer,
 			processors <- as.integer(processors)
 		}
 		
-		seqs1 <- unlist(strsplit(toString(pattern(p)), ", ", fixed=TRUE))
-		seqs2 <- unlist(strsplit(toString(subject(p)), ", ", fixed=TRUE))
+		seqs1 <- p$pattern
+		seqs2 <- p$subject
 		seqs2 <- reverseComplement(DNAStringSet(seqs2))
-		seqs2 <- unlist(strsplit(toString(seqs2), ", ", fixed=TRUE))
+		seqs2 <- as.character(seqs2)
 		
 		# calculate elongation efficiency
 		eff_taq <- .Call("terminalMismatch", seqs1, seqs2, maxDistance, maxGaps, processors, PACKAGE="DECIPHER")

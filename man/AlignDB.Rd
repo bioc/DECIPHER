@@ -13,8 +13,8 @@ AlignDB(dbFile,
         type = "DNAStringSet",
         add2tbl = "Seqs",
         batchSize = 10000,
-        perfectMatch = 5,
-        misMatch = 0,
+        perfectMatch = 2,
+        misMatch = -1,
         gapOpening = -14,
         gapExtension = -2,
         gapPower = -1,
@@ -70,7 +70,7 @@ Numeric giving the exponent that controls the degree of normalization applied to
 Logical determining whether scores are standardized to be in units of per matching site. Standardization effectively divides the score of each possible alignment by its length so that scores are relative rather than absolute.
 }
   \item{substitutionMatrix}{
-Either a substitution matrix representing the substitution scores for an alignment (in third-bits) or the name of the amino acid substitution matrix to use in alignment.  The latter may be one of the following:  ``BLOSUM45'', ``BLOSUM50'', ``BLOSUM62'', ``BLOSUM80'', ``BLOSUM100'', ``PAM30'', ``PAM40'', ``PAM70'', ``PAM120'', ``PAM250'', ``MIQS'', ``MMLSUM10'' to ``MMLSUM90'' (by tens), or ``PFASUM11'' to ``PFASUM100'' (by ones).  The default (NULL) will use the \code{perfectMatch} and \code{misMatch} penalties for DNA/RNA or \code{PFASUM50} for AA.
+Either a substitution matrix representing the substitution scores for an alignment (in third-bits) or the name of the amino acid substitution matrix to use in alignment.  The default (NULL) will use the \code{perfectMatch} and \code{misMatch} penalties for DNA/RNA or \code{PFASUM50} for AA.
 }
   \item{processors}{
 The number of processors to use, or \code{NULL} to automatically detect and use all available processors.

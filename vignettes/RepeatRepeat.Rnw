@@ -156,8 +156,11 @@ We can find the repeated sequence using pairwise alignment by aligning each of t
 windows <- extractAt(AA[[1]],
 	IRanges(seq_len(width(AA[1]) - width(Ig)),
 		width=width(Ig)))
-p <- pairwiseAlignment(windows, Ig)
-plot(score(p), ylab="Score", xlab="Amino acid position", type="l")
+p <- AlignPairs(windows,
+	Ig,
+	pairs=data.frame(Pattern=seq_along(windows), Subject=1),
+	verbose=FALSE)
+plot(p$Score, ylab="Score", xlab="Amino acid position", type="l")
 @
 \caption{\label{f2} Peaks marking the start of Ig domains in the human protein Obscurin.}
 \end{centerfig}

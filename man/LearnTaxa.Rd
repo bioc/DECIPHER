@@ -72,7 +72,7 @@ A major advantage of tree descent is that it both speeds up the classification p
 The final result is an object that can be used for classification with \code{\link{IdTaxa}}, as well as information about \code{train} that could be used to help correct any errors in the taxonomy.
 }
 \value{
-An object of class \code{Taxa} and subclass {Train}, which is stored as a list with components:
+An object of class \code{Taxa} and subclass \code{Train}, which is stored as a list with components:
   \item{taxonomy}{
 A character vector containing all possible groups in the taxonomy.
 }

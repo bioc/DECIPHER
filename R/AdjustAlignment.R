@@ -4,25 +4,29 @@
 	if (is.na(substitutionMatrix))
 		stop("substitutionMatrix cannot be NA.")
 	if (startsWith(substitutionMatrix, "PFASUM") ||
-		startsWith(substitutionMatrix, "MMLSUM")) {
+		startsWith(substitutionMatrix, "MMLSUM") ||
+		startsWith(substitutionMatrix, "BLOSUM")) {
 		sim <- gsub("^.+SUM([0-9]+)$", "\\1", substitutionMatrix)
 		substitutionMatrix <- substring(substitutionMatrix, 1L, nchar(substitutionMatrix) - nchar(sim))
+	} else if (startsWith(substitutionMatrix, "PAM")) {
+		sim <- substring(substitutionMatrix, 4L)
+		substitutionMatrix <- "PAM"
 	}
-	if (!(substitutionMatrix %in% c("BLOSUM45", "BLOSUM50", "BLOSUM62", "BLOSUM80", "BLOSUM100", "PAM30", "PAM40", "PAM70", "PAM120", "PAM250", "MIQS", "PFASUM", "MMLSUM")))
+	if (!(substitutionMatrix %in% c("MIQS", "PFASUM", "MMLSUM", "PAM", "BLOSUM")))
 		stop("Invalid substitutionMatrix.")
-	subMatrix <- eval(parse(text=data(list=substitutionMatrix, envir=environment(), package=ifelse(substitutionMatrix %in% c("MIQS", "PFASUM", "MMLSUM"), "DECIPHER", "pwalign"))))
-	if (substitutionMatrix %in% c("PFASUM", "MMLSUM")) {
-		subMatrix <- subMatrix[,, sim]
-	} else if (substitutionMatrix != "MIQS") { # substitution matrix from pwalign
-		# need to convert from half-bits to third-bits
-		subMatrix <- subMatrix*3/2
+	subMatrix <- eval(parse(text=data(list=substitutionMatrix, envir=environment(), package="DECIPHER")))
+	if (substitutionMatrix != "MIQS") {
+		m <- match(sim, dimnames(subMatrix)[[3L]])
+		if (is.na(m))
+			stop("Invalid substitutionMatrix.")
+		subMatrix <- subMatrix[,, m]
 	}
 	subMatrix
 }
 
 AdjustAlignment <- function(myXStringSet,
-	perfectMatch=5,
-	misMatch=0,
+	perfectMatch=2,
+	misMatch=-1,
 	gapLetter=-3,
 	gapOpening=-0.1,
 	gapExtension=0,

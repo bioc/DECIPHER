@@ -91,47 +91,45 @@ The dynamic programming method used by \Rpackage{DECIPHER} for aligning two prof
 
 The orange diagonal line in Figure \ref{f2} shows the optimal path for aligning two sequence profiles.  The blue segments to the left and right of the optimal path give the constraint boundaries, which the user controls with the \Rfunarg{restrict} parameter.  Areas above and below the upper and lower (respectively) constraint boundaries are neglected from further consideration.  A higher (less negative) value of \Rfunarg{restrict[1]} will further constrain the possible ``alignment space,'' which represents all possible alignments between two sequences.  Since the optimal path is not known till completion of the matrix, it is risky to overly constrain the matrix.  This is particularly true in situations where the sequences are not mostly overlapping because the optimal path will likely not be diagonal, causing the path to cross a constraint boundary.  In the non-overlapping case \Rfunarg{restrict[1]} could be set below the default to ensure that the entire ``alignment space'' is available.
 
-Neglecting the ``corners'' of the alignment space effectively converts a quadratic time problem into a near-linear time problem.  We can see this by comparing \Rfunction{AlignProfiles} with and without restricting the matrix at different sequence lengths.  To extend our comparison we can include the \Rpackage{pwalign} function \Rfunction{pairwiseAlignment}.  In this simulation, two sequences with 90\% identity are aligned and the elapsed time is recorded for a variety of sequence lengths.  As can be seen in Figure \ref{f3} below, \textit{without} restriction \Rfunction{AlignProfiles} takes quadratic time in the same manner as \Rfunction{pairwiseAlignment}.  However, \textit{with} restriction \Rfunction{AlignProfiles} takes linear time, requiring far less than a microsecond per nucleotide.
+Neglecting the ``corners'' of the alignment space effectively converts a quadratic time problem into a near-linear time problem.  We can see this by comparing \Rfunction{AlignProfiles} with and without restricting the matrix at different sequence lengths.  To extend our comparison we can include the \Rpackage{DECIPHER} function \Rfunction{AlignPairs}, which is designed specifically for fast pairwise alignment.  In this simulation, two sequences with 90\% identity are aligned and the elapsed time is recorded for a variety of sequence lengths.  As can be seen in Figure \ref{f3} below, \textit{without} restriction \Rfunction{AlignProfiles} takes quadratic time.  However, \textit{with} restriction \Rfunction{AlignProfiles} takes linear time, requiring far less than a microsecond per nucleotide.
 
 \begin{centerfig}
 <<expr0,eval=TRUE,echo=FALSE,results=hide,fig=TRUE,include=TRUE,height=6.8,width=8.5>>=
 library(DECIPHER)
-n_points <- 10
-N0 <- ceiling(2^seq(5, 13, length.out=n_points))
-N1 <- ceiling(2^seq(5, 12, length.out=n_points))
-N2 <- ceiling(2^seq(5, 13, length.out=n_points))
-N3 <- ceiling(2^seq(5, 16, length.out=n_points))
+N0 <- ceiling(2^seq(1, 17))
+N1 <- ceiling(2^seq(1, 12))
+N2 <- ceiling(2^seq(1, 13))
+N3 <- ceiling(2^seq(1, 16))
 timings0 <- setNames(rep(0, length(N0)), N0)
 timings1 <- setNames(rep(0, length(N1)), N1)
 timings2 <- setNames(rep(0, length(N2)), N2)
 timings3 <- setNames(rep(0, length(N3)), N3)
-for (i in seq_len(length(N0))) {
+for (i in seq_len(max(length(N0), length(N1), length(N2), length(N3)))) {
+	N <- 2^i
+	string1 <- DNAStringSet(paste(sample(DNA_ALPHABET[1:4], N, replace = TRUE), collapse = ""))
+	string2 <- replaceAt(string1,
+		at=IRanges(sample(N, ceiling(N/5)), width=1),
+		sample(c(DNA_ALPHABET[1:4], ""), ceiling(N/5), replace = TRUE))
 	for (j in 0:3) {
-		N <- eval(parse(text=paste("N", j, sep="")))
-		# simulate sequences with 15% distance
-		string1 <- DNAStringSet(paste(sample(DNA_ALPHABET[1:4], N[i], replace = TRUE), collapse = ""))
-		string2 <- replaceAt(string1,
-			at=IRanges(sample(N[i], ceiling(N[i]/5)), width=1),
-			sample(c(DNA_ALPHABET[1:4], ""), ceiling(N[i]/5), replace = TRUE))
 		# align the sequences using two methods
-		if (j==0) {
-			timings0[i] <- system.time(pairwiseAlignment(string1, string2))[["user.self"]]
-		} else if (j==1) {
+		if (j == 0 && i <= length(N0)) {
+			timings0[i] <- system.time(AlignPairs(string1, string2, verbose=FALSE))[["user.self"]]
+		} else if (j == 1 && i <= length(N1)) {
 			timings1[i] <- system.time(AlignProfiles(string1, string2, restrict=c(-1e10, 1e10, 1e10), anchor=NA))[["user.self"]]
-		} else if (j==2) {
+		} else if (j == 2 && i <= length(N2)) {
 			timings2[i] <- system.time(AlignProfiles(string1, string2, anchor=NA))[["user.self"]]
-		} else { # j == 3
+		} else if (j == 3 && i <= length(N3)) {
 			timings3[i] <- system.time(AlignProfiles(string1, string2))[["user.self"]]
 		}
 	}
 }
 
-c0 <- lm(timings0 ~ N0 + I(N0^2))
+c0 <- lm(timings0 ~ N0)
 c1 <- lm(timings1 ~ N1 + I(N1^2))
 c2 <- lm(timings2 ~ N2)
 c3 <- lm(timings3 ~ N3)
 
-N <- seq(1, 46340, length.out=1000) # prediction range
+N <- seq(1, max(N0, N1, N2, N3), length.out=1000) # prediction range
 plot(N0, timings0,
 	xlab = "Sequence length (nucleotides)",
 	ylab = "Elapsed Time (sec.)",
@@ -139,9 +137,8 @@ plot(N0, timings0,
 	ylim=c(range(timings0,
 		timings1,
 		timings2,
-		timings3,
-		predict(c2, data.frame(N2=46340)))),
-	xlim=c(0, max(N3)))
+		timings3)),
+	xlim=c(0, N[length(N)]))
 points(N, predict(c0,
 		data.frame(N0 = N)),
 	type="l", lty=3)
@@ -162,12 +159,12 @@ points(N, predict(c3,
 		data.frame(N3 = N)),
 	type="l", lty=3, col="green")
 legend("topright",
-	c("pwalign::pairwiseAlignment",
-		"AlignProfiles (unrestricted, unanchored)",
+	c("AlignProfiles (unrestricted, unanchored)",
 		"AlignProfiles (restricted, unanchored)",
-		"AlignProfiles (restricted, anchored)"),
-	pch=c(1, 0, 5, 2), lty=3,
-	col=c("black", "blue", "red", "green"), bg="white")
+		"AlignProfiles (restricted, anchored)",
+		"AlignPairs (adaptive banding)"),
+	pch=c(0, 5, 2, 1), lty=3,
+	col=c("blue", "red", "green", "black"), bg="white")
 @
 \caption{\label{f3} Global Pairwise Sequence Alignment Timings.}
 \end{centerfig}

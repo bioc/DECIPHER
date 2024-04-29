@@ -27,9 +27,8 @@ data(PFASUM)
 PFASUM62 <- PFASUM[,, "62"] # the PFASUM62 matrix
 PFASUM62["A", "R"] # score for A/R pairing
 
-data(BLOSUM62)
-BLOSUM62 <- BLOSUM62*3/2 # convert from half-bits to third-bits
-plot(BLOSUM62[1:20, 1:20], PFASUM62[1:20, 1:20])
+data(BLOSUM)
+plot(BLOSUM[1:20, 1:20, "62"], PFASUM62[1:20, 1:20])
 abline(a=0, b=1)
 }
 \keyword{datasets}

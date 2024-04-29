@@ -156,7 +156,7 @@ tiles <- TileSeqs(dbConn, add2tbl="Tiles")
 \begin{Sinput}
   |===========================================================================| 100%
 
-Time difference of 572.06 secs
+Time difference of 48.19 secs
 \end{Sinput}
 \end{Schunk}
 
@@ -334,17 +334,18 @@ for (i in 1:dim(probes)[1]) {
 		results <- results[keep,]
 		
 		# append more non-targets to mismatches
-		p <- pairwiseAlignment(results$probe_rc,
+		p <- AlignPairs(results$probe_rc,
 			results$target,
-			type="global-local")
+			type="sequences",
+			verbose=FALSE)
 		probes$mismatches[i] <- paste(probes$mismatches[i],
 			paste(results$id,
 				" (", round(100*results$HybEff, 1), "%,",
 				round(results$ddG1, 2), "kcal/mol,",
 				round(results$dFAm, 1), "%;",
-				substring(reverseComplement(DNAStringSet(pattern(p))),
+				substring(reverseComplement(DNAStringSet(p[[1]])),
 					1L),
-				"/", substring(subject(p), 1L), ")",
+				"/", substring(p[[2]], 1L), ")",
 				sep="",
 				collapse=" "),
 			sep="")

@@ -107,7 +107,7 @@ SearchIndex <- function(pattern,
 		if (xtype == 1L) {
 			if (!is(subject, "DNAStringSet"))
 				stop("subject must be a DNAStringSet.")
-			subMatrix <- nucleotideSubstitutionMatrix(match=1.386294, # log(4)
+			subMatrix <- .nucleotideSubstitutionMatrix(match=1.386294, # log(4)
 				mismatch=-5.545177, # -4*log(4) allows 20% distance
 				type="DNA")
 			subMatrix["A", "A"] <- -log(freqs[1L]) # A
@@ -118,7 +118,7 @@ SearchIndex <- function(pattern,
 		} else if (xtype == 2L) {
 			if (!is(subject, "RNAStringSet"))
 				stop("subject must be a RNAStringSet.")
-			subMatrix <- nucleotideSubstitutionMatrix(match=1.386294, # log(4)
+			subMatrix <- .nucleotideSubstitutionMatrix(match=1.386294, # log(4)
 				mismatch=-5.545177, # -4*log(4) allows 20% distance
 				type="RNA")
 			subMatrix["A", "A"] <- -log(freqs[1L]) # A

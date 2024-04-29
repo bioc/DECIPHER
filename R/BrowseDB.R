@@ -232,6 +232,9 @@ BrowseDB <- function(dbFile,
 	
 	html <- c("<html>",
 		styles,
+		"<head><title>",
+		title,
+		"</title></head>",
 		title,
 		# creates a table just for the header row so that it aligns
 		"\n<div class=\"table_div\"><div class=\"thead\"><table>",

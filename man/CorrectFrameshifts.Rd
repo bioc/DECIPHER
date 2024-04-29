@@ -53,7 +53,7 @@ Numeric giving the cost for shifting between frames of the query sequence.
 Named character vector in the same format as \code{GENETIC_CODE} (the default), which represents the standard genetic code.
 }
   \item{substitutionMatrix}{
-Either a substitution matrix representing the substitution scores for an alignment (in third-bits) or the name of the amino acid substitution matrix to use in alignment.  The latter may be one of the following:  ``BLOSUM45'', ``BLOSUM50'', ``BLOSUM62'', ``BLOSUM80'', ``BLOSUM100'', ``PAM30'', ``PAM40'', ``PAM70'', ``PAM120'', ``PAM250'', ``MIQS'', ``MMLSUM10'' to ``MMLSUM90'' (by tens), or ``PFASUM11'' to ``PFASUM100'' (by ones).
+Either a substitution matrix representing the substitution scores for an alignment (in third-bits) or the name of the amino acid substitution matrix to use in alignment.
 }
   \item{verbose}{
 Logical indicating whether to display progress.

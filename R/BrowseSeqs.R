@@ -424,7 +424,14 @@ BrowseSeqs <- function(myXStringSet,
 			styles,
 			"</style>",
 			sep="")
-		html <- c('<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head>', styles, title, "<pre>", html, "</pre></html>")
+		html <- c('<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>',
+			title,
+			'</title></head>',
+			styles,
+			title,
+			'<pre>',
+			html,
+			'</pre></html>')
 	} else {
 		html <- paste(html,
 			myLengths,
@@ -437,7 +444,13 @@ BrowseSeqs <- function(myXStringSet,
 			html,
 			sep="    ")
 		
-		html <- c("<html>", title, "<pre>", html, "</pre></html>")
+		html <- c('<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>',
+			title,
+			'</title></head>',
+			title,
+			'<pre>',
+			html,
+			'</pre></html>')
 	}
 	
 	# replace unicode 'middle dot' with html entity

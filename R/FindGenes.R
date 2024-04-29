@@ -188,15 +188,9 @@
 		dna <- extractAt(dna,
 			IRanges(starts,
 				width=maxL))
+		p <- .pairwiseAlignment(up_region, RemoveGaps(dna), TRUE)
 		
-		p <- pairwiseAlignment(RemoveGaps(dna),
-			up_region,
-			substitutionMatrix=nucleotideSubstitutionMatrix(),
-			gapOpening=5,
-			gapExtension=0,
-			type="local-global")
-		
-		p <- DNAStringSet(pattern(p))
+		p <- DNAStringSet(p$subject)
 		p <- subseq(p, 1, length(SD))
 		p <- RemoveGaps(p)
 		p <- unique(p)
@@ -214,23 +208,30 @@
 	upstreamWidth,
 	pattern,
 	precision=2,
-	spacing=3) {
+	spacing=3,
+	processors=1L) {
 	
-	mapping <- diag(4) # don't penalize mismatches
-	dimnames(mapping) <- list(DNA_BASES,
-			DNA_BASES)
-	mapping["G", "G"] <- 4
-	mapping["C", "C"] <- 4
+	mapping <- .nucleotideSubstitutionMatrix(1, 0)
+	mapping["G", "G"] <- 6
+	mapping["C", "C"] <- 6
 	
 	w <- which(width(dna) == upstreamWidth)
-	p <- pairwiseAlignment(dna[w],
-		pattern,
-		type="local-global",
+	p <- AlignPairs(dna[w],
+		DNAStringSet(pattern),
+		pairs=data.frame(Pattern=seq_along(w), Subject=1L),
+		type="sequences",
 		substitutionMatrix=mapping,
-		gapOpening=10,
-		gapExtension=4)
-	pattern <- as.character(pattern(p))
-	subject <- as.character(subject(p))
+		gapExtension=-4,
+		gapOpening=-10,
+		verbose=FALSE,
+		processors=processors)
+	
+	t <- TerminalChar(p[[2L]])
+	mode(t) <- "integer"
+	begin <- t[, "leadingChar"] + 1L
+	end <- t[, "leadingChar"] + t[, "difference"]
+	pattern <- substring(p[[1L]], begin, end)
+	subject <- substring(p[[2L]], begin, end)
 	
 	dG <- .Call("calculateDeltaG",
 		pattern,
@@ -239,7 +240,7 @@
 		PACKAGE="DECIPHER")
 	dG <- round(dG/precision)*precision
 	
-	pos <- (start(pattern(p)) + end(pattern(p)))/2
+	pos <- (begin + end)/2
 	pos <- round(pos/spacing)*spacing
 	
 	motif <- rep(NA_character_,
@@ -251,12 +252,10 @@
 
 .performFolding <- function(foldLeft,
 	foldRight,
-	deltaGrulesRNA) {
+	deltaGrulesRNA,
+	processors=1L) {
 	
-	mapping <- diag(4)
-	mapping[mapping == 0] <- -4
-	dimnames(mapping) <- list(DNA_BASES,
-			DNA_BASES)
+	mapping <- .nucleotideSubstitutionMatrix(1, -4)
 	mapping["G", "G"] <- 6
 	mapping["C", "C"] <- 6
 	
@@ -265,14 +264,16 @@
 	w <- which(!d)
 	m <- match(x, x[w])
 	
-	p <- pairwiseAlignment(foldLeft[w],
+	p <- AlignPairs(foldLeft[w],
 		foldRight[w],
-		type="overlap",
+		type="sequences",
 		substitutionMatrix=mapping,
-		gapOpening=5,
-		gapExtension=1)
-	pattern <- as.character(pattern(p))
-	subject <- as.character(subject(p))
+		gapExtension=-1,
+		gapOpening=-5,
+		verbose=FALSE,
+		processors=processors)
+	pattern <- as.character(p[[1L]])
+	subject <- as.character(p[[2L]])
 	
 	dG <- .Call("calculateDeltaG",
 		pattern,
@@ -733,7 +734,8 @@ FindGenes <- function(myDNAStringSet,
 	dG_RBS <- .extractRBS(upstream,
 		deltaGrulesRNA,
 		upstreamWidth,
-		SD)
+		SD,
+		processors=processors)
 	
 	# compute mRNA folding free energy
 	dG_Fold <- matrix(NA_real_,
@@ -795,7 +797,8 @@ FindGenes <- function(myDNAStringSet,
 		
 		dG_Fold[w, i] <- .performFolding(foldLeft[w],
 			foldRight[w],
-			deltaGrulesRNA)
+			deltaGrulesRNA,
+			processors=processors)
 		
 		if (verbose) {
 			count <- count + 1L

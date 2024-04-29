@@ -4,14 +4,13 @@ import(methods)
 import(S4Vectors)
 import(IRanges)
 import(XVector)
-import(Biostrings, except="pairwiseAlignment")
+import(Biostrings)
 import(DBI)
 
 importFrom("grDevices", "colorRampPalette", "colors", "dev.flush", "dev.hold", "dev.size", "rainbow", "rgb", "as.graphicsAnnot", "col2rgb")
 importFrom("graphics", "abline", "axis", "box", "legend", "mtext", "par", "plot", "points", "rect", "segments", "strheight", "strwidth", "text", "axTicks", "hist", "layout", "lines", "polygon", "locator")
 importFrom("stats", "dendrapply", "dist", "is.leaf", "nlminb", "optimize", "order.dendrogram", "pbinom", "reorder", "setNames", "step", "uniroot", "weighted.mean", "binomial", "glm", "glm.control", "optim", "predict", "smooth.spline", "dlnorm", "plnorm", "qlnorm", "chisq.test", "dmultinom", "ecdf", "pchisq", "qbinom", "as.dist", "pgamma", "prcomp", "qgamma", "qnorm", "rnorm", "runif", "kmeans")
 importFrom("utils", "browseURL", "data", "flush.console", "object.size", "setTxtProgressBar", "txtProgressBar", "packageVersion", "write.table")
-importFrom("pwalign", "pairwiseAlignment")
 
 export(
 # interacting with a database:

@@ -146,16 +146,9 @@
 	
 	# align probe and target
 	seqs2 <- reverseComplement(DNAStringSet(target))
-	seqs2 <- unlist(strsplit(toString(seqs2), ", ", fixed=TRUE))
-	seqs2 <- paste("----", seqs2, "----", sep="")
-	p <- pairwiseAlignment(probe,
-		seqs2,
-		type="global-local",
-		gapOpen=-10,
-		gapExtension=-10)
-	seqs1 <- unlist(strsplit(toString(pattern(p)), ", ", fixed=TRUE))
-	seqs2 <- unlist(strsplit(toString(subject(p)), ", ", fixed=TRUE))
-	#ws <- p@subject@range@width # width of templates
+	p <- .pairwiseAlignment(probe, seqs2, TRUE)
+	seqs1 <- p$pattern
+	seqs2 <- p$subject
 	
 	deltas <- .Call("calculateFISH", seqs1, seqs2, PACKAGE="DECIPHER")
 	dG1_PM_DNARNA <- deltas[,1] - (273.15 + temp)/1000*(deltas[,2] + 0.368*n*log(ions))
@@ -333,47 +326,44 @@
 		mapping[,"-"] <- 0
 		ecoli <- "AAATTGAAGAGTTTGATCATGGCTCAGATTGAACGCTGGCGGCAGGCCTAACACATGCAAGTCGAACGGTAACAGGAAGAAGCTTGCTTCTTTGCTGACGAGTGGCGGACGGGTGAGTAATGTCTGGGAAACTGCCTGATGGAGGGGGATAACTACTGGAAACGGTAGCTAATACCGCATAACGTCGCAAGACCAAAGAGGGGGACCTTCGGGCCTCTTGCCATCGGATGTGCCCAGATGGGATTAGCTAGTAGGTGGGGTAACGGCTCACCTAGGCGACGATCCCTAGCTGGTCTGAGAGGATGACCAGCCACACTGGAACTGAGACACGGTCCAGACTCCTACGGGAGGCAGCAGTGGGGAATATTGCACAATGGGCGCAAGCCTGATGCAGCCATGCCGCGTGTATGAAGAAGGCCTTCGGGTTGTAAAGTACTTTCAGCGGGGAGGAAGGGAGTAAAGTTAATACCTTTGCTCATTGACGTTACCCGCAGAAGAAGCACCGGCTAACTCCGTGCCAGCAGCCGCGGTAATACGGAGGGTGCAAGCGTTAATCGGAATTACTGGGCGTAAAGCGCACGCAGGCGGTTTGTTAAGTCAGATGTGAAATCCCCGGGCTCAACCTGGGAACTGCATCTGATACTGGCAAGCTTGAGTCTCGTAGAGGGGGGTAGAATTCCAGGTGTAGCGGTGAAATGCGTAGAGATCTGGAGGAATACCGGTGGCGAAGGCGGCCCCCTGGACGAAGACTGACGCTCAGGTGCGAAAGCGTGGGGAGCAAACAGGATTAGATACCCTGGTAGTCCACGCCGTAAACGATGTCGACTTGGAGGTTGTGCCCTTGAGGCGTGGCTTCCGGAGCTAACGCGTTAAGTCGACCGCCTGGGGAGTACGGCCGCAAGGTTAAAACTCAAATGAATTGACGGGGGCCCGCACAAGCGGTGGAGCATGTGGTTTAATTCGATGCAACGCGAAGAACCTTACCTGGTCTTGACATCCACGGAAGTTTTCAGAGATGAGAATGTGCCTTCGGGAACCGTGAGACAGGTGCTGCATGGCTGTCGTCAGCTCGTGTTGTGAAATGTTGGGTTAAGTCCCGCAACGAGCGCAACCCTTATCCTTTGTTGCCAGCGGTCCGGCCGGGAACTCAAAGGAGACTGCCAGTGATAAACTGGAGGAAGGTGGGGATGACGTCAAGTCATCATGGCCCTTACGACCAGGGCTACACACGTGCTACAATGGCGCATACAAAGAGAAGCGACCTCGCGAGAGCAAGCGGACCTCATAAAGTGCGTCGTAGTCCGGATTGGAGTCTGCAACTCGACTCCATGAAGTCGGAATCGCTAGTAATCGTGGATCAGAATGCCACGGTGAATACGTTCCCGGGCCTTGTACACACCGCCCGTCACACCATGGGAGTGGGTTGCAAAAGAAGTAGGTAGCTTAACCTTCGGGAGGGCGCTTACCACTTTGTGATTCATGACTGGGGTGAAGTCGTAACAAGGTAACCGTAGGGGAACCTGCGGTTGGATCACCTCCTTA"
 		
-		p <- pairwiseAlignment(unique(template), ecoli, type="global-local", fuzzyMatrix=mapping)
-		p <- p[match(template, unique(template))]
-		
 		# determine domain positioning
-		ins <- insertion(p)
-		starts <- lapply(ins, slot, "start")
-		widths <- lapply(ins, slot, "width")
+		p <- .pairwiseAlignment(template, ecoli)
+		starts <- p$insertionStart
+		widths <- p$insertionWidth
 		
-		index <- p@subject@range@start > 567 | (p@subject@range@start + p@subject@range@width) <= 567
+		index <- p$subjectStart > 567 | (p$subjectStart + p$subjectWidth) <= 567
 		domain2start <- ifelse(index,
 			1,
-			568 - p@subject@range@start)
+			568 - p$subjectStart)
 		index <- !index
 		for (j in which(index)) {
-			i <- starts[[j]] + p@subject@range@start[j] - 1
+			i <- starts[[j]] + p$subjectStart[j] - 1
 			cum <- cumsum(widths[[j]])
 			w <- which(i <= 568)
 			if (length(w) > 0)
 				domain2start[j] <- domain2start[j] + cum[length(w)]
 		}
 		
-		index <- p@subject@range@start > 913 | (p@subject@range@start + p@subject@range@width) <= 913
+		index <- p$subjectStart > 913 | (p$subjectStart + p$subjectWidth) <= 913
 		domain3start <- ifelse(index,
 			domain2start,
-			914 - p@subject@range@start)
+			914 - p$subjectStart)
 		index <- !index
 		for (j in which(index)) {
-			i <- starts[[j]] + p@subject@range@start[j] - 1
+			i <- starts[[j]] + p$subjectStart[j] - 1
 			cum <- cumsum(widths[[j]])
 			w <- which(i <= 913)
 			if (length(w) > 0)
 				domain3start[j] <- domain3start[j] + cum[length(w)]
 		}
 		
-		index <- p@subject@range@start > 1397 | (p@subject@range@start + p@subject@range@width) <= 1397
+		index <- p$subjectStart > 1397 | (p$subjectStart + p$subjectWidth) <= 1397
 		domain4start <- ifelse(index,
 			domain3start,
-			1398 - p@subject@range@start)
+			1398 - p$subjectStart)
 		index <- !index
 		for (j in which(index)) {
-			i <- starts[[j]] + p@subject@range@start[j] - 1
+			i <- starts[[j]] + p$subjectStart[j] - 1
 			cum <- cumsum(widths[[j]])
 			w <- which(i <= 1398)
 			if (length(w) > 0)
@@ -381,21 +371,16 @@
 		}
 		
 		# find target site position in the alignment
-		startsPattern <- p@pattern@range@start - 1
-		del <- deletion(p) # gaps added to pattern
+		startsPattern <- p$patternStart - 1
 		starts <- fivePrimeEnd
 		ends <- threePrimeEnd
-		ls <- length(p)
-		for (j in 1:ls) {
-			d <- del[[j]]
-			if (length(d) == 0)
-				next
-			w <- which((d@start + startsPattern[j]) <= starts[j])
+		for (j in which(lengths(p$deletionStart) > 0L)) {
+			w <- which((p$deletionStart[[j]] + startsPattern[j]) <= starts[j])
 			if (length(w) > 0)
-				starts[j] <- starts[j] + sum(d@width[w])
-			w <- which((d@start + startsPattern[j]) <= ends[j])
+				starts[j] <- starts[j] + sum(p$deletionWidth[w])
+			w <- which((p$deletionStart + startsPattern[j]) <= ends[j])
 			if (length(w) > 0)
-				ends[j] <- ends[j] + sum(d@width[w])
+				ends[j] <- ends[j] + sum(p$deletionWidth[w])
 		}
 		
 		# determine start and end of each sequence's domain
@@ -405,7 +390,7 @@
 				domain2start,
 				domain3start,
 				domain4start,
-				nchar(template) - p@pattern@range@width + nchar(unlist(strsplit(toString(pattern(p)), ", ", fixed=TRUE))) + 1),
+				nchar(template) - p$patternWidth + width(p$pattern) + 1),
 			nrow=ls)
 		for (j in 1:ls) {
 			w <- which(domains[j,] <= starts[j])
@@ -415,16 +400,13 @@
 		}
 		
 		# determine positioning in the original sequence
-		for (j in 1:ls) {
-			d <- del[[j]]
-			if (length(d) == 0)
-				next
-			w <- which((d@start + startsPattern[j] + cumsum(d@width) - d@width) <= domainStarts[j])
+		for (j in which(lengths(p$deletionStart) > 0L)) {
+			w <- which((p$deletionStart[[j]] + startsPattern[j] + cumsum(p$deletionWidth[[j]]) - p$deletionWidth[[j]]) <= domainStarts[j])
 			if (length(w) > 0)
-				domainStarts[j] <- domainStarts[j] - sum(d@width[w])
-			w <- which((d@start + startsPattern[j] + cumsum(d@width) - d@width) <= domainEnds[j])
+				domainStarts[j] <- domainStarts[j] - sum(p$deletionWidth[[j]][w])
+			w <- which((p$deletionStart[[j]] + startsPattern[j] + cumsum(p$deletionWidth[[j]]) - p$deletionWidth[[j]]) <= domainEnds[j])
 			if (length(w) > 0)
-				domainEnds[j] <- domainEnds[j] - sum(d@width[w])
+				domainEnds[j] <- domainEnds[j] - sum(p$deletionWidth[[j]][w])
 		}
 		
 		batchSize <- floor(batchSize*max(n)/max(domainEnds - domainStarts))
@@ -442,73 +424,70 @@
 		mapping[,"-"] <- 0
 		ecoli <- "GGTTAAGCGACTAAGCGTACACGGTGGATGCCCTGGCAGTCAGAGGCGATGAAGGACGTGCTAATCTGCGATAAGCGTCGGTAAGGTGATATGAACCGTTATAACCGGCGATTTCCGAATGGGGAAACCCAGTGTGATTCGTCACACTATCATTAACTGAATCCATAGGTTAATGAGGCGAACCGGGGGAACTGAAACATCTAAGTACCCCGAGGAAAAGAAATCAACCGAGATTCCCCCAGTAGCGGCGAGCGAACGGGGAGGAGCCCAGAGCCTGAATCAGTGTGTGTGTTAGTGGAAGCGTCTGGAAAGGCGCGCGATACAGGGTGACAGCCCCGTACACAAAAATGCACATACTGTGAGCTCGATGAGTAGGGCGGGACACGTGGTATCCTGTCTGAATATGGGGGGACCATCCTCCAAGGCTAAATACTCCTGACTGACCGATAGTGAACCAGTACCGTGAGGGAAAGGCGAAAAGAACCCCGGCGAGGGGAGTGAAAAAGAACCTGAAACCGTGTACGTACAAGCAGTGGGAGCCTCTTTTATGGGGTGACTGCGTACCTTTTGTATAATGGGTCAGCGACTTATATTCTGTAGCAAGGTTAACCGAATAGGGGAGCCGAAGGGAAACCGAGTCTTAACCGGGCGTTAAGTTGCAGGGTATAGACCCGAAACCCGGTGATCTAGCCATGGGCAGGTTGAAGGTTGGGTAACACTAACTGGAGGACCGAACCGACTAATGTTGAAAAATTAGCGGATGACTTGTGGCTGGGGGTGAAAGGCCAATCAAACCGGGAGATAGCTGGTTCTCCCCGAAAGCTATTTAGGTAGCGCCTCGTGAATTCATCTCCGGGGGTAGAGCACTGTTTCGGCAAGGGGGTCATCCCGACTTACCAACCCGATGCAAACTGCGAATACCGGAGAATGTTATCACGGGAGACATACGGCGGGTGCTAACGTCCGTCGTGAAGAGGGAAACAACCCAGACCGCCAGCTAAGGTCCCAAAGTCATGGTTAAGTGGGAAACGATGTGGGAAGGCCCAGACAGCCAGGATGTTGGCTTAGAAGCAGCCATCATTTAAAGAAAGCGTAATAGCTCACTGGTCGAGTCGGCCTGCGCGGAAGATGTAACGGGGCTAAACCATGCACCGAAGCTGCGGCAGCGACACTGTGTGTTGTTGGGTAGGGGAGCGTTCTGTAAGCCTGTGAAGGTGTACTGTGAGGTATGCTGGAGGTATCAGAAGTGCGAATGCTGACATAAGTAACGATAAAGCGGGTGAAAAGCCCGCTCGCCGGAAGACCAAGGGTTCCTGTCCAACGTTAATCGGGGCAGGGTGAGTCGACCCCTAAGGCGAGGCCGAAAGGCGTAGTCGATGGGAAACAGGTTAATATTCCTGTACTTGGTGTTACTGCGAAGGGGGGACGGAGAAGGCTATGTTGGCCGGGCGACGGTTGTCCCGGTTTAAGCGTGTAGGCTGGTTTTCCAGGCAAATCCGGAAAATCAAGGCTGAGGCGTGATGACGAGGCACTACGGTGCTGAAGCAACAAATGCCCTGCTTCCAGGAAAAGCCTCTAAGCATCAGGTAACATCAAATCGTACCCCAAACCGACACAGGTGGTCAGGTAGAGAATACCAAGGCGCTTGAGAGAACTCGGGTGAAGGAACTAGGCAAAATGGTGCCGTAACTTCGGGAGAAGGCACGCTGATATGTAGGTGAAGTCCCTCGCGGATGGAGCTGAAATCAGTCGAAGATACCAGCTGGCTGCAACTGTTTATTAAAAACACAGCACTGTGCAAACACGAAAGTGGACGTATACGGTGTGACGCCTGCCCGGTGCCGGAAGGTTAATTGATGGGGTCAGCGCAAGCGAAGCTCTTGATCGAAGCCCCGGTAAACGGCGGCCGTAACTATAACGGTCCTAAGGTAGCGAAATTCCTTGTCGGGTAAGTTCCGACCTGCACGAATGGCGTAATGATGGCCAGGCTGTCTCCACCCGAGACTCAGTGAAATTGAACTCGCTGTGAAGATGCAGTGTACCCGCGGCAAGACGGAAAGACCCCGTGAACCTTTACTATAGCTTGACACTGAACATTGAGCCTTGATGTGTAGGATAGGTGGGAGGCTTTGAAGTGTGGACGCCAGTCTGCATGGAGCCGACCTTGAAATACCACCCTTTAATGTTTGATGTTCTAACGTGGACCCGTGATCCGGGTTGCGGACAGTGTCTGGTGGGTAGTTTGACTGGGGCGGTCTCCTCCTAAAGAGTAACGGAGGAGCACGAAGGTTGGCTAATCCTGGTCGGACATCAGGAGGTTAGTGCAATGGCATAAGCCAGCTTGACTGCGAGCGTGACGGCGCGAGCAGGTGCGAAAGCAGGTCATAGTGATCCGGTGGTTCTGAATGGAAGGGCCATCGCTCAACGGATAAAAGGTACTCCGGGGATAACAGGCTGATACCGCCCAAGAGTTCATATCGACGGCGGTGTTTGGCACCTCGATGTCGGCTCATCACATCCTGGGGCTGAAGTAGGTCCCAAGGGTATGGCTGTTCGCCATTTAAAGTGGTACGCGAGCTGGGTTTAGAACGTCGTGAGACAGTTCGGTCCCTATCTGCCGTGGGCGCTGGAGAACTGAGGGGGGCTGCTCCTAGTACGAGAGGACCGGAGTGGACGCATCACTGGTGTTCGGGTTGTCATGCCAATGGCACTGCCCGGTAGCTAAATGCGGAAGAGATAAGTGCTGAAAGCATCTAAGCACGAAACTTGCCCCGAGATGAGTTCTCCCTGACCCTTTAAGGGTCCTGAAGGAACGTTGAAGACGACGACGTTGATAGGCCGGGTGTGTAAGCGCAGCGATGCGTTGAGCTAACCGGTACTAATGAACCGTGAGGCTTAACCTT"
 		
-		p <- pairwiseAlignment(unique(template), ecoli, type="global-local", fuzzyMatrix=mapping)
-		p <- p[match(template, unique(template))]
-		
 		# determine domain positioning
-		ins <- insertion(p)
-		starts <- lapply(ins, slot, "start")
-		widths <- lapply(ins, slot, "width")
+		p <- .pairwiseAlignment(template, ecoli)
+		starts <- p$insertionStart
+		widths <- p$insertionWidth
 		
-		index <- p@subject@range@start > 562 | (p@subject@range@start + p@subject@range@width) <= 562
+		index <- p$subjectStart > 562 | (p$subjectStart + p$subjectWidth) <= 562
 		domain2start <- ifelse(index,
 			1,
-			563 - p@subject@range@start)
+			563 - p$subjectStart)
 		index <- !index
 		for (j in which(index)) {
-			i <- starts[[j]] + p@subject@range@start[j] - 1
+			i <- starts[[j]] + p$subjectStart[j] - 1
 			cum <- cumsum(widths[[j]])
 			w <- which(i <= 563)
 			if (length(w) > 0)
 				domain2start[j] <- domain2start[j] + cum[length(w)]
 		}
 		
-		index <- p@subject@range@start > 1270 | (p@subject@range@start + p@subject@range@width) <= 1270
+		index <- p$subjectStart > 1270 | (p$subjectStart + p$subjectWidth) <= 1270
 		domain3start <- ifelse(index,
 			domain2start,
-			1271 - p@subject@range@start)
+			1271 - p$subjectStart)
 		index <- !index
 		for (j in which(index)) {
-			i <- starts[[j]] + p@subject@range@start[j] - 1
+			i <- starts[[j]] + p$subjectStart[j] - 1
 			cum <- cumsum(widths[[j]])
 			w <- which(i <= 1271)
 			if (length(w) > 0)
 				domain3start[j] <- domain3start[j] + cum[length(w)]
 		}
 		
-		index <- p@subject@range@start > 1647 | (p@subject@range@start + p@subject@range@width) <= 1647
+		index <- p$subjectStart > 1647 | (p$subjectStart + p$subjectWidth) <= 1647
 		domain4start <- ifelse(index,
 			domain3start,
-			1648 - p@subject@range@start)
+			1648 - p$subjectStart)
 		index <- !index
 		for (j in which(index)) {
-			i <- starts[[j]] + p@subject@range@start[j] - 1
+			i <- starts[[j]] + p$subjectStart[j] - 1
 			cum <- cumsum(widths[[j]])
 			w <- which(i <= 1648)
 			if (length(w) > 0)
 				domain4start[j] <- domain4start[j] + cum[length(w)]
 		}
 		
-		index <- p@subject@range@start > 2015 | (p@subject@range@start + p@subject@range@width) <= 2015
+		index <- p$subjectStart > 2015 | (p$subjectStart + p$subjectWidth) <= 2015
 		domain5start <- ifelse(index,
 			domain4start,
-			2016 - p@subject@range@start)
+			2016 - p$subjectStart)
 		index <- !index
 		for (j in which(index)) {
-			i <- starts[[j]] + p@subject@range@start[j] - 1
+			i <- starts[[j]] + p$subjectStart[j] - 1
 			cum <- cumsum(widths[[j]])
 			w <- which(i <= 2016)
 			if (length(w) > 0)
 				domain5start[j] <- domain5start[j] + cum[length(w)]
 		}
 		
-		index <- p@subject@range@start > 2626 | (p@subject@range@start + p@subject@range@width) <= 2626
+		index <- p$subjectStart > 2626 | (p$subjectStart + p$subjectWidth) <= 2626
 		domain6start <- ifelse(index,
 			domain5start,
-			2627 - p@subject@range@start)
+			2627 - p$subjectStart)
 		index <- !index
 		for (j in which(index)) {
-			i <- starts[[j]] + p@subject@range@start[j] - 1
+			i <- starts[[j]] + p$subjectStart[j] - 1
 			cum <- cumsum(widths[[j]])
 			w <- which(i <= 2627)
 			if (length(w) > 0)
@@ -516,21 +495,16 @@
 		}
 		
 		# find target site position in the alignment
-		startsPattern <- p@pattern@range@start - 1
-		del <- deletion(p) # gaps added to pattern
+		startsPattern <- p$patternStart - 1
 		starts <- fivePrimeEnd
 		ends <- threePrimeEnd
-		ls <- length(p)
-		for (j in 1:ls) {
-			d <- del[[j]]
-			if (length(d) == 0)
-				next
-			w <- which((d@start + startsPattern[j]) <= starts[j])
+		for (j in which(lengths(p$deletionStart) > 0L)) {
+			w <- which((p$deletionStart[[j]] + startsPattern[j]) <= starts[j])
 			if (length(w) > 0)
-				starts[j] <- starts[j] + sum(d@width[w])
-			w <- which((d@start + startsPattern[j]) <= ends[j])
+				starts[j] <- starts[j] + sum(p$deletionWidth[w])
+			w <- which((p$deletionStart + startsPattern[j]) <= ends[j])
 			if (length(w) > 0)
-				ends[j] <- ends[j] + sum(d@width[w])
+				ends[j] <- ends[j] + sum(p$deletionWidth[w])
 		}
 		
 		# determine start and end of each sequence's domain
@@ -542,7 +516,7 @@
 				domain4start,
 				domain5start,
 				domain6start,
-				nchar(template) - p@pattern@range@width + nchar(unlist(strsplit(toString(pattern(p)), ", ", fixed=TRUE))) + 1),
+				nchar(template) - p$patternWidth + width(p$pattern) + 1),
 			nrow=ls)
 		for (j in 1:ls) {
 			w <- which(domains[j,] <= starts[j])
@@ -552,16 +526,13 @@
 		}
 		
 		# determine positioning in the original sequence
-		for (j in 1:ls) {
-			d <- del[[j]]
-			if (length(d) == 0)
-				next
-			w <- which((d@start + startsPattern[j] + cumsum(d@width) - d@width) <= domainStarts[j])
+		for (j in which(lengths(p$deletionStart) > 0L)) {
+			w <- which((p$deletionStart[[j]] + startsPattern[j] + cumsum(p$deletionWidth[[j]]) - p$deletionWidth[[j]]) <= domainStarts[j])
 			if (length(w) > 0)
-				domainStarts[j] <- domainStarts[j] - sum(d@width[w])
-			w <- which((d@start + startsPattern[j] + cumsum(d@width) - d@width) <= domainEnds[j])
+				domainStarts[j] <- domainStarts[j] - sum(p$deletionWidth[[j]][w])
+			w <- which((p$deletionStart[[j]] + startsPattern[j] + cumsum(p$deletionWidth[[j]]) - p$deletionWidth[[j]]) <= domainEnds[j])
 			if (length(w) > 0)
-				domainEnds[j] <- domainEnds[j] - sum(d@width[w])
+				domainEnds[j] <- domainEnds[j] - sum(p$deletionWidth[[j]][w])
 		}
 		
 		batchSize <- floor(batchSize*max(n)/max(domainEnds - domainStarts))
@@ -841,7 +812,9 @@ DesignProbes <- function(tiles,
 	for (id in identifier) {
 		if (verbose) {
 			time.1 <- Sys.time()
-			cat("\n", id, sep="")
+			if (id != identifier[1L])
+				cat("\n")
+			cat(id)
 			flush.console()
 		}
 		
@@ -1144,8 +1117,6 @@ DesignProbes <- function(tiles,
 						each=j)
 					nontargets[count:(count + combos[i] - 1)] <- rep(target_site,
 						l)
-#					FAms[count:(count + combos[i] - 1)] <- rep(probes$FAm[i,w],
-#						each=j)
 					FAms[count:(count + combos[i] - 1)] <- min(probes$FAm[i,w])
 					count <- count + combos[i]
 				}
@@ -1153,12 +1124,6 @@ DesignProbes <- function(tiles,
 			
 			if (count == 1) # sites do not overlap
 				next
-			
-#			p <- pairwiseAlignment(nontargets[1:(count - 1)],
-#				reverseComplement(DNAStringSet(targets[1:(count - 1)])),
-#				type="local-global",
-#				gapOpen=-10,
-#				gapExtension=-10)
 			
 			eff <- CalculateEfficiencyFISH(targets[1:(count - 1)],
 				nontargets[1:(count - 1)],
@@ -1196,19 +1161,10 @@ DesignProbes <- function(tiles,
 				next
 			
 			s1 <- targets[index[w]]
-			m <- match(s1, probes$probe)
 			s2 <- reverseComplement(DNAStringSet(nontargets[index[w]]))
-			p <- pairwiseAlignment(s1,
-				paste("----", s2, "----", sep=""),
-				type="global-local",
-				gapOpen=-10,
-				gapExtension=-10)
-			s1 <- toString(pattern(p))
-			s1 <- unlist(strsplit(s1, ", ", fixed=TRUE))
-			s2 <- toString(subject(p))
-			s2 <- unlist(strsplit(s2, ", ", fixed=TRUE))
-			s2 <- toString(reverseComplement(DNAStringSet(s2)))
-			s2 <- unlist(strsplit(s2, ", ", fixed=TRUE))
+			p <- .pairwiseAlignment(s1, s2)
+			s1 <- as.character(p$pattern)
+			s2 <- as.character(reverseComplement(DNAStringSet(p$subject)))
 			
 			probes$mismatches[w] <- paste(probes$mismatches[w],
 				ids[k],
@@ -1435,6 +1391,7 @@ DesignProbes <- function(tiles,
 				time.1,
 				units='secs'),
 				digits=2))
+			cat("\n")
 		}
 		
 		if (numProbeSets == 0)

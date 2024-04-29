@@ -35,13 +35,9 @@
 		stop("primer is not the same length as target.")
 	
 	if (align) {
-		p <- pairwiseAlignment(primer,
-			target,
-			type="global",
-			gapOpen=-5,
-			gapExtension=-5)
-		primer <- as.character(pattern(p))
-		target <- as.character(subject(p))
+		p <- .pairwiseAlignment(primer, target, TRUE)
+		primer <- p$pattern
+		target <- p$subject
 	} else {
 		if (any(nchar(target) != nchar(primer)))
 			stop("primer and target must be aligned (equal length).")
@@ -335,11 +331,6 @@ DesignSignatures <- function(dbFile,
 		if (any(is.na(focusID)))
 			stop("focusID not found in identifier.")
 	}
-	
-	# set the seed for repeatable sampling
-	last.seed <- .Random.seed
-	set.seed(1234)
-	on.exit({.Random.seed <- last.seed}, add=TRUE)
 	
 	# load dS and dH rules
 	data("deltaSrules",
@@ -2061,6 +2052,7 @@ DesignSignatures <- function(dbFile,
 			time.1,
 			units='secs'),
 			digits=2))
+		cat("\n")
 	}
 	
 	return(primers)
