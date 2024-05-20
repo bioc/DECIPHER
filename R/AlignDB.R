@@ -6,10 +6,10 @@ AlignDB <- function(dbFile,
 	batchSize=10000,
 	perfectMatch=2,
 	misMatch=-1,
-	gapOpening=-14,
-	gapExtension=-2,
+	gapOpening=-12,
+	gapExtension=-3,
 	gapPower=-1,
-	terminalGap=0,
+	terminalGap=-4,
 	normPower=c(1, 0),
 	standardize=TRUE,
 	substitutionMatrix=NULL,
@@ -111,15 +111,19 @@ AlignDB <- function(dbFile,
 		} else if (is.character(substitutionMatrix)) {
 			subMatrix <- .getSubMatrix(substitutionMatrix)
 		} else if (is.matrix(substitutionMatrix)) {
-			if (any(!(AAs %in% dimnames(substitutionMatrix)[[1]])) ||
-				any(!(AAs %in% dimnames(substitutionMatrix)[[2]])))
+			if (nrow(substitutionMatrix) != ncol(substitutionMatrix))
+				stop("substitutionMatrix is not square.")
+			if (sum(!(AAs %in% rownames(substitutionMatrix))) > 0L ||
+				sum(!(AAs %in% colnames(substitutionMatrix))) > 0L)
 				stop("substitutionMatrix is incomplete.")
 			subMatrix <- substitutionMatrix
 		} else {
 			stop("Invalid substitutionMatrix must be NULL, a character string, or a matrix.")
 		}
-		subMatrix <- subMatrix[AAs, AAs]
-		mode(subMatrix) <- "numeric"
+		if (nrow(subMatrix) != length(AAs) || sum(rownames(subMatrix) != AAs) > 0L)
+			subMatrix <- subMatrix[AAs, AAs]
+		if (!is.double(subMatrix))
+			mode(subMatrix) <- "numeric"
 	} else {
 		if (!is.null(substitutionMatrix)) {
 			if (is.matrix(substitutionMatrix)) {
@@ -134,7 +138,7 @@ AlignDB <- function(dbFile,
 				stop("substitutionMatrix must be NULL or a matrix.")
 			}
 		} else if (type==2L && missing(perfectMatch) && missing(misMatch)) {
-			substitutionMatrix <- matrix(c(10, 3, 5, 3, 3, 12, 3, 5, 5, 3, 12, 3, 3, 5, 3, 10),
+			substitutionMatrix <- matrix(c(11, 4, 5, 4, 4, 12, 4, 5, 5, 4, 12, 4, 4, 5, 4, 11),
 				nrow=4,
 				ncol=4,
 				dimnames=list(bases, bases))

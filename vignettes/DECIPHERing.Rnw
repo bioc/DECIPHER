@@ -62,7 +62,7 @@ options(width=80)
 \section{About DECIPHER}
 %------------------------------------------------------------
 
-\Rpackage{DECIPHER} is a software toolset that can be used for deciphering and managing biological sequences efficiently using the \R{} statistical programming language.  The program features tools falling into seven categories:
+\Rpackage{DECIPHER} is a software that can be used for deciphering and managing biological sequences efficiently in the \R{} programming language.  The program features tools falling into seven categories:
 \begin{itemize}
 \item Sequence databases: import, maintain, view, export, and interact with a massive number of sequences.
 \item Homology finding: rapidly query sequences for homologous hits among a set of target sequences or genomes.  Cluster into groups of related sequences.

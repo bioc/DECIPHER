@@ -2,8 +2,8 @@ AlignSeqs <- function(myXStringSet,
 	guideTree=NULL,
 	iterations=2,
 	refinements=1,
-	gapOpening=c(-18, -14),
-	gapExtension=c(-3, -2),
+	gapOpening=c(-18, -10),
+	gapExtension=-3,
 	useStructures=TRUE,
 	structures=NULL,
 	FUN=AdjustAlignment,
@@ -175,7 +175,7 @@ AlignSeqs <- function(myXStringSet,
 					if (dim(structureMatrix)[1] != dim(structureMatrix)[2])
 						stop("structureMatrix is not square.")
 				} else {
-					structureMatrix <- matrix(c(4, 0, -2, 0, 14, 0, -2, 0, 0),
+					structureMatrix <- matrix(c(3, 2, -1, 2, 12, -4, -1, -4, 1),
 						nrow=3) # order is H, E, C
 				}
 				if (dim(structureMatrix)[1] != dim(structures[[1]])[1])
@@ -218,7 +218,7 @@ AlignSeqs <- function(myXStringSet,
 					if (dim(structureMatrix)[1] != 3)
 						stop("structureMatrix must be 3 x 3 when structures is NULL.")
 				} else { # use the default structureMatrix
-					structureMatrix <- matrix(c(7, -4, -4, -4, 12, -3, -4, -3, 12),
+					structureMatrix <- matrix(c(7, -3, -3, -3, 11, -8, -3, -8, 11),
 						nrow=3) # order is ., (, )
 				}
 				replace <- FALSE
@@ -350,7 +350,7 @@ AlignSeqs <- function(myXStringSet,
 			!("misMatch" %in% m) &&
 			!("perfectMatch" %in% m)) {
 			subM <- TRUE
-			sM <- sM2 <- matrix(c(12, 4, 6, 4, 4, 14, 4, 6, 6, 4, 14, 4, 4, 6, 4, 12),
+			sM <- sM2 <- matrix(c(11, 4, 5, 4, 4, 12, 4, 5, 5, 4, 12, 4, 4, 5, 4, 11),
 				nrow=4,
 				ncol=4)
 			dimnames(sM) <- list(bases, bases)
@@ -840,7 +840,7 @@ AlignSeqs <- function(myXStringSet,
 			verbose=verbose)
 		
 		if (replace) {
-			structureMatrix <<- matrix(c(7, -4, -4, -4, 12, -3, -4, -3, 12),
+			structureMatrix <<- matrix(c(7, -3, -3, -3, 11, -8, -3, -8, 11),
 				nrow=3) # order is ., (, )
 			replace <<- FALSE
 		} else {

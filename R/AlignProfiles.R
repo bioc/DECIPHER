@@ -6,10 +6,10 @@ AlignProfiles <- function(pattern,
 	s.struct=NULL,
 	perfectMatch=2,
 	misMatch=-1,
-	gapOpening=-14,
-	gapExtension=-2,
+	gapOpening=-12,
+	gapExtension=-3,
 	gapPower=-1,
-	terminalGap=0,
+	terminalGap=-4,
 	restrict=c(-1000, 2, 10),
 	anchor=0.7,
 	normPower=c(1, 0),
@@ -192,15 +192,19 @@ AlignProfiles <- function(pattern,
 		} else if (is.character(substitutionMatrix)) {
 			subMatrix <- .getSubMatrix(substitutionMatrix)
 		} else if (is.matrix(substitutionMatrix)) {
-			if (any(!(AAs %in% dimnames(substitutionMatrix)[[1]])) ||
-				any(!(AAs %in% dimnames(substitutionMatrix)[[2]])))
+			if (nrow(substitutionMatrix) != ncol(substitutionMatrix))
+				stop("substitutionMatrix is not square.")
+			if (sum(!(AAs %in% rownames(substitutionMatrix))) > 0L ||
+				sum(!(AAs %in% colnames(substitutionMatrix))) > 0L)
 				stop("substitutionMatrix is incomplete.")
 			subMatrix <- substitutionMatrix
 		} else {
 			stop("Invalid substitutionMatrix must be NULL, a character string, or a matrix.")
 		}
-		subMatrix <- subMatrix[AAs, AAs]
-		mode(subMatrix) <- "numeric"
+		if (nrow(subMatrix) != length(AAs) || sum(rownames(subMatrix) != AAs) > 0L)
+			subMatrix <- subMatrix[AAs, AAs]
+		if (!is.double(subMatrix))
+			mode(subMatrix) <- "numeric"
 	} else {
 		bases <- c("A", "C", "G",
 			ifelse(type == 2L, "U", "T"))
@@ -215,7 +219,7 @@ AlignProfiles <- function(pattern,
 				stop("substitutionMatrix must be NULL or a matrix.")
 			}
 		} else if (type == 2L && missing(perfectMatch) && missing(misMatch)) {
-			sM <- matrix(c(12, 4, 6, 4, 4, 14, 4, 6, 6, 4, 14, 4, 4, 6, 4, 12),
+			sM <- matrix(c(11, 4, 5, 4, 4, 12, 4, 5, 5, 4, 12, 4, 4, 5, 4, 11),
 				nrow=4,
 				ncol=4,
 				dimnames=list(bases, bases))
@@ -242,10 +246,10 @@ AlignProfiles <- function(pattern,
 		if (is.null(structureMatrix)) {
 			if (type == 3L) {
 				# assume structures from PredictHEC
-				structureMatrix <- matrix(c(4, 0, -2, 0, 14, 0, -2, 0, 0),
+				structureMatrix <- matrix(c(3, 2, -1, 2, 12, -4, -1, -4, 1),
 					nrow=3) # order is H, E, C
 			} else {
-				structureMatrix <- matrix(c(7, -4, -4, -4, 12, -3, -4, -3, 12),
+				structureMatrix <- matrix(c(7, -3, -3, -3, 11, -8, -3, -8, 11),
 					nrow=3) # order is ., (, )
 			}
 		} else {

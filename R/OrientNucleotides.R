@@ -231,6 +231,7 @@ OrientNucleotides <- function(myXStringSet,
 			time.1,
 			units='secs'),
 			digits=2))
+		cat("\n")
 	}
 	
 	if (type == 1L) {

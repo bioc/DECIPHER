@@ -436,7 +436,8 @@ DetectRepeats <- function(myXStringSet,
 			POSL <- tempL + 1L
 			POSR <- tempR + 1L
 			attempts <- 0L
-			while (POSR[length(POSR)] <= l &&
+			n <- length(POSR)
+			while (POSR[n] <= l &&
 				attempts <= maxShifts) {
 				y <- .Call("replaceGaps",
 					x,
@@ -456,6 +457,37 @@ DetectRepeats <- function(myXStringSet,
 				}
 				POSL <- POSL + 1L
 				POSR <- POSR + 1L
+			}
+			
+			t <- TerminalChar(x)
+			gaps <- t[1L, "leadingChar"]
+			if (gaps > 0 && posL[1L] > 1L) {
+				delta <- min(posL[1L] - 1L, gaps)
+				y <- x
+				POSL <- posL
+				POSL[1L] <- POSL[1L] - delta
+				subseq(y[1L], gaps - delta + 1L, gaps) <- subseq(myXString, POSL[1L], posL[1L] - 1L)
+				temp <- .score(y, gapCost, POSL, posR)
+				if (temp > LnL) {
+					x <- y
+					LnL <- temp
+					posL <- POSL
+				}
+			}
+			
+			gaps <- t[n, "trailingChar"]
+			if (gaps > 0 && posR[n] < l) {
+				delta <- min(l - posR[n], gaps)
+				y <- x
+				POSR <- posR
+				POSR[n] <- POSR[n] + delta
+				subseq(y[n], width(x)[n] - gaps + 1L, width(x)[n] - gaps + delta) <- subseq(myXString, posR[n] + 1L, POSR[n])
+				temp <- .score(y, gapCost, posL, POSR)
+				if (temp > LnL) {
+					x <- y
+					LnL <- temp
+					posR <- POSR
+				}
 			}
 			
 			list(x, LnL, posL, posR)
@@ -510,8 +542,7 @@ DetectRepeats <- function(myXStringSet,
 					values[w[i]])
 				posL <- posL + w[i]
 				posR <- posL + values[w[i]] - 1L
-				keep <- posL <= l &
-					posR <= l
+				keep <- posL <= l
 				if (sum(keep) < length(keep)) {
 					posL <- posL[keep]
 					posR <- posR[keep]

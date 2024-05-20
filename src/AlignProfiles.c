@@ -88,6 +88,7 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 	}
 	int normalize = asInteger(norm);
 	int nthreads = asInteger(nThreads);
+	int NTHREADS = nthreads;
 	
 	double *dbnM = REAL(dbnMatrix);
 	int do_DBN, d, size = 8;
@@ -375,8 +376,16 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 		}
 		//Rprintf("\nk %d START %d END %d start %d end %d top %d left %d", k, START, END, start, end, top, left);
 		max = -1e53;
+		if (nthreads > 1) {
+			NTHREADS = (END - START)/500;
+			if (NTHREADS < 1) {
+				NTHREADS = 1;
+			} else if (NTHREADS > nthreads) {
+				NTHREADS = nthreads;
+			}
+		}
 		#ifdef _OPENMP
-		#pragma omp parallel for private(i,j,gp,gs,S,M,GP,GS,tot,lGp,lGs,temp) reduction(+:totM,avgM) num_threads(nthreads)
+		#pragma omp parallel for private(i,j,gp,gs,S,M,GP,GS,tot,lGp,lGs,temp) reduction(+:totM,avgM) num_threads(NTHREADS)
 		#endif
 		for (i = START; i <= END; i++) {
 			// determine column index
@@ -826,6 +835,7 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 	double *subM = REAL(subMatrix);
 	int normalize = asInteger(norm);
 	int nthreads = asInteger(nThreads);
+	int NTHREADS = nthreads;
 	
 	double *hecM = REAL(hecMatrix);
 	int do_HEC, d, size = 29;
@@ -1212,8 +1222,16 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 		}
 		
 		max = -1e53;
+		if (nthreads > 1) {
+			NTHREADS = (END - START)/500;
+			if (NTHREADS < 1) {
+				NTHREADS = 1;
+			} else if (NTHREADS > nthreads) {
+				NTHREADS = nthreads;
+			}
+		}
 		#ifdef _OPENMP
-		#pragma omp parallel for private(i,j,gp,gs,M,GP,GS,tot,lGp,lGs,temp) reduction(+:totM,avgM) num_threads(nthreads)
+		#pragma omp parallel for private(i,j,gp,gs,M,GP,GS,tot,lGp,lGs,temp) reduction(+:totM,avgM) num_threads(NTHREADS)
 		#endif
 		for (i = START; i <= END; i++) {
 			// determine column index

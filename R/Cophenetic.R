@@ -5,6 +5,13 @@ Cophenetic <- function(x) {
 		stop("x must be an object of class 'dendrogram'.")
 	
 	n <- attr(x, "members")
+	if (n == 1L) {
+		d <- dist(numeric())
+		attr(d, "Diag") <- TRUE
+		attr(d, "Upper") <- TRUE
+		attr(d, "Labels") <- attr(x, "label")
+		return(d)
+	}
 	d <- numeric(n*(n - 1)/2)
 	u <- unlist(x)
 	o <- order(u)

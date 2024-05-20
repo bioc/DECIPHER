@@ -667,7 +667,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 
 SEXP extendMatches(SEXP X1, SEXP X2, SEXP starts1, SEXP ends1, SEXP index1, SEXP starts2, SEXP ends2, SEXP index2, SEXP width1, SEXP width2, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP nThreads)
 {
-	int i, j, p1, p2, lkup1, lkup2, boundL1, boundR1, boundL2, boundR2;
+	int i, p1, p2, lkup1, lkup2, boundL1, boundR1, boundL2, boundR2;
 	
 	XStringSet_holder x1_set = hold_XStringSet(X1);
 	XStringSet_holder x2_set = hold_XStringSet(X2);
@@ -793,15 +793,61 @@ SEXP extendMatches(SEXP X1, SEXP X2, SEXP starts1, SEXP ends1, SEXP index1, SEXP
 			}
 		}
 	}
+	free(lkup_row);
+	free(lkup_col);
 	
-	SEXP basePackage, order;
-	PROTECT(basePackage = eval(lang2(install("getNamespace"), ScalarString(mkChar("base"))), R_GlobalEnv));
-	order = eval(lang3(install("sort.list"), ans0, R_NilValue), basePackage);
-	UNPROTECT(1);
+	SEXP ret_list;
+	PROTECT(ret_list = allocVector(VECSXP, 5));
+	SET_VECTOR_ELT(ret_list, 0, ans0);
+	SET_VECTOR_ELT(ret_list, 1, ans1);
+	SET_VECTOR_ELT(ret_list, 2, ans2);
+	SET_VECTOR_ELT(ret_list, 3, ans3);
+	SET_VECTOR_ELT(ret_list, 4, ans4);
+	
+	UNPROTECT(6);
+	
+	return ret_list;
+}
+
+SEXP withdrawMatches(SEXP order, SEXP starts1, SEXP ends1, SEXP index1, SEXP starts2, SEXP ends2, SEXP index2, SEXP width1, SEXP width2, SEXP score, SEXP bufferSize)
+{
+	int i, j, p1, p2, boundL1, boundL2, temp1, temp2;
+	
 	int *o = INTEGER(order);
+	int l = length(starts1);
+	int *s1 = INTEGER(starts1);
+	int *e1 = INTEGER(ends1);
+	int *i1 = INTEGER(index1);
+	int *s2 = INTEGER(starts2);
+	int *e2 = INTEGER(ends2);
+	int *i2 = INTEGER(index2);
+	int *w1 = INTEGER(width1);
+	int l1 = w1[length(width1) - 1];
+	int *w2 = INTEGER(width2);
+	int l2 = w2[length(width2) - 1];
+	double *s = REAL(score);
+	int buffer = asInteger(bufferSize);
 	
-	char *pos1 = (char *) calloc(x1.length, sizeof(char)); // initialized to zero (thread-safe on Windows)
-	char *pos2 = (char *) calloc(x2.length, sizeof(char)); // initialized to zero (thread-safe on Windows)
+	SEXP ans0, ans1, ans2, ans3, ans4;
+	PROTECT(ans0 = allocVector(REALSXP, l));
+	double *rans0 = REAL(ans0);
+	PROTECT(ans1 = allocVector(INTSXP, l));
+	int *rans1 = INTEGER(ans1);
+	PROTECT(ans2 = allocVector(INTSXP, l));
+	int *rans2 = INTEGER(ans2);
+	PROTECT(ans3 = allocVector(INTSXP, l));
+	int *rans3 = INTEGER(ans3);
+	PROTECT(ans4 = allocVector(INTSXP, l));
+	int *rans4 = INTEGER(ans4);
+	
+	int *pos1 = (int *) malloc(l1*sizeof(int)); // thread-safe on Windows
+	int *pos2 = (int *) malloc(l2*sizeof(int)); // thread-safe on Windows
+	
+	for (i = 0; i < l1; i++)
+		pos1[i] = buffer;
+	for (i = 0; i < l2; i++)
+		pos2[i] = buffer;
+	
 	for (j = l - 1; j >= 0; j--) {
 		i = o[j] - 1; // index
 		if (i1[i] == 1) {
@@ -816,13 +862,11 @@ SEXP extendMatches(SEXP X1, SEXP X2, SEXP starts1, SEXP ends1, SEXP index1, SEXP
 		}
 		
 		// pull back overlapping start
-		p1 = rans1[i] + boundL1 - 1;
-		p2 = rans3[i] + boundL2 - 1;
-		while (p1 < rans2[i] + boundL1 - 1 && (pos1[p1] == 1 || pos2[p2] == 1)) {
-			lkup1 = lkup_row[(unsigned char)x1.ptr[p1]];
-			lkup2 = lkup_col[(unsigned char)x2.ptr[p2]];
-			if (lkup1 != NA_INTEGER && lkup2 != NA_INTEGER)
-				rans0[i] -= sM[lkup1 + lkup2];
+		p1 = s1[i] + boundL1 - 1;
+		p2 = s2[i] + boundL2 - 1;
+		while (p1 < e1[i] + boundL1 - 1 &&
+			((p2 + 1 >= pos1[p1] + buffer && p2 + 1 <= pos1[p1] - buffer) ||
+			(p1 + 1 >= pos2[p2] + buffer && p1 + 1 <= pos2[p2] - buffer))) {
 			p1++;
 			p2++;
 		}
@@ -830,13 +874,11 @@ SEXP extendMatches(SEXP X1, SEXP X2, SEXP starts1, SEXP ends1, SEXP index1, SEXP
 		rans3[i] = p2 + 1 - boundL2;
 		
 		// pull back overlapping end
-		p1 = rans2[i] + boundL1 - 1;
-		p2 = rans4[i] + boundL2 - 1;
-		while (p1 >= rans1[i] + boundL1 && (pos1[p1] == 1 || pos2[p2] == 1)) {
-			lkup1 = lkup_row[(unsigned char)x1.ptr[p1]];
-			lkup2 = lkup_col[(unsigned char)x2.ptr[p2]];
-			if (lkup1 != NA_INTEGER && lkup2 != NA_INTEGER)
-				rans0[i] -= sM[lkup1 + lkup2];
+		p1 = e1[i] + boundL1 - 1;
+		p2 = e2[i] + boundL2 - 1;
+		while (p1 >= rans1[i] + boundL1 &&
+			((p2 + 1 >= pos1[p1] + buffer && p2 + 1 <= pos1[p1] - buffer) ||
+			(p1 + 1 >= pos2[p2] + buffer && p1 + 1 <= pos2[p2] - buffer))) {
 			p1--;
 			p2--;
 		}
@@ -847,14 +889,19 @@ SEXP extendMatches(SEXP X1, SEXP X2, SEXP starts1, SEXP ends1, SEXP index1, SEXP
 		p1 = rans2[i] + boundL1;
 		p2 = rans4[i] + boundL2;
 		while (p1 >= rans1[i] + boundL1) {
+			temp1 = p1;
+			temp2 = p2;
 			p1--;
-			pos1[p1] = 1;
 			p2--;
-			pos2[p2] = 1;
+			if (pos1[p1] == buffer)
+				pos1[p1] = temp2;
+			if (pos2[p2] == buffer)
+				pos2[p2] = temp1;
 		}
+		
+		// lower score proportionally
+		rans0[i] = s[i]*((double)(rans2[i] - rans1[i] + 1)/(double)(e1[i] - s1[i] + 1));
 	}
-	free(lkup_row);
-	free(lkup_col);
 	free(pos1);
 	free(pos2);
 	

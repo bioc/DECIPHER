@@ -23,21 +23,28 @@
  */
 #include "Biostrings_interface.h"
 
+// for math functions
+#include <math.h>
+
 // DECIPHER header file
 #include "DECIPHER.h"
 
 SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC_MI2, SEXP output)
 {
-	int i, j, l, k1, k2, p1, p2;
-	int wS = asInteger(windowSize);
-	double f1 = (2*(double)wS - 1)/(2*(double)wS + 1); // fraction of each single
-	double f2 = 2/(2*(double)wS + 1); // fraction of each double
+	int i, j, k = 0, l, k1, k2, p1, p2;
+	int wS1 = INTEGER(windowSize)[0];
+	int wS2 = INTEGER(windowSize)[1];
+	double f1 = (2*(double)wS1 - 1)/(2*(double)wS1 + 1); // fraction of each single
+	double f2 = 2/(2*(double)wS2 + 1); // fraction of each double
 	double *bg = REAL(background);
+	int w = length(background);
 	double *MI1 = REAL(HEC_MI1); // [AA, pos, HEC]
-	int o = asInteger(output);
-	int total = length(HEC_MI1)/60; // maximum window
-	int center = (total - 1)/2; // center of window
+	int total1 = length(HEC_MI1)/60; // maximum window
+	int center1 = (total1 - 1)/2; // center of window
 	double *MI2 = REAL(HEC_MI2); // [AA1, AA2, pos1, pos2, HEC]
+	int total2 = (int)sqrt(length(HEC_MI2)/1200); // maximum window
+	int center2 = (total2 - 1)/2; // center of window
+	int o = asInteger(output);
 	double H, E, C, sum, *rans;
 	char *states;
 	
@@ -188,11 +195,11 @@ SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC
 		}
 		
 		for (j = 0; j < l; j++) {
-			H = *(bg);
-			E = *(bg + 1);
-			C = *(bg + 2);
+			H = *(bg + k);
+			E = *(bg + k + 1);
+			C = *(bg + k + 2);
 			
-			for (k1 = -1*wS; k1 <= wS; k1++) {
+			for (k1 = -1*wS1; k1 <= wS1; k1++) {
 				p1 = j + k1;
 				if (p1 < 0)
 					continue;
@@ -201,14 +208,23 @@ SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC
 				
 				if (residues[p1] < 20) {
 					// add mutual information from single residues
-					H -= f1 * *(MI1 + residues[p1] + 20*(center + k1));
-					E -= f1 * *(MI1 + residues[p1] + 20*(center + k1) + 20*total);
-					C -= f1 * *(MI1 + residues[p1] + 20*(center + k1) + 40*total);
-				} else {
-					continue;
+					H -= f1 * *(MI1 + residues[p1] + 20*(center1 + k1));
+					E -= f1 * *(MI1 + residues[p1] + 20*(center1 + k1) + 20*total1);
+					C -= f1 * *(MI1 + residues[p1] + 20*(center1 + k1) + 40*total1);
 				}
+			}
+			
+			for (k1 = -1*wS2; k1 <= wS2; k1++) {
+				p1 = j + k1;
+				if (p1 < 0)
+					continue;
+				if (p1 >= l)
+					break;
 				
-				for (k2 = wS; k2 > k1; k2--) {
+				if (residues[p1] >= 20)
+					continue;
+				
+				for (k2 = wS2; k2 > k1; k2--) {
 					p2 = j + k2;
 					if (p2 < 0)
 						break;
@@ -217,9 +233,9 @@ SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC
 					
 					if (residues[p2] < 20) {
 						// add mutual information from pairs of residues
-						H += f2 * *(MI2 + residues[p1] + 20*residues[p2] + 400*(center + k1) + 400*total*(center + k2));
-						E += f2 * *(MI2 + residues[p1] + 20*residues[p2] + 400*(center + k1) + 400*total*(center + k2) + 400*total*total);
-						C += f2 * *(MI2 + residues[p1] + 20*residues[p2] + 400*(center + k1) + 400*total*(center + k2) + 800*total*total);
+						H += f2 * *(MI2 + residues[p1] + 20*residues[p2] + 400*(center2 + k1) + 400*total2*(center2 + k2));
+						E += f2 * *(MI2 + residues[p1] + 20*residues[p2] + 400*(center2 + k1) + 400*total2*(center2 + k2) + 400*total2*total2);
+						C += f2 * *(MI2 + residues[p1] + 20*residues[p2] + 400*(center2 + k1) + 400*total2*(center2 + k2) + 800*total2*total2);
 					}
 				}
 			}
@@ -246,6 +262,10 @@ SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC
 				*(rans + 3*j + 2) = C/sum;
 			}
 		}
+		
+		k += 3;
+		if (k == w)
+			k = 0; // recycle background
 		
 		if (o == 1) {
 			states[l] = '\0'; // end (null terminate) the string

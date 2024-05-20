@@ -21,6 +21,7 @@ ReadDendrogram <- function(file,
 		r <- r[w]
 	}
 	
+	r <- gsub("'(.*?)'", '"\\1"', r)
 	r <- strsplit(r,
 		'(?=[\\[\\](),:;])(?=([^"]*"[^"]*")*[^"]*$)',
 		perl=TRUE)[[1]]

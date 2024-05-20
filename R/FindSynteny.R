@@ -4,17 +4,17 @@ FindSynteny <- function(dbFile,
 	useFrames=TRUE,
 	alphabet=AA_REDUCED[[172]],
 	geneticCode=GENETIC_CODE,
-	sepCost=-3,
+	sepCost=-2,
 	sepPower=0.5,
-	gapCost=-12,
+	gapCost=-10,
 	gapPower=0.5,
 	shiftCost=0,
 	codingCost=0,
-	maxSep=150,
-	maxGap=15,
+	maxSep=200,
+	maxGap=20,
 	minScore=100,
 	N=10,
-	dropScore=-6,
+	dropScore=-5,
 	maskRepeats=TRUE,
 	maskLCRs=TRUE,
 	allowOverlap=FALSE,
@@ -205,6 +205,8 @@ FindSynteny <- function(dbFile,
 	n <- as.integer(floor(log(4294967295, sizeAA)))
 	alphabet <- alphabet - 1L
 	
+	# initialize parameters
+	buffer <- -500L # distance to higher scoring hit to pull back overlap (< 0)
 	# subMatrixDNA gets multiplied by log(size) to calibrate for DNA distribution
 	# -3 allows 25% transition rate and -4 allows 20% transversion rate
 	subMatrixDNA <- matrix(c(1, -4, -3, -4, -4, 1, -4, -3, -3, -4, 1, -4, -4, -3, -4, 1),
@@ -697,6 +699,30 @@ FindSynteny <- function(dbFile,
 					WIDTH2[length(WIDTH2)])
 			}
 			
+			subScore <- .Call("withdrawMatches",
+				order(weights),
+				x.s,
+				x.e,
+				x.i,
+				y.s,
+				y.e,
+				y.i,
+				WIDTH1,
+				WIDTH2,
+				weights,
+				buffer,
+				PACKAGE="DECIPHER")
+			w <- which(subScore[[3L]] - subScore[[2L]] > 0L & subScore[[1L]] > 0)
+			weights <- subScore[[1L]][w]
+			x.s <- subScore[[2L]][w]
+			x.e <- subScore[[3L]][w]
+			y.s <- subScore[[4L]][w]
+			y.e <- subScore[[5L]][w]
+			x.i <- x.i[w]
+			y.i <- y.i[w]
+			x.f <- x.f[w]
+			y.f <- y.f[w]
+			
 			# order by increasing sequence index in g1
 			o <- order(x.i, x.s)
 			x.s <- x.s[o]
@@ -1069,6 +1095,32 @@ FindSynteny <- function(dbFile,
 				weights <- subScore
 			}
 			
+			temp <- c(WIDTH2[1L], diff(WIDTH2))[y.i]
+			subScore <- .Call("withdrawMatches",
+				order(weights),
+				x.s,
+				x.e,
+				x.i,
+				temp + 1L - y.e,
+				temp + 1L - y.s,
+				length(WIDTH2) + 1L - y.i,
+				WIDTH1,
+				c(rev(WIDTH2[length(WIDTH2)] - WIDTH2)[-1L], WIDTH2[length(WIDTH2)]),
+				weights,
+				buffer,
+				PACKAGE="DECIPHER")
+			w <- which(subScore[[3L]] - subScore[[2L]] > 0L & subScore[[1L]] > 0)
+			weights <- subScore[[1L]][w]
+			x.s <- subScore[[2L]][w]
+			x.e <- subScore[[3L]][w]
+			x.i <- x.i[w]
+			x.f <- x.f[w]
+			temp <- temp[w]
+			y.s <- temp + 1L - subScore[[5L]][w]
+			y.e <- temp + 1L - subScore[[4L]][w]
+			y.i <- y.i[w]
+			y.f <- y.f[w]
+			
 			# order by increasing sequence index in g1
 			o <- order(x.i, x.s)
 			x.s <- x.s[o]
@@ -1082,7 +1134,7 @@ FindSynteny <- function(dbFile,
 			weights <- weights[o]
 			
 			if (length(y.s) > 0) {
-				d <- max(y.e) - (y.e + y.s)
+				d <- WIDTH2[length(WIDTH2)] - (y.e + y.s)
 			} else {
 				d <- integer()
 			}

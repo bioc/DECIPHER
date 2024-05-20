@@ -1,7 +1,7 @@
 PredictHEC <- function(myAAStringSet,
 	type="states",
-	windowSize=7,
-	background=c(H=-0.12, E=-0.25, C=0.23),
+	windowSize=8,
+	background=c(H=-0.2, E=-0.6, C=0),
 	HEC_MI1=NULL,
 	HEC_MI2=NULL) {
 	
@@ -18,14 +18,20 @@ PredictHEC <- function(myAAStringSet,
 		stop("Ambiguous type.")
 	if (!is.numeric(windowSize))
 		stop("windowSize must be a numeric.")
-	if (floor(windowSize) != windowSize)
+	if (any(floor(windowSize) != windowSize))
 		stop("windowSize must be an integer number.")
-	if (windowSize < 1)
+	if (any(windowSize < 1))
 		stop("windowSize must be at least 1.")
+	if (length(windowSize) == 1L) {
+		windowSize <- rep(windowSize, 2L)
+	} else if (length(windowSize) != 2L) {
+		stop("windowSize must be one or two numbers.")
+	}
+	windowSize <- as.integer(windowSize)
 	if (!is.double(background))
 		stop("background must be a numeric.")
-	if (length(background) != 3)
-		stop("background must be length 3.")
+	if (length(background) < 3L || length(background) %% 3L != 0L)
+		stop("The length of background must be evenly divisible by 3.")
 	if (is.null(HEC_MI1)) {
 		data("HEC_MI1", envir=environment(), package="DECIPHER")
 	} else {
@@ -34,7 +40,7 @@ PredictHEC <- function(myAAStringSet,
 		if (length(dim(HEC_MI1)) != 3)
 			stop("HEC_MI1 must be a three dimensional array.")
 		if (dim(HEC_MI1)[1] != 20 ||
-			windowSize > ((dim(HEC_MI1)[2] - 1)/2) ||
+			windowSize[1L] > ((dim(HEC_MI1)[2] - 1)/2) ||
 			(dim(HEC_MI1)[2] %% 2) != 1 ||
 			dim(HEC_MI1)[3] != 3)
 			stop("HEC_MI1 must have dimensions 20 x (2*windowSize + 1) x 3.")
@@ -48,11 +54,11 @@ PredictHEC <- function(myAAStringSet,
 			stop("HEC_MI2 must be a three dimensional array.")
 		if (dim(HEC_MI2)[1] != 20 ||
 			dim(HEC_MI2)[2] != 20 ||
-			windowSize > ((dim(HEC_MI2)[3] - 1)/2) ||
+			windowSize[2L] > ((dim(HEC_MI2)[3] - 1)/2) ||
 			dim(HEC_MI2)[3] != dim(HEC_MI2)[4] ||
 			(dim(HEC_MI2)[3] %% 2) != 1 ||
 			dim(HEC_MI2)[5] != 3)
-			stop("HEC_MI2 must have dimensions 20 x 20 x (2*windowSize + 1) x(2*windowSize + 1) x 3.")
+			stop("HEC_MI2 must have dimensions 20 x 20 x (2*windowSize + 1) x (2*windowSize + 1) x 3.")
 	}
 	
 	states <- .Call("predictHEC",

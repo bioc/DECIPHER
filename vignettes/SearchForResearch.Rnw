@@ -386,7 +386,7 @@ table(offset)
 maps$Score[which.max(offset)]
 @
 
-All reads mapped to locations nearby the correct location except one, which was far from the actual mapping location. This read had a mapping score of zero, because this read mapped equally well to multiple locations on the genome. Our strategy of subtracting second best scores worked as intended to eliminate this ambiguously mapped read. We could impose a score cutoff after subtraction to eliminate ambiguously mapped reads. In practice, we would see reads mapped to both strands of the genome and we could use \Rfunction{AlignPairs} to obtain more information if desired.
+All reads mapped to locations nearby the correct location except one, which was far from the actual mapping location. This read had a mapping score of zero, because this read mapped equally well to multiple locations on the genome. Our strategy of subtracting second best scores worked as intended to eliminate this multi-mapped read. In practice, we would see reads mapped to both strands of the genome and we could use \Rfunction{AlignPairs} to obtain more information if desired.
 
 %------------------------------------------------------------
 \section{Recommended search settings}

@@ -11,8 +11,8 @@ AlignPairs(pattern,
            subject,
            pairs = NULL,
            type = "values",
-           perfectMatch = 1,
-           misMatch = -2,
+           perfectMatch = 2,
+           misMatch = -1,
            gapOpening = -16,
            gapExtension = -1.2,
            substitutionMatrix = NULL,
@@ -117,6 +117,8 @@ alignments <- AlignPairs(query, target, hits, type="sequences")
 BrowseSeqs(c(alignments[[1]][1], alignments[[2]][1])) # view the first pair
 
 # perform global pairwise alignment by creating virtual endpoint anchors
+# virtual anchors are immediately out-of-bounds (positions 0 and width + 1)
+# this causes gap opening/extension penalties to be applied at each terminus
 hits$Position <- mapply(function(x, y, z)
 		cbind(matrix(0L, 4), x, matrix(c(y, y, z, z), 4)),
 	hits$Position,
@@ -127,7 +129,7 @@ aligned <- AlignPairs(query, target, hits) # penalizes terminal gaps
 head(aligned) # all alignments now span start to end of the sequences
 
 # perform global pairwise alignment of sequences without anchors (approach 1)
-pattern <- query[rep(1, length(query))] # first sequence
+pattern <- query[rep(1, length(query))] # first sequence repeated
 subject <- query
 aligned1 <- AlignPairs(pattern, subject) # no terminal gap penalties
 head(aligned1)

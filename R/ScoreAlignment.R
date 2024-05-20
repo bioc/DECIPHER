@@ -53,10 +53,10 @@ ScoreAlignment <- function(myXStringSet,
 		stop("includeTerminalGaps must be a logical.")
 	if (!is.numeric(weight))
 		stop("weight must be a numeric.")
-	if (length(weight) != 1 && length(weight) != length(myXStringSet))
+	if (length(weight) != 1 && length(weight) != l)
 		stop("Length of weight must equal one or the length of the myXStringSet.")
 	if (length(weight) == 1) {
-		weight <- rep(1, length(myXStringSet))
+		weight <- rep(1, l)
 	} else {
 		if (!isTRUE(all.equal(1, mean(weight))))
 			stop("The mean of weight must be 1.")
@@ -80,15 +80,19 @@ ScoreAlignment <- function(myXStringSet,
 		} else if (is.character(substitutionMatrix)) {
 			subMatrix <- .getSubMatrix(substitutionMatrix)
 		} else if (is.matrix(substitutionMatrix)) {
-			if (any(!(AAs %in% dimnames(substitutionMatrix)[[1]])) ||
-				any(!(AAs %in% dimnames(substitutionMatrix)[[2]])))
+			if (nrow(substitutionMatrix) != ncol(substitutionMatrix))
+				stop("substitutionMatrix is not square.")
+			if (sum(!(AAs %in% rownames(substitutionMatrix))) > 0L ||
+				sum(!(AAs %in% colnames(substitutionMatrix))) > 0L)
 				stop("substitutionMatrix is incomplete.")
 			subMatrix <- substitutionMatrix
 		} else {
 			stop("Invalid substitutionMatrix must be NULL, a character string, or a matrix.")
 		}
-		subMatrix <- subMatrix[AAs, AAs]
-		mode(subMatrix) <- "numeric"
+		if (nrow(subMatrix) != length(AAs) || sum(rownames(subMatrix) != AAs) > 0L)
+			subMatrix <- subMatrix[AAs, AAs]
+		if (!is.double(subMatrix))
+			mode(subMatrix) <- "numeric"
 		
 		functionCall <- "colScoresAA"
 	} else { # DNAStringSet or RNAStringSet

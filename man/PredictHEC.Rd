@@ -9,8 +9,8 @@ Predicts 3-state protein secondary structure based on the primary (amino acid) s
 \usage{
 PredictHEC(myAAStringSet,
            type = "states",
-           windowSize = 7,
-           background = c(H = -0.12, E = -0.25, C = 0.23),
+           windowSize = 8,
+           background = c(H = -0.2, E = -0.6, C = 0),
            HEC_MI1 = NULL,
            HEC_MI2 = NULL)
 }
@@ -22,20 +22,20 @@ An \code{AAStringSet} object of sequences.
 Character string indicating the type of results desired.  This should be (an unambiguous abbreviation of) one of \code{"states"}, \code{"scores"}, or \code{"probabilities"}.
 }
   \item{windowSize}{
-Numeric specifying the number of residues to the left or right of the center position to use in the prediction.
+Either a single number specifying the number of residues to the left or right of the center position to use in the prediction or two numbers to use with \code{HEC_MI1} and \code{HEC_MI2}, respectively.
 }
   \item{background}{
-Numeric vector with the background ``scores'' for each of the three states (H, E, and C).
+Numeric vector with the background ``scores'' for each of the three states (H, E, and C), or a matrix with columns giving the background for each sequence in \code{myXStringSet}.  The background represents a calibrated prior on the relative propensity for each state.
 }
   \item{HEC_MI1}{
-An array of dimensions 20 x 21 x 3 giving the mutual information for single residues.
+An array of dimensions 20 x \code{W} x 3 giving the mutual information for single residues, where \code{W} is at least 2*\code{windowSize} + 1.
 }
   \item{HEC_MI2}{
-An array of dimensions 20 x 20 x 21 x 21 x 3 giving the mutual information for pairs of residues.
+An array of dimensions 20 x 20 x \code{W} x \code{W} x 3 giving the mutual information for pairs of residues, where \code{W} is at least 2*\code{windowSize} + 1.
 }
 }
 \details{
-The GOR (Garnier-Osguthorpe-Robson) method is an information-theory method for prediction of secondary structure based on the primary sequence of a protein.  Version IV of the method makes 3-state predictions based on the mutual information contained in single residues and pairs of residues within \code{windowSize} residues of the position being assigned.  This approach is about 65\% accurate, and is one of the most accurate methods for assigning secondary structure that only use a single sequence.  This implementation of GOR IV does not use decision constants or the number of contiguous states when assigning the final state.  Note that characters other than the standard 20 amino acids are not assigned a state.
+The GOR (Garnier-Osguthorpe-Robson) method is an information-theory method for prediction of secondary structure based on the primary sequence of a protein.  Version IV of the method makes 3-state predictions based on the mutual information contained in single residues and pairs of residues within \code{windowSize} residues of the position being assigned.  This approach is about 65\% accurate, and is one of the more accurate methods for assigning secondary structure based on single sequences.  This implementation of GOR IV does not use decision constants or the number of contiguous states when assigning the final state.  Note that characters other than the standard 20 amino acids are not assigned a state.
 }
 \value{
 If \code{type} is \code{"states"} (the default), then the output is a character vector with the secondary structure assignment ("H", "E", or "C") for each residue in \code{myAAStringSet}.
