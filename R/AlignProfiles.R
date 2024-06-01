@@ -219,7 +219,7 @@ AlignProfiles <- function(pattern,
 				stop("substitutionMatrix must be NULL or a matrix.")
 			}
 		} else if (type == 2L && missing(perfectMatch) && missing(misMatch)) {
-			sM <- matrix(c(11, 4, 5, 4, 4, 12, 4, 5, 5, 4, 12, 4, 4, 5, 4, 11),
+			substitutionMatrix <- matrix(c(11, 4, 5, 4, 4, 12, 4, 5, 5, 4, 12, 4, 4, 5, 4, 11),
 				nrow=4,
 				ncol=4,
 				dimnames=list(bases, bases))

@@ -228,7 +228,6 @@ dend <- reorder(dend, seq_along(seqs))
 layout(matrix(1:2))
 plot(dend)
 plot(unlist(dend), xlab="Position on tree", ylab="Repeat number")
-abline(a=0, b=1)
 @
 \caption{\label{f4} Inferred phylogeny of Ig domain repeats detected in Obscurin.}
 \end{centerfig}

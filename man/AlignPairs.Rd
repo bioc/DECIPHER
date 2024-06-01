@@ -47,7 +47,7 @@ Numeric giving the cost for opening a gap in the alignment.
 Numeric giving the cost for extending an open gap in the alignment.
 }
   \item{substitutionMatrix}{
-Either a substitution matrix representing the substitution scores for an alignment (in third-bits) or the name of the amino acid substitution matrix to use in alignment.  The default (NULL) will use the \code{perfectMatch} and \code{misMatch} penalties for DNA/RNA or \code{PFASUM50} for AA.
+Either a substitution matrix representing the substitution scores for an alignment (in third-bits) or the name of the amino acid substitution matrix to use in alignment.  The default (NULL) will use the \code{perfectMatch} and \code{misMatch} penalties for DNA/RNA or \code{PFASUM50} for amino acids including ``U'' (selenocysteine) and ``O'' (pyrrolysine) with scores of zero.
 }
   \item{bandWidth}{
 Integer determining the number of positions included in the adaptive band, which should be at least as large as the largest expected insertion or deletion (i.e., gap).  Smaller values will accelerate alignment, potentially at the expense of accuracy.

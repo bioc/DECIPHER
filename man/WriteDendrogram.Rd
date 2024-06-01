@@ -9,8 +9,8 @@ Writes a dendrogram object to a file in Newick (also known as New Hampshire) par
 \usage{
 WriteDendrogram(x,
                 file = "",
-                quoteLabels = TRUE,
-                convertBlanks = !quoteLabels,
+                quote = "'",
+                space = " ",
                 internalLabels = TRUE,
                 digits = 10,
                 append = FALSE)
@@ -22,11 +22,11 @@ An object of class \code{dendrogram}.
   \item{file}{
 A connection or a character string naming the file path where the tree should be exported.  If "" (the default), the tree is printed to the standard output connection, the console unless redirected by sink.
 }
-  \item{quoteLabels}{
-Logical specifying whether to place leaf labels in double quotes.
+  \item{quote}{
+A single character used to quote labels, or an empty character string (i.e., \code{""}) to avoid quoting labels.
 }
-  \item{convertBlanks}{
-Logical specifying whether to convert spaces in leaf labels to underscores.
+  \item{space}{
+A single character (e.g., \code{"_"}) used to replace spaces in labels, or a space (i.e., \code{" "}) to leave spaces intact.
 }
   \item{internalLabels}{
 Logical indicating whether to write any ``edgetext'' preceding a node as an internal node label.
@@ -39,7 +39,7 @@ Logical indicating whether to append to an existing \code{file}.  Only applicabl
 }
 }
 \details{
-\code{WriteDendrogram} will write a dendrogram object to a \code{file} in standard Newick format.  Note that special characters (commas, square brackets, colons, semi-colons, and parentheses) present in leaf labels will likely cause a broken Newick file unless \code{quoteLabels} is \code{TRUE} (the default).
+\code{WriteDendrogram} will write a dendrogram object to a \code{file} in standard Newick format.  Note that special characters (commas, square brackets, colons, semi-colons, and parentheses) present in leaf labels will likely cause a broken Newick file unless \code{quote} is a single or double quotation mark (the default).
 }
 \value{
 \code{NULL}.

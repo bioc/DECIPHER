@@ -9,13 +9,13 @@ Detects approximate copies of sequence patterns that likely arose from duplicati
 \usage{
 DetectRepeats(myXStringSet,
               type = "tandem",
-              minScore = 10,
+              minScore = 8,
               allScores = FALSE,
               maxCopies = 1000,
               maxPeriod = 1000,
               maxFailures = 3,
               maxShifts = 5,
-              alphabet = AA_REDUCED[[77]],
+              alphabet = AA_REDUCED[[110]],
               useEmpirical = TRUE,
               correctBackground = TRUE,
               processors = 1,
@@ -139,6 +139,11 @@ for (i in seq_along(cols)) {
 	}
 }
 BrowseSeqs(dna, patterns=cols)
+
+# find tandem repeats in the protein sequence
+aa <- translate(dna, if.fuzzy.codon="solve")
+y <- DetectRepeats(aa)
+y
 
 # find interspersed (rather than tandem) repeats
 data(yeastSEQCHR1)

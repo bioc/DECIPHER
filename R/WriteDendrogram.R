@@ -1,7 +1,7 @@
 WriteDendrogram <- function(x,
 	file="",
-	quoteLabels=TRUE,
-	convertBlanks=!quoteLabels,
+	quote="'",
+	space=" ",
 	internalLabels=TRUE,
 	digits=10,
 	append=FALSE) {
@@ -9,10 +9,14 @@ WriteDendrogram <- function(x,
 	# error checking
 	if (!is(x, "dendrogram"))
 		stop("x is not a dendrogram.")
-	if (!is.logical(quoteLabels))
-		stop("quoteLabels must be a logical.")
-	if (!is.logical(convertBlanks))
-		stop("convertBlanks must be a logical.")
+	if (!is.character(quote))
+		stop("quote must be a character.")
+	if (nchar(quote) > 1L)
+		stop("quote must be a single character.")
+	if (!is.character(space))
+		stop("space must be a character.")
+	if (nchar(space) != 1L)
+		stop("space must be a single character.")
 	if (!is.numeric(digits))
 		stop("digits must be a numeric.")
 	if (floor(digits) != digits)
@@ -39,12 +43,13 @@ WriteDendrogram <- function(x,
 	getLab <- function(LAB) {
 		if (is.null(LAB))
 			return("")
-		lab <- gsub("'", "''", LAB, fixed=TRUE)
-		if (convertBlanks)
-			lab <- gsub(" ", "_", lab, fixed=TRUE)
-		if (quoteLabels)
-			lab <- paste('"', lab, '"', sep="")
-		return(lab)
+		if (space != " ")
+			LAB <- gsub(" ", space, LAB, fixed=TRUE)
+		if (quote != "") {
+			LAB <- gsub(quote, '_', LAB, fixed=TRUE)
+			LAB <- paste(quote, LAB, quote, sep="")
+		}
+		return(LAB)
 	}
 	
 	.dendrogram2newick <- function(x, height=attr(x, "height"), root=TRUE) {

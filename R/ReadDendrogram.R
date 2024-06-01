@@ -1,7 +1,8 @@
 ReadDendrogram <- function(file,
 	convertBlanks=TRUE,
 	internalLabels=TRUE,
-	keepRoot=TRUE) {
+	keepRoot=TRUE,
+	quote="'") {
 	
 	# error checking
 	if (!is.logical(convertBlanks))
@@ -10,6 +11,9 @@ ReadDendrogram <- function(file,
 		stop("internalLabels must be a logical.")
 	if (!is.logical(keepRoot))
 		stop("keepRoot must be a logical.")
+	quote <- match(quote, c("'", '"'))
+	if (is.na(quote))
+		stop("Invalid quote.")
 	
 	r <- readLines(file, warn=FALSE)
 	w <- which(nchar(r) > 0)
@@ -21,9 +25,10 @@ ReadDendrogram <- function(file,
 		r <- r[w]
 	}
 	
-	r <- gsub("'(.*?)'", '"\\1"', r)
 	r <- strsplit(r,
-		'(?=[\\[\\](),:;])(?=([^"]*"[^"]*")*[^"]*$)',
+		ifelse(quote == 1L,
+			"(?=[\\[\\](),:;])(?=([^']*'[^']*')*[^']*$)",
+			'(?=[\\[\\](),:;])(?=([^"]*"[^"]*")*[^"]*$)'),
 		perl=TRUE)[[1]]
 	r <- gsub("^\\s+|\\s+$", "", r)
 	w <- which(r == "")
@@ -32,7 +37,11 @@ ReadDendrogram <- function(file,
 	
 	getLab <- function(LAB) {
 		# convert underscores to spaces in unquoted labels
-		lab <- gsub("^\"(.*)\"$", "\\1", LAB)
+		lab <- gsub(ifelse(quote == 1L,
+				"^\'(.*)\'$",
+				"^\"(.*)\"$"),
+			"\\1",
+			LAB)
 		if (convertBlanks && nchar(lab) == nchar(LAB))
 			lab <- gsub("_", " ", lab, fixed=TRUE)
 		if (nchar(lab) != nchar(LAB))

@@ -10,7 +10,8 @@ Reads a dendrogram object from a file in Newick (also known as New Hampshire) pa
 ReadDendrogram(file,
                convertBlanks = TRUE,
                internalLabels = TRUE,
-               keepRoot = TRUE)
+               keepRoot = TRUE,
+               quote = "'")
 }
 \arguments{
   \item{file}{
@@ -24,6 +25,9 @@ Logical indicating whether to keep internal node labels as ``edgetext'' precedin
 }
   \item{keepRoot}{
 Logical specifying whether to keep the root node (if one is present) as a dendrogram leaf.
+}
+  \item{quote}{
+Either a single or double quotation mark determining the character used quote labels.
 }
 }
 \details{
