@@ -15,7 +15,7 @@ DetectRepeats(myXStringSet,
               maxPeriod = 1000,
               maxFailures = 3,
               maxShifts = 5,
-              alphabet = AA_REDUCED[[110]],
+              alphabet = AA_REDUCED[[17]],
               useEmpirical = TRUE,
               correctBackground = TRUE,
               processors = 1,
@@ -139,11 +139,6 @@ for (i in seq_along(cols)) {
 	}
 }
 BrowseSeqs(dna, patterns=cols)
-
-# find tandem repeats in the protein sequence
-aa <- translate(dna, if.fuzzy.codon="solve")
-y <- DetectRepeats(aa)
-y
 
 # find interspersed (rather than tandem) repeats
 data(yeastSEQCHR1)

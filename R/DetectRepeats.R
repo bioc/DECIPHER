@@ -6,7 +6,7 @@ DetectRepeats <- function(myXStringSet,
 	maxPeriod=1000,
 	maxFailures=3,
 	maxShifts=5,
-	alphabet=AA_REDUCED[[110]],
+	alphabet=AA_REDUCED[[17]],
 	useEmpirical=TRUE,
 	correctBackground=TRUE,
 	processors=1,
@@ -133,7 +133,7 @@ DetectRepeats <- function(myXStringSet,
 	if (useEmpirical) {
 		if (xtype == 3L) {
 			if (correctBackground) {
-				correction <- 0.20 # correction factor to standardize log-odds scores
+				correction <- 0.33 # correction factor to standardize log-odds scores
 			} else {
 				correction <- 0.08 # correction factor to standardize log-odds scores
 			}
@@ -141,20 +141,20 @@ DetectRepeats <- function(myXStringSet,
 			periods <- c(1.124771, -4.629093, 1.898747, 0.142147, 0.8568637, 11.51574) # sigmoid fit for log-odds of periodicity relative to background
 		} else {
 			if (correctBackground) {
-				correction <- 0.70 # correction factor to standardize log-odds scores
+				correction <- 0.77 # correction factor to standardize log-odds scores
 			} else {
-				correction <- 0.30 # correction factor to standardize log-odds scores
+				correction <- 0.35 # correction factor to standardize log-odds scores
 			}
 			periods <- c(1.134164, -4.598236, 1.921606, 0.1278975, 0.3457191, 14.33223) # sigmoid fit for log-odds of periodicity relative to background
 		}
 		lens <- c(NA_real_, -0.3, -1.2, 1, 0.7, 1.9, 2.8, 4.5, 2.8, 4) # log-odds of repeat copy number relative to background
-		gapCost <- c(-3, -0.1) # gap open and extension coefficients
+		gapCost <- c(-3, -0.2) # gap open and extension coefficients
 		coef <- -0.3 # coefficient of the normalized quadratic column weight function (> -1)
-		offset <- 0.06 # offset to centering of subsitution matrix
+		offset <- 0.03 # offset to centering of subsitution matrix
 	} else {
 		if (xtype == 3L) {
 			if (correctBackground) {
-				correction <- 0.21 # correction factor to standardize log-odds scores
+				correction <- 0.22 # correction factor to standardize log-odds scores
 			} else {
 				correction <- 0.08 # correction factor to standardize log-odds scores
 			}
