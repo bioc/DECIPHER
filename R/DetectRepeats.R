@@ -1,12 +1,12 @@
 DetectRepeats <- function(myXStringSet,
 	type="tandem",
-	minScore=8,
+	minScore=10,
 	allScores=FALSE,
 	maxCopies=1000,
 	maxPeriod=1000,
 	maxFailures=3,
 	maxShifts=5,
-	alphabet=AA_REDUCED[[17]],
+	alphabet=AA_REDUCED[[47]],
 	useEmpirical=TRUE,
 	correctBackground=TRUE,
 	processors=1,
@@ -133,36 +133,36 @@ DetectRepeats <- function(myXStringSet,
 	if (useEmpirical) {
 		if (xtype == 3L) {
 			if (correctBackground) {
-				correction <- 0.33 # correction factor to standardize log-odds scores
+				correction <- 0.23 # correction factor to standardize log-odds scores
 			} else {
-				correction <- 0.08 # correction factor to standardize log-odds scores
+				correction <- 0.10 # correction factor to standardize log-odds scores
 			}
 			residues <- c(A=0.04, R=-0.02, N=0.06, D=0.07, C=0.33, Q=-0.05, E=-0.08, G=0.01, H=-0.85, I=0.28, L=0.12, K=-0.09, M=-0.38, F=0.22, P=-0.18, S=-0.2, T=0.03, W=0.29, Y=0.19, V=0.24) # log-odds in tandem repeat
 			periods <- c(1.124771, -4.629093, 1.898747, 0.142147, 0.8568637, 11.51574) # sigmoid fit for log-odds of periodicity relative to background
 		} else {
 			if (correctBackground) {
-				correction <- 0.77 # correction factor to standardize log-odds scores
+				correction <- 0.80 # correction factor to standardize log-odds scores
 			} else {
-				correction <- 0.35 # correction factor to standardize log-odds scores
+				correction <- 0.32 # correction factor to standardize log-odds scores
 			}
 			periods <- c(1.134164, -4.598236, 1.921606, 0.1278975, 0.3457191, 14.33223) # sigmoid fit for log-odds of periodicity relative to background
 		}
 		lens <- c(NA_real_, -0.3, -1.2, 1, 0.7, 1.9, 2.8, 4.5, 2.8, 4) # log-odds of repeat copy number relative to background
-		gapCost <- c(-3, -0.2) # gap open and extension coefficients
+		gapCost <- c(-4, -0.1) # gap open and extension coefficients
 		coef <- -0.3 # coefficient of the normalized quadratic column weight function (> -1)
-		offset <- 0.03 # offset to centering of subsitution matrix
+		offset <- 0.1 # offset to centering of subsitution matrix
 	} else {
 		if (xtype == 3L) {
 			if (correctBackground) {
-				correction <- 0.22 # correction factor to standardize log-odds scores
+				correction <- 0.17 # correction factor to standardize log-odds scores
 			} else {
-				correction <- 0.08 # correction factor to standardize log-odds scores
+				correction <- 0.10 # correction factor to standardize log-odds scores
 			}
 		} else {
 			if (correctBackground) {
-				correction <- 0.55 # correction factor to standardize log-odds scores
+				correction <- 0.58 # correction factor to standardize log-odds scores
 			} else {
-				correction <- 0.23 # correction factor to standardize log-odds scores
+				correction <- 0.18 # correction factor to standardize log-odds scores
 			}
 		}
 		gapCost <- c(-2, -0.1) # gap open and extension coefficients
