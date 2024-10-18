@@ -6,6 +6,7 @@
 // for OpenMP parallel processing
 #ifdef _OPENMP
 #include <omp.h>
+#undef match
 #endif
 
 /*
@@ -78,14 +79,14 @@ void heapSelect(double *score, int *A, int l, int k)
 }
 
 // returns hits between queries and targets in an inverted index
-SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP pattern, SEXP subject, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP limitTarget, SEXP limitQuery, SEXP verbose, SEXP pBar, SEXP nThreads)
+SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP pattern, SEXP subject, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP limitTarget, SEXP limitQuery, SEXP alphabet, SEXP correction, SEXP background, SEXP iterations, SEXP threshold, SEXP verbose, SEXP pBar, SEXP nThreads)
 {
 	int i, j, k, p, c;
 	int n = length(query); // number of sequences in the query
 	int K = asInteger(wordSize); // k-mer length
 	int step = asInteger(stepSize); // separation between k-mers
 	double *freqs = REAL(logFreqs); // -log of normalized letter frequencies
-	int size = length(logFreqs); // alphabet size
+	int levels = length(logFreqs); // number of letters in the reduced alphabet
 	int *num = INTEGER(count); // count of each k-mer in target
 	int *loc = INTEGER(location); // location of k-mer in target
 	int *ind = INTEGER(index); // index of target sequence
@@ -94,19 +95,28 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 	double tot = asReal(total); // total size of target database
 	double minS = asReal(minScore); // minimum score or NA to calculate
 	int sO = asInteger(scoreOnly); // FALSE to output anchor positions
-	int limitT = asInteger(limitTarget);
-	int limitQ = asInteger(limitQuery);
+	int limitT = asInteger(limitTarget); // maximum number of matches per subject
+	int limitQ = asInteger(limitQuery); // maximum number of matches per pattern
+	int *alpha = INTEGER(alphabet); // (possibly reduced) letter mapping to freqs
+	int size = length(alphabet); // number of letters in standard alphabet
+	double correct = asReal(correction); // weight of subMatrix background correction
+	double *bg = REAL(background); // background frequencies of standard alphabet
+	int maxIt = asInteger(iterations); // number of profile search iterations
+	double thresh = asReal(threshold); // expect-value for profile inclusion
 	int nthreads = asInteger(nThreads);
 	
 	// if subMatrix provided then query/target sequences present
 	XStringSet_holder p_set, s_set, l_set;
 	Chars_holder l_i;
 	double *sM, dS;
-	int *lkup_row, *lkup_col;
+	int *lkup_row, *lkup_col, *pwv;
+	double *scores, *addScores;
 	int sizeM = length(subMatrix);
 	if (sizeM > 0) {
 		l_set = hold_XStringSet(letters);
 		l_i = get_elt_from_XStringSet_holder(&l_set, 0);
+		if (l_i.length < size)
+			error("Incorrect size of substitutionMatrix.");
 		if (l_i.length*l_i.length != sizeM)
 			error("Incorrect size of substitutionMatrix.");
 		sM = REAL(subMatrix);
@@ -122,6 +132,37 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 		for (i = 0; i < l_i.length; i++) {
 			lkup_row[(unsigned char)l_i.ptr[i]] = i;
 			lkup_col[(unsigned char)l_i.ptr[i]] = i*l_i.length;
+		}
+		if (maxIt > 0) {
+			pwv = (int *) malloc(K*sizeof(int)); // thread-safe on Windows
+			pwv[0] = 1;
+			for (i = 1; i < K; i++)
+				pwv[i] = pwv[i - 1]*levels;
+		}
+	} else {
+		// calculate -log(expected k-mer frequency)
+		scores = (double *) calloc(L, sizeof(double)); // initialized to zero (thread-safe on Windows)
+		addScores = (double *) calloc(L, sizeof(double)); // initialized to zero (thread-safe on Windows)
+		c = 1;
+		for (i = 1; i <= K; i++) {
+			k = -1;
+			j = 0;
+			p = 0;
+			while (j < L) {
+				if (j == p) {
+					p += c;
+					if (k == levels - 1) {
+						k = 0;
+					} else {
+						k++;
+					}
+				}
+				scores[j] += freqs[k];
+				if (i > K - step)
+					addScores[j] += freqs[k];
+				j++;
+			}
+			c *= levels;
 		}
 	}
 	
@@ -156,31 +197,6 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 		sepCost[i] *= sC;
 	}
 	
-	// calculate -log(expected k-mer frequency)
-	double *addScores = (double *) calloc(L, sizeof(double)); // initialized to zero (thread-safe on Windows)
-	double *scores = (double *) calloc(L, sizeof(double)); // initialized to zero (thread-safe on Windows)
-	c = 1;
-	for (i = 1; i <= K; i++) {
-		k = -1;
-		j = 0;
-		p = 0;
-		while (j < L) {
-			if (j == p) {
-				p += c;
-				if (k == size - 1) {
-					k = 0;
-				} else {
-					k++;
-				}
-			}
-			scores[j] += freqs[k];
-			if (i > K - step)
-				addScores[j] += freqs[k];
-			j++;
-		}
-		c *= size;
-	}
-	
 	// determine the offset for each k-mer
 	R_xlen_t *offset = (R_xlen_t *) malloc(L*sizeof(R_xlen_t)); // thread-safe on Windows
 	offset[0] = 0;
@@ -190,7 +206,7 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 		k = i;
 	}
 	
-	// build threadsafe vectors for outputs
+	// build threadsafe vectors for inputs and outputs
 	double **vecs = (double **) malloc(n*sizeof(double *)); // thread-safe on Windows
 	int **ptrs = (int **) malloc(n*sizeof(int *)); // thread-safe on Windows
 	int *l = (int *) malloc(n*sizeof(int)); // thread-safe on Windows
@@ -262,363 +278,540 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 			int *posQuery = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
 			int *posTarget = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
 			int *set = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-			double *score = (double *) malloc(s*sizeof(double)); // thread-safe on Windows
-			double *addScore = (double *) malloc(s*sizeof(double)); // thread-safe on Windows
-			s = 0;
-			for (j = 0; j < l[i]; j++) { // each query k-mer
-				if (counts[j] > 0) { // w[j] != NA_INTEGER
-					R_xlen_t P = offset[w[j]]; // position of k-mer in loc and ind
-					for (k = 0; k < counts[j]; k++) { // each target instance of k-mer
-						posQuery[s] = j + 1;
-						posTarget[s] = loc[P];
-						set[s] = ind[P];
-						score[s] = scores[w[j]];
-						addScore[s] = addScores[w[j]];
-						P++;
-						s++;
+			int *set2;
+			double *score, *addScore, *score2, *addScore2;
+			if (sizeM > 0) {
+				s = 0;
+				for (j = 0; j < l[i]; j++) { // each query k-mer
+					if (counts[j] > 0) { // w[j] != NA_INTEGER
+						R_xlen_t P = offset[w[j]]; // position of k-mer in loc and ind
+						for (k = 0; k < counts[j]; k++) { // each target instance of k-mer
+							posQuery[s] = j + 1;
+							posTarget[s] = loc[P];
+							set[s] = ind[P];
+							P++;
+							s++;
+						}
+					}
+				}
+			} else {
+				score = (double *) malloc(s*sizeof(double)); // thread-safe on Windows
+				addScore = (double *) malloc(s*sizeof(double)); // thread-safe on Windows
+				s = 0;
+				for (j = 0; j < l[i]; j++) { // each query k-mer
+					if (counts[j] > 0) { // w[j] != NA_INTEGER
+						R_xlen_t P = offset[w[j]]; // position of k-mer in loc and ind
+						for (k = 0; k < counts[j]; k++) { // each target instance of k-mer
+							posQuery[s] = j + 1;
+							posTarget[s] = loc[P];
+							set[s] = ind[P];
+							score[s] = scores[w[j]];
+							addScore[s] = addScores[w[j]];
+							P++;
+							s++;
+						}
 					}
 				}
 			}
 			
-			// merge sort on set then posTarget
-			int *o1 = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-			for (j = 0; j < s; j++)
-				o1[j] = j; // initial order
-			int *o2; // pointer to previous order
-			for (j = 1; j < l[i]; j++)
-				counts[j] += counts[j - 1]; // batch size
+			double *subScores; // substitution scores (if maxIt > 0)
+			int lkup; // index of letter
+			if (sizeM > 0) {
+				Chars_holder p_i;
+				p_i = get_elt_from_XStringSet_holder(&p_set, i);
+				
+				double *sMcorr; // background corrected substitution matrix
+				if (correct > 0) { // apply composition correction to substitution matrix
+					double *fg = (double *) malloc(size*sizeof(double)); // thread-safe on Windows
+					for (j = 0; j < size; j++)
+						fg[j] = correct*bg[j]; // initialize to pseudocount
+					for (j = 0; j < p_i.length; j++) {
+						lkup = lkup_row[(unsigned char)p_i.ptr[j]];
+						if (lkup >= 0 && lkup < size)
+							fg[lkup]++;
+					}
+					double weight = 0;
+					for (j = 0; j < size; j++)
+						weight += fg[j];
+					for (j = 0; j < size; j++)
+						fg[j] /= weight;
+					sMcorr = (double *) malloc(sizeM*sizeof(double)); // thread-safe on Windows
+					for (j = 0; j < sizeM; j++)
+						sMcorr[j] = sM[j];
+					for (j = 0; j < size; j++)
+						for (k = 0; k < size; k++)
+							sMcorr[j*l_i.length + k] += log(bg[j]*bg[k]/(fg[j]*fg[k]));
+					free(fg);
+				} else {
+					sMcorr = sM;
+				}
+				
+				// calculate substitution scores
+				subScores = (double *) malloc(l_i.length*p_i.length*sizeof(double)); // thread-safe on Windows
+				for (j = 0; j < p_i.length; j++) {
+					if (j < l[i] && w[j] == NA_INTEGER) {
+						lkup = NA_INTEGER; // masked position
+					} else {
+						lkup = lkup_col[(unsigned char)p_i.ptr[j]];
+					}
+					if (lkup == NA_INTEGER) {
+						for (k = 0; k < l_i.length; k++)
+							subScores[j*l_i.length + k] = NA_REAL;
+					} else {
+						for (k = 0; k < l_i.length; k++)
+							subScores[j*l_i.length + k] = sMcorr[lkup + k];
+					}
+				}
+				if (correct > 0)
+					free(sMcorr);
+			}
+			
+			int *chain; // set of joined hits per match
+			int *len; // length of each hit
+			int *res; // indices of results
 			c = l[i]; // current number of batches
-			int group1, group2;
-			while (c > 1) {
-				o2 = o1; // store previous order
-				o1 = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-				p = 0; // position in o1
-				j = 0; // position in group 1
-				group1 = 0; // group 1 in counts
-				group2 = 1; // group 2 in counts
-				// sort pairs of groups
-				while (group2 < c) {
-					k = counts[group1]; // position in group 2
-					while (j < counts[group1] && k < counts[group2]) {
-						if (set[o2[j]] == set[o2[k]]) { // apply tiebreaker
-							if (posTarget[o2[j]] <= posTarget[o2[k]]) {
+			for (int it = 0; it <= maxIt; it++) { // each search iteration
+				// merge sort on set then posTarget
+				int *o1 = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+				for (j = 0; j < s; j++)
+					o1[j] = j; // initial order
+				int *o2; // pointer to previous order
+				for (j = 1; j < c; j++)
+					counts[j] += counts[j - 1]; // batch size
+				int group1, group2;
+				while (c > 1) {
+					o2 = o1; // store previous order
+					o1 = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+					p = 0; // position in o1
+					j = 0; // position in group 1
+					group1 = 0; // group 1 in counts
+					group2 = 1; // group 2 in counts
+					// sort pairs of groups
+					while (group2 < c) {
+						k = counts[group1]; // position in group 2
+						while (j < counts[group1] && k < counts[group2]) {
+							if (set[o2[j]] == set[o2[k]]) { // apply tiebreaker
+								if (posTarget[o2[j]] <= posTarget[o2[k]]) {
+									o1[p++] = o2[j++];
+								} else {
+									o1[p++] = o2[k++];
+								}
+							} else if (set[o2[j]] < set[o2[k]]) {
 								o1[p++] = o2[j++];
 							} else {
 								o1[p++] = o2[k++];
 							}
-						} else if (set[o2[j]] < set[o2[k]]) {
+						}
+						while (j < counts[group1])
 							o1[p++] = o2[j++];
-						} else {
+						while (k < counts[group2])
 							o1[p++] = o2[k++];
+						group1 = group2 + 1;
+						group2 = group1 + 1;
+						j = k;
+					}
+					while (p < s) {
+						o1[p] = o2[p];
+						p++;
+					}
+					
+					// merge pairs of groups
+					p = 0;
+					k = 0;
+					while (k < c - 1) {
+						k += 2;
+						counts[p++] = counts[k - 1];
+					}
+					if (k < c)
+						counts[p++] = counts[k++];
+					c = p;
+					free(o2);
+				}
+				free(counts);
+				
+				// reorder all vectors
+				int *posQuery2 = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+				int *posTarget2 = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+				set2 = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+				if (sizeM > 0) {
+					for (j = 0; j < s; j++) {
+						posQuery2[j] = posQuery[o1[j]];
+						posTarget2[j] = posTarget[o1[j]];
+						set2[j] = set[o1[j]];
+					}
+				} else {
+					score2 = (double *) malloc(s*sizeof(double)); // thread-safe on Windows
+					addScore2 = (double *) malloc(s*sizeof(double)); // thread-safe on Windows
+					for (j = 0; j < s; j++) {
+						posQuery2[j] = posQuery[o1[j]];
+						posTarget2[j] = posTarget[o1[j]];
+						set2[j] = set[o1[j]];
+						score2[j] = score[o1[j]];
+						addScore2[j] = addScore[o1[j]];
+					}
+					free(score);
+					free(addScore);
+					score = score2;
+					addScore = addScore2;
+				}
+				free(o1);
+				free(posQuery);
+				free(posTarget);
+				free(set);
+				posQuery = posQuery2;
+				posTarget = posTarget2;
+				set = set2;
+				
+				// collapse adjacent hits
+				len = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+				int *origin = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+				char *keep = (char *) malloc(s*sizeof(char)); // thread-safe on Windows
+				for (j = 0; j < s; j++) {
+					len[j] = K;
+					origin[j] = j;
+					keep[j] = 1;
+				}
+				c = 0; // current position
+				k = 0; // previous position
+				p = s; // remaining vector length
+				int deltaQuery, deltaTarget;
+				while (c < s - 1) {
+					c++; // advance current position
+					if (set[k] == set[c]) { // same index
+						j = k;
+						while (j < c) {
+							deltaTarget = posTarget[c] - posTarget[j];
+							if (deltaTarget > step) {
+								k = j + 1; // advance previous position
+							} else if (deltaTarget == step) {
+								deltaQuery = posQuery[c] - posQuery[j];
+								if (deltaQuery == step) { // merge positions
+									p--;
+									keep[c] = 0;
+									origin[c] = origin[j];
+									len[origin[j]] = len[origin[j]] + step;
+									if (sizeM == 0)
+										score[origin[j]] = score[origin[j]] + addScore[c];
+									break; // done merging
+								}
+							} else { // deltaTarget == 0L
+								break; // reached same target position
+							}
+							j++;
+						}
+					} else {
+						k = c;
+					}
+				}
+				if (sizeM == 0)
+					free(addScore);
+				free(origin);
+				
+				// resize all vectors
+				posQuery2 = (int *) malloc(p*sizeof(int)); // thread-safe on Windows
+				posTarget2 = (int *) malloc(p*sizeof(int)); // thread-safe on Windows
+				set2 = (int *) malloc(p*sizeof(int)); // thread-safe on Windows
+				int *len2 = (int *) malloc(p*sizeof(int)); // thread-safe on Windows
+				score2 = (double *) malloc(p*sizeof(double)); // thread-safe on Windows
+				p = 0;
+				if (sizeM > 0) {
+					for (j = 0; j < s; j++) {
+						if (keep[j]) {
+							posQuery2[p] = posQuery[j];
+							posTarget2[p] = posTarget[j];
+							set2[p] = set[j];
+							len2[p] = len[j];
+							p++;
 						}
 					}
-					while (j < counts[group1])
-						o1[p++] = o2[j++];
-					while (k < counts[group2])
-						o1[p++] = o2[k++];
-					group1 = group2 + 1;
-					group2 = group1 + 1;
-					j = k;
+				} else {
+					for (j = 0; j < s; j++) {
+						if (keep[j]) {
+							posQuery2[p] = posQuery[j];
+							posTarget2[p] = posTarget[j];
+							set2[p] = set[j];
+							len2[p] = len[j];
+							score2[p] = score[j];
+							p++;
+						}
+					}
+					free(score);
 				}
-				while (p < s) {
-					o1[p] = o2[p];
-					p++;
+				s = p;
+				free(keep);
+				free(posQuery);
+				free(posTarget);
+				free(set);
+				free(len);
+				posQuery = posQuery2;
+				posTarget = posTarget2;
+				set = set2;
+				len = len2;
+				score = score2;
+				
+				double prevScore, tempScore;
+				int gap, sep, temp;
+				if (sizeM > 0) { // rescore and extend hits
+					Chars_holder p_i, s_j;
+					p_i = get_elt_from_XStringSet_holder(&p_set, i);
+					int p1, p2; // position in query or target
+					int prev = 0; // index previous sequence in target
+					int bound; // boundary in target sequence
+					int maxLen; // maximum observed length
+					
+					// score and extend hits
+					for (j = 0; j < s; j++) {
+						if (prev != set[j]) {
+							s_j = get_elt_from_XStringSet_holder(&s_set, set[j] - 1);
+							prev = set[j];
+							maxLen = 0;
+						}
+						
+						// score hit
+						score[j] = 0;
+						p1 = posQuery[j] + len[j] - 1;
+						p2 = posTarget[j] + len[j] - 1;
+						while (p1 >= posQuery[j]) {
+							p1--;
+							p2--;
+							lkup = lkup_row[(unsigned char)s_j.ptr[p2]];
+							if (lkup != NA_INTEGER && subScores[p1*l_i.length + lkup] != NA_REAL)
+								score[j] += subScores[p1*l_i.length + lkup];
+						}
+						
+						// try extending left
+						k = j - 1;
+						bound = 0; // left bound
+						while (k >= 0 && set[k] == set[j]) {
+							deltaTarget = posTarget[j] - posTarget[k] - len[k];
+							if (deltaTarget >= maxSep + maxLen) {
+								break;
+							} else if (deltaTarget >= 0) {
+								deltaQuery = posQuery[j] - posQuery[k] - len[k];
+								if (deltaQuery >= 0 && deltaQuery <= maxSep) {
+									if (deltaQuery > deltaTarget) {
+										gap = deltaQuery - deltaTarget;
+									} else {
+										gap = deltaTarget - deltaQuery;
+									}
+									if (gap == 0) { // intersecting
+										bound = posTarget[k] + len[k];
+										break;
+									}
+								}
+							}
+							k--;
+						}
+						tempScore = 0;
+						while (p1 > 0 && p2 > bound && tempScore > dS) {
+							p1--;
+							p2--;
+							lkup = lkup_row[(unsigned char)s_j.ptr[p2]];
+							if (lkup != NA_INTEGER && subScores[p1*l_i.length + lkup] != NA_REAL) {
+								tempScore += subScores[p1*l_i.length + lkup];
+							} else { // encountered missing character
+								break;
+							}
+							if (tempScore > 0) { // new max score
+								score[j] += tempScore;
+								tempScore = 0;
+								len[j] += posQuery[j] - p1 - 1;
+								posQuery[j] = p1 + 1;
+								posTarget[j] = p2 + 1;
+							}
+						}
+						
+						// try extending right
+						k = j + 1;
+						bound = s_j.length - 1; // right bound
+						while (k < s && set[k] == set[j]) {
+							deltaTarget = posTarget[k] - posTarget[j] - len[j];
+							if (deltaTarget >= maxSep) {
+								break;
+							} else if (deltaTarget >= 0) {
+								deltaQuery = posQuery[k] - posQuery[j] - len[j];
+								if (deltaQuery >= 0 && deltaQuery <= maxSep) {
+									if (deltaQuery > deltaTarget) {
+										gap = deltaQuery - deltaTarget;
+									} else {
+										gap = deltaTarget - deltaQuery;
+									}
+									if (gap == 0) { // intersecting
+										bound = posTarget[k] - 2;
+										break;
+									}
+								}
+							}
+							k++;
+						}
+						tempScore = 0;
+						p1 = posQuery[j] + len[j] - 1;
+						p2 = posTarget[j] + len[j] - 1;
+						while (p1 < p_i.length && p2 <= bound && tempScore > dS) {
+							lkup = lkup_row[(unsigned char)s_j.ptr[p2]];
+							if (lkup != NA_INTEGER && subScores[p1*l_i.length + lkup] != NA_REAL) {
+								tempScore += subScores[p1*l_i.length + lkup];
+							} else { // encountered missing character
+								break;
+							}
+							if (tempScore > 0) { // new max score
+								score[j] += tempScore;
+								tempScore = 0;
+								len[j] = p1 - posQuery[j] + 2;
+							}
+							p1++;
+							p2++;
+						}
+						
+						if (len[j] > maxLen)
+							maxLen = len[j];
+						
+						// (re)order by posTarget
+						p2 = j;
+						p1 = p2 - 1;
+						while (p2 > 0 && // within bounds
+							set[p1] == set[p2] && // same index
+							posTarget[p2] < posTarget[p1]) { // out of order
+							temp = len[p1];
+							len[p1] = len[p2];
+							len[p2] = temp;
+							temp = posQuery[p1];
+							posQuery[p1] = posQuery[p2];
+							posQuery[p2] = temp;
+							temp = posTarget[p1];
+							posTarget[p1] = posTarget[p2];
+							posTarget[p2] = temp;
+							tempScore = score[p1];
+							score[p1] = score[p2];
+							score[p2] = tempScore;
+							p2 = p1;
+							p1--;
+						}
+					}
+					
+					// pull back overlap
+					for (j = 0; j < s; j++) {
+						if (prev != set[j]) {
+							s_j = get_elt_from_XStringSet_holder(&s_set, set[j] - 1);
+							prev = set[j];
+						}
+						
+						prevScore = 0; // best score after chaining
+						double bestScore = 0; // score difference from overlap
+						int bestLen = 0; // length difference from overlap
+						k = j + 1;
+						while (k < s && set[k] == set[j]) {
+							deltaTarget = posTarget[j] + len[j] - posTarget[k]; // overlap
+							if (deltaTarget > maxSep) { // cannot chain
+								break;
+							} else if (posQuery[k] > posQuery[j] && // can chain
+								deltaTarget < len[k] && deltaTarget < len[j]) { // not fully overlapping
+								deltaQuery = posQuery[j] + len[j] - posQuery[k]; // overlap
+								if (deltaQuery <= maxSep && // can chain
+									deltaQuery < len[k] && deltaQuery < len[j]) { // not fully overlapping
+									if (deltaQuery > deltaTarget) {
+										sep = deltaQuery;
+										gap = deltaQuery - deltaTarget;
+									} else {
+										sep = deltaTarget;
+										gap = deltaTarget - deltaQuery;
+									}
+									if (gap <= maxSep && // can chain
+										score[j] + gapCost[gap] > 0 && // can chain
+										score[k] + gapCost[gap] > 0) { // can chain
+										if (sep > 0) { // score chaining after pulling back overlap
+											p1 = posQuery[j] + len[j] - 1;
+											p2 = posTarget[j] + len[j] - 1;
+											p = p1 - sep;
+											tempScore = 0;
+											while (p1 > p) {
+												p1--;
+												p2--;
+												lkup = lkup_row[(unsigned char)s_j.ptr[p2]];
+												tempScore += subScores[p1*l_i.length + lkup];
+											}
+											if (score[k] + gapCost[gap] - tempScore > prevScore) {
+												prevScore = score[k] + gapCost[gap] - tempScore;
+												bestLen = sep;
+												bestScore = tempScore;
+											}
+										} else { // score chaining without overlap
+											sep *= -1;
+											if (sep <= maxSep && // can chain
+												score[k] + gapCost[gap] + sepCost[sep] > prevScore) {
+												prevScore = score[k] + gapCost[gap] + sepCost[sep];
+												bestLen = 0;
+												bestScore = 0;
+											}
+										}
+									}
+								}
+							}
+							k++;
+						}
+						len[j] -= bestLen;
+						score[j] -= bestScore;
+					}
 				}
 				
-				// merge pairs of groups
-				p = 0;
-				k = 0;
-				while (k < c - 1) {
-					k += 2;
-					counts[p++] = counts[k - 1];
-				}
-				if (k < c)
-					counts[p++] = counts[k++];
-				c = p;
-				free(o2);
-			}
-			free(counts);
-			
-			// reorder all vectors
-			int *posQuery2 = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-			int *posTarget2 = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-			int *set2 = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-			double *score2 = (double *) malloc(s*sizeof(double)); // thread-safe on Windows
-			double *addScore2 = (double *) malloc(s*sizeof(double)); // thread-safe on Windows
-			for (j = 0; j < s; j++) {
-				posQuery2[j] = posQuery[o1[j]];
-				posTarget2[j] = posTarget[o1[j]];
-				set2[j] = set[o1[j]];
-				score2[j] = score[o1[j]];
-				addScore2[j] = addScore[o1[j]];
-			}
-			free(o1);
-			free(posQuery);
-			free(posTarget);
-			free(set);
-			free(score);
-			free(addScore);
-			posQuery = posQuery2;
-			posTarget = posTarget2;
-			set = set2;
-			score = score2;
-			addScore = addScore2;
-			
-			// collapse adjacent hits
-			int *len = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-			int *origin = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-			char *keep = (char *) malloc(s*sizeof(char)); // thread-safe on Windows
-			for (j = 0; j < s; j++) {
-				len[j] = K;
-				origin[j] = j;
-				keep[j] = 1;
-			}
-			c = 0; // current position
-			k = 0; // previous position
-			p = s; // remaining vector length
-			int deltaQuery, deltaTarget;
-			while (c < s - 1) {
-				c++; // advance current position
-				if (set[k] == set[c]) { // same index
-					j = k;
-					while (j < c) {
-						deltaTarget = posTarget[c] - posTarget[j];
-						if (deltaTarget > step) {
-							k = j + 1; // advance previous position
-						} else if (deltaTarget == step) {
-							deltaQuery = posQuery[c] - posQuery[j];
-							if (deltaQuery == step) { // merge positions
-								p--;
-								keep[c] = 0;
-								origin[c] = origin[j];
-								len[origin[j]] = len[origin[j]] + step;
-								score[origin[j]] = score[origin[j]] + addScore[c];
-								break; // done merging
-							}
-						} else { // deltaTarget == 0L
-							break; // reached same target position
-						}
-						j++;
-					}
-				} else {
-					k = c;
-				}
-			}
-			free(addScore);
-			free(origin);
-			
-			// resize all vectors
-			posQuery2 = (int *) malloc(p*sizeof(int)); // thread-safe on Windows
-			posTarget2 = (int *) malloc(p*sizeof(int)); // thread-safe on Windows
-			set2 = (int *) malloc(p*sizeof(int)); // thread-safe on Windows
-			int *len2 = (int *) malloc(p*sizeof(int)); // thread-safe on Windows
-			score2 = (double *) malloc(p*sizeof(double)); // thread-safe on Windows
-			p = 0;
-			for (j = 0; j < s; j++) {
-				if (keep[j]) {
-					posQuery2[p] = posQuery[j];
-					posTarget2[p] = posTarget[j];
-					set2[p] = set[j];
-					len2[p] = len[j];
-					score2[p] = score[j];
-					p++;
-				}
-			}
-			s = p;
-			free(keep);
-			free(posQuery);
-			free(posTarget);
-			free(set);
-			free(len);
-			free(score);
-			posQuery = posQuery2;
-			posTarget = posTarget2;
-			set = set2;
-			len = len2;
-			score = score2;
-			
-			double prevScore, tempScore;
-			int gap, sep, temp;
-			if (sizeM > 0) { // rescore and extend hits
-				Chars_holder p_i, s_j;
-				p_i = get_elt_from_XStringSet_holder(&p_set, i);
-				int lkup1, lkup2; // index in substitution matrix
-				int p1, p2; // position in query or target
-				int prev = 0; // index previous sequence in target
-				int bound; // boundary in target sequence
-				int maxLen; // maximum observed length
+				// determine significance of occurrences
+				chain = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+				origin = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+				int *cov = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
 				for (j = 0; j < s; j++) {
-					if (prev != set[j]) {
-						s_j = get_elt_from_XStringSet_holder(&s_set, set[j] - 1);
-						prev = set[j];
-						maxLen = 0;
-					}
-					
-					// rescore match
-					score[j] = 0;
-					p1 = posQuery[j] + len[j] - 1;
-					p2 = posTarget[j] + len[j] - 1;
-					while (p1 >= posQuery[j]) {
-						p1--;
-						p2--;
-						lkup1 = lkup_row[(unsigned char)p_i.ptr[p1]]; // never NA
-						lkup2 = lkup_col[(unsigned char)s_j.ptr[p2]]; // never NA
-						score[j] += sM[lkup1 + lkup2];
-					}
-					
-					// try extending left
-					k = j - 1;
-					bound = 0; // left bound
-					sep = maxSep; // minimum gap size
-					while (k >= 0 && set[k] == set[j]) {
-						deltaTarget = posTarget[j] - posTarget[k] - len[k];
-						if (deltaTarget >= maxSep + maxLen) {
-							break;
-						} else if (deltaTarget >= 0) {
-							deltaQuery = posQuery[j] - posQuery[k] - len[k];
-							if (deltaQuery >= 0 && deltaQuery <= maxSep) {
-								if (deltaQuery > deltaTarget) {
-									gap = deltaQuery - deltaTarget;
-								} else {
-									gap = deltaTarget - deltaQuery;
-								}
-								if (gap < sep) { // new minimum gaps
-									bound = posTarget[k] + len[k];
-									sep = gap;
-								}
-							}
-						}
-						k--;
-					}
-					tempScore = 0;
-					while (p1 > 0 && p2 > bound && tempScore > dS) {
-						p1--;
-						p2--;
-						lkup1 = lkup_row[(unsigned char)p_i.ptr[p1]];
-						lkup2 = lkup_col[(unsigned char)s_j.ptr[p2]];
-						if (lkup1 != NA_INTEGER && lkup2 != NA_INTEGER) {
-							tempScore += sM[lkup1 + lkup2];
-						} else { // encountered missing character
-							break;
-						}
-						if (tempScore > 0) { // new max score
-							score[j] += tempScore;
-							tempScore = 0;
-							len[j] += posQuery[j] - p1 - 1;
-							posQuery[j] = p1 + 1;
-							posTarget[j] = p2 + 1;
-						}
-					}
-					
-					// try extending right
-					k = j + 1;
-					bound = s_j.length - 1; // right bound
-					sep = maxSep; // minimum gap size
-					while (k < s && set[k] == set[j]) {
-						deltaTarget = posTarget[k] - posTarget[j] - len[j];
-						if (deltaTarget >= maxSep) {
-							break;
-						} else if (deltaTarget >= 0) {
-							deltaQuery = posQuery[k] - posQuery[j] - len[j];
-							if (deltaQuery >= 0 && deltaQuery <= maxSep) {
-								if (deltaQuery > deltaTarget) {
-									gap = deltaQuery - deltaTarget;
-								} else {
-									gap = deltaTarget - deltaQuery;
-								}
-								if (gap < sep) { // new minimum gaps
-									bound = posTarget[k] - 2;
-									sep = gap;
-								}
-							}
-						}
-						k++;
-					}
-					tempScore = 0;
-					p1 = posQuery[j] + len[j] - 1;
-					p2 = posTarget[j] + len[j] - 1;
-					while (p1 < p_i.length && p2 <= bound && tempScore > dS) {
-						lkup1 = lkup_row[(unsigned char)p_i.ptr[p1]];
-						lkup2 = lkup_col[(unsigned char)s_j.ptr[p2]];
-						if (lkup1 != NA_INTEGER && lkup2 != NA_INTEGER) {
-							tempScore += sM[lkup1 + lkup2];
-						} else { // encountered missing character
-							break;
-						}
-						if (tempScore > 0) { // new max score
-							score[j] += tempScore;
-							tempScore = 0;
-							len[j] = p1 - posQuery[j] + 2;
-						}
-						p1++;
-						p2++;
-					}
-					
-					if (len[j] > maxLen)
-						maxLen = len[j];
-					
-					// (re)order by posTarget
-					p2 = j;
-					p1 = p2 - 1;
-					while (p2 > 0 && // within bounds
-						set[p1] == set[p2] && // same index
-						posTarget[p2] < posTarget[p1]) { // out of order
-						temp = len[p1];
-						len[p1] = len[p2];
-						len[p2] = temp;
-						temp = posQuery[p1];
-						posQuery[p1] = posQuery[p2];
-						posQuery[p2] = temp;
-						temp = posTarget[p1];
-						posTarget[p1] = posTarget[p2];
-						posTarget[p2] = temp;
-						tempScore = score[p1];
-						score[p1] = score[p2];
-						score[p2] = tempScore;
-						p2 = p1;
-						p1--;
-					}
+					chain[j] = j;
+					origin[j] = j;
+					cov[j] = len[j] - 1;
 				}
-			}
-			
-			// determine significance of occurrences
-			int *chain = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-			origin = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-			int *cov = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-			for (j = 0; j < s; j++) {
-				chain[j] = j;
-				origin[j] = j;
-				cov[j] = len[j] - 1;
-			}
-			j = 0; // last hit
-			k = 1; // current hit
-			int delta;
-			while (k < s) {
-				if (set[k] != set[j]) { // switched index
-					j = k;
-				} else {
-					prevScore = score[k];
-					p = j;
-					while (p < k) {
-						deltaTarget = posTarget[k] - posTarget[p] - len[p];
-						if (deltaTarget > maxSep) {
-							if (p == j)
-								j = p + 1; // limit search space
-						} else if (deltaTarget > negK) {
-							deltaQuery = posQuery[k] - posQuery[p] - len[p];
-							if (deltaQuery > negK && deltaQuery <= maxSep) {
-								if (deltaTarget < 0 || deltaQuery < 0) { // overlap due to indels
-									if (deltaQuery < deltaTarget) {
-										delta = deltaQuery;
+				j = 0; // last hit
+				k = 1; // current hit
+				int delta;
+				while (k < s) {
+					if (set[k] != set[j]) { // switched index
+						j = k;
+					} else {
+						prevScore = score[k];
+						p = j;
+						while (p < k) {
+							deltaTarget = posTarget[k] - posTarget[p] - len[p];
+							if (deltaTarget > maxSep) {
+								if (p == j)
+									j = p + 1; // limit search space
+							} else if (deltaTarget > negK) {
+								deltaQuery = posQuery[k] - posQuery[p] - len[p];
+								if (deltaQuery > negK && deltaQuery <= maxSep) {
+									if (deltaTarget < 0 || deltaQuery < 0) { // overlap due to indels
+										if (deltaQuery < deltaTarget) {
+											delta = deltaQuery;
+										} else {
+											delta = deltaTarget;
+										}
+										deltaQuery -= delta;
+										deltaTarget -= delta;
+										
+										if (deltaQuery <= maxSep && deltaTarget <= maxSep) {
+											// deduct the approximate score of removed positions
+											tempScore = score[p] + prevScore*(double)(len[k] + delta)/(double)len[k];
+											if (tempScore > score[k]) {
+												if (deltaQuery > deltaTarget) {
+													gap = deltaQuery - deltaTarget;
+													sep = deltaTarget;
+												} else {
+													gap = deltaTarget - deltaQuery;
+													sep = deltaQuery;
+												}
+												tempScore = tempScore + gapCost[gap];
+												tempScore = tempScore + sepCost[sep];
+												if (tempScore > score[k]) {
+													score[k] = tempScore;
+													chain[k] = p;
+													origin[k] = origin[p];
+													cov[k] = len[k] - 1 + cov[p] + delta;
+												}
+											}
+										}
 									} else {
-										delta = deltaTarget;
-									}
-									deltaQuery -= delta;
-									deltaTarget -= delta;
-									
-									if (deltaQuery <= maxSep && deltaTarget <= maxSep) {
-										// deduct the approximate score of removed positions
-										tempScore = score[p] + prevScore*(double)(len[k] + delta)/(double)len[k];
+										tempScore = score[p] + prevScore;
 										if (tempScore > score[k]) {
 											if (deltaQuery > deltaTarget) {
 												gap = deltaQuery - deltaTarget;
@@ -633,83 +826,231 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 												score[k] = tempScore;
 												chain[k] = p;
 												origin[k] = origin[p];
-												cov[k] = len[k] - 1 + cov[p] + delta;
+												cov[k] = len[k] - 1 + cov[p];
 											}
-										}
-									}
-								} else {
-									tempScore = score[p] + prevScore;
-									if (tempScore > score[k]) {
-										if (deltaQuery > deltaTarget) {
-											gap = deltaQuery - deltaTarget;
-											sep = deltaTarget;
-										} else {
-											gap = deltaTarget - deltaQuery;
-											sep = deltaQuery;
-										}
-										tempScore = tempScore + gapCost[gap];
-										tempScore = tempScore + sepCost[sep];
-										if (tempScore > score[k]) {
-											score[k] = tempScore;
-											chain[k] = p;
-											origin[k] = origin[p];
-											cov[k] = len[k] - 1 + cov[p];
 										}
 									}
 								}
 							}
+							p++;
 						}
-						p++;
+					}
+					k++;
+				}
+				
+				// correct for size of k-mer search space
+				for (j = 0; j < s; j++) {
+					temp = pos[set[j] - 1] - cov[j];
+					if (temp > step) // correct for multiple target k-mers
+						score[j] -= log(((double)temp)/((double)step));
+					if (width > cov[j]) // correct for multiple query k-mers
+						score[j] -= log((double)(width - cov[j]));
+				}
+				free(cov);
+				
+				// eliminate lower scoring chains with same origin
+				int *maxOrigin; // pointer to maximum origin
+				maxOrigin = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+				for (j = 0; j < s; j++) {
+					if (origin[j] == j) {
+						maxOrigin[j] = j;
+					} else if (score[maxOrigin[origin[j]]] < score[j]) {
+						maxOrigin[origin[j]] = j;
+						maxOrigin[j] = NA_INTEGER;
+					} else {
+						maxOrigin[j] = NA_INTEGER;
 					}
 				}
-				k++;
-			}
-			
-			// correct for size of k-mer search space
-			for (j = 0; j < s; j++) {
-				temp = pos[set[j] - 1] - cov[j];
-				if (temp > step) // correct for multiple target k-mers
-					score[j] -= log(((double)temp)/((double)step));
-				if (width > cov[j]) // correct for multiple query k-mers
-					score[j] -= log((double)(width - cov[j]));
-			}
-			free(cov);
-			
-			// eliminate lower scoring chains with same origin
-			int *maxOrigin; // pointer to maximum origin
-			maxOrigin = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
-			for (j = 0; j < s; j++) {
-				if (origin[j] == j) {
-					maxOrigin[j] = j;
-				} else if (score[maxOrigin[origin[j]]] < score[j]) {
-					maxOrigin[origin[j]] = j;
-					maxOrigin[j] = NA_INTEGER;
-				} else {
-					maxOrigin[j] = NA_INTEGER;
+				free(origin);
+				keep = calloc(s, sizeof(char)); // initialized to zero (thread-safe on Windows)
+				c = 0; // count of results
+				for (j = 0; j < s; j++) {
+					if (maxOrigin[j] != NA_INTEGER) {
+						keep[maxOrigin[j]] = 1;
+						c++;
+					}
+				}
+				free(maxOrigin);
+				res = (int *) malloc(c*sizeof(int)); // thread-safe on Windows
+				p = 0;
+				for (j = 0; j < s; j++)
+					if (keep[j])
+						res[p++] = j;
+				free(keep);
+				
+				if (it < maxIt) { // repeat search with more k-mers
+					Chars_holder p_i, s_j;
+					p_i = get_elt_from_XStringSet_holder(&p_set, i);
+					int p1, p2; // position in query or target
+					int prev = 0; // index previous sequence in target
+					double cutoff, weight;
+					
+					// calculate sequence profile
+					double *profile = (double *) calloc(l_i.length*p_i.length, sizeof(double)); // initialized to zero (thread-safe on Windows)
+					for (j = 0; j < c; j++) {
+						cutoff = log((tot - (double)pos[set[res[j]] - 1])/(double)step/thresh);
+						if (score[res[j]] > cutoff) {
+							if (prev != set[res[j]]) {
+								s_j = get_elt_from_XStringSet_holder(&s_set, set[res[j]] - 1);
+								prev = set[res[j]];
+							}
+							weight = 1 - exp(cutoff - score[res[j]]); // probability of homology
+							p = res[j];
+							while (p != chain[p]) {
+								p = chain[p];
+								p1 = posQuery[p] + len[p] - 1;
+								p2 = posTarget[p] + len[p] - 1;
+								while (p1 >= posQuery[p]) {
+									p1--;
+									p2--;
+									lkup = lkup_row[(unsigned char)s_j.ptr[p2]];
+									if (lkup != NA_INTEGER)
+										profile[p1*l_i.length + lkup] += weight;
+								}
+							}
+						}
+					}
+					
+					// convert profile to letters
+					double temp_profile[l_i.length];
+					int *patterns; // most frequent query k-mers
+					int *patterns2; // alternative query k-mers
+					patterns = (int *) calloc(p_i.length, sizeof(int)); // initialized to zero (thread-safe on Windows)
+					patterns2 = (int *) calloc(p_i.length, sizeof(int)); // initialized to zero (thread-safe on Windows)
+					for (j = 0; j < p_i.length; j++) {
+						for (k = 0; k < levels; k++)
+							temp_profile[k] = 0;
+						weight = 0;
+						for (k = 0; k < size; k++) {
+							temp_profile[alpha[k]] += profile[j*l_i.length + k];
+							weight += profile[j*l_i.length + k];
+						}
+						if (weight == 0) {
+							patterns[j] = NA_INTEGER;
+						} else {
+							for (k = 0; k < levels; k++) {
+								if (temp_profile[k] > 0) {
+									temp_profile[k] /= weight; // normalize profile
+									temp_profile[k] = log(temp_profile[k]);
+									temp_profile[k] += freqs[k]; // convert to log-odds
+									if (temp_profile[k] > temp_profile[patterns[j]]) {
+										patterns2[j] = patterns[j];
+										patterns[j] = k;
+									}
+								}
+							}
+						}
+					}
+					free(profile);
+					
+					// convert profile to k-mers
+					s = 0; // unmasked k-mers in original sequence
+					p = 0; // number of alternative pattern k-mers
+					for (j = 0; j < l[i]; j++) {
+						if (w[j] != NA_INTEGER) { // query k-mer is not masked
+							s++;
+							if (patterns[j] != NA_INTEGER) { // enriched letter
+								for (k = 1; k < K; k++) {
+									if (patterns[j + k] == NA_INTEGER) {
+										patterns[j] = NA_INTEGER;
+										break;
+									}
+									patterns[j] += pwv[k]*patterns[j + k];
+									patterns2[j] += pwv[k]*patterns[j + k];
+								}
+								if (patterns[j] != NA_INTEGER) { // enriched letters
+									if (patterns[j] != w[j]) { // most frequent pattern k-mer
+										p++;
+									} else if (patterns[j] != patterns2[j]) { // alternative pattern k-mer
+										patterns[j] = patterns2[j];
+										p++;
+									}
+								}
+							}
+						}
+					}
+					free(patterns2);
+					
+					if (p == 0) { // no alternative pattern k-mers
+						free(patterns);
+						break;
+					}
+					
+					// count target occurrences of each query k-mer
+					counts = (int *) malloc((s + p)*sizeof(int)); // thread-safe on Windows
+					s = 0; // total number of k-mers shared with targets
+					p = 0; // position in counts
+					for (j = 0; j < l[i]; j++) { // each query k-mer
+						if (w[j] != NA_INTEGER) {
+							counts[p] = num[w[j]];
+							s += counts[p++];
+							if (s < 0) // signed integer overflow
+								break;
+							if (patterns[j] != NA_INTEGER && // enriched letters
+								patterns[j] != w[j]) { // alternative pattern k-mer
+								counts[p] = num[patterns[j]];
+								s += counts[p++];
+								if (s < 0) // signed integer overflow
+									break;
+							}
+						}
+					}
+					
+					if (s < 0) { // revert to previous results
+						free(patterns);
+						free(counts);
+						break;
+					}
+					
+					free(set);
+					free(score);
+					free(posQuery);
+					free(posTarget);
+					free(len);
+					free(chain);
+					free(res);
+					
+					// record target occurrences of each query k-mer
+					posQuery = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+					posTarget = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+					set = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
+					s = 0; // target k-mer
+					c = 0; // position in counts
+					for (j = 0; j < l[i]; j++) { // each query k-mer
+						if (w[j] != NA_INTEGER) {
+							R_xlen_t P = offset[w[j]]; // position of k-mer in loc and ind
+							for (k = 0; k < counts[c]; k++) { // each target instance of k-mer
+								posQuery[s] = j + 1;
+								posTarget[s] = loc[P];
+								set[s] = ind[P];
+								P++;
+								s++;
+							}
+							c++;
+							if (patterns[j] != NA_INTEGER && // enriched letters
+								patterns[j] != w[j]) { // alternative pattern k-mer
+								R_xlen_t P = offset[patterns[j]]; // position of k-mer in loc and ind
+								for (k = 0; k < counts[c]; k++) { // each target instance of k-mer
+									posQuery[s] = j + 1;
+									posTarget[s] = loc[P];
+									set[s] = ind[P];
+									P++;
+									s++;
+								}
+								c++;
+							}
+						}
+					}
+					free(patterns);
 				}
 			}
-			free(origin);
-			keep = calloc(s, sizeof(char)); // initialized to zero (thread-safe on Windows)
-			c = 0; // count of results
-			for (j = 0; j < s; j++) {
-				if (maxOrigin[j] != NA_INTEGER) {
-					keep[maxOrigin[j]] = 1;
-					c++;
-				}
-			}
-			free(maxOrigin);
-			int *res; // indices of results
-			res = (int *) malloc(c*sizeof(int)); // thread-safe on Windows
-			p = 0;
-			for (j = 0; j < s; j++)
-				if (keep[j])
-					res[p++] = j;
-			free(keep);
+			if (sizeM > 0)
+				free(subScores);
 			
 			// eliminate chains below the minimum score
 			k = 0;
 			if (ISNA(minS)) { // determine the minimum score per target
-				double mS;
+				double mS; // minimum score
 				for (j = 0; j < c; j++) {
 					mS = log((tot - (double)pos[set[res[j]] - 1])/(double)step);
 					if (score[res[j]] >= mS)
@@ -875,14 +1216,17 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 		}
 	}
 	
-	free(addScores);
-	free(scores);
 	free(offset);
 	free(sepCost);
 	free(gapCost);
 	if (sizeM > 0) {
 		free(lkup_row);
 		free(lkup_col);
+		if (maxIt > 0)
+			free(pwv);
+	} else {
+		free(addScores);
+		free(scores);
 	}
 	
 	int **anchors; // pointers to anchor positions
@@ -1073,26 +1417,21 @@ SEXP updateIndex(SEXP offset, SEXP query, SEXP wordSize, SEXP step, SEXP locatio
 		kmers = INTEGER(VECTOR_ELT(query, i)); // query k-mers
 		n = length(VECTOR_ELT(query, i)); // query length
 		
-		// record the number of unmasked positions
 		k = -1*s - 1; // last hit
-		for (j = 0; j < n; j++) {
+		for (j = 0; j < n; j += s) {
 			if (kmers[j] != NA_INTEGER) {
+				// record the number of unmasked positions
 				if (k == j - s) {
 					pos[i] += s;
 				} else {
 					pos[i] += K;
 				}
 				k = j;
-			}
-		}
-		
-		// update the inverted index
-		for (j = 0; j < n; j += s) {
-			k = kmers[j];
-			if (k != NA_INTEGER) { // unmasked position
-				ind[(R_xlen_t)off[k]] = c;
-				loc[(R_xlen_t)off[k]] = j + 1;
-				off[k]++;
+				
+				// update the inverted index
+				ind[(R_xlen_t)off[kmers[j]]] = c;
+				loc[(R_xlen_t)off[kmers[j]]] = j + 1;
+				off[kmers[j]]++;
 			}
 		}
 		

@@ -1,4 +1,4 @@
-to.dendrogram <- function(object, states=NULL, p=NULL, s=NULL) {
+to.dendrogram <- function(object, states=NULL, p=NULL) {
 	z <- list()
 	oHgts <- object$lengths
 	oHgt <- object$height
@@ -41,14 +41,12 @@ to.dendrogram <- function(object, states=NULL, p=NULL, s=NULL) {
 		attr(zk, "height") <- oHgt[k]
 		attr(zk, "state") <- states[k]
 		attr(zk, "probability") <- p[k]
-		attr(zk, "support") <- s[k]
 		k <- as.character(k)
 		z[[k]] <- zk
 	}
 	z <- z[[k]]
 	attr(z, "state") <- states[nMerge]
 	attr(z, "probability") <- NULL
-	attr(z, "support") <- NULL
 	class(z) <- "dendrogram"
 	z
 }
@@ -88,8 +86,6 @@ to.dendrogram <- function(object, states=NULL, p=NULL, s=NULL) {
 					attr(stack[[pos]][[2L]], "state"))
 				probs <- c(attr(stack[[pos]][[1L]], "probability"),
 					attr(stack[[pos]][[2L]], "probability"))
-				support <- c(attr(stack[[pos]][[1L]], "support"),
-					attr(stack[[pos]][[2L]], "support"))
 				m <- m1 + m2
 				if ((h - h1) <= collapse && (h - h2) <= collapse) {
 					l1 <- length(stack[[pos]][[1L]])
@@ -115,8 +111,6 @@ to.dendrogram <- function(object, states=NULL, p=NULL, s=NULL) {
 				attr(stack[[pos]], "state") <- unique(states)
 				if (length(probs) > 0)
 					attr(stack[[pos]], "probability") <- min(probs)
-				if (length(support) > 0)
-					attr(stack[[pos]], "support") <- min(support)
 				
 				class(stack[[pos]]) <- "dendrogram"
 			}
@@ -664,6 +658,27 @@ to.dendrogram <- function(object, states=NULL, p=NULL, s=NULL) {
 	return(myClusters)
 }
 
+.reorder2 <- function(C) {
+	mode(C) <- "integer"
+	repeat {
+		temp <- .Call("firstRow", C, PACKAGE="DECIPHER")
+		if (temp[1L] == 0L)
+			break
+		w <- temp[1L]
+		a <- temp[2L]
+		temp <- C[w,]
+		C[w:(a - 1L),] <- C[(w + 1L):a,]
+		C[a,] <- temp
+		w1 <- which(C[w:dim(C)[1L],] %in% (w + 1L):a)
+		w2 <- which(C[w:dim(C)[1L],] %in% w)
+		if (length(w1) > 0L)
+			C[w:dim(C)[1L],][w1] <- C[w:dim(C)[1L],][w1] - 1L
+		if (length(w2) > 0)
+			C[w:dim(C)[1L],][w2] <- a
+	}
+	C
+}
+
 .swapBranches <- function(myClusters, r1, c1, r2, c2) {
 	# swap branch [r1, c1] with [r2, c2]
 	temp <- myClusters[r1, c1]
@@ -791,7 +806,7 @@ MODELS <- list(Nucleotide=c("JC69",
 	# (note: output columns 1:3 are uncorrected)
 	
 	n <- nrow(x1)
-	if (root==0) { # midpoint root
+	if (root == 0) { # midpoint root
 		# find the leaf at minimum height
 		r1 <- which(x1[, 7] < 0)
 		h1 <- x1[r1, 6] - x1[r1, 4]
@@ -872,7 +887,7 @@ MODELS <- list(Nucleotide=c("JC69",
 		}
 	}
 	
-	if (root==0) { # determine height of the midpoint
+	if (root == 0) { # determine height of the midpoint
 		w <- which(merged)
 		longest <- longest + x1[, 6] - h[minH]
 		m <- w[which.max(longest[w])]
@@ -921,7 +936,7 @@ MODELS <- list(Nucleotide=c("JC69",
 	# make new root node
 	delta <- x1[m, 6] - midH
 	x2[count, 4:10] <- c(x1[m, 4 + index[m]] - delta,
-		delta,
+		ifelse(x1[m, 8 - index[m]] < 0, x1[m, 5 - index[m]] + delta, delta),
 		midH,
 		x1[m, 7 + index[m]],
 		count - 1,
@@ -1051,22 +1066,6 @@ MODELS <- list(Nucleotide=c("JC69",
 		myClusters,
 		PACKAGE="DECIPHER")
 	return(myClusters)
-}
-
-.getParams <- function(myClusters) {
-	j <- which(myClusters[, 4:5] < 0)
-	myClusters[, 4:5][j] <- -1*myClusters[, 4:5][j]
-	lower <- params <- upper <- as.vector(myClusters[, 4:5])
-	if (length(j) > 0) {
-		j <- c(j,
-			ifelse(j > nrow(myClusters),
-				j - nrow(myClusters),
-				j + nrow(myClusters)))
-		j <- c(j, which(myClusters[, 7:8] %in% j))
-		lower[j] <- 0
-		upper[j] <- 3*max(params[j]) + 0.01
-	}
-	list(myClusters, lower, params, upper)
 }
 
 .giveParamsDNA <- function(model_params, model, .rates) {
@@ -1246,232 +1245,21 @@ MODELS <- list(Nucleotide=c("JC69",
 	return(c(i, k1, k2))
 }
 
-.cophenetic <- function(myClusters) {
-	n <- nrow(myClusters)
-	one <- two <- vector("list", n)
-	d <- matrix(1e-6, n + 1, n + 1) # initialize positive
-	for (i in seq_len(n)) {
-		j <- myClusters[i, 7]
-		if (j > 0) {
-			one[[i]] <- c(one[[j]], two[[j]])
-		} else {
-			one[[i]] <- -j
-		}
-		j <- one[[i]]
-		d[j, -j] <- d[j, -j] + myClusters[i, 4]
-		d[-j, j] <- d[-j, j] + myClusters[i, 4]
-		
-		j <- myClusters[i, 8]
-		if (j > 0) {
-			two[[i]] <- c(one[[j]], two[[j]])
-		} else {
-			two[[i]] <- -j
-		}
-		j <- two[[i]]
-		d[j, -j] <- d[j, -j] + myClusters[i, 5]
-		d[-j, j] <- d[-j, j] + myClusters[i, 5]
-	}
-	as.dist(d)
-}
-
-.rowSums <- function(d) {
-	n <- attr(d, "Size")
-	r <- numeric(n)
-	for (k in seq_along(d)) {
-		j <- floor((2*n + 1 - sqrt((2*n - 1)^2 - 8*(k - 1)))/2)
-		i <- j + k - (2*n - j)*(j - 1)/2
-		r[i] <- r[i] + d[k]
-		r[j] <- r[j] + d[k]
-	}
-	r
-}
-
-.makeS <- function(Q, c, v=0.1, noise=0, resolution=10) {
-	# make substitution matrix
-	if (c <= 5) { # nucleotides
-		s <- seq_len(c)
-		type <- 1L
-		if (noise > 0) {
-			Q[1:12] <- abs(Q[1:12] + rnorm(12, sd=Q[1:12]*noise))
-			Q[s] <- Q[s]/sum(Q[s]) # normalize state frequencies
-		}
-	} else { # amino acids
-		s <- seq_len(c) + 190
-		type <- 3L
-		if (noise > 0) {
-			Q[1:212] <- abs(Q[1:212] + rnorm(212, sd=Q[1:212]*noise))
-			Q[s] <- Q[s]/sum(Q[s]) # normalize state frequencies
-		}
-	}
-	
-	# log((p(x)*p(x->y|v))/(p(x)*p(y)))
-	P <- .Call("expM", v, Q, type) # convert rate matrix to probabilities
-	S <- log(P[seq_len(c), seq_len(c)]/Q[s]) # substitution matrix
-	diag(S) <- 0 # no score for no change
-	S <- abs(S) # more positive is worse score
-	
-	# factor into powers of -2 for floating point reproducibility
-	powers <- 2^(seq(0, 1 - resolution))
-	for (i in seq_len(nrow(S) - 1L)) {
-		for (j in (i + 1L):nrow(S)) {
-			res <- logical(resolution)
-			num <- S[i, j]
-			for (k in seq_len(resolution)) {
-				res[k] <- floor(num/powers[k])
-				num <- num - res[k]*powers[k]
-			}
-			S[i, j] <- S[j, i] <- sum(res*2^(1 - seq_along(res)))
-		}
-	}
-	
-	S
-}
-
-.Sankoff <- function(C, z, S, weights, scoreOnly=TRUE, add=0, processors=1L) {
+.Sankoff <- function(C, X, S, weights, scoreOnly=TRUE, add=0, states, processors=1L) {
 	if (is.double(C))
 		mode(C) <- "integer"
 	
 	result <- .Call("clusterMP",
 		C,
-		z,
+		X,
 		S,
-		c(nrow(S), ncol(z), nrow(C), nrow(z)),
+		states,
 		scoreOnly,
 		add,
 		weights,
 		processors)
 	
 	result
-}
-
-.reorder2 <- function(myClusters) {
-	repeat {
-		a <- pmax(myClusters[, 1], myClusters[, 2])
-		w <- which(a > seq_len(nrow(myClusters)))
-		if (length(w) == 0)
-			break
-		w <- w[1]
-		temp <- myClusters[w,]
-		myClusters[w:(a[w] - 1),] <- myClusters[(w + 1):a[w],]
-		myClusters[a[w],] <- temp
-		w1 <- which(myClusters[w:dim(myClusters)[1],] %in% (w + 1):a[w])
-		w2 <- which(myClusters[w:dim(myClusters)[1],] %in% w)
-		if (length(w1) > 0)
-			myClusters[w:dim(myClusters)[1],][w1] <- myClusters[w:dim(myClusters)[1],][w1] - 1
-		if (length(w2) > 0)
-			myClusters[w:dim(myClusters)[1],][w2] <- a[w]
-	}
-	myClusters
-}
-
-.clusterMP <- function(z, # integer encoded XStringSet
-	S, # substitution matrix
-	seed, # order of addition
-	NNIs=10, # how often to attempt NNIs
-	stochastic=FALSE, # use random addition
-	weights,
-	processors) {
-	l <- nrow(z)
-	
-	C <- matrix(NA_integer_, l - 1, 2)
-	C[1,] <- -seed[1:2]
-	for (i in 1L:(l - 2L)) {
-		if (i %% NNIs == 0) { # attempt NNIs
-			res <- .Sankoff(C[seq_len(i),, drop=FALSE],
-				z,
-				S,
-				weights,
-				TRUE,
-				-1, # add
-				processors)
-			
-			count <- 1L
-			Corg <- C
-			for (j in rev(seq_len(i))) {
-				if (Corg[j, 1] > 0) {
-					count <- count + 1L
-					if (res[1] > res[count] &&
-						C[j, 1] > 0 &&
-						all(C[c(j, C[j, 1]),] == Corg[c(j, C[j, 1]),])) {
-						# swap left-left with right
-						temp <- C[C[j, 1], 1]
-						C[C[j, 1], 1] <- C[j, 2]
-						C[j, 2] <- temp
-						C <- .reorder2(C)
-					}
-					
-					count <- count + 1L
-					if (res[1] > res[count] &&
-						C[j, 1] > 0 &&
-						all(C[c(j, C[j, 1]),] == Corg[c(j, C[j, 1]),])) {
-						# swap left-right with right
-						temp <- C[C[j, 1], 2]
-						C[C[j, 1], 2] <- C[j, 2]
-						C[j, 2] <- temp
-						C <- .reorder2(C)
-					}
-				}
-				
-				if (Corg[j, 2] > 0) {
-					count <- count + 1L
-					if (res[1] > res[count] &&
-						C[j, 2] > 0 &&
-						all(C[c(j, C[j, 2]),] == Corg[c(j, C[j, 2]),])) {
-						# swap right-left with left
-						temp <- C[C[j, 2], 1]
-						C[C[j, 2], 1] <- C[j, 1]
-						C[j, 1] <- temp
-						C <- .reorder2(C)
-					}
-					
-					count <- count + 1L
-					if (res[1] > res[count] &&
-						C[j, 2] > 0 &&
-						all(C[c(j, C[j, 2]),] == Corg[c(j, C[j, 2]),])) {
-						# swap right-right with left
-						temp <- C[C[j, 2], 2]
-						C[C[j, 2], 2] <- C[j, 1]
-						C[j, 1] <- temp
-						C <- .reorder2(C)
-					}
-				}
-			}
-		}
-		
-		res <- .Sankoff(C[seq_len(i),, drop=FALSE],
-			z,
-			S,
-			weights,
-			TRUE,
-			seed[i + 2],
-			processors)
-		
-		res <- res[-1L]
-		if (stochastic) {
-			w <- sample(length(res),
-				1L,
-				prob=exp(min(res) - res))
-		} else {
-			w <- which.min(res)
-		}
-		if (w > i) {
-			w <- c(w - i, 2L)
-		} else {
-			w <- c(w, 1L)
-		}
-		
-		# add sequence to the tree
-		if (w[1] > i) { # add to root
-			C[w[1],] <- c(i, -seed[i + 2])
-		} else {
-			C[w[1]:i,][C[w[1]:i,] %in% w[1]:i] <- C[w[1]:i,][C[w[1]:i,] %in% w[1]:i] + 1L
-			C[(w[1] + 1):(i + 1),] <- C[w[1]:i,]
-			C[w[1], 3 - w[2]] <- -seed[i + 2]
-			C[w[1] + 1, w[2]] <- w[1]
-		}
-	}
-	
-	c(list(C), .Sankoff(C, z, S, weights, FALSE, processors=processors))
 }
 
 .guessParams <- function(a, indels) {
@@ -1737,14 +1525,17 @@ MODELS <- list(Nucleotide=c("JC69",
 	list(w, res, exp(X), LnL)
 }
 
-.rNNIs <- function(myClusters, fracRandomNNIs, prob) {
+.rNNIs <- function(myClusters, fracRandomNNIs) {
 	if (fracRandomNNIs == 0)
 		return(myClusters)
 	
 	w <- which(myClusters[, 7:8, drop=FALSE] > 0, arr.ind=TRUE)
-	s <- sample(seq_along(prob),
-		ceiling(length(prob)*fracRandomNNIs),
-		prob=prob)
+	n <- as.integer(fracRandomNNIs*nrow(w))
+	
+	if (n <= 0L)
+		return(myClusters)
+	
+	s <- sample(nrow(w), n)
 	s <- s[order(w[s, 1L])]
 	flip <- sample(0:1, length(s), replace=TRUE)
 	for (j in seq_along(s)) {
@@ -1790,94 +1581,6 @@ MODELS <- list(Nucleotide=c("JC69",
 	myClusters
 }
 
-.redundancy <- function(y, i) {
-	# downweight redundancy in y
-	c <- 1 - cor(t(y))^2 # 1 - R^2
-	count <- 1L
-	w <- numeric(nrow(c))
-	w[i] <- 1L
-	while(count < nrow(c)) {
-		count <- count + 1L
-		c[, i] <- NA_real_
-		j <- which.min(c[i,]) # highest correlation
-		w[j] <- c[i, j]
-		i <- j
-	}
-	w
-}
-
-.estimate <- function(x, # dependent variable
-	y, # independent variables
-	base, # base of weight function
-	tol=0.9, # minimum cumulative stdev of principal components
-	interval=0, # exclusion interval for normal quantile [0, 1)
-	N=1, # number of estimates to return
-	mult) { # lower and upper bounds of multiplier on noise (>= 0)
-	# perform dimensionality-reduction in log space
-	y <- log(y) # error ~ lognormal
-	
-	PCA <- prcomp(y)
-	
-	# select random principal components
-	w <- which(PCA$sdev > 0)
-	if (length(w) > 0) {
-		w <- sample(w, prob=PCA$sdev[w])
-		s <- cumsum(PCA$sdev[w])
-		s <- s/s[length(s)]
-		n <- which.max(s >= tol - 1e-8)
-		if (n < 3)
-			n <- 3
-		w <- w[seq_len(n)]
-	} else {
-		n <- 1
-		w <- w[seq_len(n)]
-	}
-	X <- PCA$x[, w, drop=FALSE]
-	R <- t(PCA$rotation[, w])
-	C <- PCA$center
-	
-	# determine weights
-	w <- base^(-1000*(x/min(x) - 1)) # downweight worse scores
-	w <- w*.redundancy(X, which.max(x)) # downweight redundant scores
-	w <- w/sum(w)
-	means <- colSums(w*X)
-	sdevs <- sqrt(colSums(w*t(t(X) - means)^2)/(1 - sum(w^2)))
-	
-	Y <- matrix(qnorm(runif(n*N, interval),
-			means,
-			runif(n*N, mult[1L], mult[2L])*sdevs,
-			lower.tail=sample(c(TRUE, FALSE), n, replace=TRUE)),
-		ncol=n,
-		byrow=TRUE)
-	Y <- Y %*% R
-	Y <- t(t(Y) + C)
-	
-	Y <- exp(Y)
-	Y[is.na(Y) | Y < 1e-8] <- 1e-8
-	Y[Y > 20] <- 20
-	Y
-}
-
-.support <- function(myClusters, Trees) {
-	t1 <- .extractClades(myClusters)
-	w <- which(myClusters[, 7:8, drop=FALSE] > 0)
-	t1 <- t1[w]
-	t1 <- lapply(t1, sort)
-	dim <- nrow(myClusters) + 1L
-	W <- which(lengths(Trees) > 0)
-	support <- numeric(length(t1))
-	for (j in seq_along(W)) {
-		t2 <- .extractClades(Trees[[W[j]]])
-		t2 <- lapply(t2, sort)
-		t2 <- c(t2,
-			lapply(t2,
-				function(x)
-					seq_len(dim)[-x]))
-		support <- support + tail(duplicated(c(t2, t1)), length(t1))
-	}
-	support/length(W)
-}
-
 .column <- function (j, n) {
 	j <- rep(as.integer(j), n)
 	i <- seq_len(n)
@@ -1890,21 +1593,93 @@ MODELS <- list(Nucleotide=c("JC69",
 	k
 }
 
+.branchLengths <- function(myClusters, myDistMatrix) {
+	C <- myClusters[, 7L:8L]
+	mode(C) <- "integer"
+	n <- nrow(myClusters)
+	
+	myClusters[, 4L:5L] <- .Call("clusterME",
+		C,
+		myDistMatrix,
+		ifelse(is(myDistMatrix, "dist"), -n, n),
+		1L, # flag
+		PACKAGE="DECIPHER")
+	
+	myClusters
+}
+
+.sort <- function(x, processors=1L, ascending=TRUE, keepNAs=TRUE) # sort positive integers
+	x[.Call("radixOrder",
+		x,
+		ascending, # ascending
+		keepNAs, # keep NAs
+		processors,
+		PACKAGE="DECIPHER")]
+
+.cophenetic <- function(myClusters) {
+	H <- myClusters[, 4L:5L]
+	C <- myClusters[, 7L:8L]
+	mode(C) <- "integer"
+	
+	d <- .Call("patristic", C, H, PACKAGE="DECIPHER")
+	attr(d, "Size") <- nrow(myClusters) + 1L
+	class(d) <- "dist"
+	d
+}
+
+.chooseProcessors <- function(resTime) {
+	processors <- length(resTime)
+	if (processors == 1L) {
+		processors
+	} else {
+		w <- which(is.na(resTime))
+		l <- length(w)
+		if (l == processors) { # start with max
+			processors
+		} else if (l == processors - 1L) { # use middle
+			processors %/% 2L
+		} else {
+			o <- base::order(resTime, na.last=NA)
+			if (l == 0L) { # use weighted mean
+				as.integer(round((resTime[o[2L]]*o[1L] + resTime[o[1L]]*o[2L])/(resTime[o[1L]] + resTime[o[2L]])))
+			} else if (l == processors - 2L) { # select next
+				if (o[1L] == 1L) { # use minimum
+					1L
+				} else if (o[1L] < o[2L]) { # select less than minimum
+					o[1L] %/% 2L
+				} else { # use weighted mean
+					as.integer(round((resTime[o[2L]]*o[1L] + resTime[o[1L]]*o[2L])/(resTime[o[1L]] + resTime[o[2L]])))
+				}
+			} else if ((o[1L] > o[2L] && o[1L] < o[3L]) ||
+				(o[1L] < o[2L] && o[1L] > o[3L])) { # approximate minimum
+				as.integer(round((resTime[o[2L]]*o[1L] + resTime[o[1L]]*o[2L])/(resTime[o[1L]] + resTime[o[2L]])))
+			} else if (o[1L] > 1L && o[1L] == min(o)) { # select less than minimum
+				o[1L] %/% 2L
+			} else { # approximate minimum
+				as.integer(round((resTime[o[2L]]*o[1L] + resTime[o[1L]]*o[2L])/(resTime[o[1L]] + resTime[o[2L]])))
+			}
+		}
+	}
+}
+
 TreeLine <- function(myXStringSet=NULL,
 	myDistMatrix=NULL,
-	method="ML",
+	method="ME",
 	type="dendrogram",
-	model=MODELS,
 	cutoff=-Inf,
 	showPlot=FALSE,
+	standardDeviation=0.1,
+	fracRandomNNIs=0.7,
+	minIterations=100,
+	maxIterations=1000,
+	maxTime=Inf,
+	root=0,
 	collapse=-1,
 	reconstruct=FALSE,
-	root=0,
-	informationCriterion="AICc",
-	maxGenerations=20,
-	maxTime=Inf,
-	quadrature=FALSE,
 	costMatrix=NULL,
+	model=MODELS,
+	informationCriterion="AICc",
+	quadrature=FALSE,
 	processors=1,
 	verbose=TRUE) {
 	
@@ -1914,22 +1689,26 @@ TreeLine <- function(myXStringSet=NULL,
 	# error checking
 	if (length(method) != 1)
 		stop("Only one method can be specified.")
-	METHODS <- c("NJ","UPGMA", "ML", "complete", "single", "WPGMA", "MP", "UPGMH")
+	METHODS <- c("NJ", "UPGMA", "ML", "complete", "single", "WPGMA", "MP", "UPGMH", "ME")
 	method <- pmatch(method, METHODS)
 	if (is.na(method))
 		stop("Invalid method.")
-	if (method==-1)
+	if (method == -1)
 		stop("Ambiguous method.")
 	if (!is.logical(reconstruct) &&
 		!is.numeric(reconstruct))
 		stop("reconstruct must be a logical or numeric.")
+	if (length(reconstruct) != 1L)
+		stop("reconstruct must be a single value.")
+	if (is.na(reconstruct))
+		stop("reconstruct cannot be NA.")
 	if (is.numeric(reconstruct)) {
+		if (method != 3)
+			stop("reconstruct must be a logical unless method is 'ML'.")
 		if (reconstruct <= 0)
 			stop("reconstruct must be be greater than zero.")
 		if (reconstruct > 1)
 			stop("reconstruct can be at most one.")
-		if (method == 7)
-			stop("reconstruct must be a logical when method is 'MP'.")
 	}
 	TYPES <- c("clusters", "dendrogram", "both")
 	type <- pmatch(type[1], TYPES)
@@ -1964,13 +1743,44 @@ TreeLine <- function(myXStringSet=NULL,
 	if (informationCriterion == -1)
 		stop("Ambiguous informationCriterion.")
 	informationCriterion <- ICs[informationCriterion]
-	if (!is.numeric(maxGenerations))
-		stop("maxGenerations must be a numeric.")
-	if (maxGenerations <= 0)
-		stop("maxGenerations must be greater than zero.")
-	if (floor(maxGenerations) != maxGenerations)
-		stop("maxGenerations must be a whole number.")
-	maxGenerations <- as.integer(maxGenerations)
+	if (!is.numeric(minIterations))
+		stop("minIterations must be a numeric.")
+	if (minIterations <= 0)
+		stop("minIterations must be greater than zero.")
+	if (floor(minIterations) != minIterations)
+		stop("minIterations must be a whole number.")
+	minIterations <- as.integer(minIterations)
+	if (!is.numeric(maxIterations))
+		stop("maxIterations must be a numeric.")
+	if (maxIterations < minIterations)
+		stop("maxIterations must be at least minIterations.")
+	if (floor(maxIterations) != maxIterations)
+		stop("maxIterations must be a whole number.")
+	maxIterations <- as.integer(maxIterations)
+	if (minIterations == 1L)
+		maxIterations <- 1L # only one iteration needed
+	if (!is.numeric(standardDeviation))
+		stop("standardDeviation must be a numeric.")
+	if (length(standardDeviation) != 1L)
+		stop("standardDeviation must be a single numeric.")
+	if (is.na(standardDeviation))
+		stop("standardDeviation cannot be NA.")
+	if (standardDeviation < 0)
+		stop("standardDeviation must be at least zero.")
+	if (standardDeviation > 1)
+		stop("standardDeviation can be at most one.")
+	if (!is.numeric(fracRandomNNIs))
+		stop("fracRandomNNIs must be a numeric.")
+	if (length(fracRandomNNIs) != 1L)
+		stop("fracRandomNNIs must be a single numeric.")
+	if (is.na(fracRandomNNIs))
+		stop("fracRandomNNIs cannot be NA.")
+	if (fracRandomNNIs < 0)
+		stop("fracRandomNNIs must be at least zero.")
+	if (fracRandomNNIs > 1)
+		stop("fracRandomNNIs can be at most one.")
+	if (standardDeviation == 0 && fracRandomNNIs == 0)
+		stop("standardDeviation and fracRandomNNIs cannot both be zero.")
 	if (length(maxTime) != 1)
 		stop("maxTime must be a single numeric.")
 	if (!is.numeric(maxTime))
@@ -1991,8 +1801,7 @@ TreeLine <- function(myXStringSet=NULL,
 		processors <- as.integer(processors)
 	}
 	
-	if (!((method == 3 || method == 7) &&
-		is.null(myDistMatrix))) {
+	if (!is.null(myDistMatrix)) {
 		if (is(myDistMatrix, "matrix")) {
 			dim <- dim(myDistMatrix)
 			if (dim[2] != dim[1])
@@ -2001,13 +1810,15 @@ TreeLine <- function(myXStringSet=NULL,
 		} else if (is(myDistMatrix, "dist")) {
 			dim <- attr(myDistMatrix, "Size")
 		} else {
-			stop(paste("myDistMatrix must be a matrix for method '", METHODS[method], "'.", sep=""))
+			stop("myDistMatrix must be a matrix or dist object.")
 		}
 		if (dim < 2)
 			stop("myDistMatrix is too small.")
 		if (typeof(myDistMatrix) == "integer")
 			mode(myDistMatrix) <- "numeric"
 	} else {
+		if (is.null(myXStringSet))
+			stop("Either myXStringSet or myDistMatrix must be specified.")
 		dim <- length(myXStringSet)
 	}
 	if (type > 1) {
@@ -2041,13 +1852,8 @@ TreeLine <- function(myXStringSet=NULL,
 	}
 	
 	orgXStringSet <- myXStringSet # keep unmasked for reconstruction
-	absTol <- 1 # (initial) absolute convergence tolerance
-	relTol <- 0.001 # (initial) relative convergence tolerance
 	
-	if (method == 3L || # ML needs a model
-		(type > 1 && # return a dendrogram
-		reconstruct && # reconstruction uses a model
-		method != 7L)) { # MP reconstruction does not use a model
+	if (method == 3L) { # ML needs a model
 		if (is.list(model)) {
 			if (typeX == 3L) { # amino acids
 				model <- model$Protein
@@ -2152,7 +1958,10 @@ TreeLine <- function(myXStringSet=NULL,
 			stop('A minimum of two rates are required for the discrete Gamma distribution (i.e., "+G2").')
 	}
 	
-	if (verbose && method != 3 && method != 7) {
+	if (method == 3 || method == 7 || method == 9) {
+		pBar <- NULL
+		time.1 <- Sys.time()
+	} else if (verbose) {
 		pBar <- txtProgressBar(min=0, max=100, initial=0, style=ifelse(interactive(), 3, 1))
 		time.1 <- Sys.time()
 	} else {
@@ -2160,23 +1969,19 @@ TreeLine <- function(myXStringSet=NULL,
 	}
 	
 	if (is.null(myDistMatrix)) {
-		maxDist <- 3 # maximum distance allowed in distance matrix
 		myDistMatrix <- DistanceMatrix(myXStringSet,
 			type="dist",
-			correction="F81",
-			penalizeGapLetterMatches=method != 7 && indels,
+			correction="none",
+			penalizeGapLetterMatches=FALSE,
 			processors=processors,
 			verbose=FALSE)
-		myDistMatrix[myDistMatrix > maxDist] <- maxDist
-	} else {
-		maxDist <- max(1, max(myDistMatrix, na.rm=TRUE))
 	}
 	
 	# impute missing distances with ultrametric method
 	if (is(myDistMatrix, "matrix")) {
 		w <- which(is.na(myDistMatrix), arr.ind=TRUE)
 		for (k in seq_len(nrow(w))) {
-			myDistMatrix[w[k, 1], w[k, 2]] <- min(maxDist,
+			myDistMatrix[w[k, 1], w[k, 2]] <- min(1,
 				pmax(myDistMatrix[w[k, 1],],
 					myDistMatrix[w[k, 2],]),
 				na.rm=TRUE)
@@ -2186,84 +1991,53 @@ TreeLine <- function(myXStringSet=NULL,
 		for (k in seq_along(w)) {
 			j <- floor((2*dim + 1 - sqrt((2*dim - 1)^2 - 8*(w[k] - 1)))/2L)
 			i <- j + w[k] - (2*dim - j)*(j - 1)/2
-			myDistMatrix[w[k]] <- min(maxDist,
+			myDistMatrix[w[k]] <- min(1,
 				pmax(myDistMatrix[.column(i, dim)],
 					myDistMatrix[.column(j, dim)]),
 				na.rm=TRUE)
 		}
 	}
 	
+	resTime0 <- rep(NA_real_, processors)
+	optProcessors0 <- .chooseProcessors(resTime0)
+	time.3 <- Sys.time()
 	myClusters <- .Call("cluster",
 		myDistMatrix,
-		ifelse(method == 3 || method == 7,
+		ifelse(method == 3 || method == 7 || method == 9,
 			-Inf,
 			cutoff[1]),
-		ifelse(method == 3 || method == 7,
-			1L, # NJ
+		ifelse(method == 3 || method == 7 || method == 9,
+			0L, # heuristic NJ
 			method),
 		ifelse(is(myDistMatrix, "matrix"),
 			dim,
 			-dim),
-		verbose && method != 3 && method != 7,
+		verbose && method != 3 && method != 7 && method != 9,
 		pBar,
-		processors,
+		optProcessors0,
 		PACKAGE="DECIPHER")
+	time.4 <- Sys.time()
+	if (is.na(resTime0[optProcessors0])) {
+		resTime0[optProcessors0] <- difftime(time.4, time.3, units='secs')
+	} else {
+		resTime0[optProcessors0] <- (resTime0[optProcessors0] + difftime(time.4, time.3, units='secs'))/2
+	}
 	
-	if (verbose && method != 3 && method != 7) {
+	if (verbose && method != 3 && method != 7 && method != 9) {
 		setTxtProgressBar(pBar, 100)
 		close(pBar)
-		
-		if (reconstruct && type > 1)
-			cat("\n")
 	}
 	
 	if (method == 3 ||
 		method == 7 ||
+		method == 9 ||
 		(reconstruct && type > 1)) {
 		myClusters <- .reorderClusters(myClusters,
 			all=method != 3)
-		Z <- as.matrix(myXStringSet)
-		if (method == 7) {
-			if (is.null(costMatrix)) {
-				if (typeX == 1) {
-					states <- DNA_BASES
-				} else if (typeX == 2) {
-					states <- RNA_BASES
-				} else {
-					states <- AA_STANDARD
-				}
-				S <- 1 - diag(length(states))
-			} else {
-				S <- costMatrix
-				if (!is(S, "matrix"))
-					stop("costMatrix must be a matrix.")
-				if (nrow(S) != ncol(S))
-					stop("costMatrix must be a square matrix.")
-				if (!is.numeric(S))
-					stop("costMatrix must be a numeric matrix.")
-				mode(S) <- "numeric"
-				if (any(is.na(S)))
-					stop("costMatrix contains NA values.")
-				if (any(S < 0))
-					stop("costMatrix contains negative values.")
-				if (any(S != t(S)))
-					stop("costMatrix must be symmetric.")
-				if (is.null(rownames(S))) {
-					if (is.null(colnames(S))) {
-						stop("costMatrix must have row or column names.")
-					} else {
-						states <- colnames(S)
-					}
-				} else {
-					states <- rownames(S)
-				}
-				if (any(is.na(states)) || any(nchar(states) != 1))
-					stop("costMatrix has row or column names not equal to one character.")
-			}
-			N <- sum(!is.na(Z))/nrow(Z) # denominator of parsimony branch length
-		} else {
+		if (method == 3) {
+			absTol <- 1e0 # (initial) absolute convergence tolerance
+			relTol <- 1e-3 # (initial) relative convergence tolerance
 			if (typeX == 3L) {
-				states <- AA_STANDARD
 				.optimizeModel <- .optimizeModelAA
 				.giveParams <- .giveParamsAA
 				m <- matrix(NA_real_,
@@ -2275,11 +2049,6 @@ TreeLine <- function(myXStringSet=NULL,
 							"alpha",
 							"-LnL", "AICc", "BIC")))
 			} else {
-				if (typeX == 1) {
-					states <- DNA_BASES
-				} else if (typeX == 2) {
-					states <- RNA_BASES
-				}
 				.optimizeModel <- .optimizeModelDNA
 				.giveParams <- .giveParamsDNA
 				m <- matrix(NA_real_,
@@ -2291,13 +2060,11 @@ TreeLine <- function(myXStringSet=NULL,
 							"alpha",
 							"-LnL", "AICc", "BIC")))
 			}
-			if (method == 3 && indels)
-				states <- c(states, "-")
-			weights_ML <- .Call("transposeXStringSet",
+			weights_ML <- .Call("matchColumns",
 				myXStringSet,
-				typeX,
+				DNAStringSet(""), # do not filter uninformative sites
 				PACKAGE="DECIPHER")
-			weights_ML <- tabulate(selfmatch(weights_ML), length(weights_ML))
+			weights_ML <- tabulate(weights_ML, length(weights_ML))
 			if (quadrature) {
 				.rates <- .rates1 # use Laguerre quadrature
 			} else {
@@ -2325,35 +2092,48 @@ TreeLine <- function(myXStringSet=NULL,
 				}
 			}
 			if (verbose) {
-				cat("Optimizing model parameters:")
+				if (length(model) > 1L) {
+					cat("Fitting initial tree to models:")
+				} else {
+					cat("Fitting initial tree to model:")
+				}
 				flush.console()
 			}
-			if (method == 3) {
-				.minimize <- function(x, branches=integer(), lengths=numeric()) {
-					# given branch lengths return -LnL
-					myClusters[, 4:5] <- x
-					tree <- myClusters[, 4:5]
-					u_lengths <- unique(c(tree, lengths))
-					tree <- matrix(c(match(tree, u_lengths),
-							as.integer(myClusters[, 7:8])),
-						ncol=4L)
-					lengths <- match(lengths, u_lengths)
-					.Call("clusterML",
-						tree,
-						myXStringSet,
-						model_params,
-						branches,
-						lengths,
-						0,
-						typeX,
-						weights_ML,
-						u_lengths,
-						processors,
-						PACKAGE="DECIPHER")
+			.minimize <- function(x, branches=integer(), lengths=numeric()) {
+				# given branch lengths return -LnL
+				myClusters[, 4:5] <- x
+				tree <- myClusters[, 4:5]
+				u_lengths <- unique(c(tree, lengths))
+				tree <- matrix(c(match(tree, u_lengths),
+						as.integer(myClusters[, 7:8])),
+					ncol=4L)
+				lengths <- match(lengths, u_lengths)
+				
+				optProcessors2 <- .chooseProcessors(resTime2)
+				time.3 <- Sys.time()
+				LnL <- .Call("clusterML",
+					tree,
+					myXStringSet,
+					model_params,
+					branches,
+					lengths,
+					0,
+					typeX,
+					weights_ML,
+					u_lengths,
+					optProcessors2,
+					PACKAGE="DECIPHER")
+				time.4 <- Sys.time()
+				if (is.na(resTime2[optProcessors2])) {
+					resTime2[optProcessors2] <<- difftime(time.4, time.3, units='secs')/(length(x) + length(branches))
+				} else {
+					resTime2[optProcessors2] <<- (resTime2[optProcessors2] + difftime(time.4, time.3, units='secs')/(length(x) + length(branches)))/2
 				}
+				
+				LnL
 			}
 			
-			resTime <- matrix(NA_real_, nrow=length(model), ncol=processors)
+			resTime1 <- resTime2 <- rep(NA_real_, processors)
 			for (i in seq_along(model)) {
 				start <- Inf
 				it <- 1L
@@ -2384,29 +2164,13 @@ TreeLine <- function(myXStringSet=NULL,
 						flush.console()
 					}
 					
-					if (it == 1L) {
-						optProcessors <- processors
-					} else if (it == 2L) {
-						optProcessors <- 1L
-					} else {
-						w <- which(is.na(resTime[i,]))
-						if (length(w) == 0L) {
-							optProcessors <- which.min(resTime[i,])
-						} else if (length(w) == 1L) {
-							optProcessors <- w
-						} else {
-							o <- order(resTime[i,])
-							optProcessors <- w[which.min(abs(mean(o[1:2]) - w))]
-						}
-					}
-					
-					gc(FALSE) # necessary for repeatable timing
+					optProcessors1 <- .chooseProcessors(resTime1)
 					time.3 <- Sys.time()
 					temp <- .optimizeModel(myClusters,
 						model[i],
 						myXStringSet,
 						N,
-						method == 3, # scaleTree
+						TRUE, # scaleTree
 						.rates,
 						if (it == 1L) {
 							defaults
@@ -2418,32 +2182,28 @@ TreeLine <- function(myXStringSet=NULL,
 							ifelse(start < Inf,
 								min(absTol/start, relTol)/.Machine$double.eps,
 								relTol/.Machine$double.eps)/10),
-						processors=optProcessors)
+						processors=optProcessors1)
 					time.4 <- Sys.time()
-					if (is.na(resTime[i, optProcessors])) {
-						resTime[i, optProcessors] <- difftime(time.4, time.3, units='secs')/temp[2L]
+					if (is.na(resTime1[optProcessors1])) {
+						resTime1[optProcessors1] <- difftime(time.4, time.3, units='secs')/temp[2L]
 					} else {
-						resTime[i, optProcessors] <- (resTime[i, optProcessors] + difftime(time.4, time.3, units='secs')/temp[2L])/2
+						resTime1[optProcessors1] <- (resTime1[optProcessors1] + difftime(time.4, time.3, units='secs')/temp[2L])/2
 					}
 					m[model[i],] <- temp[-1:-2]
 					
-					if (method == 3) {
-						myClusters[, 4:5] <- temp[1L]*myClusters[, 4:5] # scale tree
-						
-						if (start - m[model[i], "-LnL"] < absTol)
-							break
-						
-						start <- m[model[i], "-LnL"]
-						model_params <- .giveParams(m[model[i],],
-							rownames(m)[i],
-							.rates)
-						
-						params <- as.vector(myClusters[, 4:5])
-						params <- .globalBranches(.minimize, params)
-						myClusters[, 4:5] <- params
-					} else {
+					myClusters[, 4:5] <- temp[1L]*myClusters[, 4:5] # scale tree
+					
+					if (start - m[model[i], "-LnL"] < absTol)
 						break
-					}
+					
+					start <- m[model[i], "-LnL"]
+					model_params <- .giveParams(m[model[i],],
+						rownames(m)[i],
+						.rates)
+					
+					params <- as.vector(myClusters[, 4:5])
+					params <- .globalBranches(.minimize, params)
+					myClusters[, 4:5] <- params
 					
 					it <- it + 1L
 				}
@@ -2466,16 +2226,14 @@ TreeLine <- function(myXStringSet=NULL,
 			
 			if (length(model) > 1) { # choose the best model
 				w <- which.min(m[, informationCriterion])
-				optProcessors <- which.min(resTime[w,])
 				m <- m[w,, drop=FALSE]
 				model <- model[w]
 				if (verbose)
 					cat("\n\nThe selected model was:  ",
 						model,
-						ifelse(method == 3 || method == 8, "\n\n", "\n"),
+						ifelse(method == 3 || method == 7 || method == 9, "\n\n", "\n"),
 						sep="")
 			} else {
-				optProcessors <- which.min(resTime[1,])
 				if (verbose)
 					cat("\n\n")
 			}
@@ -2483,12 +2241,70 @@ TreeLine <- function(myXStringSet=NULL,
 			model_params <- .giveParams(m,
 				rownames(m),
 				.rates)
+		} else if (method == 7 || reconstruct) {
+			if (is.null(costMatrix)) {
+				if (typeX == 1) {
+					states <- DNA_BASES
+				} else if (typeX == 2) {
+					states <- RNA_BASES
+				} else {
+					states <- AA_STANDARD
+				}
+				S <- 1 - diag(length(states)) # binary cost matrix
+			} else {
+				S <- costMatrix
+				if (!is(S, "matrix"))
+					stop("costMatrix must be a matrix.")
+				if (nrow(S) != ncol(S))
+					stop("costMatrix must be a square matrix.")
+				if (!is.numeric(S))
+					stop("costMatrix must be a numeric matrix.")
+				mode(S) <- "numeric"
+				if (any(is.na(S)))
+					stop("costMatrix contains NA values.")
+				if (any(S < 0))
+					stop("costMatrix contains negative values.")
+				if (any(S != t(S)))
+					stop("costMatrix must be symmetric.")
+				if (is.null(rownames(S))) {
+					if (is.null(colnames(S))) {
+						stop("costMatrix must have row or column names.")
+					} else {
+						states <- colnames(S)
+					}
+				} else {
+					states <- rownames(S)
+				}
+				if (any(is.na(states)) || any(nchar(states) != 1))
+					stop("costMatrix has row or column names not equal to one character.")
+			}
+			# determine denominator of parsimony branch lengths
+			N <- sum(letterFrequency(myXStringSet, states, collapse=TRUE))/length(myXStringSet)
+			lkup <- if (typeX == 3L) {
+				AAStringSet(paste(states, collapse=""))
+			} else if (typeX == 2L) {
+				RNAStringSet(paste(states, collapse=""))
+			} else {
+				DNAStringSet(paste(states, collapse=""))
+			}
+			weights_MP <- .Call("matchColumns",
+				myXStringSet,
+				lkup,
+				PACKAGE="DECIPHER")
+			weights_MP <- tabulate(weights_MP, length(weights_MP))
 		}
 		
-		if (nrow(myClusters) > 2 &&
-			(method == 3 || method == 7)) {
+		if (nrow(myClusters) > 2 && # at least four leaves
+			(method == 3 || method == 7 || method == 9)) { # optimize tree
 			# initialize functions requiring the local environment
-			if (method == 3) {
+			if (method == 3) { # ML
+				# initialize parameters
+				relTol <- 0.0001 # relative convergence tolerance (0, 1]
+				absTol <- 0.1 # absolute convergence tolerance (> 0)
+				threshold <- 0.9 # support probability required to skip NNI calculations (0, 1]
+				fracParams <- 1.005 # attempt parameter optimization within fracParams*best score
+				resTime3 <- rep(NA_real_, processors)
+				
 				.minimize <- function(x, branches=integer(), lengths=numeric()) {
 					# given branch lengths return -LnL
 					myClusters[, 4:5] <- x
@@ -2498,6 +2314,9 @@ TreeLine <- function(myXStringSet=NULL,
 							as.integer(myClusters[, 7:8])),
 						ncol=4L)
 					lengths <- match(lengths, u_lengths)
+					
+					optProcessors2 <- .chooseProcessors(resTime2)
+					time.3 <- Sys.time()
 					LnL <- .Call("clusterML",
 						tree,
 						myXStringSet,
@@ -2508,93 +2327,114 @@ TreeLine <- function(myXStringSet=NULL,
 						typeX,
 						weights_ML,
 						u_lengths,
-						optProcessors,
+						optProcessors2,
 						PACKAGE="DECIPHER")
+					time.4 <- Sys.time()
+					if (is.na(resTime2[optProcessors2])) {
+						resTime2[optProcessors2] <<- difftime(time.4, time.3, units='secs')/(length(x) + length(branches))
+					} else {
+						resTime2[optProcessors2] <<- (resTime2[optProcessors2] + difftime(time.4, time.3, units='secs')/(length(x) + length(branches)))/2
+					}
 					
-					w <- which.min(LnL)
-					if (LnL[w] < .best - epsilon) {
-						.best <<- LnL[w]
+					if (LnL[1L] < .best - epsilon) {
+						.best <<- LnL[1L]
 						if (verbose) {
 							if (is.infinite(.overall))
-								.overall <<- LnL[1]
-							.printLine(LnL[w])
+								.overall <<- LnL[1L]
+							.printLine(LnL[1L])
 						}
 					}
 					
 					LnL
 				}
 				
-				.NNI <- function(myClusters, probs=NULL) {
-					if (is.null(probs)) {
-						w <- NULL # use all branches
-					} else {
-						w <- which(myClusters[, 7:8] > 0, arr.ind=TRUE)
-						w <- unname(w)
-						w <- w[probs[myClusters[, 7:8][w]] < threshold,, drop=FALSE]
-						if (nrow(w) == 0L ||
-							(nrow(w) == 1L &&
-							w[, 1L] == nrow(myClusters) && # only root
-							any(myClusters[nrow(myClusters), 7:8] < 0))) # trifurcation
+				.NNI <- function(myClusters, probs=NULL, out=NULL) {
+					if (is.null(out)) {
+						if (is.null(probs)) {
 							w <- NULL # use all branches
-					}
-					out <- .localBranches(myClusters,
-						myXStringSet,
-						model_params,
-						weights_ML,
-						optProcessors,
-						w)
-					
-					LnL <- out[[4L]]
-					delta <- LnL - epsilon - out[[2L]]
-					o <- which(delta > 0)
-					
-					if (sum(probs >= threshold) > 0 && sum(delta[o]) < absTol) {
-						# collect complete set of NNIs
-						w <- which(myClusters[, 7:8] > 0, arr.ind=TRUE)
-						w <- unname(w)
-						w <- w[probs[myClusters[, 7:8][w]] >= threshold,, drop=FALSE]
-						if (!(nrow(w) == 0L ||
-							(nrow(w) == 1L &&
-							w[, 1L] == nrow(myClusters) &&
-							any(myClusters[nrow(myClusters), 7:8] < 0)))) {
-							temp <- .localBranches(myClusters,
-								myXStringSet,
-								model_params,
-								weights_ML,
-								optProcessors,
-								w)
-							out[[1L]] <- rbind(out[[1L]], temp[[1L]])
-							out[[2L]] <- c(out[[2L]], temp[[2L]])
-							out[[3L]] <- cbind(out[[3L]], temp[[3L]])
-							# NOTE: out[[4L]] == temp[[4L]]
-							
-							delta <- LnL - epsilon - out[[2L]]
-							o <- which(delta > 0)
+						} else {
+							w <- which(myClusters[, 7:8] > 0, arr.ind=TRUE)
+							w <- unname(w)
+							w <- w[probs[myClusters[, 7:8][w]] < threshold,, drop=FALSE]
+							if (nrow(w) == 0L ||
+								(nrow(w) == 1L &&
+								w[, 1L] == nrow(myClusters) && # only root
+								any(myClusters[nrow(myClusters), 7:8] < 0))) # trifurcation
+								w <- NULL # use all branches
 						}
-					}
-					
-					NNIs <- length(o) # number of potential NNI improvements
-					if (length(o) > 1L) {
-						# order NNIs by decreasing estimated improvement
-						o <- o[order(delta[o], decreasing=TRUE)]
 						
-						# exclude NNIs at the same split
-						o <- o[!duplicated(out[[1L]][o, 1L])]
+						optProcessors3 <- .chooseProcessors(resTime3)
+						time.3 <- Sys.time()
+						out <- .localBranches(myClusters,
+							myXStringSet,
+							model_params,
+							weights_ML,
+							optProcessors3,
+							w)
+						time.4 <- Sys.time()
+						if (is.na(resTime3[optProcessors3])) {
+							resTime3[optProcessors3] <<- difftime(time.4, time.3, units='secs')/(2*nrow(myClusters) + length(w))
+						} else {
+							resTime3[optProcessors3] <<- (resTime3[optProcessors3] + difftime(time.4, time.3, units='secs')/(2*nrow(myClusters) + length(w)))/2
+						}
 						
-						# exclude conflicting NNIs (within one branch away)
-						m <- match(myClusters[out[[1L]][o, 1L], 7L], # left branch
-							out[[1L]][o, 1L]) # center branch
-						m <- c(which(m < seq_along(m)), m[which(m > seq_along(m))])
-						if (length(m) > 0)
-							o <- o[-m]
-						m <- match(myClusters[out[[1L]][o, 1L], 8L], # right branch
-							out[[1L]][o, 1L]) # center branch
-						m <- c(which(m < seq_along(m)), m[which(m > seq_along(m))])
-						if (length(m) > 0)
-							o <- o[-m]
+						LnL <- out[[4L]]
+						delta <- LnL - epsilon - out[[2L]]
+						o <- which(delta > 0)
 						
-						# sort from beginning to end of myClusters
-						o <- o[order(out[[1L]][o, 1L])]
+						if (sum(probs >= threshold) > 0 && sum(delta[o]) < absTol) {
+							# collect complete set of NNIs
+							w <- which(myClusters[, 7:8] > 0, arr.ind=TRUE)
+							w <- unname(w)
+							w <- w[probs[myClusters[, 7:8][w]] >= threshold,, drop=FALSE]
+							if (!(nrow(w) == 0L ||
+								(nrow(w) == 1L &&
+								w[, 1L] == nrow(myClusters) &&
+								any(myClusters[nrow(myClusters), 7:8] < 0)))) {
+								temp <- .localBranches(myClusters,
+									myXStringSet,
+									model_params,
+									weights_ML,
+									optProcessors1,
+									w)
+								out[[1L]] <- rbind(out[[1L]], temp[[1L]])
+								out[[2L]] <- c(out[[2L]], temp[[2L]])
+								out[[3L]] <- cbind(out[[3L]], temp[[3L]])
+								# NOTE: out[[4L]] == temp[[4L]]
+								
+								delta <- LnL - epsilon - out[[2L]]
+								o <- which(delta > 0)
+							}
+						}
+						
+						NNIs <- length(o) # number of potential NNI improvements
+						if (length(o) > 1L) {
+							# order NNIs by decreasing estimated improvement
+							o <- o[order(delta[o], decreasing=TRUE)]
+							
+							# exclude NNIs at the same split
+							o <- o[!duplicated(out[[1L]][o, 1L])]
+							
+							# exclude conflicting NNIs (within one branch away)
+							m <- match(myClusters[out[[1L]][o, 1L], 7L], # left branch
+								out[[1L]][o, 1L]) # center branch
+							m <- c(which(m < seq_along(m)), m[which(m > seq_along(m))])
+							if (length(m) > 0)
+								o <- o[-m]
+							m <- match(myClusters[out[[1L]][o, 1L], 8L], # right branch
+								out[[1L]][o, 1L]) # center branch
+							m <- c(which(m < seq_along(m)), m[which(m > seq_along(m))])
+							if (length(m) > 0)
+								o <- o[-m]
+							
+							# sort from beginning to end of myClusters
+							o <- o[order(out[[1L]][o, 1L])]
+						}
+					} else {
+						LnL <- out[[4L]]
+						delta <- LnL - epsilon - out[[2L]]
+						NNIs <- 1L
+						o <- which.max(delta) # best NNI only
 					}
 					
 					p <- tapply(out[[2L]],
@@ -2697,18 +2537,30 @@ TreeLine <- function(myXStringSet=NULL,
 					
 					list(myClusters,
 						NNIs,
-						cbind(out[[1L]], out[[2L]]),
+						out,
 						LnL,
 						probs)
 				}
-			} else {
-				.minimize <- function(C) {
-					score <- .Sankoff(C,
-						Z, # integer encoded XStringSet
+			} else if (method == 7) { # MP
+				# initialize parameters
+				resTime4 <- resTime5 <- rep(NA_real_, processors)
+				
+				.minimize <- function(myClusters) {
+					optProcessors4 <- .chooseProcessors(resTime4)
+					time.3 <- Sys.time()
+					score <- .Sankoff(myClusters[, 7:8],
+						myXStringSet,
 						S, # substitution matrix
 						weights_MP,
 						scoreOnly=TRUE,
-						processors=processors)
+						states=lkup,
+						processors=optProcessors4)
+					time.4 <- Sys.time()
+					if (is.na(resTime4[optProcessors4])) {
+						resTime4[optProcessors4] <<- difftime(time.4, time.3, units='secs')
+					} else {
+						resTime4[optProcessors4] <<- (resTime4[optProcessors4] + difftime(time.4, time.3, units='secs'))/2
+					}
 					
 					if (score < .best - epsilon) {
 						.best <<- score
@@ -2724,90 +2576,276 @@ TreeLine <- function(myXStringSet=NULL,
 				
 				.NNI <- function(myClusters, probs=NULL) {
 					C <- myClusters[, 7:8]
+					
+					optProcessors5 <- .chooseProcessors(resTime5)
+					time.3 <- Sys.time()
 					res <- .Sankoff(C,
-						Z,
+						myXStringSet,
 						S,
 						weights_MP,
-						TRUE,
+						scoreOnly=TRUE,
 						-1, # add
-						processors)
+						states=lkup,
+						optProcessors5)
+					time.4 <- Sys.time()
+					if (is.na(resTime5[optProcessors5])) {
+						resTime5[optProcessors5] <<- difftime(time.4, time.3, units='secs')
+					} else {
+						resTime5[optProcessors5] <<- (resTime5[optProcessors5] + difftime(time.4, time.3, units='secs'))/2
+					}
 					
 					NNIs <- 0L
-					count <- 1L
+					count <- length(res)
+					index <- integer(length(res))
+					type <- integer(length(res))
 					Corg <- C
-					for (j in rev(seq_len(nrow(C)))) {
-						if (Corg[j, 1] > 0) {
-							count <- count + 1L
-							if (res[1] > res[count] &&
-								C[j, 1] > 0 &&
-								all(C[c(j, C[j, 1]),] == Corg[c(j, C[j, 1]),])) {
-								# swap left-left with right
-								NNIs <- NNIs + 1L
-								temp <- C[C[j, 1], 1]
-								C[C[j, 1], 1] <- C[j, 2]
-								C[j, 2] <- temp
-								C <- .reorder2(C)
-							}
-							
-							count <- count + 1L
-							if (res[1] > res[count] &&
-								C[j, 1] > 0 &&
-								all(C[c(j, C[j, 1]),] == Corg[c(j, C[j, 1]),])) {
-								# swap left-right with right
-								NNIs <- NNIs + 1L
-								temp <- C[C[j, 1], 2]
-								C[C[j, 1], 2] <- C[j, 2]
-								C[j, 2] <- temp
-								C <- .reorder2(C)
-							}
-						}
-						
+					for (j in seq_len(nrow(C))) {
 						if (Corg[j, 2] > 0) {
-							count <- count + 1L
-							if (res[1] > res[count] &&
-								C[j, 2] > 0 &&
-								all(C[c(j, C[j, 2]),] == Corg[c(j, C[j, 2]),])) {
-								# swap right-left with left
-								NNIs <- NNIs + 1L
-								temp <- C[C[j, 2], 1]
-								C[C[j, 2], 1] <- C[j, 1]
-								C[j, 1] <- temp
-								C <- .reorder2(C)
-							}
-							
-							count <- count + 1L
 							if (res[1] > res[count] &&
 								C[j, 2] > 0 &&
 								all(C[c(j, C[j, 2]),] == Corg[c(j, C[j, 2]),])) {
 								# swap right-right with left
 								NNIs <- NNIs + 1L
+								index[count] <- j
+								type[count] <- 1L
 								temp <- C[C[j, 2], 2]
 								C[C[j, 2], 2] <- C[j, 1]
 								C[j, 1] <- temp
 								C <- .reorder2(C)
 							}
+							count <- count - 1L
+							
+							if (res[1] > res[count] &&
+								C[j, 2] > 0 &&
+								all(C[c(j, C[j, 2]),] == Corg[c(j, C[j, 2]),])) {
+								# swap right-left with left
+								NNIs <- NNIs + 1L
+								index[count] <- j
+								type[count] <- 2L
+								temp <- C[C[j, 2], 1]
+								C[C[j, 2], 1] <- C[j, 1]
+								C[j, 1] <- temp
+								C <- .reorder2(C)
+							}
+							count <- count - 1L
+						}
+						
+						if (Corg[j, 1] > 0) {
+							if (res[1] > res[count] &&
+								C[j, 1] > 0 &&
+								all(C[c(j, C[j, 1]),] == Corg[c(j, C[j, 1]),])) {
+								# swap left-right with right
+								NNIs <- NNIs + 1L
+								index[count] <- j
+								type[count] <- 3L
+								temp <- C[C[j, 1], 2]
+								C[C[j, 1], 2] <- C[j, 2]
+								C[j, 2] <- temp
+								C <- .reorder2(C)
+							}
+							count <- count - 1L
+							
+							if (res[1] > res[count] &&
+								C[j, 1] > 0 &&
+								all(C[c(j, C[j, 1]),] == Corg[c(j, C[j, 1]),])) {
+								# swap left-left with right
+								NNIs <- NNIs + 1L
+								index[count] <- j
+								type[count] <- 4L
+								temp <- C[C[j, 1], 1]
+								C[C[j, 1], 1] <- C[j, 2]
+								C[j, 2] <- temp
+								C <- .reorder2(C)
+							}
+							count <- count - 1L
 						}
 					}
 					
-					res <- .Sankoff(C,
-						Z,
+					optProcessors4 <- .chooseProcessors(resTime4)
+					time.3 <- Sys.time()
+					res2 <- .Sankoff(C,
+						myXStringSet,
 						S,
 						weights_MP,
-						FALSE,
-						processors=processors)
+						scoreOnly=FALSE,
+						states=lkup,
+						processors=optProcessors4)
+					time.4 <- Sys.time()
+					if (is.na(resTime4[optProcessors4])) {
+						resTime4[optProcessors4] <<- difftime(time.4, time.3, units='secs')
+					} else {
+						resTime4[optProcessors4] <<- (resTime4[optProcessors4] + difftime(time.4, time.3, units='secs'))/2
+					}
+					
+					if (res2[[1L]] > res[1L]) { # fallback to best NNI
+						C <- Corg
+						NNIs <- 1L
+						w <- which.min(res)
+						j <- index[w]
+						if (type[w] == 1L) {
+							temp <- C[C[j, 2], 2]
+							C[C[j, 2], 2] <- C[j, 1]
+							C[j, 1] <- temp
+						} else if (type[w] == 2L) {
+							temp <- C[C[j, 2], 1]
+							C[C[j, 2], 1] <- C[j, 1]
+							C[j, 1] <- temp
+						} else if (type[w] == 3L) {
+							temp <- C[C[j, 1], 2]
+							C[C[j, 1], 2] <- C[j, 2]
+							C[j, 2] <- temp
+						} else { # type[w] == 4L
+							temp <- C[C[j, 1], 1]
+							C[C[j, 1], 1] <- C[j, 2]
+							C[j, 2] <- temp
+						}
+						C <- .reorder2(C)
+						
+						optProcessors4 <- .chooseProcessors(resTime4)
+						time.3 <- Sys.time()
+						res2 <- .Sankoff(C,
+							myXStringSet,
+							S,
+							weights_MP,
+							scoreOnly=FALSE,
+							states=lkup,
+							processors=optProcessors4)
+						time.4 <- Sys.time()
+						if (is.na(resTime4[optProcessors4])) {
+							resTime4[optProcessors4] <<- difftime(time.4, time.3, units='secs')
+						} else {
+							resTime4[optProcessors4] <<- (resTime4[optProcessors4] + difftime(time.4, time.3, units='secs'))/2
+						}
+					}
 					
 					myClusters[, 7:8] <- C
-					myClusters[, 4:5] <- res[[3L]]/N # changes per site
+					myClusters[, 4:5] <- res2[[3L]]/N # changes per site
 					list(myClusters,
 						NNIs,
-						NULL,
-						res[[1L]])
+						res2[[1L]])
+				}
+			} else { # ME (method == 9)
+				.minimize <- function(myClusters) {
+					C <- myClusters[, 7L:8L]
+					mode(C) <- "integer"
+					n <- nrow(myClusters)
+					score <- .Call("clusterME",
+						C,
+						myDistMatrix,
+						ifelse(is(myDistMatrix, "dist"), -n, n),
+						0L, # flag
+						PACKAGE="DECIPHER")
+					
+					if (score < .best - epsilon) {
+						.best <<- score
+						if (verbose) {
+							if (is.infinite(.overall))
+								.overall <<- score
+							.printLine(score)
+						}
+					}
+					
+					score
+				}
+				
+				.NNI <- function(myClusters, probs=NULL) {
+					C <- myClusters[, 7L:8L]
+					mode(C) <- "integer"
+					n <- nrow(myClusters)
+					
+					delta <- .Call("clusterME",
+						C,
+						myDistMatrix,
+						ifelse(is(myDistMatrix, "dist"), -n, n),
+						2L, # flag
+						PACKAGE="DECIPHER")
+					
+					.doNNIs <- function(myClusters, o=seq_len(nrow(myClusters))) {
+						C <- myClusters[, 7L:8L]
+						# attempt nearest neighbor interchanges
+						NNIs <- 0L
+						for (i in seq_along(o)) {
+							if (o[i] == n) { # (virtual) root branch
+								if (delta[n] != 0 &&
+									myClusters[n, 7L] == C[n, 1L] &&
+									myClusters[n, 8L] == C[n, 2L] &&
+									myClusters[myClusters[n, 7L], 7L] == C[C[n, 1L], 1L] &&
+									myClusters[myClusters[n, 7L], 8L] == C[C[n, 1L], 2L] &&
+									myClusters[myClusters[n, 8L], 7L] == C[C[n, 2L], 1L] &&
+									myClusters[myClusters[n, 8L], 8L] == C[C[n, 2L], 2L]) {
+									if (delta[n] > 0) {
+										NNIs <- NNIs + 1L
+										temp <- C[C[n, 1L], 1L]
+										C[C[n, 1L], 1L] <- C[C[n, 2L], 1L]
+										C[C[n, 2L], 1L] <- temp
+										C <- .reorder2(C)
+									} else { # delta[n] < 0
+										# swap left-right (b) with right-left (c)
+										NNIs <- NNIs + 1L
+										temp <- C[C[n, 1L], 2L]
+										C[C[n, 1L], 2L] <- C[C[n, 2L], 1L]
+										C[C[n, 2L], 1L] <- temp
+										C <- .reorder2(C)
+									}
+								}
+							} else {
+								for (j in 1L:2L) {
+									if (delta[o[i], j] != 0 &&
+										myClusters[o[i], 7L] == C[o[i], 1L] && myClusters[o[i], 8L] == C[o[i], 2L]) {
+										if (delta[o[i], j] > 0) {
+											NNIs <- NNIs + 1L
+											temp <- C[C[o[i], j], 1L]
+											C[C[o[i], j], 1L] <- C[o[i], 3L - j]
+											C[o[i], 3L - j] <- temp
+											C <- .reorder2(C)
+										} else { # delta[o[i], j] < 0
+											NNIs <- NNIs + 1L
+											temp <- C[C[o[i], j], 2L]
+											C[C[o[i], j], 2L] <- C[o[i], 3L - j]
+											C[o[i], 3L - j] <- temp
+											C <- .reorder2(C)
+										}
+									}
+								}
+							}
+						}
+						list(C, NNIs)
+					}
+					
+					w <- which.max(abs(delta))
+					if (w == 1L && delta[1L] == 0) { # return no NNIs
+						list(myClusters, 0L)
+					} else {
+						C <- .doNNIs(myClusters)
+						score <- .Call("clusterME",
+							C[[1L]],
+							myDistMatrix,
+							ifelse(is(myDistMatrix, "dist"), -n, n),
+							0L, # flag
+							PACKAGE="DECIPHER")
+						if (C[[2]] > 1L &&
+							score >= .best - epsilon) { # fallback to best NNI
+							C <- .doNNIs(myClusters, ifelse(w > n, w - n, w))
+							score <- .Call("clusterME",
+								C[[1L]],
+								myDistMatrix,
+								ifelse(is(myDistMatrix, "dist"), -n, n),
+								0L, # flag
+								PACKAGE="DECIPHER")
+						}
+						myClusters[, 7L:8L] <- C[[1L]]
+						list(myClusters,
+							C[[2L]],
+							score)
+					}
 				}
 			}
 			
-			# print progress of likelihood maximization
 			if (verbose) {
-				.printLine <- function(value, print=interactive()) {
+				.printLine <- function(value,
+					print=interactive() &&
+						difftime(Sys.time(), time.last, units='secs') >= 0.1,
+					line.width=getOption("width")) {
 					if (!print)
 						return(value)
 					if (value == 0) {
@@ -2828,14 +2866,22 @@ TreeLine <- function(myXStringSet=NULL,
 						}
 					}
 					change <- abs(change)
-					cat(ifelse(interactive(),
+					line <- paste(ifelse(interactive(),
 						"\r",
-						""),
+						"\n"),
+						ifelse(!final,
+							paste("Tree #",
+								it,
+								". ",
+								sep=""),
+							""),
 						ifelse(method == 3,
 							"-ln(L) = ",
-							"score = "),
+							ifelse(method == 9,
+								"length = ",
+								"score = ")),
 						formatC(value,
-							digits=1,
+							digits=3,
 							format="f"),
 						" (",
 						sign,
@@ -2843,880 +2889,485 @@ TreeLine <- function(myXStringSet=NULL,
 							digits=3,
 							format="f"),
 						"%)",
-						ifelse(is.na(.Grafts), # don't report Climbs if Grafts
-							ifelse(is.na(.Climbs),
-								"",
-								paste(",",
-									.Climbs,
-									ifelse(.Climbs == 1, "Climb", "Climbs"))),
+						ifelse(is.na(.Climbs),
+							"",
+							paste(",",
+								.Climbs,
+								ifelse(.Climbs == 1, "Climb", "Climbs"))),
+						ifelse(is.na(.Grafts),
+							"",
 							paste(", ",
 								.Grafts,
-								ifelse(.Grafts == 1, " Graft", " Grafts"),
+								ifelse(.Grafts == 1L, " Graft", " Grafts"),
 								" of ",
 								.totGrafts,
 								sep="")),
 						"  ",
 						sep="")
+					chars <- line.width - nchar(line)
+					if (chars > 0L)
+						line <- paste(line,
+							paste(rep(" ", chars), collapse=""),
+							sep="")
+					cat(line)
 					flush.console()
+					time.last <<- Sys.time()
 					value
 				}
 			}
 			
 			# initialize overall parameters
-			relTol <- 0.0001 # relative convergence tolerance (0, 1]
-			absTol <- 0.1 # absolute convergence tolerance (> 0)
-			epsilon <- 1e-5 # threshold to accept changes
-			fracParams <- 1.005 # attempt parameter optimization within fracParams*best score
-			startingTrees <- c(1L, 5L) # number of initial trees to compare per iteration
-			generationSize <- 100L # maximum number of regrowths per generation (also used to set maxGenerations)
-			max_iterations <- c(100L, maxGenerations*generationSize, 1000L) # maximum number of iterations per phase
-			max_time <- maxTime*max_iterations/sum(max_iterations) # maximum number of hours per phase
-			
-			# initialize initial tree parameters
-			if (method == 3) {
-				noiseLevel <- c(0, 0.5) # Gaussian noise added to substitution matrix (>= 0)
-			} else {
-				noiseLevel <- c(0, 0) # substitution matrix is fixed
-			}
-			nSamps <- Inf # number of resamples of parsimony weights (> 0 or Inf for zero noise)
-			observations <- 10L # number of repeated observations of best score to skip phase
-			
-			# initialize climb parameters
-			doClimbs <- TRUE
-			threshold <- 0.9 # support probability required to skip NNI calculations (0, 1]
-			
-			# initialize regrowth parameters
-			waitAttempts <- 10L # number of attempts (per generation) to wait before sampling all trees for PCA
-			maxSD <- 0.001 # normalized standard deviation of scores to keep iterating after observations (>= 0)
-			noiseEstimation <- c(1, 2.5) # Gaussian noise added to estimates (multiple of standard error >= 0)
-			base <- 2 # base of weight function
-			fracSamp <- 0.25 # fraction of previous trees to sample for PCA (0, 1]
-			numSamp <- ceiling(fracSamp*max_iterations[1L]) # fixed number of trees to sample
-			tolPCA <- seq(0.5, 0.5, length.out=generationSize) # tolerances for PCA each generation (0, 1]
-			addNoise <- 0.5 # amount of noise to add when converging to the same tree (>= 0)
-			popSize <- startingTrees[2L] # number of projected cophenetic matrices to store
-			fracRandomNNIs <- c(0.2, 0.7) # fraction of random NNIs in regrowth and shake (0, 1]
-			
-			# initialize grafting parameters
-			fracGraft <- 0.1 # fraction of high scoring trees for first grafts [0, 1]
-			doGrafts <- FALSE
-			.Grafts <- NA # number of tree recombinations
-			
-			# initialize shake parameters
-			.Shakes <- NA # number of shakes (or NA for none)
-			doShakes <- FALSE
-			repsShakes <- 50L # number of shake replicates
-			
-			# initialize variables for maximum parsimony
-			Z <- matrix(match(Z, states), # integer encode
-				nrow=nrow(Z),
-				ncol=ncol(Z))
-			r <- apply(Z,
-				2L,
-				function(x) {
-					x <- x[!is.na(x)]
-					if (length(x) > 0) {
-						max(x) - min(x)
-					} else {
-						0
-					}
-				})
-			r <- which(r > 0) # informative sites
-			weights_MP <- tabulate(r[selfmatch(as.data.frame(Z[, r, drop=FALSE]))], ncol(Z))
-			
-			# maximize likelihood of tree
+			epsilon <- 1e-5 # threshold to accept changes (>> machine precision)
+			outgroups <- .Call("rowSums",
+				myDistMatrix,
+				ifelse(is(myDistMatrix, "dist"),
+					-attr(myDistMatrix, "Size"),
+					nrow(myDistMatrix)),
+				PACKAGE="DECIPHER")
+			outgroups <- order(outgroups)
+			outgroups <- outgroups[c(1L, length(outgroups))]
 			final <- FALSE # final pass
 			it <- 0L # iteration number
-			I <- 0L # estimate number
-			cand <- 0L # current candidate
-			t <- list() # tested topologies
-			gen <- 0L # current generation
-			allow <- TRUE # allow parameter optimization at end of iteration
-			maxTrees <- sum(max_iterations)
-			graft <- logical(sum(max_iterations))
-			Scores <- rep(-Inf, maxTrees)
-			Trees <- vector("list", maxTrees)
-			Cophenetic <- vector("list", max_iterations[1L] + max_iterations[2L])
-			if (method == 3)
-				Models <- vector("list", maxTrees)
-			currentTime <- Sys.time()
-			if (verbose)
-				cat("PHASE 1 OF 3: INITIAL TREES\n")
-			while (!final) {
-				if (it >= max_iterations[1L]) {
-					if (gen == maxGenerations &&
-						cand == generationSize) {
-						currentTime <- Sys.time()
-						if (verbose)
-							cat("\n\nPHASE 3 OF 3: SHAKEN TREES")
-						doGrafts <- TRUE # note: grafting sets best tree for shakes
-						doClimbs <- FALSE # note: used to delineate iteration type
-						doShakes <- TRUE
-						.Shakes <- 0L # number of shakes (or NA for none)
-						.totShakes <- 0L
-						allow <- FALSE
-						
-						w <- (it - generationSize + 1L):it
-						w <- w[Scores[w] > -Inf]
-						graft[w[which.min(Scores[w])]] <- TRUE
-						
-						w <- which(Scores[seq_len(it)] > -Inf)
-						graft[w[Scores[w] < quantile(Scores[w], fracGraft)]] <- TRUE
-						w <- w[which.min(Scores[w])]
-						.best <- Scores[w]
-						
-						outgroups <- Cophenetic[[w]]
-						outgroups <- .rowSums(outgroups)
-						outgroups <- order(outgroups)
-						outgroups <- outgroups[c(1L, length(outgroups))]
-						Cophenetic[] <- list(NULL)
-					} else {
-						if (cand == generationSize) {
-							w <- (it - generationSize + 1L):it
-							w <- w[Scores[w] > -Inf]
-							W <- which.min(Scores[w])
-							graft[w[W]] <- TRUE
-							Cophenetic[w[-W]] <- list(NULL)
-							observed <- Scores[graft]
-							observed <- sum((observed - min(observed))/min(observed) < relTol)
-							if (is.na(observed)) {
-								gen <- maxGenerations
-								it <- sum(max_iterations[1:2])
-								next # skip remaining generations
-							} else if (observed >= observations) {
-								w <- (max_iterations[1L] + 1L):it
-								w <- w[Scores[w] > -Inf]
-								if (sd(Scores[w])/mean(Scores[w]) < maxSD) {
-									gen <- maxGenerations
-									it <- sum(max_iterations[1:2])
-									next # skip remaining generations
-								} else {
-									observed <- observations - 1L
-								}
-							}
-							attempt <- 1L
-							gen <- gen + 1L
-							cand <- 0L
-							W <- integer()
-							offset <- 0
-						} else if (it > max_iterations[1L]) {
-							W <- (it - cand + 1L):it
-							offset <- min(Scores[W])
-							if (offset > 0) {
-								offset <- sum((Scores[W] - offset)/offset < relTol)
-								offset <- addNoise*(offset - 1) # add noise as needed
-							} else {
-								offset <- 0
-							}
-						} else {
-							currentTime <- Sys.time()
-							observed <- 0L
-							attempt <- 1L
-							gen <- gen + 1L
-							W <- integer()
-							offset <- 0
-						}
-						
-						W <- c(seq_len(max_iterations[1L]), W)
-						w <- W[which.min(Scores[W])]
-						if (w == it && # last iteration was best
-							sum(Scores[W] <= Scores[w] + absTol) == 1L) {
-							attempt <- 1L
-						} else if (cand > 0L) {
-							attempt <- attempt + 1L
-							if (attempt > waitAttempts) {
-								w <- W[which.min(Scores[W])]
-								W <- seq_len(it) # use all trees
-								W <- W[lengths(Cophenetic)[W] > 0]
-								if (min(Scores[W]) >= Scores[w] - absTol) { # best overall occurred this generation
-									it <- it + generationSize - cand
-									cand <- generationSize
-									next
-								}
-							}
-						}
-						
-						if (it > max_iterations[1L] &&
-							difftime(Sys.time(), currentTime, units="hours") > max_time[2L]) {
-							it <- it + generationSize - cand
-							cand <- generationSize
-							next
-						}
-						.overall <- Scores[w]
-						if (method == 3) {
-							m <- Models[[w]][[1]]
-							model_params <- Models[[w]][[2]]
-						}
-						
-						it <- it + 1L
-						.Climbs <- 0L # number of Climbs (or NA for none)
-						cand <- cand + 1L
-						I <- I + 1L
-						.best <- Inf
-						doClimbs <- TRUE
-						
-						if (verbose) {
-							cat(ifelse(cand == 1L,
-									paste("\n\nPHASE 2 OF 3: REGROW GENERATION ",
-										gen,
-										" OF ",
-										ifelse(gen + observations - observed <= maxGenerations,
-											paste(gen + observations - observed - 1L, "TO "),
-											""),
-										maxGenerations,
-										"\n\n",
-										sep=""),
-									"\n"),
-								"2/3. Optimizing regrown tree #",
-								cand,
-								" of ",
-								if (min(Scores[Scores > -Inf]) >= Scores[w] - absTol) { # best overall
-									ifelse(cand + waitAttempts - attempt >= generationSize,
-										generationSize,
-										paste(cand + waitAttempts - attempt,
-											"to",
-											generationSize))
-								} else {
-									ifelse(cand + waitAttempts >= generationSize,
-										generationSize,
-										paste(cand + waitAttempts,
-											"to",
-											generationSize))
-								},
-								":\n",
-								sep="")
-							flush.console()
-						}
-						
-						if (w == it - 1L ||
-							cand == 1L ||
-							I + startingTrees[2L] - 1L > popSize) {
-							if (Scores[w] > 0) {
-								w <- W[sample(seq_along(W),
-									numSamp,
-									prob=base^(-1000*(Scores[W]/Scores[w] - 1)) + .Machine$double.xmin)]
-							} else {
-								w <- W[sample(seq_along(W),
-									numSamp)]
-							}
-							for (i in seq_along(w)) {
-								d <- Cophenetic[[w[i]]]
-								if (i == 1L)
-									D <- matrix(NA_real_,
-										nrow=length(w),
-										ncol=length(d))
-								D[i,] <- d
-							}
-							
-							I <- 1L
-							E <- .estimate(Scores[w],
-								D,
-								base,
-								tol=tolPCA[cand],
-								N=min((generationSize - cand + 1L)*startingTrees[2L], popSize),
-								mult=noiseEstimation + offset)
-						}
-						
-						candScore <- Inf
-						for (I in I:(I + startingTrees[2L] - 1L)) {
-							# perform regrowth
-							myClusters <- .Call("cluster",
-								E[I,],
-								-Inf, # cutoff
-								1L, # NJ
-								-dim,
-								FALSE,
-								NULL,
-								processors,
-								PACKAGE="DECIPHER")
-							
-							myClusters <- .rNNIs(myClusters,
-								fracRandomNNIs[1L],
-								rep(1, nrow(myClusters) - 1L))
-							
-							if (method == 3) { # optimize all branch lengths
-								params <- as.vector(myClusters[, 4:5])
-								params <- .globalBranches(.minimize, params)
-								if (.best < candScore) {
-									myClusters[, 4:5] <- params
-									myClustersTemp <- myClusters
-									candScore <- .best
-								}
-							} else { # method == 7
-								.best <- .Sankoff(myClusters[, 7:8],
-									Z, # integer encoded XStringSet
-									S, # substitution matrix
-									weights_MP,
-									scoreOnly=TRUE,
-									processors=processors)
-								if (.best < candScore) {
-									myClustersTemp <- myClusters
-									candScore <- .best
-								}
-							}
-						}
-						
-						myClusters <- myClustersTemp
-						
-						if (verbose)
-							.printLine(.best)
-					}
+			.overall <- .best <- ifelse(method == 3, m[, "-LnL"], Inf)
+			Scores <- rep(Inf, maxIterations)
+			
+			if (verbose) {
+				time.last <- time.1
+				if (maxIterations == 1L) {
+					cat("Optimizing 1 candidate tree:\n")
 				} else {
-					.Climbs <- 0L # number of Climbs (or NA for none)
-					allow <- TRUE
-					
-					if (it == 0L) {
-						if (method == 3) {
-							.best <- m[, "-LnL"]
-						} else {
-							.best <- .Sankoff(myClusters[, 7:8],
-								Z, # integer encoded XStringSet
-								S, # substitution matrix
-								weights_MP,
-								scoreOnly=TRUE,
-								processors=processors)
-						}
-						.overall <- .best
-						observed <- 0L
-					} else {
-						Score <- Scores[seq_len(it)]
-						w <- which.min(Score)
-						if (Score[w] > 0) {
-							observed <- sum((Score - Score[w])/Score[w] < relTol)
-						} else {
-							observed <- it
-						}
-						if (observed >= observations ||
-							(it > 2L &&
-							difftime(Sys.time(), currentTime, units="hours") > max_time[1L])) {
-							max_iterations[1L] <- it
-							if (repsShakes > it)
-								repsShakes <- it
-							if (numSamp > it)
-								numSamp <- it
-							next
-						}
-						.overall <- Scores[w]
-						if (method == 3) {
-							m <- Models[[w]][[1]]
-							model_params <- Models[[w]][[2]]
-						}
-					}
-					it <- it + 1L
-					
-					if (verbose) {
-						cat("\n1/3. Optimizing initial tree #",
-							it,
-							" of ",
-							ifelse(it + observations - observed <= max_iterations[1L],
-								paste(it + observations - observed - 1L, "to "),
-								""),
-							max_iterations[1L],
-							":\n",
-							sep="")
-						flush.console()
-					}
-					
-					if (it > 1L) {
-						if (method == 3) {
-							.best <- Inf
-							S <- .makeS(model_params,
-								length(states),
-								v=mean(Trees[[w]][, 4:5]),
-								noise=noiseLevel[2L]*(it - 2)/max_iterations[1L] + noiseLevel[1L])
-						}
-						candScore <- Inf
-						for (j in seq_len(startingTrees[1L])) {
-							if (nSamps < Inf) {
-								weights <- sample(seq_along(weights_MP),
-									nSamps*length(weights_MP),
-									replace=TRUE,
-									prob=weights_MP)
-								weights <- tabulate(weights, length(weights_MP))
-							} else {
-								weights <- weights_MP
-							}
-							
-							temp <- .clusterMP(Z,
-								S,
-								sample(dim), # seed
-								NNIs=1e6,
-								stochastic=TRUE,
-								weights=weights,
-								processors=processors)
-							temp[[4L]] <- temp[[4L]]/N # changes per site
-							
-							if (method == 3) { # optimize all branch lengths
-								myClustersTemp <- myClusters
-								myClusters[, 4:5] <- temp[[4]]
-								myClusters[, 7:8] <- temp[[1]]
-								params <- as.vector(temp[[4]])
-								params <- .globalBranches(.minimize, params)
-								if (.best < candScore) {
-									myClusters[, 4:5] <- params
-									candScore <- .best
+					cat("Optimizing up to",
+						maxIterations,
+						"candidate trees:\n")
+				}
+				flush.console()
+			}
+			
+			# search for the best tree
+			while (!final) {
+				it <- it + 1L
+				.Grafts <- NA
+				
+				if (it > maxIterations) {
+					final <- TRUE
+				} else {
+					w <- which(Scores < .overall + epsilon)
+					if (length(w) >= minIterations) {
+						final <- TRUE
+					} else if (it > 1L) {
+						if (difftime(Sys.time(), time.1, units="hours") >= maxTime) {
+							final <- TRUE
+						} else { # regrow tree
+							if (standardDeviation > 0) {
+								optProcessors0 <- .chooseProcessors(resTime0)
+								time.3 <- Sys.time()
+								myClusters <- .Call("cluster",
+									D*rlnorm(length(D), sdlog=standardDeviation),
+									-Inf, # cutoff
+									0L, # heuristic NJ
+									-dim,
+									FALSE, # verbose
+									NULL,
+									optProcessors0,
+									PACKAGE="DECIPHER")
+								time.4 <- Sys.time()
+								if (is.na(resTime0[optProcessors0])) {
+									resTime0[optProcessors0] <- difftime(time.4, time.3, units='secs')
 								} else {
-									myClusters <- myClustersTemp
+									resTime0[optProcessors0] <- (resTime0[optProcessors0] + difftime(time.4, time.3, units='secs'))/2
 								}
-							} else { # method == 7
-								.best <- temp[[2]]
-								if (.best < candScore) {
-									myClusters[, 4:5] <- temp[[4]]
-									myClusters[, 7:8] <- temp[[1]]
-									candScore <- .best
-									if (verbose)
-										.printLine(.best)
-								}
+							} else {
+								myClusters <- Tree
 							}
+							myClusters <- .rNNIs(myClusters, fracRandomNNIs)
 						}
-					} else if (verbose) {
-						.printLine(.best)
 					}
 				}
 				
-				repeat {
-					# perform tree fusions
-					if (doGrafts) {
-						.Grafts <- 0L
-						.totGrafts <- 0L
-						
-						w <- which(Scores[seq_len(it)] > -Inf)
-						w <- w[which.min(Scores[w])]
-						myClusters <- Trees[[w]]
-						.overall <- .best <- best <- Scores[w]
-						if (method == 3) {
-							m <- Models[[w]][[1]]
-							model_params <- Models[[w]][[2]]
-						}
-						
-						s <- which(graft)
-						graft[s] <- FALSE
-						s <- s[s != w]
-						
-						if (verbose) {
-							cat("\n\nGrafting",
-								length(s),
-								ifelse(length(s) > 1,
-									"trees",
-									"tree"),
-								"to the best tree:\n")
-							.printLine(.best)
-							flush.console()
-						}
-						
-						for (outgroup in outgroups) {
-							myClusters <- .root(myClusters, outgroup)
-							
-							t1 <- .extractClades(myClusters)
-							s1 <- lapply(t1, sort)
-							myClustersTemp <- myClusters
-							
-							for (i in s) {
-								# find untested topologies
-								myClustersAlt <- Trees[[i]]
-								myClustersAlt <- .root(myClustersAlt, outgroup)
-								
-								t2 <- .extractClades(myClustersAlt)
-								s2 <- lapply(t2, sort)
-								x <- match(s1, s2)
-								u <- which(!is.na(x)) # same leaves
-								u <- u[!tail(duplicated(c(t2, t1[u])), length(u))] # different branching
-								u <- u[!tail(duplicated(c(t, t2[x[u]])), length(u))] # untried
-								rows <- ifelse(x[u] > nrow(myClustersAlt), x[u] - nrow(myClustersAlt), x[u])
-								u <- u[!(myClustersAlt[, 7:8][x[u]] %in% rows)] # only keep the smallest subtrees
-								
-								# test alternative topologies
-								while (length(u) > 0) {
-									.totGrafts <- .totGrafts + 1L
-									r1 <- myClusters[, 7:8][u[1]]
-									r2 <- myClustersAlt[, 7:8][x[u[1]]]
-									
-									i1 <- .getClusters(r1, Inf, myClusters)
-									i2 <- .getClusters(r2, Inf, myClustersAlt)
-									i1 <- sort(i1)
-									i2 <- sort(i2)
-									subTree <- myClustersAlt[i2,, drop=FALSE]
-									node <- subTree[, 7:8] > 0
-									subTree[, 7:8][node] <- i1[match(subTree[, 7:8][node], i2)]
-									myClusters[i1,] <- subTree
-									
-									if (method == 3) { # optimize branch lengths
-										branches <- c(r1, r1 + nrow(myClusters))
-										r1 <- myClusters[, 7:8][branches]
-										r1 <- r1[r1 > 0]
-										branches <- c(branches, r1, r1 + nrow(myClusters))
-										if (u[1L] > nrow(myClusters)) {
-											branches <- c(branches, u[1L], u[1L] - nrow(myClusters))
-										} else {
-											branches <- c(branches, u[1L], u[1L] + nrow(myClusters))
-										}
-										params <- as.vector(myClusters[, 4:5])
-										params <- .globalBranches(.minimize, params, as.integer(branches))
-										if (.best < best - epsilon) # perform global optimization
-											params <- .globalBranches(.minimize, params)
-										myClusters[, 4:5] <- params
-									} else {
-										.minimize(myClusters[, 7:8])
-									}
-									
-									if (.best < best - epsilon) {
-										.Grafts <- .Grafts + 1L
-										best <- .best
-										
-										if (method == 7) {
-											params <- .Sankoff(myClusters[, 7:8],
-												Z, # integer encoded XStringSet
-												S, # substitution matrix
-												weights_MP,
-												scoreOnly=FALSE,
-												processors=processors)[[3]]
-											myClusters[, 4:5] <- params/N # changes per site
-										}
-										myClustersTemp <- myClusters
-										
-										last <- t1
-										t1 <- .extractClades(myClusters)
-										t <- unique(c(t, last[!(last %in% t1)]))
-										s1 <- lapply(t1, sort)
-									} else {
-										myClusters <- myClustersAlt
-										subTree <- myClustersTemp[i1,, drop=FALSE]
-										node <- subTree[, 7:8] > 0
-										subTree[, 7:8][node] <- i2[match(subTree[, 7:8][node], i1)]
-										myClusters[i2,] <- subTree
-										myClustersAlt <- myClusters
-										myClusters <- myClustersTemp
-										
-										last <- t2
-										t2 <- .extractClades(myClustersAlt)
-										t <- unique(c(t, last[!(last %in% t2)]))
-										s2 <- lapply(t2, sort)
-									}
-									x <- match(s1, s2)
-									u <- which(!is.na(x)) # same leaves
-									u <- u[!tail(duplicated(c(t2, t1[u])), length(u))] # different branching
-									u <- u[!tail(duplicated(c(t, t2[x[u]])), length(u))] # untried
-									rows <- ifelse(x[u] > nrow(myClustersAlt), x[u] - nrow(myClustersAlt), x[u])
-									u <- u[!(myClustersAlt[, 7:8][x[u]] %in% rows)] # only keep the smallest subtrees
-									
-									if (verbose) {
-										.printLine(.best)
-										flush.console()
-									}
-								}
-							}
-						}
-						
-						if (method == 3 &&
-							.Grafts > 0L &&
-							((typeX != 3 && model != "JC69") ||
-							(typeX == 3 && !(model %in% colnames(ProtModels)))) &&
-							.best < .overall - epsilon) {
-							temp <- .optimizeModel(myClusters,
-								rownames(m),
-								myXStringSet,
-								N,
-								TRUE, # scaleTree
-								.rates,
-								m,
-								weights_ML,
-								factr=min(1e10, min(absTol/.best, relTol)/.Machine$double.eps/10),
-								processors=optProcessors)
-							if (temp[15L] < .best - epsilon) { # improvement
-								m[1,] <- temp[-1:-2]
-								myClusters[, 4:5] <- temp[1L]*myClusters[, 4:5] # scale tree
-								model_params <- .giveParams(m,
-									rownames(m),
-									.rates)
-								.best <- m[1, "-LnL"]
-							}
-							
-							if (verbose) {
-								.printLine(.best)
-								flush.console()
-							}
-						}
-						
-						# replace best tree
-						Trees[[w]] <- myClusters
-						Scores[w] <- .best
-						if (method == 3)
-							Models[[it]] <- list(m, model_params)
-						
-						if (.totShakes > 0L &&
-							difftime(Sys.time(), currentTime, units="hours") > max_time[3L]) {
-							doShakes <- FALSE
-							doGrafts <- FALSE
-							final <- TRUE
-						} else if (!doShakes) {
-							if (.totShakes >= max_iterations[3L] ||
-								.best == 0 ||
-								((currentScore - .best)/.best < relTol &&
-								currentScore - .best < absTol)) {
-								doGrafts <- FALSE
-								final <- TRUE
-							} else {
-								doShakes <- TRUE
-								if (verbose) {
-									if (!interactive())
-										.printLine(.best, TRUE)
-									cat("\n")
-								}
-							}
+				.Climbs <- 0L
+				if (final) {
+					if (verbose)
+						cat("\n\nFinalizing the best tree (#",
+							which.max(Scores == .overall),
+							"):\n",
+							sep="")
+					myClusters <- Tree
+					.best <- best <- .overall
+					if (method == 3) {
+						m <- Model[[1]]
+						model_params <- Model[[2]]
+						optModel <- FALSE # model already optimized
+					}
+				} else {
+					if (method == 3) {
+						if (it == 1L) {
+							.best <- m[, "-LnL"]
+							optModel <- FALSE # model already optimized
 						} else {
-							if (verbose) {
-								if (!interactive())
-									.printLine(.best, TRUE)
-								cat("\n")
-							}
-						}
-					}
-					
-					currentScore <- .best
-					currentClimbs <- .Climbs
-					
-					if (final || (!is.na(.Climbs) && doClimbs)) { # perform nearest neighbor interchanges
-						if (final) {
-							myClusters <- .reorderClusters(myClusters, all=TRUE)
-							myClusters <- .adjustTreeHeights(myClusters)
-							myClusters <- .root(myClusters, root)
-							probs <- NULL
-						} else if (.Climbs == 0L) {
-							probs <- NULL
-						}
-						out <- .NNI(myClusters, probs)
-						if (method == 3L)
-							probs <- out[[5L]]
-						
-						if (out[[2L]] > 0) {
-							.Climbs <- .Climbs + 1L
-							myClusters <- out[[1L]]
-							if (method == 3) {
-								if (out[[2L]] > 1L) { # optimize all branch lengths
-									params <- as.vector(myClusters[, 4:5])
-									params <- .globalBranches(.minimize, params)
-									myClusters[, 4:5] <- params
-								} else if (verbose) {
-									.printLine(.best)
-								}
-							} else if (method == 7) {
-								.best <- out[[4L]]
-								if (verbose)
-									.printLine(.best)
-							}
-							if (final) {
-								myClusters <- .reorderClusters(myClusters, all=TRUE)
-								myClusters <- .adjustTreeHeights(myClusters)
-							}
-						}
-					}
-					
-					if (!is.na(.Shakes) && doShakes) {
-						.overall <- best <- .best
-						.Grafts <- NA
-						myClustersTemp <- myClusters
-						new <- TRUE
-						if (verbose)
-							.lastShake <- .totShakes + repsShakes
-						for (i in seq_len(repsShakes)) {
-							it <- it + 1L
-							graft[it] <- TRUE
-							.totShakes <- .totShakes + 1L
-							.Shakes <- .Shakes + 1L
-							.Climbs <- 0L
 							.best <- Inf
+							m <- Model[[1]]
+							model_params <- Model[[2]]
+							params <- as.vector(myClusters[, 4:5])
+							params <- .globalBranches(.minimize, params)
+							myClusters[, 4:5] <- params
+							optModel <- TRUE # may need to optimize model
+						}
+					} else { # method == 7 || method == 9
+						.best <- .minimize(myClusters)
+					}
+				}
+				if (verbose)
+					.printLine(.best)
+				
+				# perform rounds of NNIs (Climbs)
+				repeat {
+					if (final) {
+						myClusters <- .reorderClusters(myClusters, all=TRUE)
+						myClusters <- .adjustTreeHeights(myClusters)
+						myClusters <- .root(myClusters, root)
+						probs <- NULL
+						
+						if (method == 3) {
+							params <- as.vector(myClusters[, 4:5])
+							params <- .globalBranches(.minimize, params)
+							myClusters[, 4:5] <- params
+						}
+					} else if (.Climbs == 0L) {
+						probs <- NULL
+					}
+					
+					out <- .NNI(myClusters, probs)
+					
+					if (out[[2L]] > 0) {
+						.Climbs <- .Climbs + 1L
+						prev <- myClusters
+						best <- .best
+						myClusters <- out[[1L]]
+						if (method == 3) {
+							optModel <- TRUE # may need to optimize model
+							params <- as.vector(myClusters[, 4:5])
 							
-							if (verbose) {
-								cat("\n3/3. Optimizing shaken tree #",
-									.totShakes,
-									" of ",
-									ifelse(.lastShake >= max_iterations[3L],
-										max_iterations[3L],
-										paste(.lastShake, "to", max_iterations[3L])),
-									":\n",
-									sep="")
-								flush.console()
-							}
-							
-							if (new) {
-								new <- FALSE
-								support <- .support(myClusters, Trees)
-							}
-							
-							myClusters <- .rNNIs(myClusters,
-								min(fracRandomNNIs[2L], mean(support < 1)),
-								1/support)
-							if (method == 3) { # optimize all branch lengths
-								params <- as.vector(myClusters[, 4:5])
+							if (final) { # perform global optimization
 								params <- .globalBranches(.minimize, params)
-								myClusters[, 4:5] <- params
-								if (verbose)
-									.printLine(.best)
-							}
-							
-							lastNNI <- Inf
-							probs <- NULL
-							repeat {
-								outTemp <- .NNI(myClusters, probs)
-								if (method == 3L)
-									probs <- outTemp[[5L]]
+							} else { # try limiting branches
+								branches <- which(params != prev[, 4:5])
 								
-								if (outTemp[[2L]] == 0L) {
-									if (.Climbs == 0L &&
-										method == 7) {
-										.best <- out[[4L]]
-										if (verbose)
-											.printLine(.best)
-									}
-									break
+								if (out[[2L]] > 1L) { # multiple NNIs
+									# include branches that are next to a change
+									branches <- c(branches,
+										ifelse(branches > nrow(myClusters),
+											branches - nrow(myClusters),
+											branches + nrow(myClusters)))
+									branches <- unique(branches)
+									# include branches above the existing branches
+									branches <- c(branches,
+										which(myClusters[, 7:8] %in% branches[branches < nrow(myClusters)]))
+									branches <- unique(branches)
+									# include branches that are below the existing branches
+									branches <- c(branches,
+										myClusters[, 7:8][branches])
+									branches <- unique(branches)
+									branches <- branches[branches > 0]
+									branches <- as.integer(branches)
 								}
-								.Climbs <- .Climbs + 1L
-								myClusters <- outTemp[[1L]]
-								if (method == 3 &&
-									outTemp[[2L]] > 1L) { # optimize all branch lengths
-									params <- as.vector(myClusters[, 4:5])
+								
+								params <- .globalBranches(.minimize, params, branches)
+								if (.best >= best - epsilon) # perform global optimization
 									params <- .globalBranches(.minimize, params)
-									myClusters[, 4:5] <- params
-								} else if (method == 7) {
-									.best <- outTemp[[4L]]
-									if (verbose)
-										.printLine(.best)
-								}
-								if (outTemp[[4L]] > lastNNI - absTol)
-									break
-								lastNNI <- outTemp[[4L]]
 							}
 							
-							if (method == 3 &&
-								((typeX != 3 && model != "JC69") ||
-								(typeX == 3 && !(model %in% colnames(ProtModels)))) &&
-								.best < best - epsilon) {
-								temp <- .optimizeModel(myClusters,
-									rownames(m),
-									myXStringSet,
-									N,
-									TRUE, # scaleTree
-									.rates,
-									m,
-									weights_ML,
-									factr=min(1e10, min(absTol/.best, relTol)/.Machine$double.eps/10),
-									processors=optProcessors)
-								if (temp[15L] < .best - epsilon) { # improvement
-									m[1,] <- temp[-1:-2]
-									myClusters[, 4:5] <- temp[1L]*myClusters[, 4:5] # scale tree
-									model_params <- .giveParams(m,
-										rownames(m),
-										.rates)
-									.best <- m[1, "-LnL"]
-								}
-								
-								if (verbose) {
-									.printLine(.best)
-									flush.console()
+							if (out[[2L]] > 1L &&
+								.best >= best - epsilon) { # fallback to best NNI
+								out <- .NNI(prev, probs, out[[3L]])
+								myClusters <- out[[1L]]
+								params <- as.vector(myClusters[, 4:5])
+								if (final) {
+									params <- .globalBranches(.minimize, params)
+								} else {
+									branches <- which(params != prev[, 4:5])
+									params <- .globalBranches(.minimize, params, branches)
 								}
 							}
 							
-							if (verbose && !interactive())
-								.printLine(.best, TRUE)
+							myClusters[, 4:5] <- params
+							probs <- out[[5L]]
+						} else {
+							.best <- out[[3L]]
+						}
+						
+						if (.best < best - epsilon) {
+							if (verbose)
+								.printLine(.best)
+						} else { # revert
+							myClusters <- prev
+							.best <- best
+							break
+						}
+					} else if (method == 3 &&
+						optModel &&
+						it > 1L &&
+						((typeX != 3 && model != "JC69") ||
+						(typeX == 3 && !(model %in% colnames(ProtModels)))) &&
+						.best/.overall < fracParams) {
+						optModel <- FALSE # model already optimized
+						optProcessors1 <- .chooseProcessors(resTime1)
+						time.3 <- Sys.time()
+						temp <- .optimizeModel(myClusters,
+							rownames(m),
+							myXStringSet,
+							N,
+							FALSE, # scaleTree
+							.rates,
+							m,
+							weights_ML,
+							factr=min(1e10, min(absTol/.best, relTol)/.Machine$double.eps/10),
+							processors=optProcessors1)
+						time.4 <- Sys.time()
+						if (is.na(resTime1[optProcessors1])) {
+							resTime1[optProcessors1] <- difftime(time.4, time.3, units='secs')/temp[2L]
+						} else {
+							resTime1[optProcessors1] <- (resTime1[optProcessors1] + difftime(time.4, time.3, units='secs')/temp[2L])/2
+						}
+						m[1,] <- temp[-1:-2]
+						temp_params <- .giveParams(m,
+							rownames(m),
+							.rates)
+						if (.best - m[1, "-LnL"] < absTol && (.best - m[1, "-LnL"])/.best < relTol) {
+							break
+						} else {
+							model_params <- temp_params
+							params <- as.vector(myClusters[, 4:5])
+							params <- .globalBranches(.minimize, params)
+							myClusters[, 4:5] <- params
+						}
+					} else {
+						break
+					}
+				}
+				
+				if (!final && .best > .overall) { # perform tree fusions (Grafts)
+					.Grafts <- 0L # number of successful grafts
+					.totGrafts <- 0L # number of attempted grafts
+					myClustersAlt <- myClusters
+					myClusters <- Tree
+					.best <- best <- .overall
+					if (method == 3) {
+						m <- Model[[1]]
+						model_params <- Model[[2]]
+					}
+					if (verbose)
+						.printLine(.best)
+					
+					for (outgroup in outgroups) {
+						myClusters <- .root(myClusters, outgroup)
+						
+						t1 <- .extractClades(myClusters)
+						s1 <- lapply(t1, .sort)
+						t1 <- .Call("hashList", t1, PACKAGE="DECIPHER")
+						s1 <- .Call("hashList", s1, PACKAGE="DECIPHER")
+						myClustersTemp <- myClusters
+						
+						myClustersAlt <- .root(myClustersAlt, outgroup)
+						
+						t2 <- .extractClades(myClustersAlt)
+						s2 <- lapply(t2, .sort)
+						t2 <- .Call("hashList", t2, PACKAGE="DECIPHER")
+						s2 <- .Call("hashList", s2, PACKAGE="DECIPHER")
+						x <- match(s1, s2, nomatch=0L)
+						u <- which(x != 0L) # same leaves
+						u <- u[!(t1[u] %in% t2)] # different branching
+						u <- u[!(t2[x[u]] %in% t)] # untried
+						rows <- ifelse(x[u] > nrow(myClustersAlt), x[u] - nrow(myClustersAlt), x[u])
+						u <- u[myClustersAlt[, 7:8][x[u]] > 0] # skip hash collisions
+						u <- u[!(myClustersAlt[, 7:8][x[u]] %in% rows)] # only keep the smallest subtrees
+						
+						# test alternative topologies
+						while (length(u) > 0) {
+							.totGrafts <- .totGrafts + 1L
+							r1 <- myClusters[, 7:8][u[1L]]
+							r2 <- myClustersAlt[, 7:8][x[u[1L]]]
 							
-							Scores[it] <- .best
-							Trees[[it]] <- myClusters
-							if (method == 3)
-								Models[[it]] <- list(m, model_params)
+							i1 <- .getClusters(r1, Inf, myClusters)
+							i2 <- .getClusters(r2, Inf, myClustersAlt)
+							if (length(i1) != length(i2)) { # hash collision
+								u <- u[-1L]
+								next
+							}
+							i1 <- sort(i1)
+							i2 <- sort(i2)
+							subTree <- myClustersAlt[i2,, drop=FALSE]
+							node <- subTree[, 7:8] > 0
+							subTree[, 7:8][node] <- i1[match(subTree[, 7:8][node], i2)]
+							myClusters[i1,] <- subTree
+							
+							if (method == 3) { # optimize branch lengths
+								branches <- c(r1, r1 + nrow(myClusters))
+								r1 <- myClusters[, 7:8][branches]
+								r1 <- r1[r1 > 0]
+								branches <- c(branches, r1, r1 + nrow(myClusters))
+								if (u[1L] > nrow(myClusters)) {
+									branches <- c(branches, u[1L], u[1L] - nrow(myClusters))
+								} else {
+									branches <- c(branches, u[1L], u[1L] + nrow(myClusters))
+								}
+								branches <- as.integer(branches)
+								params <- as.vector(myClusters[, 4:5])
+								params <- .globalBranches(.minimize, params, branches)
+								if (.best < best - epsilon) # perform global optimization
+									params <- .globalBranches(.minimize, params)
+								myClusters[, 4:5] <- params
+							} else { # method == 7 || method == 9
+								.minimize(myClusters)
+							}
 							
 							if (.best < best - epsilon) {
-								myClustersTemp <- myClusters
-								new <- TRUE
+								.Grafts <- .Grafts + 1L
 								best <- .best
-								.overall <- .best
-								out <- outTemp
+								
+								if (method == 3) {
+									optModel <- TRUE # may need to optimize model
+								} else if (method == 7) {
+									optProcessors4 <- .chooseProcessors(resTime4)
+									time.3 <- Sys.time()
+									params <- .Sankoff(myClusters[, 7:8],
+										myXStringSet,
+										S, # substitution matrix
+										weights_MP,
+										scoreOnly=FALSE,
+										states=lkup,
+										processors=optProcessors4)[[3L]]
+									time.4 <- Sys.time()
+									if (is.na(resTime4[optProcessors4])) {
+										resTime4[optProcessors4] <- difftime(time.4, time.3, units='secs')
+									} else {
+										resTime4[optProcessors4] <- (resTime4[optProcessors4] + difftime(time.4, time.3, units='secs'))/2
+									}
+									myClusters[, 4:5] <- params/N # changes per site
+								}
+								myClustersTemp <- myClusters
+								
+								last <- t1
+								t1 <- .extractClades(myClusters)
+								s1 <- lapply(t1, .sort)
+								t1 <- .Call("hashList", t1, PACKAGE="DECIPHER")
+								s1 <- .Call("hashList", s1, PACKAGE="DECIPHER")
+								last <- last[!(last %in% t1)]
 							} else {
-								.Shakes <- .Shakes - 1L
+								myClusters <- myClustersAlt
+								subTree <- myClustersTemp[i1,, drop=FALSE]
+								node <- subTree[, 7:8] > 0
+								subTree[, 7:8][node] <- i2[match(subTree[, 7:8][node], i1)]
+								myClusters[i2,] <- subTree
+								myClustersAlt <- myClusters
 								myClusters <- myClustersTemp
+								
+								last <- t2
+								t2 <- .extractClades(myClustersAlt)
+								s2 <- lapply(t2, .sort)
+								t2 <- .Call("hashList", t2, PACKAGE="DECIPHER")
+								s2 <- .Call("hashList", s2, PACKAGE="DECIPHER")
+								last <- last[!(last %in% t2)]
 							}
+							last <- last[!(last %in% t)]
+							if (length(last) > 0L) {
+								while (length(last) + count > length(t))
+									length(t) <- 2L*length(t) # extend t
+								t[(count + 1L):(count + length(last))] <- last
+								count <- count + length(last)
+							}
+							x <- match(s1, s2, nomatch=0L)
+							u <- which(x != 0L) # same leaves
+							u <- u[!(t1[u] %in% t2)] # different branching
+							u <- u[!(t2[x[u]] %in% t)] # untried
+							rows <- ifelse(x[u] > nrow(myClustersAlt), x[u] - nrow(myClustersAlt), x[u])
+							u <- u[myClustersAlt[, 7:8][x[u]] > 0] # skip hash collisions
+							u <- u[!(myClustersAlt[, 7:8][x[u]] %in% rows)] # only keep the smallest subtrees
+							
+							if (verbose)
+								.printLine(.best)
 						}
-						
-						.best <- best
-						if (.totShakes >= max_iterations[3L] ||
-							((currentScore - .best)/.best < relTol &&
-							currentScore - .best < absTol) ||
-							.Shakes == 0L)
-							doShakes <- FALSE
 					}
-					
-					exit <- !doGrafts &&
-						(((currentScore - .best)/.best < relTol &&
-						currentScore - .best < absTol) ||
-						((is.na(.Climbs) || currentClimbs == .Climbs) &&
-						(is.na(.Shakes) || .Shakes == 0L)))
-					
-					if (method == 3) {
-						if (!final &&
-							allow &&
-							((typeX != 3 && model != "JC69") ||
-							(typeX == 3 && !(model %in% colnames(ProtModels)))) &&
-							((it == 1 && !exit) ||
-							(it > 1 && (.best < .overall || (exit && .best < .overall*fracParams))))) {
+				}
+				
+				if (verbose)
+					.printLine(.best, TRUE)
+				
+				if (method == 9)
+					myClusters <- .branchLengths(myClusters, myDistMatrix)
+				
+				Scores[it] <- .best
+				if (final) {
+					myClusters <- .reorderClusters(myClusters, all=TRUE)
+					myClusters <- .adjustTreeHeights(myClusters)
+				} else if (it == 1L || .best < .overall) {
+					if (method == 3 &&
+						optModel &&
+						((typeX != 3 && model != "JC69") ||
+						(typeX == 3 && !(model %in% colnames(ProtModels))))) {
+						repeat {
+							optProcessors1 <- .chooseProcessors(resTime1)
+							time.3 <- Sys.time()
 							temp <- .optimizeModel(myClusters,
 								rownames(m),
 								myXStringSet,
 								N,
-								TRUE, # scaleTree
+								FALSE, # scaleTree
 								.rates,
 								m,
 								weights_ML,
 								factr=min(1e10, min(absTol/.best, relTol)/.Machine$double.eps/10),
-								processors=optProcessors)
+								processors=optProcessors1)
+							time.4 <- Sys.time()
+							if (is.na(resTime1[optProcessors1])) {
+								resTime1[optProcessors1] <- difftime(time.4, time.3, units='secs')/temp[2L]
+							} else {
+								resTime1[optProcessors1] <- (resTime1[optProcessors1] + difftime(time.4, time.3, units='secs')/temp[2L])/2
+							}
 							m[1,] <- temp[-1:-2]
-							myClusters[, 4:5] <- temp[1L]*myClusters[, 4:5] # scale tree
 							temp_params <- .giveParams(m,
 								rownames(m),
 								.rates)
-							if (m[1, "-LnL"] < .best - epsilon) {
-								.best <- m[1, "-LnL"]
-								if (.best > currentScore - epsilon)
-									allow <- FALSE
-								if ((currentScore - .best)/.best < relTol &&
-									currentScore - .best < absTol) {
-									model_params <- temp_params
-								} else {
-									exit <- FALSE
-								}
-								if (verbose)
-									.printLine(.best)
-							}
-						} else {
-							temp_params <- model_params
+							
+							if (.best - m[1, "-LnL"] < absTol && (.best - m[1, "-LnL"])/.best < relTol)
+								break
+							
+							model_params <- temp_params
+							params <- as.vector(myClusters[, 4:5])
+							params <- .globalBranches(.minimize, params)
+							myClusters[, 4:5] <- params
+						}
+						
+						if (m[1, "-LnL"] < .best - epsilon) {
+							.best <- m[1, "-LnL"]
+							model_params <- temp_params
+							if (verbose)
+								.printLine(.best)
 						}
 					}
 					
-					if (exit) {
-						if (verbose && !interactive())
-							.printLine(.best, TRUE)
-						break # convergence
-					}
-					
+					t <- NA_integer_ # tested topologies
+					count <- 0L # elements in t
+					Tree <- myClusters
 					if (method == 3)
-						model_params <- temp_params
-				}
-				
-				if (doClimbs) { # not shaking
-					Scores[it] <- .best
-					Trees[[it]] <- myClusters
-					Cophenetic[[it]] <- .cophenetic(myClusters)
-					if (method == 3)
-						Models[[it]] <- list(m, model_params)
+						Model <- list(m, model_params)
+					.overall <- .best
+					if (standardDeviation > 0)
+						D <- .cophenetic(myClusters)
 				}
 			}
+			if (standardDeviation > 0)
+				rm(D)
 			
 			if (method == 7) {
+				optProcessors4 <- .chooseProcessors(resTime4)
 				params <- .Sankoff(myClusters[, 7:8],
-					Z, # integer encoded XStringSet
+					myXStringSet,
 					S, # substitution matrix
 					weights_MP,
-					scoreOnly=FALSE,
-					processors=processors)
-				myClusters[, 4:5] <- params[[3]]/N # changes per site
+					scoreOnly=ifelse(reconstruct, NA, FALSE),
+					states=lkup,
+					processors=optProcessors4)
+				myClusters[, 4:5] <- params[[3L]]/N # changes per site
 				subs <- params[[4L]]
 			}
 			
@@ -3730,42 +3381,58 @@ TreeLine <- function(myXStringSet=NULL,
 				cat("\n")
 				flush.console()
 			}
-		} else {
-			if (method == 7L) {
-				Z <- matrix(match(Z, states), # integer encode
-					nrow=nrow(Z),
-					ncol=ncol(Z))
-				params <- .Sankoff(myClusters[, 7:8, drop=FALSE],
-					Z, # integer encoded XStringSet
-					S, # substitution matrix
-					rep(1L, ncol(Z)),
-					scoreOnly=FALSE,
-					processors=processors)
-				myClusters[, 4:5] <- params[[3L]]/N
-				myClusters <- .reorderClusters(myClusters, all=TRUE)
-				myClusters <- .adjustTreeHeights(myClusters)
-				myClusters <- .root(myClusters, root)
-				.best <- params[[1L]]
-				subs <- params[[4L]]
-			} else {
-				.best <- m[, "-LnL"]
-				myClusters <- .reorderClusters(myClusters, all=TRUE)
-				myClusters <- .adjustTreeHeights(myClusters)
-				myClusters <- .root(myClusters, root)
-			}
+		} else if (method == 3) {
+			.best <- m[, "-LnL"]
+			if (verbose)
+				cat("-ln(L) =", .best, "(0.000%), 0 Grafts of 0, 0 Climbs\n")
+		} else if (method == 7) {
+			params <- .Sankoff(myClusters[, 7:8, drop=FALSE],
+				myXStringSet,
+				S, # substitution matrix
+				weights_MP,
+				scoreOnly=ifelse(reconstruct, NA, FALSE),
+				states=lkup,
+				processors=processors)
+			myClusters[, 4:5] <- params[[3L]]/N
+			.best <- params[[1L]]
+			subs <- params[[4L]]
+			if (verbose)
+				cat("score =", .best, "(0.000%), 0 Grafts of 0, 0 Climbs\n")
+		} else if (method == 9) {
+			myClusters <- .branchLengths(myClusters, myDistMatrix)
+			.best <- sum(myClusters[, 4:5])
+			if (verbose)
+				cat("length =", .best, "(0.000%), 0 Grafts of 0, 0 Climbs\n")
+		} else { # reconstruct == TRUE
+			.best <- NULL
 		}
+		myClusters <- .reorderClusters(myClusters, all=TRUE)
+		myClusters <- .adjustTreeHeights(myClusters)
+		myClusters <- .root(myClusters, root)
 		
-		if (method == 7 && reconstruct && type > 1) {
+		if (method != 3 && reconstruct && type > 1) {
+			if (method != 7) {
+				params <- .Sankoff(myClusters[, 7:8],
+					myXStringSet,
+					S, # substitution matrix
+					weights_MP,
+					scoreOnly=NA, # reconstruct ancestral states
+					states=lkup,
+					processors=processors)
+				subs <- params[[4L]]
+			}
+			dimnames(subs) <- list(states, states)
 			f <- function(x) {
 				x <- states[x]
 				x[is.na(x)] <- "."
 				paste(x, collapse="")
 			}
-			orgXStringSet <- apply(Z, 1, f)
-			states <- list(apply(params[[2]], 1, f))
+			ancestors <- list(apply(params[[2]], 1, f))
+			states <- paste("[^", paste(states, collapse=""), "]", sep="")
+			orgXStringSet <- gsub(states, ".", orgXStringSet)
 		}
 		
-		if (verbose && method != 7) {
+		if (verbose && method == 3) {
 			params <- formatC(round(model_params, 3),
 				digits=3,
 				format="f")
@@ -3789,7 +3456,7 @@ TreeLine <- function(myXStringSet=NULL,
 							"\n"),
 					sep="")
 			} else {
-				cat(ifelse(all(is.na(m[c(1, 5, 11)])),
+				cat(ifelse(all(is.na(m[c(1, 5, 6, 12)])),
 						"",
 						"\nModel parameters:"),
 					ifelse(is.na(m[1]),
@@ -3832,7 +3499,7 @@ TreeLine <- function(myXStringSet=NULL,
 								digits=3,
 								format="f"),
 							sep="")),
-					ifelse(all(is.na(m[c(1, 5, 12)])),
+					ifelse(all(is.na(m[c(1, 5, 6, 12)])),
 							"",
 							"\n"),
 					sep="")
@@ -3857,6 +3524,7 @@ TreeLine <- function(myXStringSet=NULL,
 	if (showPlot || type > 1) {
 		if (method != 3 &&
 			method != 7 &&
+			method != 9 &&
 			(method == 1 ||
 			root > 0))
 			myClusters <- .root(myClusters, root)
@@ -3902,20 +3570,14 @@ TreeLine <- function(myXStringSet=NULL,
 		
 		if (method == 3) {
 			if (nrow(myClusters) > 2) {
-				if (out[[2L]] == 0L) { # no remaining NNIs
-					scores <- out[[3L]][, 4L]
-					w <- out[[3L]][, 1:2]
-					LnL <- out[[4]]
-				} else { # convergence despite possible NNIs
-					out <- .localBranches(myClusters,
-						myXStringSet,
-						model_params,
-						weights_ML,
-						optProcessors)
-					scores <- out[[2L]]
-					w <- out[[1L]][, 1:2]
-					LnL <- out[[4]]
-				}
+				out <- .localBranches(myClusters,
+					myXStringSet,
+					model_params,
+					weights_ML,
+					processors)
+				scores <- out[[2L]]
+				w <- out[[1L]][, 1:2]
+				LnL <- out[[4L]]
 				
 				p <- tapply(scores,
 					myClusters[, 7:8][w],
@@ -3930,24 +3592,15 @@ TreeLine <- function(myXStringSet=NULL,
 			probs <- NULL
 		}
 		
-		if (nrow(myClusters) > 2 &&
-			(method == 3 || method == 7)) {
-			support <- rep(NA_real_, nrow(myClusters))
-			w <- which(myClusters[, 7:8] > 0)
-			support[myClusters[, 7:8][w]] <- .support(myClusters, Trees)
-		} else {
-			support <- NULL
-		}
-		
 		if (reconstruct && type > 1) {
 			# perform ancestral state reconstruction
-			if (method != 7) {
+			if (method == 3) {
 				tree <- myClusters[, 4:5]
 				u_lengths <- unique(tree)
 				tree <- matrix(c(match(tree, u_lengths),
 						as.integer(myClusters[, 7:8])),
 					ncol=4L)
-				states <- .Call("clusterML",
+				ancestors <- .Call("clusterML",
 					tree,
 					orgXStringSet,
 					model_params,
@@ -3957,13 +3610,12 @@ TreeLine <- function(myXStringSet=NULL,
 					typeX,
 					weights_ML,
 					u_lengths,
-					optProcessors,
+					processors,
 					PACKAGE="DECIPHER")
 			}
 			d <- to.dendrogram(myClustersList,
-				states[[1]],
-				probs,
-				support)
+				ancestors[[1]],
+				probs)
 			orgXStringSet <- unname(as.character(orgXStringSet))
 			d <- rapply(d,
 				function(x) {
@@ -3972,11 +3624,10 @@ TreeLine <- function(myXStringSet=NULL,
 				},
 				how="replace")
 			if (method == 3)
-				attr(d, "siteLnLs") <- states[[2]]
+				attr(d, "siteLnLs") <- ancestors[[2]]
 		} else {
 			d <- to.dendrogram(myClustersList,
-				p=probs,
-				s=support)
+				p=probs)
 		}
 		
 		# convert bifurcating tree to multifurcating
@@ -3987,10 +3638,8 @@ TreeLine <- function(myXStringSet=NULL,
 		attr(d, "model") <- model
 		attr(d, "parameters") <- params
 		attr(d, "score") <- .best
-		if (method == 7L) {
-			dimnames(subs) <- list(states, states)
-			attr(d, "substitutions") <- subs
-		}
+		if (method != 3 && reconstruct && type > 1)
+			attr(d, "transitions") <- subs
 		
 		# specify the order of clusters that
 		# will match the plotted dendrogram
@@ -4011,7 +3660,7 @@ TreeLine <- function(myXStringSet=NULL,
 		# add midpoints to the tree
 		d <- .applyMidpoints(d, dim)
 	}
-	if (type==1 || type==3) {
+	if (type == 1 || type == 3) {
 		dNames <- labels(myDistMatrix)
 		if (is.null(dNames)) {
 			dNames <- 1:(dim(myClusters)[1] + 1)

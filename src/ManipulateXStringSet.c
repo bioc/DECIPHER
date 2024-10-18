@@ -2,11 +2,12 @@
  *                         Manipulate XStringSets                           *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
- 
- // for OpenMP parallel processing
- #ifdef _OPENMP
- #include <omp.h>
- #endif
+
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#undef match
+#endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -273,7 +274,7 @@ SEXP replaceChars(SEXP x, SEXP r, SEXP t)
 	
 	SEXP seqs;
 	PROTECT(seqs = allocVector(STRSXP, n));
-	char *s = Calloc(longest + 1, char); // each sequence
+	char *s = R_Calloc(longest + 1, char); // each sequence
 	
 	// write new character vector
 	if (asInteger(t) == 1) {
@@ -556,7 +557,7 @@ SEXP replaceChars(SEXP x, SEXP r, SEXP t)
 		}
 	}
 	
-	Free(s);
+	R_Free(s);
 	
 	UNPROTECT(1);
 	
@@ -580,7 +581,7 @@ SEXP replaceChar(SEXP x, SEXP c, SEXP r)
 	
 	SEXP seqs;
 	PROTECT(seqs = allocVector(STRSXP, n));
-	char *s = Calloc(longest + 1, char); // each sequence
+	char *s = R_Calloc(longest + 1, char); // each sequence
 	
 	// write new character vector
 	for (i = 0; i < n; i++) {
@@ -602,7 +603,7 @@ SEXP replaceChar(SEXP x, SEXP c, SEXP r)
 		SET_STRING_ELT(seqs, i, mkChar(s));
 	}
 	
-	Free(s);
+	R_Free(s);
 	
 	UNPROTECT(1);
 	
@@ -896,57 +897,6 @@ SEXP removeGaps(SEXP x, SEXP type, SEXP mask, SEXP nThreads)
 			}
 			if (sum > 0)
 				memcpy((char *) ans_elt_holder.ptr + p, x_i.ptr + j - sum, sum * sizeof(char));
-		}
-	}
-	
-	UNPROTECT(2);
-	return ans;
-}
-
-// swap rows and columns of an aligned XStringSet
-SEXP transposeXStringSet(SEXP x, SEXP type)
-{
-	int i, j, x_length, x_width;
-	int t = asInteger(type);
-	SEXP ans_width, ans;
-	
-	// determine the element type of the XStringSet
-	const char *ans_element_type;
-	ans_element_type = get_List_elementType(x);
-	
-	// determine the length of the XStringSet
-	Chars_holder x_i, ans_elt_holder;
-	XStringSet_holder x_set, ans_holder;
-	x_set = hold_XStringSet(x);
-	x_length = get_length_from_XStringSet_holder(&x_set);
-	
-	// establish the sequence widths
-	x_i = get_elt_from_XStringSet_holder(&x_set, 0);
-	x_width = x_i.length;
-	PROTECT(ans_width = NEW_INTEGER(x_width));
-	int *width = INTEGER(ans_width);
-	for (i = 0; i < x_width; i++)
-		width[i] = x_length;
-	
-	// set the class of the XStringSet
-	char ans_classname[40];
-	if (t == 1) {
-		strcpy(ans_classname, "DNAStringSet");
-	} else if (t == 2) {
-		strcpy(ans_classname, "RNAStringSet");
-	} else { // t == 3
-		strcpy(ans_classname, "AAStringSet");
-	}
-	
-	// initialize a new XStringSet
-	PROTECT(ans = alloc_XRawList(ans_classname, ans_element_type, ans_width));
-	ans_holder = hold_XVectorList(ans);
-	
-	for (i = 0; i < x_width; i++) {
-		ans_elt_holder = get_elt_from_XStringSet_holder(&ans_holder, i);
-		for (j = 0; j < x_length; j++) {
-			x_i = get_elt_from_XStringSet_holder(&x_set, j);
-			memcpy((char *) ans_elt_holder.ptr + j, x_i.ptr + i, sizeof(char));
 		}
 	}
 	

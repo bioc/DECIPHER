@@ -12,7 +12,7 @@ Cophenetic <- function(x) {
 		attr(d, "Labels") <- attr(x, "label")
 		return(d)
 	}
-	d <- numeric(n*(n - 1)/2)
+	
 	u <- unlist(x)
 	o <- order(u)
 	u <- u[o]
@@ -27,50 +27,62 @@ Cophenetic <- function(x) {
 		},
 		how="replace")
 	
-	.dist <- function(dend) {
-		# initialize a stack of maximum length (n)
-		stack <- vector("list", n)
-		visit <- logical(n) # node already visited
-		parent <- integer(n) # index of parent node
-		index <- integer(n) # index in parent node
-		pos <- 1L # current position in the stack
-		stack[[pos]] <- dend
-		while (pos > 0L) { # more nodes to visit
-			if (visit[pos]) { # ascending tree
-				visit[pos] <- FALSE # reset visit
-				
-				for (k in seq_along(stack[[pos]])) {
-					h <- attr(stack[[pos]], "height") - attr(stack[[pos]][[k]], "height")
-					I <- unlist(stack[[pos]][[k]])
-					d <- .Call("cophenetic", # in-place change of d (requires previous temporary copy)
-						I,
-						n,
-						d,
-						h,
-						PACKAGE="DECIPHER")
-				}
-				
-				# replace self in parent
-				if (parent[pos] > 0)
-					stack[[parent[pos]]][[index[pos]]] <- stack[[pos]]
-				pos <- pos - 1L # pop off of stack
-			} else { # descending tree
-				visit[pos] <- TRUE
-				p <- pos
-				for (i in seq_along(stack[[p]])) {
-					if (!is.leaf(stack[[p]][[i]])) {
-						# push subtree onto stack
-						pos <- pos + 1L
-						stack[[pos]] <- stack[[p]][[i]]
-						parent[[pos]] <- p
-						index[[pos]] <- i
-					}
-				}
-			}
+	index <- n - 1L
+	C <- matrix(0L, index, 2L)
+	H <- matrix(0, index, 2L)
+	
+	# convert dendrogram to matrix
+	indices <- integer(index)
+	stack <- vector("list", index)
+	pos <- 1L
+	stack[[pos]] <- x
+	indices[pos] <- index
+	while (pos > 0L) {
+		y <- stack[[pos]]
+		i <- indices[pos]
+		pos <- pos - 1L # remove
+		
+		h <- attr(y, "height")
+		while (length(y) == 1L)
+			y <- stack[[1L]] # descend
+		
+		h1 <- attr(y[[1L]], "height")
+		H[i, 1L] <- h - h1
+		
+		if (is.leaf(y[[1L]])) {
+			C[i, 1L] <- -y[[1L]][1L]
+		} else {
+			index <- index - 1L
+			C[i, 1L] <- index
+			pos <- pos + 1L
+			stack[pos] <- y[1L] # add
+			indices[pos] <- index
 		}
-		return(stack[[1L]])
+		if (length(y) == 2L) {
+			h2 <- attr(y[[2L]], "height")
+			H[i, 2L] <- h - h2
+			if (is.leaf(y[[2L]])) {
+				C[i, 2L] <- -y[[2L]][1L]
+			} else {
+				index <- index - 1L
+				C[i, 2L] <- index
+				pos <- pos + 1L
+				stack[pos] <- y[2L] # add
+				indices[pos] <- index
+			}
+		} else { # length(y) > 2
+			index <- index - 1L
+			C[i, 2L] <- index
+			pos <- pos + 1L
+			y <- y[-1L]
+			attr(y, "height") <- h
+			stack[[pos]] <- y # add
+			indices[pos] <- index
+		}
 	}
-	.dist(x)
+	
+	d <- .Call("patristic", C, H, PACKAGE="DECIPHER")
+	
 	class(d) <- "dist"
 	attr(d, "Size") <- n
 	attr(d, "Diag") <- TRUE

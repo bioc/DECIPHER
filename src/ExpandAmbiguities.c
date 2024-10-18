@@ -86,7 +86,7 @@ SEXP expandAmbiguities(SEXP x, SEXP c)
 			}
 		}
 		
-		int *pers = Calloc(maxCombos*count, int); // initialized to zero
+		int *pers = R_Calloc(maxCombos*count, int); // initialized to zero
 		int alt; // whether to alternate
 		int combos = 1; // number of ambiguities
 		for (j = 0; j < count; j++) {
@@ -270,7 +270,7 @@ SEXP expandAmbiguities(SEXP x, SEXP c)
 			SET_STRING_ELT(ans, j, mkChar(perm));
 		}
 		
-		Free(pers);
+		R_Free(pers);
 		
 		SET_VECTOR_ELT(ret_list, i, ans);
 		UNPROTECT(1);

@@ -65,11 +65,11 @@ SEXP movAvg(SEXP x, SEXP type, SEXP alpha, SEXP thresh, SEXP maxAvg, SEXP start,
 			continue;
 		
 		// initialize array of error probabilities
-		double *p = Calloc(m, double); // initialized to zero
+		double *p = R_Calloc(m, double); // initialized to zero
 		
 		// initialize arrays of weighted averages
-		double *s1 = Calloc(m, double); // initialized to zero
-		double *s2 = Calloc(m, double); // initialized to zero
+		double *s1 = R_Calloc(m, double); // initialized to zero
+		double *s2 = R_Calloc(m, double); // initialized to zero
 		
 		if (k == 1) { // Phred
 			for (j = 0; j < m; j++)
@@ -96,7 +96,7 @@ SEXP movAvg(SEXP x, SEXP type, SEXP alpha, SEXP thresh, SEXP maxAvg, SEXP start,
 		for (j = 0; j < m; j++)
 			s1[j] += s2[j];
 		
-		Free(s2);
+		R_Free(s2);
 		
 		// find the longest region below threshold
 		int longest = 0;
@@ -118,7 +118,7 @@ SEXP movAvg(SEXP x, SEXP type, SEXP alpha, SEXP thresh, SEXP maxAvg, SEXP start,
 			}
 		}
 		
-		Free(s1);
+		R_Free(s1);
 		
 		right[i] = bestEnd + 1;
 		if (longest == 0) {
@@ -134,7 +134,7 @@ SEXP movAvg(SEXP x, SEXP type, SEXP alpha, SEXP thresh, SEXP maxAvg, SEXP start,
 			}
 		}
 		
-		Free(p);
+		R_Free(p);
 	}
 	
 	SEXP ret_list;

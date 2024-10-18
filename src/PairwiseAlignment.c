@@ -2,11 +2,12 @@
  *                       Performs Pairwise Alignment                        *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
- 
- // for OpenMP parallel processing
- #ifdef _OPENMP
- #include <omp.h>
- #endif
+
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#undef match
+#endif
  
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),

@@ -105,7 +105,7 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 	
 	for (s = 0; s < x_length; s++) {
 		x_s = get_elt_from_XStringSet_holder(&x_set, s);
-		int *seq = Calloc(x_s.length, int); // initialized to zero
+		int *seq = R_Calloc(x_s.length, int); // initialized to zero
 		seq_length = 0; // x_s.length without non-DNA characters
 		for (i = 0; i < x_s.length; i++) {
 			switch (x_s.ptr[i]) {
@@ -161,7 +161,7 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 			seq_length++;
 		}
 		
-		int *stack = Calloc(l, int); // initialized to zero
+		int *stack = R_Calloc(l, int); // initialized to zero
 		
 		if (o == 1) {
 			PROTECT(ans = allocMatrix(REALSXP, l, seq_length)); // [temp][pos]
@@ -218,10 +218,10 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 			}
 			
 			// allocate memory
-			double *V_10_LR = Calloc(seq_length + 1, double); // initialized to zero
-			double *U_01_LR = Calloc(seq_length, double); // initialized to zero
-			double *U_11_LR = Calloc(seq_length, double); // initialized to zero
-			int *rescale = Calloc(seq_length, int); // initialized to zero
+			double *V_10_LR = R_Calloc(seq_length + 1, double); // initialized to zero
+			double *U_01_LR = R_Calloc(seq_length, double); // initialized to zero
+			double *U_11_LR = R_Calloc(seq_length, double); // initialized to zero
+			int *rescale = R_Calloc(seq_length, int); // initialized to zero
 			
 			// initialize according to Tøstesen (2003)
 			rescale_i = 0; // current rescaling exponent
@@ -277,9 +277,9 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 			// NOTE:  sequence complementation is unnecessary
 			
 			// allocate memory
-			double *V_10_RL = Calloc(seq_length + 1, double); // initialized to zero
-			double *U_01_RL = Calloc(seq_length, double); // initialized to zero
-			double *U_11_RL = Calloc(seq_length, double); // initialized to zero
+			double *V_10_RL = R_Calloc(seq_length + 1, double); // initialized to zero
+			double *U_01_RL = R_Calloc(seq_length, double); // initialized to zero
+			double *U_11_RL = R_Calloc(seq_length, double); // initialized to zero
 			
 			// initialize according to Tøstesen (2003)
 			V_10_RL[0] = 1;
@@ -388,19 +388,19 @@ SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output)
 				}
 			}
 			
-			Free(V_10_LR);
-			Free(U_01_LR);
-			Free(U_11_LR);
-			Free(rescale);
-			Free(V_10_RL);
-			Free(U_01_RL);
-			Free(U_11_RL);
+			R_Free(V_10_LR);
+			R_Free(U_01_LR);
+			R_Free(U_11_LR);
+			R_Free(rescale);
+			R_Free(V_10_RL);
+			R_Free(U_01_RL);
+			R_Free(U_11_RL);
 			
 			R_CheckUserInterrupt();
 		}
 		
-		Free(seq);
-		Free(stack);
+		R_Free(seq);
+		R_Free(stack);
 		
 		if (o == 1) {
 			SET_VECTOR_ELT(ret, s, ans);

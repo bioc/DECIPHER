@@ -1445,7 +1445,7 @@ SEXP consensusSequence(SEXP x, SEXP threshold, SEXP ambiguity, SEXP minInformati
 	}
 	*/
 	// initialize an array of encoded base counts
-	double *bases = Calloc(7*seqLength, double); // initialized to zero
+	double *bases = R_Calloc(7*seqLength, double); // initialized to zero
 	
 	// loop through each sequence in the DNAStringSet
 	for (i = 0; i < x_length; i++) {
@@ -1473,7 +1473,7 @@ SEXP consensusSequence(SEXP x, SEXP threshold, SEXP ambiguity, SEXP minInformati
 	PROTECT(consensusSeq = allocVector(STRSXP, 1));
 	SET_STRING_ELT(consensusSeq, 0, mkChar(seq));
 	
-	Free(bases);
+	R_Free(bases);
 	
 	UNPROTECT(1);
 
@@ -1516,7 +1516,7 @@ SEXP consensusSequenceAA(SEXP x, SEXP threshold, SEXP ambiguity, SEXP minInforma
 	}
 	 */
 	// initialize an array of encoded base counts
-	double *bases = Calloc(26*seqLength, double); // initialized to zero
+	double *bases = R_Calloc(26*seqLength, double); // initialized to zero
 	
 	// loop through each sequence in the AAStringSet
 	for (i = 0; i < x_length; i++) {
@@ -1544,7 +1544,7 @@ SEXP consensusSequenceAA(SEXP x, SEXP threshold, SEXP ambiguity, SEXP minInforma
 	PROTECT(consensusSeq = allocVector(STRSXP, 1));
 	SET_STRING_ELT(consensusSeq, 0, mkChar(seq));
 	
-	Free(bases);
+	R_Free(bases);
 	
 	UNPROTECT(1);
 	
@@ -1583,7 +1583,7 @@ SEXP consensusProfile(SEXP x, SEXP weight, SEXP structs)
 		PROTECT(dims = GET_DIM(elmt));
 		d = INTEGER(dims)[0];
 		UNPROTECT(1);
-		DBN = Calloc(d*seqLength, double);
+		DBN = R_Calloc(d*seqLength, double);
 		size += d;
 	} else {
 		do_DBN = 0;
@@ -1616,13 +1616,13 @@ SEXP consensusProfile(SEXP x, SEXP weight, SEXP structs)
 		totW[j] = 0;
 	*/
 	// initialize an array of encoded base counts
-	double *bases = Calloc(7*seqLength, double); // initialized to zero
+	double *bases = R_Calloc(7*seqLength, double); // initialized to zero
 	// initialize an array for gap opening and closing
-	double *gaps = Calloc(2*seqLength, double); // initialized to zero
+	double *gaps = R_Calloc(2*seqLength, double); // initialized to zero
 	// initialize an array of positional weights
-	double *totW = Calloc(seqLength + 1, double); // initialized to zero
+	double *totW = R_Calloc(seqLength + 1, double); // initialized to zero
 	// initialize an array of terminal gap lengths
-	int *gapLengths = Calloc(x_length*2, int); // initialized to zero
+	int *gapLengths = R_Calloc(x_length*2, int); // initialized to zero
 	
 	// loop through each sequence in the DNAStringSet
 	for (i = 0; i < x_length; i++) {
@@ -1728,12 +1728,12 @@ SEXP consensusProfile(SEXP x, SEXP weight, SEXP structs)
 		}
 	}
 	
-	Free(bases);
-	Free(gaps);
-	Free(totW);
-	Free(gapLengths);
+	R_Free(bases);
+	R_Free(gaps);
+	R_Free(totW);
+	R_Free(gapLengths);
 	if (do_DBN)
-		Free(DBN);
+		R_Free(DBN);
 	
 	//PROTECT(ret_list = allocVector(VECSXP, 2));
 	//SET_VECTOR_ELT(ret_list, 0, ans);
@@ -1776,7 +1776,7 @@ SEXP consensusProfileAA(SEXP x, SEXP weight, SEXP structs)
 		PROTECT(dims = GET_DIM(elmt));
 		d = INTEGER(dims)[0];
 		UNPROTECT(1);
-		HEC = Calloc(d*seqLength, double);
+		HEC = R_Calloc(d*seqLength, double);
 		size += d;
 	} else {
 		do_HEC = 0;
@@ -1809,15 +1809,15 @@ SEXP consensusProfileAA(SEXP x, SEXP weight, SEXP structs)
 		totW[j] = 0;
 	*/
 	// initialize an array of encoded base counts
-	double *bases = Calloc(26*seqLength, double); // initialized to zero
+	double *bases = R_Calloc(26*seqLength, double); // initialized to zero
 	// initialize an array for gap opening and closing
-	double *gaps = Calloc(2*seqLength, double); // initialized to zero
+	double *gaps = R_Calloc(2*seqLength, double); // initialized to zero
 	// initialize an array of positional weights
-	double *totW = Calloc(seqLength + 1, double); // initialized to zero
+	double *totW = R_Calloc(seqLength + 1, double); // initialized to zero
 	// initialize an array of terminal gap lengths
-	int *gapLengths = Calloc(x_length*2, int); // initialized to zero
+	int *gapLengths = R_Calloc(x_length*2, int); // initialized to zero
 	// initialize an array of run starts (length 2, > 2)
-	double *runs = Calloc(2*seqLength, double); // initialized to zero
+	double *runs = R_Calloc(2*seqLength, double); // initialized to zero
 	
 	// loop through each sequence in the AAStringSet
 	for (i = 0; i < x_length; i++) {
@@ -1900,13 +1900,13 @@ SEXP consensusProfileAA(SEXP x, SEXP weight, SEXP structs)
 		}
 	}
 	
-	Free(bases);
-	Free(gaps);
-	Free(totW);
-	Free(gapLengths);
-	Free(runs);
+	R_Free(bases);
+	R_Free(gaps);
+	R_Free(totW);
+	R_Free(gapLengths);
+	R_Free(runs);
 	if (do_HEC)
-		Free(HEC);
+		R_Free(HEC);
 	
 	UNPROTECT(1);
 	
@@ -1951,11 +1951,11 @@ SEXP colScores(SEXP x, SEXP subset, SEXP subMatrix, SEXP go, SEXP ge, SEXP termi
 	}
 	
 	// initialize an array of encoded base counts
-	double *bases = Calloc(7*seqLength, double); // initialized to zero
+	double *bases = R_Calloc(7*seqLength, double); // initialized to zero
 	// initialize an array of terminal gap lengths
-	int *gapLengths = Calloc(sub_length*2, int); // initialized to zero
+	int *gapLengths = R_Calloc(sub_length*2, int); // initialized to zero
 	if (do_DBN) // initialize an array of structure counts
-		DBN = Calloc(d*seqLength, double); // initialized to zero
+		DBN = R_Calloc(d*seqLength, double); // initialized to zero
 	
 	for (i = 0; i < sub_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, sub[i] - 1);
@@ -2046,10 +2046,10 @@ SEXP colScores(SEXP x, SEXP subset, SEXP subMatrix, SEXP go, SEXP ge, SEXP termi
 			*(rans + k) += GO*(curr*total);
 	}
 	
-	Free(bases);
-	Free(gapLengths);
+	R_Free(bases);
+	R_Free(gapLengths);
 	if (do_DBN)
-		Free(DBN);
+		R_Free(DBN);
 	
 	UNPROTECT(1);
 	
@@ -2094,11 +2094,11 @@ SEXP colScoresAA(SEXP x, SEXP subset, SEXP subMatrix, SEXP go, SEXP ge, SEXP ter
 	}
 	
 	// initialize an array of encoded base counts
-	double *bases = Calloc(26*seqLength, double); // initialized to zero
+	double *bases = R_Calloc(26*seqLength, double); // initialized to zero
 	// initialize an array of terminal gap lengths
-	int *gapLengths = Calloc(sub_length*2, int); // initialized to zero
+	int *gapLengths = R_Calloc(sub_length*2, int); // initialized to zero
 	if (do_HEC) // initialize an array of structure counts
-		HEC = Calloc(d*seqLength, double); // initialized to zero
+		HEC = R_Calloc(d*seqLength, double); // initialized to zero
 	
 	for (i = 0; i < sub_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, sub[i] - 1);
@@ -2189,10 +2189,10 @@ SEXP colScoresAA(SEXP x, SEXP subset, SEXP subMatrix, SEXP go, SEXP ge, SEXP ter
 			*(rans + k) += GO*(curr*total);
 	}
 	
-	Free(bases);
-	Free(gapLengths);
+	R_Free(bases);
+	R_Free(gapLengths);
 	if (do_HEC)
-		Free(HEC);
+		R_Free(HEC);
 	
 	UNPROTECT(1);
 	
@@ -2231,13 +2231,13 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 //	*(rans) = 0; // initialize to zero changes
 	
 	// initialize an array of encoded base counts
-	double *bases = Calloc(7*seqLength, double); // initialized to zero
+	double *bases = R_Calloc(7*seqLength, double); // initialized to zero
 	// initialize an array of encoded gap events
-	unsigned long long int *gaps = Calloc(seqLength, unsigned long long int); // initialized to zero
+	unsigned long long int *gaps = R_Calloc(seqLength, unsigned long long int); // initialized to zero
 	// initialize an array of terminal gap lengths
-	int *gapLengths = Calloc(x_length*2, int); // initialized to zero
+	int *gapLengths = R_Calloc(x_length*2, int); // initialized to zero
 	// initialize an array of gap counts of each length
-	int *gapCount = Calloc(maxSize + 1, int); // initialized to zero
+	int *gapCount = R_Calloc(maxSize + 1, int); // initialized to zero
 	
 	for (i = 0; i < x_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
@@ -2269,7 +2269,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 	}
 	
 	// initialize an array of column scores
-	double *scores = Calloc(seqLength, double); // initialized to zero
+	double *scores = R_Calloc(seqLength, double); // initialized to zero
 	
 	// populate column scores and count gap events
 	for (k = 0; k < seqLength; k++) {
@@ -2337,9 +2337,9 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 			continue;
 		
 		// initialize a vector of gap counts of each length
-		int *gapNumber = Calloc(gapCount[size], int); // initialized to zero
+		int *gapNumber = R_Calloc(gapCount[size], int); // initialized to zero
 		// initialize a vector of positions where gap events end (close)
-		int *position = Calloc(gapCount[size], int); // initialized to zero
+		int *position = R_Calloc(gapCount[size], int); // initialized to zero
 		count = 0;
 		for (j = size; j < (seqLength - 1); j++) { // each position
 			if ((gaps[j] & ((unsigned long long int)1 << size)) != 0) { // gap of correct size ending at this position
@@ -2380,7 +2380,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 				break;
 			
 			// find all sequences with this gap event
-			int *seqNumbers = Calloc(x_length, int); // initialized to zero
+			int *seqNumbers = R_Calloc(x_length, int); // initialized to zero
 			j = position[min];
 			count = 0;
 			for (i = 0; i < x_length; i++) { // each sequence
@@ -2440,17 +2440,17 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 			int subset = left + size + 1; // additional position is for the far left
 			
 			// initialize an array of encoded base counts
-			double *basesSubset = Calloc(7*subset, double); // initialized to zero
+			double *basesSubset = R_Calloc(7*subset, double); // initialized to zero
 			// initialize an array of encoded gap events
-			unsigned long long int *gapsSubset = Calloc(subset, unsigned long long int); // initialized to zero
+			unsigned long long int *gapsSubset = R_Calloc(subset, unsigned long long int); // initialized to zero
 			// initialize a vector of column scores
-			double *scoresSubset = Calloc(subset, double); // initialized to zero
+			double *scoresSubset = R_Calloc(subset, double); // initialized to zero
 			// initialize an array of encoded base counts
-			double *basesSubsetLeftSaved = Calloc(7*subset, double); // initialized to zero
+			double *basesSubsetLeftSaved = R_Calloc(7*subset, double); // initialized to zero
 			// initialize an array of encoded gap events
-			unsigned long long int *gapsSubsetLeftSaved = Calloc(subset, unsigned long long int); // initialized to zero
+			unsigned long long int *gapsSubsetLeftSaved = R_Calloc(subset, unsigned long long int); // initialized to zero
 			// initialize a vector of column scores
-			double *scoresLeftSaved = Calloc(subset, double); // initialized to zero
+			double *scoresLeftSaved = R_Calloc(subset, double); // initialized to zero
 			
 			// copy subset of counts from bases to basesSubset
 			for (i = 0; i <= left + size; i++) { // shift offset
@@ -2492,7 +2492,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 					gapsSubset[subset - j - 1 - size]) { // there is an adjacent gap closing
 					
 					// initialize a vector of gap sizes to confirm in the adjacent position
-					int *confirm = Calloc(maxSize, int); // initialized to zero
+					int *confirm = R_Calloc(maxSize, int); // initialized to zero
 					
 					// possibly merge gaps
 					for (i = 0; i < gapNumber[min]; i++) { // each sequence
@@ -2568,7 +2568,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 							gapsSubset[subset - j - 1 - size] &= ~((unsigned long long int)1 << confirm[k]);
 					}
 					
-					Free(confirm);
+					R_Free(confirm);
 				} else {
 					gapsSubset[subset - j - 1] |= ((unsigned long long int)1 << size);
 				}
@@ -2634,9 +2634,9 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 				}
 			}
 			
-			Free(basesSubset);
-			Free(gapsSubset);
-			Free(scoresSubset);
+			R_Free(basesSubset);
+			R_Free(gapsSubset);
+			R_Free(scoresSubset);
 			
 			// repeat process for right shifts
 			
@@ -2647,17 +2647,17 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 				subset = seqLength - (position[min] - size) - 1;
 			
 			// initialize an array of encoded base counts
-			basesSubset = Calloc(7*subset, double); // initialized to zero
+			basesSubset = R_Calloc(7*subset, double); // initialized to zero
 			// initialize an array of encoded gap events
-			gapsSubset = Calloc(subset, unsigned long long int); // initialized to zero
+			gapsSubset = R_Calloc(subset, unsigned long long int); // initialized to zero
 			// initialize a vector of column scores
-			scoresSubset = Calloc(subset, double); // initialized to zero
+			scoresSubset = R_Calloc(subset, double); // initialized to zero
 			// initialize an array of encoded base counts
-			double *basesSubsetRightSaved = Calloc(7*subset, double); // initialized to zero
+			double *basesSubsetRightSaved = R_Calloc(7*subset, double); // initialized to zero
 			// initialize an array of encoded gap events
-			unsigned long long int *gapsSubsetRightSaved = Calloc(subset, unsigned long long int); // initialized to zero
+			unsigned long long int *gapsSubsetRightSaved = R_Calloc(subset, unsigned long long int); // initialized to zero
 			// initialize a vector of column scores
-			double *scoresRightSaved = Calloc(subset, double); // initialized to zero
+			double *scoresRightSaved = R_Calloc(subset, double); // initialized to zero
 			
 			// copy subset of counts from bases to basesSubset
 			for (i = 0; i < subset; i++) {
@@ -2697,7 +2697,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 					// check for an adjacent gap opening
 					
 					// initialize a vector of gap sizes to confirm in the adjacent position
-					int *confirm = Calloc(maxSize, int); // initialized to zero
+					int *confirm = R_Calloc(maxSize, int); // initialized to zero
 					
 					// possibly merge gaps
 					for (i = 0; i < gapNumber[min]; i++) { // each sequence
@@ -2774,7 +2774,7 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 							gapsSubset[j + confirm[k] + size] &= ~((unsigned long long int)1 << confirm[k]);
 					}
 					
-					Free(confirm);
+					R_Free(confirm);
 				} else {
 					gapsSubset[j + size] |= ((unsigned long long int)1 << size);
 				}
@@ -2840,9 +2840,9 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 				}
 			}
 			
-			Free(basesSubset);
-			Free(gapsSubset);
-			Free(scoresSubset);
+			R_Free(basesSubset);
+			R_Free(gapsSubset);
+			R_Free(scoresSubset);
 			
 			// commit the best shift if above threshold
 			if (bestScore > threshold) {
@@ -2939,12 +2939,12 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 				}
 			}
 			
-			Free(basesSubsetLeftSaved);
-			Free(gapsSubsetLeftSaved);
-			Free(scoresLeftSaved);
-			Free(basesSubsetRightSaved);
-			Free(gapsSubsetRightSaved);
-			Free(scoresRightSaved);
+			R_Free(basesSubsetLeftSaved);
+			R_Free(gapsSubsetLeftSaved);
+			R_Free(scoresLeftSaved);
+			R_Free(basesSubsetRightSaved);
+			R_Free(gapsSubsetRightSaved);
+			R_Free(scoresRightSaved);
 			
 			// eliminate this gap event from further consideration
 			for (j = min; j < (gapCount[size] - 1); j++) {
@@ -2952,18 +2952,18 @@ SEXP shiftGaps(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEXP 
 				position[j] = position[j + 1];
 			}
 			gapCount[size]--;
-			Free(seqNumbers);
+			R_Free(seqNumbers);
 		}
 		
-		Free(gapNumber);
-		Free(position);
+		R_Free(gapNumber);
+		R_Free(position);
 	}
 	
-	Free(bases);
-	Free(gaps);
-	Free(gapLengths);
-	Free(scores);
-	Free(gapCount);
+	R_Free(bases);
+	R_Free(gaps);
+	R_Free(gapLengths);
+	R_Free(scores);
+	R_Free(gapCount);
 	
 //	UNPROTECT(1);
 	
@@ -3002,13 +3002,13 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 //	*(rans) = 0; // initialize to zero changes
 	
 	// initialize an array of encoded base counts
-	double *bases = Calloc(26*seqLength, double); // initialized to zero
+	double *bases = R_Calloc(26*seqLength, double); // initialized to zero
 	// initialize an array of encoded gap events
-	unsigned long long int *gaps = Calloc(seqLength, unsigned long long int); // initialized to zero
+	unsigned long long int *gaps = R_Calloc(seqLength, unsigned long long int); // initialized to zero
 	// initialize an array of terminal gap lengths
-	int *gapLengths = Calloc(x_length*2, int); // initialized to zero
+	int *gapLengths = R_Calloc(x_length*2, int); // initialized to zero
 	// initialize an array of gap counts of each length
-	int *gapCount = Calloc(maxSize + 1, int); // initialized to zero
+	int *gapCount = R_Calloc(maxSize + 1, int); // initialized to zero
 	
 	for (i = 0; i < x_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
@@ -3040,7 +3040,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 	}
 	
 	// initialize an array of column scores
-	double *scores = Calloc(seqLength, double); // initialized to zero
+	double *scores = R_Calloc(seqLength, double); // initialized to zero
 	
 	// populate column scores and count gap events
 	for (k = 0; k < seqLength; k++) {
@@ -3117,9 +3117,9 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 //		Rprintf("\n\nSize = %d", size);
 		
 		// initialize a vector of gap counts of each length
-		int *gapNumber = Calloc(gapCount[size], int); // initialized to zero
+		int *gapNumber = R_Calloc(gapCount[size], int); // initialized to zero
 		// initialize a vector of positions where gap events end (close)
-		int *position = Calloc(gapCount[size], int); // initialized to zero
+		int *position = R_Calloc(gapCount[size], int); // initialized to zero
 		count = 0;
 		for (j = size; j < (seqLength - 1); j++) { // each position
 			if ((gaps[j] & ((unsigned long long int)1 << size)) != 0) { // gap of correct size ending at this position
@@ -3167,8 +3167,8 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 			
 //			Rprintf("\n\nSize = %d Position = %d\n", size, position[min]);
 			// find all sequences with this gap event
-//			int *seqNumbers = Calloc(gapNumber[min], int); // initialized to zero
-			int *seqNumbers = Calloc(x_length, int); // initialized to zero
+//			int *seqNumbers = R_Calloc(gapNumber[min], int); // initialized to zero
+			int *seqNumbers = R_Calloc(x_length, int); // initialized to zero
 			j = position[min];
 			count = 0;
 			for (i = 0; i < x_length; i++) { // each sequence
@@ -3231,17 +3231,17 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 			int subset = left + size + 1; // additional position is for the far left
 			
 			// initialize an array of encoded base counts
-			double *basesSubset = Calloc(26*subset, double); // initialized to zero
+			double *basesSubset = R_Calloc(26*subset, double); // initialized to zero
 			// initialize an array of encoded gap events
-			unsigned long long int *gapsSubset = Calloc(subset, unsigned long long int); // initialized to zero
+			unsigned long long int *gapsSubset = R_Calloc(subset, unsigned long long int); // initialized to zero
 			// initialize a vector of column scores
-			double *scoresSubset = Calloc(subset, double); // initialized to zero
+			double *scoresSubset = R_Calloc(subset, double); // initialized to zero
 			// initialize an array of encoded base counts
-			double *basesSubsetLeftSaved = Calloc(26*subset, double); // initialized to zero
+			double *basesSubsetLeftSaved = R_Calloc(26*subset, double); // initialized to zero
 			// initialize an array of encoded gap events
-			unsigned long long int *gapsSubsetLeftSaved = Calloc(subset, unsigned long long int); // initialized to zero
+			unsigned long long int *gapsSubsetLeftSaved = R_Calloc(subset, unsigned long long int); // initialized to zero
 			// initialize a vector of column scores
-			double *scoresLeftSaved = Calloc(subset, double); // initialized to zero
+			double *scoresLeftSaved = R_Calloc(subset, double); // initialized to zero
 			
 			// copy subset of counts from bases to basesSubset
 			for (i = 0; i <= left + size; i++) { // shift offset
@@ -3297,7 +3297,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 					gapsSubset[subset - j - 1 - size]) { // there is an adjacent gap closing
 					
 					// initialize a vector of gap sizes to confirm in the adjacent position
-					int *confirm = Calloc(maxSize, int); // initialized to zero
+					int *confirm = R_Calloc(maxSize, int); // initialized to zero
 					
 					// possibly merge gaps
 					for (i = 0; i < gapNumber[min]; i++) { // each sequence
@@ -3379,7 +3379,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 							gapsSubset[subset - j - 1 - size] &= ~((unsigned long long int)1 << confirm[k]);
 					}
 					
-					Free(confirm);
+					R_Free(confirm);
 				} else {
 					gapsSubset[subset - j - 1] |= ((unsigned long long int)1 << size);
 				}
@@ -3456,9 +3456,9 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 				}
 			}
 			
-			Free(basesSubset);
-			Free(gapsSubset);
-			Free(scoresSubset);
+			R_Free(basesSubset);
+			R_Free(gapsSubset);
+			R_Free(scoresSubset);
 			
 			// repeat process for right shifts
 			
@@ -3469,17 +3469,17 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 				subset = seqLength - (position[min] - size) - 1;
 			
 			// initialize an array of encoded base counts
-			basesSubset = Calloc(26*subset, double); // initialized to zero
+			basesSubset = R_Calloc(26*subset, double); // initialized to zero
 			// initialize an array of encoded gap events
-			gapsSubset = Calloc(subset, unsigned long long int); // initialized to zero
+			gapsSubset = R_Calloc(subset, unsigned long long int); // initialized to zero
 			// initialize a vector of column scores
-			scoresSubset = Calloc(subset, double); // initialized to zero
+			scoresSubset = R_Calloc(subset, double); // initialized to zero
 			// initialize an array of encoded base counts
-			double *basesSubsetRightSaved = Calloc(26*subset, double); // initialized to zero
+			double *basesSubsetRightSaved = R_Calloc(26*subset, double); // initialized to zero
 			// initialize an array of encoded gap events
-			unsigned long long int *gapsSubsetRightSaved = Calloc(subset, unsigned long long int); // initialized to zero
+			unsigned long long int *gapsSubsetRightSaved = R_Calloc(subset, unsigned long long int); // initialized to zero
 			// initialize a vector of column scores
-			double *scoresRightSaved = Calloc(subset, double); // initialized to zero
+			double *scoresRightSaved = R_Calloc(subset, double); // initialized to zero
 			
 			// copy subset of counts from bases to basesSubset
 			for (i = 0; i < subset; i++) {
@@ -3524,7 +3524,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 					// check for an adjacent gap opening
 					
 					// initialize a vector of gap sizes to confirm in the adjacent position
-					int *confirm = Calloc(maxSize, int); // initialized to zero
+					int *confirm = R_Calloc(maxSize, int); // initialized to zero
 					
 					// possibly merge gaps
 					for (i = 0; i < gapNumber[min]; i++) { // each sequence
@@ -3607,7 +3607,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 							gapsSubset[j + confirm[k] + size] &= ~((unsigned long long int)1 << confirm[k]);
 					}
 					
-					Free(confirm);
+					R_Free(confirm);
 				} else {
 					gapsSubset[j + size] |= ((unsigned long long int)1 << size);
 				}
@@ -3684,9 +3684,9 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 				}
 			}
 			
-			Free(basesSubset);
-			Free(gapsSubset);
-			Free(scoresSubset);
+			R_Free(basesSubset);
+			R_Free(gapsSubset);
+			R_Free(scoresSubset);
 			
 			// commit the best shift if above threshold
 			if (bestScore > threshold) {
@@ -3791,12 +3791,12 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 				}
 			}
 			
-			Free(basesSubsetLeftSaved);
-			Free(gapsSubsetLeftSaved);
-			Free(scoresLeftSaved);
-			Free(basesSubsetRightSaved);
-			Free(gapsSubsetRightSaved);
-			Free(scoresRightSaved);
+			R_Free(basesSubsetLeftSaved);
+			R_Free(gapsSubsetLeftSaved);
+			R_Free(scoresLeftSaved);
+			R_Free(basesSubsetRightSaved);
+			R_Free(gapsSubsetRightSaved);
+			R_Free(scoresRightSaved);
 			
 			// eliminate this gap event from further consideration
 			for (j = min; j < (gapCount[size] - 1); j++) {
@@ -3804,18 +3804,18 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 				position[j] = position[j + 1];
 			}
 			gapCount[size]--;
-			Free(seqNumbers);
+			R_Free(seqNumbers);
 		}
 		
-		Free(gapNumber);
-		Free(position);
+		R_Free(gapNumber);
+		R_Free(position);
 	}
 	
-	Free(bases);
-	Free(gaps);
-	Free(gapLengths);
-	Free(scores);
-	Free(gapCount);
+	R_Free(bases);
+	R_Free(gaps);
+	R_Free(gapLengths);
+	R_Free(scores);
+	R_Free(gapCount);
 	
 //	UNPROTECT(1);
 	

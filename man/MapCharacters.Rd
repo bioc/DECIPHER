@@ -50,12 +50,7 @@ Erik Wright \email{eswright@pitt.edu}
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
 dna <- readDNAStringSet(fas)
 
-d <- DistanceMatrix(dna, type="dist", correction="JC")
-tree <- TreeLine(myDistMatrix=d,
-                 method="NJ",
-                 type="dendrogram",
-                 myXStringSet=dna,
-                 reconstruct=TRUE)
+tree <- TreeLine(myXStringSet=dna, reconstruct=TRUE)
 
 out <- MapCharacters(tree,
                      labelEdges=TRUE,

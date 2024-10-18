@@ -12,6 +12,8 @@ Clusterize <- function(myXStringSet,
 	probability=0.99,
 	invertCenters=FALSE,
 	singleLinkage=FALSE,
+	maskRepeats=FALSE,
+	maskLCRs=FALSE,
 	alphabet=AA_REDUCED[[186]],
 	processors=1,
 	verbose=TRUE) {
@@ -106,6 +108,10 @@ Clusterize <- function(myXStringSet,
 		stop("invertCenters must be a logical.")
 	if (invertCenters && singleLinkage)
 		stop("invertCenters must be FALSE if singleLinkage is TRUE.")
+	if (!isTRUEorFALSE(maskRepeats))
+		stop("maskRepeats must be TRUE or FALSE.")
+	if (!isTRUEorFALSE(maskLCRs))
+		stop("maskLCRs must be TRUE or FALSE.")
 	if (!is.logical(verbose))
 		stop("verbose must be a logical.")
 	if (!is.null(processors) && !is.numeric(processors))
@@ -145,7 +151,6 @@ Clusterize <- function(myXStringSet,
 		stop("All sequences in myXStringSet are zero width.")
 	
 	# initialize parameters
-	keys <- c(8L, 16L) # size of radix keys for short and possibly long vectors (2^(0 to 5))
 	minCount <- 10L # minimum number of replicate timings to stop optimizing processors (>= 1)
 	fracRandom <- 0.1 # target fraction of random occurrences per rare k-mer (> 0 and << 1)
 	pow <- 0.5 # power (> 0 and <= 1) applied to the number of k-mers to randomly project into a smaller space
@@ -387,8 +392,8 @@ Clusterize <- function(myXStringSet,
 			.subset(myXStringSet, u),
 			kmerSize,
 			alphabet,
-			FALSE, # mask repeats
-			FALSE, # mask low complexity regions
+			maskRepeats,
+			maskLCRs,
 			integer(), # mask numerous k-mers
 			0L, # right is fast moving side
 			processors,
@@ -397,8 +402,8 @@ Clusterize <- function(myXStringSet,
 		v <- .Call("enumerateSequence",
 			.subset(myXStringSet, u),
 			kmerSize,
-			FALSE, # mask repeats
-			FALSE, # mask low complexity regions
+			maskRepeats,
+			maskLCRs,
 			integer(), # mask numerous k-mers
 			0L, # right is fast moving side
 			processors,
@@ -406,7 +411,7 @@ Clusterize <- function(myXStringSet,
 	}
 	sizes <- lengths(v)
 	for (i in seq_along(v)) {
-		o <- .Call("radixOrder", v[[i]], 1L, 0L, keys[1L], processors, PACKAGE="DECIPHER")
+		o <- .Call("radixOrder", v[[i]], 1L, 0L, processors, PACKAGE="DECIPHER")
 		v[[i]] <- list(v[[i]][o], seq_along(v[[i]])[o])
 	}
 	KMERS <- as.integer(words^kmerSize)
@@ -430,7 +435,7 @@ Clusterize <- function(myXStringSet,
 		} else {
 			if (length(s) > select) {
 				o <- .Call("xorShift", s, lf, PACKAGE="DECIPHER") # project k-mers
-				o <- .Call("radixOrder", freqs[o], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
+				o <- .Call("radixOrder", freqs[o], 1L, 1L, processors, PACKAGE="DECIPHER")
 				s <- s[o[z]]
 			} else if (length(s) < select) {
 				s <- c(s, y[[select - length(s)]])
@@ -439,7 +444,7 @@ Clusterize <- function(myXStringSet,
 		kmers[j + z] <- s
 		j <- j + select
 	}
-	o <- .Call("radixOrder", kmers, 1L, 0L, keys[2L], processors, PACKAGE="DECIPHER") # returns integers or doubles depending on length of kmers
+	o <- .Call("radixOrder", kmers, 1L, 0L, processors, PACKAGE="DECIPHER") # returns integers or doubles depending on length of kmers
 	if (is.integer(o)) {
 		ini <- integer(KMERS)
 	} else {
@@ -512,12 +517,12 @@ Clusterize <- function(myXStringSet,
 		s <- .Call("sortedUnique", s, PACKAGE="DECIPHER") # fast unique(s)
 		s <- s[len[s + 1L] > 0L] # remove any unrecorded k-mers
 		w <- .Call("xorShift", s, lf, PACKAGE="DECIPHER") # project k-mers
-		w <- .Call("radixOrder", freqs[w], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
+		w <- .Call("radixOrder", freqs[w], 1L, 1L, processors, PACKAGE="DECIPHER")
 		w <- s[w] + 1L # rare k-mers ranked by probability of selection
-		s <- .Call("radixOrder", len[w], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
+		s <- .Call("radixOrder", len[w], 1L, 1L, processors, PACKAGE="DECIPHER")
 		s[s] <- seq_along(s) # ranked rare k-mers by rarity of selection
 		s <- s + seq_along(s) # combine rankings
-		w <- w[.Call("radixOrder", s, 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")]
+		w <- w[.Call("radixOrder", s, 1L, 1L, processors, PACKAGE="DECIPHER")]
 		
 		groups <- .Call("selectGroups",
 			o,
@@ -526,7 +531,7 @@ Clusterize <- function(myXStringSet,
 			maxPhase1,
 			0L,
 			PACKAGE="DECIPHER")
-		d <- .Call("radixOrder", groups, 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
+		d <- .Call("radixOrder", groups, 1L, 1L, processors, PACKAGE="DECIPHER")
 		d <- .Call("dereplicate", groups, d, PACKAGE="DECIPHER")
 		
 		# fit exponential decrease in probability due to chance
@@ -562,7 +567,7 @@ Clusterize <- function(myXStringSet,
 		d[[2L]] <- d[[2L]][w]
 		
 		# apply multiple testing correction
-		w <- .Call("radixOrder", d[[2L]], 0L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
+		w <- .Call("radixOrder", d[[2L]], 0L, 1L, processors, PACKAGE="DECIPHER")
 		d[[1L]] <- d[[1L]][w]
 		d[[2L]] <- d[[2L]][w]
 		d[[2L]] <- probs[d[[2L]]] # convert to probabilities
@@ -639,7 +644,7 @@ Clusterize <- function(myXStringSet,
 		} else {
 			if (length(s) > select) {
 				o <- .Call("xorShift", s, lf, PACKAGE="DECIPHER") # project k-mers
-				o <- .Call("radixOrder", freqs[o], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
+				o <- .Call("radixOrder", freqs[o], 1L, 1L, processors, PACKAGE="DECIPHER")
 				s <- s[o[z]]
 			} else if (length(s) < select) {
 				s <- c(s, y[[select - length(s)]])
@@ -671,8 +676,8 @@ Clusterize <- function(myXStringSet,
 				.subset(myXStringSet, u),
 				wordSize,
 				alphabet,
-				FALSE, # mask repeats
-				FALSE, # mask low complexity regions
+				maskRepeats,
+				maskLCRs,
 				integer(), # mask numerous k-mers
 				0L, # right is fast moving side
 				processors,
@@ -681,8 +686,8 @@ Clusterize <- function(myXStringSet,
 			v <- .Call("enumerateSequence",
 				.subset(myXStringSet, u),
 				wordSize,
-				FALSE, # mask repeats
-				FALSE, # mask low complexity regions
+				maskRepeats,
+				maskLCRs,
 				integer(), # mask numerous k-mers
 				0L, # right is fast moving side
 				processors,
@@ -691,7 +696,7 @@ Clusterize <- function(myXStringSet,
 		WORDS <- as.integer(words^wordSize)
 		sizes <- lengths(v)
 		for (i in seq_along(v)) {
-			o <- .Call("radixOrder", v[[i]], 1L, 0L, keys[1L], processors, PACKAGE="DECIPHER")
+			o <- .Call("radixOrder", v[[i]], 1L, 0L, processors, PACKAGE="DECIPHER")
 			v[[i]] <- list(v[[i]][o], seq_along(v[[i]])[o])
 		}
 	}
@@ -1076,7 +1081,7 @@ Clusterize <- function(myXStringSet,
 	Q <- R[P]
 	
 	# order rare k-mers into groups
-	o <- .Call("radixOrder", kmers, 1L, 0L, keys[2L], processors, PACKAGE="DECIPHER") # returns integers or doubles depending on length of kmers
+	o <- .Call("radixOrder", kmers, 1L, 0L, processors, PACKAGE="DECIPHER") # returns integers or doubles depending on length of kmers
 	E <- seq_len(l)
 	E[P] <- E # order within rare k-mer groups by E
 	prev <- -1L
@@ -1085,13 +1090,13 @@ Clusterize <- function(myXStringSet,
 		curr <- kmers[o[i]]
 		if (curr != prev) {
 			w <- j:(i - 1L)
-			o[w] <- o[w[.Call("radixOrder", E[(o[w] - 1L) %/% select + 1L], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")]]
+			o[w] <- o[w[.Call("radixOrder", E[(o[w] - 1L) %/% select + 1L], 1L, 1L, processors, PACKAGE="DECIPHER")]]
 			prev <- curr
 			j <- i
 		}
 	}
 	w <- j:i
-	o[w] <- o[w[.Call("radixOrder", E[(o[w] - 1L) %/% select + 1L], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")]]
+	o[w] <- o[w[.Call("radixOrder", E[(o[w] - 1L) %/% select + 1L], 1L, 1L, processors, PACKAGE="DECIPHER")]]
 	rm(E)
 	if (is.integer(o)) {
 		ini <- integer(KMERS)
@@ -1118,7 +1123,7 @@ Clusterize <- function(myXStringSet,
 		o <- as.integer(o)
 	for (i in seq_len(l)) { # prioritize smaller k-mer groups
 		j <- seq((i - 1)*select + 1, length.out=select)
-		k <- j[.Call("radixOrder", len[kmers[j] + 1L], 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")]
+		k <- j[.Call("radixOrder", len[kmers[j] + 1L], 1L, 1L, processors, PACKAGE="DECIPHER")]
 		kmers[j] <- kmers[k]
 	}
 	
@@ -1214,7 +1219,7 @@ Clusterize <- function(myXStringSet,
 			
 			compare <-  c(bL[Q[j]]:bR[Q[j]], # surrounding centers
 				Q[recent]) # most recent centers
-			compare <- compare[.Call("radixOrder", abs(Q[j] - compare), 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")] # order by proximity
+			compare <- compare[.Call("radixOrder", abs(Q[j] - compare), 1L, 1L, processors, PACKAGE="DECIPHER")] # order by proximity
 			compare <- seeds.index[compare]
 			compare <- compare[compare != 0L] # remove unvisited seeds
 			compare <- compare[!duplicated(compare)]
@@ -1229,9 +1234,9 @@ Clusterize <- function(myXStringSet,
 				maxPhase1,
 				P[j],
 				PACKAGE="DECIPHER")
-			d <- .Call("radixOrder", groups, 1L, 1L, keys[1L], processors, PACKAGE="DECIPHER")
+			d <- .Call("radixOrder", groups, 1L, 1L, processors, PACKAGE="DECIPHER")
 			d <- .Call("dereplicate", groups, d, PACKAGE="DECIPHER")
-			d <- d[[1L]][.Call("radixOrder", d[[2L]], 0L, 1L, keys[1L], processors, PACKAGE="DECIPHER")]
+			d <- d[[1L]][.Call("radixOrder", d[[2L]], 0L, 1L, processors, PACKAGE="DECIPHER")]
 			if (length(d) > maxPhase3)
 				length(d) <- maxPhase3
 			groups <- groups[d]

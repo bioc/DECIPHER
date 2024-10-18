@@ -2,11 +2,12 @@
  *                        Cluster Maximum Likelihood                        *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
- 
- // for OpenMP parallel processing
- #ifdef _OPENMP
- #include <omp.h>
- #endif
+
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#undef match
+#endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -227,12 +228,8 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 	
 	int Z1 = 0, Z2 = 0;
 	for (i = 0; i < s0; i++) {
-		if (*(Ls1 + i) != 0)
-			Z1 = 1;
-		if (*(Ls2 + i) != 0)
-			Z2 = 1;
-		if (Z1 && Z2)
-			break;
+		Z1 |= *(Ls1 + i) != 0;
+		Z2 |= *(Ls2 + i) != 0;
 	}
 	
 	if (root == 0 && Z1) {
@@ -261,8 +258,7 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 			int Z3 = 0;
 			for (i = 0; i < s0; i++) {
 				*(Ls3 + i) = L1[i]*L2[i];
-				if (*(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon)
-					Z3 = 1;
+				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
 			}
 			
 			*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
@@ -280,24 +276,21 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 			#ifdef _OPENMP
 			#pragma omp simd
 			#endif
-			for (i = 0; i < s0; i++) {
+			for (i = 0; i < s0; i++)
 				L1[i] = *(P1++)*(*(Ls1));
-			}
 			for (j = 1; j < s0; j++) {
 				P1++;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
-				for (i = 0; i < s0; i++) {
+				for (i = 0; i < s0; i++)
 					L1[i] += *(P1++)*(*(Ls1 + j));
-				}
 			}
 			
 			int Z3 = 0;
 			for (i = 0; i < s0; i++) {
 				*(Ls3 + i) = L1[i];
-				if (*(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon)
-					Z3 = 1;
+				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
 			}
 			
 			*(Ls3 + s1) = *(Ls1 + s1);
@@ -317,22 +310,19 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 			#ifdef _OPENMP
 			#pragma omp simd
 			#endif
-			for (i = 0; i < s0; i++) {
+			for (i = 0; i < s0; i++)
 				L2[i] = *(P2++)*(*(Ls2));
-			}
 			for (j = 1; j < s0; j++) {
 				P2++;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
-				for (i = 0; i < s0; i++) {
+				for (i = 0; i < s0; i++)
 					L2[i] += *(P2++)*(*(Ls2 + j));
-				}
 			}
 			
-			for (i = 0; i < s0; i++) {
+			for (i = 0; i < s0; i++)
 				*(Ls3 + i) = L2[i];
-			}
 			
 			if (root && Z1) {
 				#ifdef _OPENMP
@@ -346,12 +336,8 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 			}
 			
 			int Z3 = 0;
-			for (i = 0; i < s0; i++) {
-				if (*(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon) {
-					Z3 = 1;
-					break;
-				}
-			}
+			for (i = 0; i < s0; i++)
+				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
 			
 			if (Z3) {
 				#ifdef _OPENMP
@@ -385,12 +371,8 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 	
 	int Z1 = 0, Z2 = 0;
 	for (i = 0; i < s0; i++) {
-		if (*(Ls1 + i) != 0)
-			Z1 = 1;
-		if (*(Ls2 + i) != 0)
-			Z2 = 1;
-		if (Z1 && Z2)
-			break;
+		Z1 |= *(Ls1 + i) != 0;
+		Z2 |= *(Ls2 + i) != 0;
 	}
 	
 	if (root == 0 && Z1) {
@@ -417,8 +399,7 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 			int Z3 = 0;
 			for (i = 0; i < s0; i++) {
 				*(Ls3 + i) = L1[i]*L2[i];
-				if (*(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon)
-					Z3 = 1;
+				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
 			}
 			
 			*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
@@ -436,23 +417,20 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 			#ifdef _OPENMP
 			#pragma omp simd
 			#endif
-			for (i = 0; i < s0; i++) {
+			for (i = 0; i < s0; i++)
 				L1[i] = *(P1++)*(*(Ls1));
-			}
 			for (j = 1; j < s0; j++) {
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
-				for (i = 0; i < s0; i++) {
+				for (i = 0; i < s0; i++)
 					L1[i] += *(P1++)*(*(Ls1 + j));
-				}
 			}
 			
 			int Z3 = 0;
 			for (i = 0; i < s0; i++) {
 				*(Ls3 + i) = L1[i];
-				if (*(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon)
-					Z3 = 1;
+				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
 			}
 			
 			*(Ls3 + s1) = *(Ls1 + s1);
@@ -472,21 +450,18 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 			#ifdef _OPENMP
 			#pragma omp simd
 			#endif
-			for (i = 0; i < s0; i++) {
+			for (i = 0; i < s0; i++)
 				L2[i] = *(P2++)*(*(Ls2));
-			}
 			for (j = 1; j < s0; j++) {
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
-				for (i = 0; i < s0; i++) {
+				for (i = 0; i < s0; i++)
 					L2[i] += *(P2++)*(*(Ls2 + j));
-				}
 			}
 			
-			for (i = 0; i < s0; i++) {
+			for (i = 0; i < s0; i++)
 				*(Ls3 + i) = L2[i];
-			}
 			
 			if (root && Z1) {
 				#ifdef _OPENMP
@@ -500,12 +475,8 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 			}
 			
 			int Z3 = 0;
-			for (i = 0; i < s0; i++) {
-				if (*(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon) {
-					Z3 = 1;
-					break;
-				}
-			}
+			for (i = 0; i < s0; i++)
+				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
 			
 			if (Z3) {
 				#ifdef _OPENMP
@@ -538,12 +509,8 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 	
 	int Z1 = 0, Z2 = 0;
 	for (i = 0; i < s0; i++) {
-		if (*(Ls1 + i) != 0)
-			Z1 = 1;
-		if (*(Ls2 + i) != 0)
-			Z2 = 1;
-		if (Z1 && Z2)
-			break;
+		Z1 |= *(Ls1 + i) != 0;
+		Z2 |= *(Ls2 + i) != 0;
 	}
 	
 	if (root == 0 && Z1) {
@@ -572,8 +539,7 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 			int Z3 = 0;
 			for (i = 0; i < s0; i++) {
 				*(Ls3 + i) = L1[i]*L2[i];
-				if (*(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon)
-					Z3 = 1;
+				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
 			}
 			
 			*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
@@ -591,24 +557,21 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 			#ifdef _OPENMP
 			#pragma omp simd
 			#endif
-			for (i = 0; i < s0; i++) {
+			for (i = 0; i < s0; i++)
 				L1[i] = *(P1++)*(*(Ls1));
-			}
 			for (j = 1; j < s0; j++) {
 				P1++;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
-				for (i = 0; i < s0; i++) {
+				for (i = 0; i < s0; i++)
 					L1[i] += *(P1++)*(*(Ls1 + j));
-				}
 			}
 			
 			int Z3 = 0;
 			for (i = 0; i < s0; i++) {
 				*(Ls3 + i) = L1[i];
-				if (*(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon)
-					Z3 = 1;
+				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
 			}
 			
 			*(Ls3 + s1) = *(Ls1 + s1);
@@ -628,22 +591,19 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 			#ifdef _OPENMP
 			#pragma omp simd
 			#endif
-			for (i = 0; i < s0; i++) {
+			for (i = 0; i < s0; i++)
 				L2[i] = *(P2++)*(*(Ls2));
-			}
 			for (j = 1; j < s0; j++) {
 				P2++;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
-				for (i = 0; i < s0; i++) {
+				for (i = 0; i < s0; i++)
 					L2[i] += *(P2++)*(*(Ls2 + j));
-				}
 			}
 			
-			for (i = 0; i < s0; i++) {
+			for (i = 0; i < s0; i++)
 				*(Ls3 + i) = L2[i];
-			}
 			
 			if (root && Z1) {
 				#ifdef _OPENMP
@@ -657,12 +617,8 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 			}
 			
 			int Z3 = 0;
-			for (i = 0; i < s0; i++) {
-				if (*(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon) {
-					Z3 = 1;
-					break;
-				}
-			}
+			for (i = 0; i < s0; i++)
+				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
 			
 			if (Z3) {
 				#ifdef _OPENMP
@@ -696,12 +652,8 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 	
 	int Z1 = 0, Z2 = 0;
 	for (i = 0; i < s0; i++) {
-		if (*(Ls1 + i) != 0)
-			Z1 = 1;
-		if (*(Ls2 + i) != 0)
-			Z2 = 1;
-		if (Z1 && Z2)
-			break;
+		Z1 |= *(Ls1 + i) != 0;
+		Z2 |= *(Ls2 + i) != 0;
 	}
 	
 	if (root == 0 && Z1) {
@@ -728,8 +680,7 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 			int Z3 = 0;
 			for (i = 0; i < s0; i++) {
 				*(Ls3 + i) = L1[i]*L2[i];
-				if (*(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon)
-					Z3 = 1;
+				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
 			}
 			
 			*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
@@ -747,23 +698,20 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 			#ifdef _OPENMP
 			#pragma omp simd
 			#endif
-			for (i = 0; i < s0; i++) {
+			for (i = 0; i < s0; i++)
 				L1[i] = *(P1++)*(*(Ls1));
-			}
 			for (j = 1; j < s0; j++) {
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
-				for (i = 0; i < s0; i++) {
+				for (i = 0; i < s0; i++)
 					L1[i] += *(P1++)*(*(Ls1 + j));
-				}
 			}
 			
 			int Z3 = 0;
 			for (i = 0; i < s0; i++) {
 				*(Ls3 + i) = L1[i];
-				if (*(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon)
-					Z3 = 1;
+				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
 			}
 			
 			*(Ls3 + s1) = *(Ls1 + s1);
@@ -783,21 +731,18 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 			#ifdef _OPENMP
 			#pragma omp simd
 			#endif
-			for (i = 0; i < s0; i++) {
+			for (i = 0; i < s0; i++)
 				L2[i] = *(P2++)*(*(Ls2));
-			}
 			for (j = 1; j < s0; j++) {
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
-				for (i = 0; i < s0; i++) {
+				for (i = 0; i < s0; i++)
 					L2[i] += *(P2++)*(*(Ls2 + j));
-				}
 			}
 			
-			for (i = 0; i < s0; i++) {
+			for (i = 0; i < s0; i++)
 				*(Ls3 + i) = L2[i];
-			}
 			
 			if (root && Z1) {
 				#ifdef _OPENMP
@@ -811,12 +756,8 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 			}
 			
 			int Z3 = 0;
-			for (i = 0; i < s0; i++) {
-				if (*(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon) {
-					Z3 = 1;
-					break;
-				}
-			}
+			for (i = 0; i < s0; i++)
+				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
 			
 			if (Z3) {
 				#ifdef _OPENMP
@@ -831,6 +772,350 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 				*(Ls3 + i) = *(Ls1 + i);
 			*(Ls3 + s1) = *(Ls1 + s1);
 		}
+	}
+}
+
+static void L_component(double *__restrict Ls, const int i3, const int i1, const double *P, const int j1, const int s2, const double epsilon, const double inv_epsilon)
+{
+	int i, j;
+	const int s0 = 4;
+	const int s1 = 5;
+	
+	double *Ls1 = Ls + i1;
+	double *Ls3 = Ls + i3;
+	const double *P1 = P + j1*s2;
+	
+	int Z1 = 0;
+	for (i = 0; i < s0; i++)
+		Z1 |= *(Ls1 + i) != 0;
+	
+	if (Z1) {
+		#ifdef _OPENMP
+		#pragma omp simd
+		#endif
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(P1++)*(*(Ls1));
+		for (j = 1; j < s0; j++) {
+			P1++;
+			#ifdef _OPENMP
+			#pragma omp simd
+			#endif
+			for (i = 0; i < s0; i++)
+				*(Ls3 + i) += *(P1++)*(*(Ls1 + j));
+		}
+		*(Ls3 + s0) = 0;
+		*(Ls3 + s1) = *(Ls1 + s1);
+		
+		int Z3 = 0;
+		for (i = 0; i < s0; i++)
+			Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+		
+		if (Z3) {
+			#ifdef _OPENMP
+			#pragma omp simd
+			#endif
+			for (i = 0; i < s0; i++)
+				*(Ls3 + i) *= epsilon;
+			*(Ls3 + s1) += 1;
+		}
+	} else {
+		for (i = 0; i <= s1; i++)
+			*(Ls3 + i) = 0;
+	}
+}
+
+static void L_component_Indels(double *__restrict Ls, const int i3, const int i1, const double *P, const int j1, const int s2, const double epsilon, const double inv_epsilon)
+{
+	int i, j;
+	const int s0 = 5;
+	const int s1 = 5;
+	
+	double *Ls1 = Ls + i1;
+	double *Ls3 = Ls + i3;
+	const double *P1 = P + j1*s2;
+	
+	int Z1 = 0;
+	for (i = 0; i < s0; i++)
+		Z1 |= *(Ls1 + i) != 0;
+	
+	if (Z1) {
+		#ifdef _OPENMP
+		#pragma omp simd
+		#endif
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(P1++)*(*(Ls1));
+		for (j = 1; j < s0; j++) {
+			#ifdef _OPENMP
+			#pragma omp simd
+			#endif
+			for (i = 0; i < s0; i++)
+				*(Ls3 + i) += *(P1++)*(*(Ls1 + j));
+		}
+		*(Ls3 + s1) = *(Ls1 + s1);
+		
+		int Z3 = 0;
+		for (i = 0; i < s0; i++)
+			Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+		
+		if (Z3) {
+			#ifdef _OPENMP
+			#pragma omp simd
+			#endif
+			for (i = 0; i < s0; i++)
+				*(Ls3 + i) *= epsilon;
+			*(Ls3 + s1) += 1;
+		}
+	} else {
+		for (i = 0; i <= s1; i++)
+			*(Ls3 + i) = 0;
+	}
+}
+
+static void L_component_AA(double *__restrict Ls, const int i3, const int i1, const double *P, const int j1, const int s2, const double epsilon, const double inv_epsilon)
+{
+	int i, j;
+	const int s0 = 20;
+	const int s1 = 21;
+	
+	double *Ls1 = Ls + i1;
+	double *Ls3 = Ls + i3;
+	const double *P1 = P + j1*s2;
+	
+	int Z1 = 0;
+	for (i = 0; i < s0; i++)
+		Z1 |= *(Ls1 + i) != 0;
+	
+	if (Z1) {
+		#ifdef _OPENMP
+		#pragma omp simd
+		#endif
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(P1++)*(*(Ls1));
+		for (j = 1; j < s0; j++) {
+			P1++;
+			#ifdef _OPENMP
+			#pragma omp simd
+			#endif
+			for (i = 0; i < s0; i++)
+				*(Ls3 + i) += *(P1++)*(*(Ls1 + j));
+		}
+		*(Ls3 + s0) = 0;
+		*(Ls3 + s1) = *(Ls1 + s1);
+		
+		int Z3 = 0;
+		for (i = 0; i < s0; i++)
+			Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+		
+		if (Z3) {
+			#ifdef _OPENMP
+			#pragma omp simd
+			#endif
+			for (i = 0; i < s0; i++)
+				*(Ls3 + i) *= epsilon;
+			*(Ls3 + s1) += 1;
+		}
+	} else {
+		for (i = 0; i <= s1; i++)
+			*(Ls3 + i) = 0;
+	}
+}
+
+static void L_component_AA_Indels(double *__restrict Ls, const int i3, const int i1, const double *P, const int j1, const int s2, const double epsilon, const double inv_epsilon)
+{
+	int i, j;
+	const int s0 = 21;
+	const int s1 = 21;
+	
+	double *Ls1 = Ls + i1;
+	double *Ls3 = Ls + i3;
+	const double *P1 = P + j1*s2;
+	
+	int Z1 = 0;
+	for (i = 0; i < s0; i++)
+		Z1 |= *(Ls1 + i) != 0;
+	
+	if (Z1) {
+		#ifdef _OPENMP
+		#pragma omp simd
+		#endif
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(P1++)*(*(Ls1));
+		for (j = 1; j < s0; j++) {
+			#ifdef _OPENMP
+			#pragma omp simd
+			#endif
+			for (i = 0; i < s0; i++)
+				*(Ls3 + i) += *(P1++)*(*(Ls1 + j));
+		}
+		*(Ls3 + s1) = *(Ls1 + s1);
+		
+		int Z3 = 0;
+		for (i = 0; i < s0; i++)
+			Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+		
+		if (Z3) {
+			#ifdef _OPENMP
+			#pragma omp simd
+			#endif
+			for (i = 0; i < s0; i++)
+				*(Ls3 + i) *= epsilon;
+			*(Ls3 + s1) += 1;
+		}
+	} else {
+		for (i = 0; i <= s1; i++)
+			*(Ls3 + i) = 0;
+	}
+}
+
+static void L_final(double *__restrict Ls, const int i3, const int i1, const int i2)
+{
+	int i;
+	const int s0 = 4;
+	const int s1 = 5;
+	
+	double *Ls1 = Ls + i1;
+	double *Ls2 = Ls + i2;
+	double *Ls3 = Ls + i3;
+	
+	int Z1 = 0, Z2 = 0;
+	for (i = 0; i < s0; i++) {
+		Z1 |= *(Ls1 + i) != 0;
+		Z2 |= *(Ls2 + i) != 0;
+	}
+	
+	if (Z1 && Z2) {
+		// neither branch can be disregarded
+		
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(Ls1 + i) * *(Ls2 + i);
+		*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
+	} else if (Z1) {
+		// second branch can be disregarded
+		
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(Ls1 + i);
+		*(Ls3 + s1) = *(Ls1 + s1);
+	} else {
+		// first branch can be disregarded
+		
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(Ls2 + i);
+		*(Ls3 + s1) = *(Ls2 + s1);
+	}
+	
+	*(Ls3 + s0) = 0;
+}
+
+static void L_final_Indels(double *__restrict Ls, const int i3, const int i1, const int i2)
+{
+	int i;
+	const int s0 = 5;
+	const int s1 = 5;
+	
+	double *Ls1 = Ls + i1;
+	double *Ls2 = Ls + i2;
+	double *Ls3 = Ls + i3;
+	
+	int Z1 = 0, Z2 = 0;
+	for (i = 0; i < s0; i++) {
+		Z1 |= *(Ls1 + i) != 0;
+		Z2 |= *(Ls2 + i) != 0;
+	}
+	
+	if (Z1 && Z2) {
+		// neither branch can be disregarded
+		
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(Ls1 + i) * *(Ls2 + i);
+		*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
+	} else if (Z1) {
+		// second branch can be disregarded
+		
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(Ls1 + i);
+		*(Ls3 + s1) = *(Ls1 + s1);
+	} else {
+		// first branch can be disregarded
+		
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(Ls2 + i);
+		*(Ls3 + s1) = *(Ls2 + s1);
+	}
+}
+
+static void L_final_AA(double *__restrict Ls, const int i3, const int i1, const int i2)
+{
+	int i;
+	const int s0 = 20;
+	const int s1 = 21;
+	
+	double *Ls1 = Ls + i1;
+	double *Ls2 = Ls + i2;
+	double *Ls3 = Ls + i3;
+	
+	int Z1 = 0, Z2 = 0;
+	for (i = 0; i < s0; i++) {
+		Z1 |= *(Ls1 + i) != 0;
+		Z2 |= *(Ls2 + i) != 0;
+	}
+	
+	if (Z1 && Z2) {
+		// neither branch can be disregarded
+		
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(Ls1 + i) * *(Ls2 + i);
+		*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
+	} else if (Z1) {
+		// second branch can be disregarded
+		
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(Ls1 + i);
+		*(Ls3 + s1) = *(Ls1 + s1);
+	} else {
+		// first branch can be disregarded
+		
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(Ls2 + i);
+		*(Ls3 + s1) = *(Ls2 + s1);
+	}
+	
+	*(Ls3 + s0) = 0;
+}
+
+static void L_final_AA_Indels(double *__restrict Ls, const int i3, const int i1, const int i2)
+{
+	int i;
+	const int s0 = 21;
+	const int s1 = 21;
+	
+	double *Ls1 = Ls + i1;
+	double *Ls2 = Ls + i2;
+	double *Ls3 = Ls + i3;
+	
+	int Z1 = 0, Z2 = 0;
+	for (i = 0; i < s0; i++) {
+		Z1 |= *(Ls1 + i) != 0;
+		Z2 |= *(Ls2 + i) != 0;
+	}
+	
+	if (Z1 && Z2) {
+		// neither branch can be disregarded
+		
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(Ls1 + i) * *(Ls2 + i);
+		*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
+	} else if (Z1) {
+		// second branch can be disregarded
+		
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(Ls1 + i);
+		*(Ls3 + s1) = *(Ls1 + s1);
+	} else {
+		// first branch can be disregarded
+		
+		for (i = 0; i < s0; i++)
+			*(Ls3 + i) = *(Ls2 + i);
+		*(Ls3 + s1) = *(Ls2 + s1);
 	}
 }
 
@@ -1163,7 +1448,6 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 	if (s != 0 && altL != 0)
 		error("branches or lengths specified when states is not zero.");
 	
-	// calculate a vector of sequence lengths
 	y_i = get_elt_from_XStringSet_holder(&y_set, 0);
 	int maxWidth = y_i.length; // assume all sequences are maxWidth (aligned)
 	
@@ -1176,14 +1460,20 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 	// L_unknown is split into multiple versions to allow fixed loop iterations for compiler optimizations
 	static void (*L_unknown_)(double *, const int, const int, const int, const double *, const int, const int, const int, const double, const double, const int);
 	static void (*L_known_)(const char *, double *, int);
+	static void (*L_component_)(double *, const int, const int, const double *, const int, const int, const double, const double);
+	static void (*L_final_)(double *, const int, const int, const int);
 	if (t == 3) {
 		params = 212;
 		numRates = (length(model) - params)/2; // number of bins for the gamma distribution
 		indels = (*(m + 210) == 0) ? 0 : 1;
 		if (indels) {
 			L_unknown_ = &L_unknown_AA_Indels;
+			L_component_ = &L_component_AA_Indels;
+			L_final_ = &L_final_AA_Indels;
 		} else {
 			L_unknown_ = &L_unknown_AA;
+			L_component_ = &L_component_AA;
+			L_final_ = &L_final_AA;
 		}
 		L_known_ = &L_known_AA;
 	} else {
@@ -1192,13 +1482,17 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 		indels = (*(m + 4) == 0) ? 0 : 1;
 		if (indels) {
 			L_unknown_ = &L_unknown_Indels;
+			L_component_ = &L_component_Indels;
+			L_final_ = &L_final_Indels;
 		} else {
 			L_unknown_ = &L_unknown;
+			L_component_ = &L_component;
+			L_final_ = &L_final;
 		}
 		L_known_ = &L_known;
 	}
 	
-	const double epsilon = pow(2, DBL_MAX_EXP/4);
+	const double epsilon = pow(2, DBL_MAX_EXP/4); // ((2^-254)^2)^2 > 0
 	const double inv_epsilon = 1/epsilon;
 	const double log_epsilon = log(epsilon);
 	int size = lu*s2;
@@ -1206,7 +1500,7 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 	int *Up;
 	double *P;
 	if (s > 0 || altB > 0) { // initialize pointers up the tree
-		Up = Calloc(l1 - 1, int); // root node is untouched
+		Up = R_Calloc(l1 - 1, int); // root node is untouched
 		for (j = 1; j < l1; j++) { // for each node
 			if (T[2*l1 + j] > 0) { // first branch is a node
 				row = T[2*l1 + j] - 1;
@@ -1237,7 +1531,7 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 				p = Up[p];
 			}
 		}
-		P = Calloc(size*numRates + s2, double); // initialized to zero
+		P = R_Calloc(size*numRates + s2, double); // initialized to zero
 		// last matrix is identity
 		if (t == 3) {
 			P[size*numRates + 0] = 1;
@@ -1269,7 +1563,7 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 			P[size*numRates + 24] = 1;
 		}
 	} else {
-		P = Calloc(size*numRates, double); // initialized to zero
+		P = R_Calloc(size*numRates, double); // initialized to zero
 	}
 	
 	for (k = 0; k < numRates; k++) { // for each bin of the gamma distribution determined by alpha
@@ -1288,7 +1582,7 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 		}
 	}
 	
-	double *sumL = Calloc(maxWidth*(altB + 1), double);
+	double *sumL = R_Calloc(maxWidth*(altB + 1), double);
 	#ifdef _OPENMP
 	#pragma omp parallel for private(j,k,o,p,y_i,row) num_threads(nthreads)
 	#endif
@@ -1302,7 +1596,7 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 		if (weight > 0) {
 			double *Ls;
 			if (altL != altB) {
-				Ls = (double *) calloc((length + 1)*3*width, sizeof(double)); // initialized to zero (thread-safe on Windows)
+				Ls = (double *) calloc((length + 3)*3*width, sizeof(double)); // initialized to zero (thread-safe on Windows)
 			} else {
 				Ls = (double *) calloc(l1*3*width, sizeof(double)); // initialized to zero (thread-safe on Windows)
 			}
@@ -1363,61 +1657,66 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 				(*L_unknown_)(Ls, row*3*width + 2*width, row*3*width + 0, row*3*width + width, P, T[0*l1 + row] - 1 + k*lu, T[1*l1 + row] - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
 				
 				if (s > 0) { // final node
-					if (t == 3) {
-						if (!((*(Ls + 0 + row*3*width) == 0 &&
-							*(Ls + 1 + row*3*width) == 0 &&
-							*(Ls + 2 + row*3*width) == 0 &&
-							*(Ls + 3 + row*3*width) == 0 &&
-							*(Ls + 4 + row*3*width) == 0 &&
-							*(Ls + 5 + row*3*width) == 0 &&
-							*(Ls + 6 + row*3*width) == 0 &&
-							*(Ls + 7 + row*3*width) == 0 &&
-							*(Ls + 8 + row*3*width) == 0 &&
-							*(Ls + 9 + row*3*width) == 0 &&
-							*(Ls + 10 + row*3*width) == 0 &&
-							*(Ls + 11 + row*3*width) == 0 &&
-							*(Ls + 12 + row*3*width) == 0 &&
-							*(Ls + 13 + row*3*width) == 0 &&
-							*(Ls + 14 + row*3*width) == 0 &&
-							*(Ls + 15 + row*3*width) == 0 &&
-							*(Ls + 16 + row*3*width) == 0 &&
-							*(Ls + 17 + row*3*width) == 0 &&
-							*(Ls + 18 + row*3*width) == 0 &&
-							*(Ls + 19 + row*3*width) == 0) ||
-							(*(Ls + width + 0 + row*3*width) == 0 &&
-							*(Ls + width + 1 + row*3*width) == 0 &&
-							*(Ls + width + 2 + row*3*width) == 0 &&
-							*(Ls + width + 3 + row*3*width) == 0 &&
-							*(Ls + width + 4 + row*3*width) == 0 &&
-							*(Ls + width + 5 + row*3*width) == 0 &&
-							*(Ls + width + 6 + row*3*width) == 0 &&
-							*(Ls + width + 7 + row*3*width) == 0 &&
-							*(Ls + width + 8 + row*3*width) == 0 &&
-							*(Ls + width + 9 + row*3*width) == 0 &&
-							*(Ls + width + 10 + row*3*width) == 0 &&
-							*(Ls + width + 11 + row*3*width) == 0 &&
-							*(Ls + width + 12 + row*3*width) == 0 &&
-							*(Ls + width + 13 + row*3*width) == 0 &&
-							*(Ls + width + 14 + row*3*width) == 0 &&
-							*(Ls + width + 15 + row*3*width) == 0 &&
-							*(Ls + width + 16 + row*3*width) == 0 &&
-							*(Ls + width + 17 + row*3*width) == 0 &&
-							*(Ls + width + 18 + row*3*width) == 0 &&
-							*(Ls + width + 19 + row*3*width) == 0))) { // neither branch is a gap
-							for (j = 0; j < s1; j++)
-								node[row*maxWidth*s1 + i*s1 + j] += *(Ls + 2*width + j + row*3*width) * *(m + numRates + k + params);
-						}
+					if (indels) {
+						for (j = 0; j < s1; j++)
+							node[row*maxWidth*s1 + i*s1 + j] += *(Ls + 2*width + j + row*3*width) * *(m + numRates + k + params);
 					} else {
-						if (!((*(Ls + 0 + row*3*width) == 0 &&
-							*(Ls + 1 + row*3*width) == 0 &&
-							*(Ls + 2 + row*3*width) == 0 &&
-							*(Ls + 3 + row*3*width) == 0) ||
-							(*(Ls + width + 0 + row*3*width) == 0 &&
-							*(Ls + width + 1 + row*3*width) == 0 &&
-							*(Ls + width + 2 + row*3*width) == 0 &&
-							*(Ls + width + 3 + row*3*width) == 0))) { // neither branch is a gap
-							for (j = 0; j < s1; j++)
-								node[row*maxWidth*s1 + i*s1 + j] += *(Ls + 2*width + j + row*3*width) * *(m + numRates + k + params);
+						if (t == 3) {
+							if (!((*(Ls + 0 + row*3*width) == 0 &&
+								*(Ls + 1 + row*3*width) == 0 &&
+								*(Ls + 2 + row*3*width) == 0 &&
+								*(Ls + 3 + row*3*width) == 0 &&
+								*(Ls + 4 + row*3*width) == 0 &&
+								*(Ls + 5 + row*3*width) == 0 &&
+								*(Ls + 6 + row*3*width) == 0 &&
+								*(Ls + 7 + row*3*width) == 0 &&
+								*(Ls + 8 + row*3*width) == 0 &&
+								*(Ls + 9 + row*3*width) == 0 &&
+								*(Ls + 10 + row*3*width) == 0 &&
+								*(Ls + 11 + row*3*width) == 0 &&
+								*(Ls + 12 + row*3*width) == 0 &&
+								*(Ls + 13 + row*3*width) == 0 &&
+								*(Ls + 14 + row*3*width) == 0 &&
+								*(Ls + 15 + row*3*width) == 0 &&
+								*(Ls + 16 + row*3*width) == 0 &&
+								*(Ls + 17 + row*3*width) == 0 &&
+								*(Ls + 18 + row*3*width) == 0 &&
+								*(Ls + 19 + row*3*width) == 0) ||
+								(*(Ls + width + 0 + row*3*width) == 0 &&
+								*(Ls + width + 1 + row*3*width) == 0 &&
+								*(Ls + width + 2 + row*3*width) == 0 &&
+								*(Ls + width + 3 + row*3*width) == 0 &&
+								*(Ls + width + 4 + row*3*width) == 0 &&
+								*(Ls + width + 5 + row*3*width) == 0 &&
+								*(Ls + width + 6 + row*3*width) == 0 &&
+								*(Ls + width + 7 + row*3*width) == 0 &&
+								*(Ls + width + 8 + row*3*width) == 0 &&
+								*(Ls + width + 9 + row*3*width) == 0 &&
+								*(Ls + width + 10 + row*3*width) == 0 &&
+								*(Ls + width + 11 + row*3*width) == 0 &&
+								*(Ls + width + 12 + row*3*width) == 0 &&
+								*(Ls + width + 13 + row*3*width) == 0 &&
+								*(Ls + width + 14 + row*3*width) == 0 &&
+								*(Ls + width + 15 + row*3*width) == 0 &&
+								*(Ls + width + 16 + row*3*width) == 0 &&
+								*(Ls + width + 17 + row*3*width) == 0 &&
+								*(Ls + width + 18 + row*3*width) == 0 &&
+								*(Ls + width + 19 + row*3*width) == 0))) { // neither branch is a gap
+								for (j = 0; j < s1; j++)
+									node[row*maxWidth*s1 + i*s1 + j] += *(Ls + 2*width + j + row*3*width) * *(m + numRates + k + params);
+							}
+						} else {
+							if (!((*(Ls + 0 + row*3*width) == 0 &&
+								*(Ls + 1 + row*3*width) == 0 &&
+								*(Ls + 2 + row*3*width) == 0 &&
+								*(Ls + 3 + row*3*width) == 0) ||
+								(*(Ls + width + 0 + row*3*width) == 0 &&
+								*(Ls + width + 1 + row*3*width) == 0 &&
+								*(Ls + width + 2 + row*3*width) == 0 &&
+								*(Ls + width + 3 + row*3*width) == 0))) { // neither branch is a gap
+								for (j = 0; j < s1; j++)
+									node[row*maxWidth*s1 + i*s1 + j] += *(Ls + 2*width + j + row*3*width) * *(m + numRates + k + params);
+							}
 						}
 					}
 				}
@@ -1479,34 +1778,44 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 								if (count == 1) {
 									if (flip > 0) {
 										// opposite merging with down-right
-										(*L_unknown_)(Ls, l1*3*width + 0, p*3*width + side, down*3*width + width, P, *(ls + (o - 1)*5 + 2) - 1 + k*lu, *(ls + (o - 1)*5 + 3) - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
+										L_component_(Ls, (length + 1)*3*width + 0, p*3*width + side, P, *(ls + (o - 1)*5 + 2) - 1 + k*lu, s2, epsilon, inv_epsilon);
+										L_component_(Ls, (length + 1)*3*width + width, down*3*width + width, P, *(ls + (o - 1)*5 + 3) - 1 + k*lu, s2, epsilon, inv_epsilon);
+										L_final_(Ls, l1*3*width + 0, (length + 1)*3*width + 0, (length + 1)*3*width + width);
 										// up merging with down-left
-										(*L_unknown_)(Ls, l1*3*width + width, p*3*width + 2*width, down*3*width + 0, P, *(ls + (o - 1)*5 + 4) - 1 + k*lu, *(ls + (o - 1)*5 + 1) - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
+										L_component_(Ls, (length + 2)*3*width + 0, p*3*width + 2*width, P, *(ls + (o - 1)*5 + 4) - 1 + k*lu, s2, epsilon, inv_epsilon);
+										L_component_(Ls, (length + 2)*3*width + width, down*3*width + 0, P, *(ls + (o - 1)*5 + 1) - 1 + k*lu, s2, epsilon, inv_epsilon);
+										L_final_(Ls, l1*3*width + width, (length + 2)*3*width + 0, (length + 2)*3*width + width);
 									} else {
 										// opposite merging with down-left
-										(*L_unknown_)(Ls, l1*3*width + 0, p*3*width + side, down*3*width + 0, P, *(ls + (o - 1)*5 + 3) - 1 + k*lu, *(ls + (o - 1)*5 + 2) - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
+										L_component_(Ls, (length + 1)*3*width + 0, p*3*width + side, P, *(ls + (o - 1)*5 + 3) - 1 + k*lu, s2, epsilon, inv_epsilon);
+										L_component_(Ls, (length + 1)*3*width + width, down*3*width + 0, P, *(ls + (o - 1)*5 + 2) - 1 + k*lu, s2, epsilon, inv_epsilon);
+										L_final_(Ls, l1*3*width + 0, (length + 1)*3*width + 0, (length + 1)*3*width + width);
 										// up merging with down-right
-										(*L_unknown_)(Ls, l1*3*width + width, p*3*width + 2*width, down*3*width + width, P, *(ls + (o - 1)*5 + 4) - 1 + k*lu, *(ls + (o - 1)*5 + 1) - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
+										L_component_(Ls, (length + 2)*3*width + 0, p*3*width + 2*width, P, *(ls + (o - 1)*5 + 4) - 1 + k*lu, s2, epsilon, inv_epsilon);
+										L_component_(Ls, (length + 2)*3*width + width, down*3*width + width, P, *(ls + (o - 1)*5 + 1) - 1 + k*lu, s2, epsilon, inv_epsilon);
+										L_final_(Ls, l1*3*width + width, (length + 2)*3*width + 0, (length + 2)*3*width + width);
 									}
 									// merge both across center
-									(*L_unknown_)(Ls, row*3*width + 2*width, l1*3*width + 0, l1*3*width + width, P, numRates*lu, *(ls + (o - 1)*5 + 0) - 1 + k*lu, s2, epsilon, inv_epsilon, 1);
+									L_component_(Ls, (length + 1)*3*width + 2*width, l1*3*width + 0, P, *(ls + (o - 1)*5 + 0) - 1 + k*lu, s2, epsilon, inv_epsilon);
+									L_component_(Ls, (length + 2)*3*width + 2*width, l1*3*width + width, P, *(ls + (o - 1)*5 + 0) - 1 + k*lu, s2, epsilon, inv_epsilon);
+									L_final_(Ls, row*3*width + 2*width, l1*3*width + 0, (length + 2)*3*width + 2*width);
 									
 									// up merging with below
-									(*L_unknown_)(Ls, length*3*width + 0, p*3*width + 2*width, l1*3*width + 0, P, *(ls + (o - 1)*5 + 4) - 1 + k*lu, *(ls + (o - 1)*5 + 0) - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
+									L_final_(Ls, length*3*width + 0, (length + 2)*3*width + 0, (length + 1)*3*width + 2*width);
 									if (flip > 0) {
 										// down-left merging with below
-										(*L_unknown_)(Ls, l1*3*width + 2*width, down*3*width + 0, l1*3*width + 0, P, *(ls + (o - 1)*5 + 1) - 1 + k*lu, *(ls + (o - 1)*5 + 0) - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
+										L_final_(Ls, l1*3*width + 2*width, (length + 2)*3*width + width, (length + 1)*3*width + 2*width);
 										// down-right merging with above
-										(*L_unknown_)(Ls, length*3*width + width, down*3*width + width, l1*3*width + width, P, *(ls + (o - 1)*5 + 3) - 1 + k*lu, *(ls + (o - 1)*5 + 0) - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
+										L_final_(Ls, length*3*width + width, (length + 1)*3*width + width, (length + 2)*3*width + 2*width);
 										// opposite merging with above
-										(*L_unknown_)(Ls, length*3*width + 2*width, p*3*width + side, l1*3*width + width, P, *(ls + (o - 1)*5 + 2) - 1 + k*lu, *(ls + (o - 1)*5 + 0) - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
+										L_final_(Ls, length*3*width + 2*width, (length + 1)*3*width + 0, (length + 2)*3*width + 2*width);
 									} else {
 										// down-right merging with below
-										(*L_unknown_)(Ls, l1*3*width + 2*width, down*3*width + width, l1*3*width + 0, P, *(ls + (o - 1)*5 + 1) - 1 + k*lu, *(ls + (o - 1)*5 + 0) - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
+										L_final_(Ls, l1*3*width + 2*width, (length + 2)*3*width + width, (length + 1)*3*width + 2*width);
 										// down-left merging with above
-										(*L_unknown_)(Ls, length*3*width + width, down*3*width + 0, l1*3*width + width, P, *(ls + (o - 1)*5 + 2) - 1 + k*lu, *(ls + (o - 1)*5 + 0) - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
+										L_final_(Ls, length*3*width + width, (length + 1)*3*width + width, (length + 2)*3*width + 2*width);
 										// opposite merging with above
-										(*L_unknown_)(Ls, length*3*width + 2*width, p*3*width + side, l1*3*width + width, P, *(ls + (o - 1)*5 + 3) - 1 + k*lu, *(ls + (o - 1)*5 + 0) - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
+										L_final_(Ls, length*3*width + 2*width, (length + 1)*3*width + 0, (length + 2)*3*width + 2*width);
 									}
 								} else if (count == 2 || count == 7) {
 									(*L_unknown_)(Ls, row*3*width + 2*width, l1*3*width + 0, l1*3*width + width, P, numRates*lu, *(ls + (o - 1)*5 + 0) - 1 + k*lu, s2, epsilon, inv_epsilon, 1);
@@ -1588,21 +1897,27 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 				}
 				
 				if (s > 0) {
-					for (j = l1 - 2; j >= 0; j--) { // for each node below the root
-						// apply three-way parsimony to resolve gaps
-						int c1 = 0, c2 = 0;
-						for (o = 0; o < s1 - 1; o++) {
-							c1 |= *(Ls + o + j*3*width) != 0;
-							c2 |= *(Ls + width + o + j*3*width) != 0;
-						}
-						int c = c1 + c2;
-						if (c >= 1) { // at least one non-gap
-							int side = (T[2*l1 + Up[j]] == j + 1) ? 0 : width; // edge of row
-							if (c == 2 || c2) {
-								int off1 = (side == 0) ? 0 : l1;
-								(*L_unknown_)(Ls, row*3*width + 2*width, Up[j]*3*width + side, j*3*width + 2*width, P, numRates*lu, T[off1 + Up[j]] - 1 + k*lu, s2, epsilon, inv_epsilon, 1);
-								for (o = 0; o < s1; o++)
-									node[j*maxWidth*s1 + i*s1 + o] += *(Ls + 2*width + o + row*3*width) * *(m + numRates + k + params);
+					if (indels) {
+						for (j = l1 - 2; j >= 0; j--)
+							for (o = 0; o < s1; o++)
+								node[j*maxWidth*s1 + i*s1 + o] += *(Ls + 2*width + o + row*3*width) * *(m + numRates + k + params);
+					} else {
+						for (j = l1 - 2; j >= 0; j--) { // for each node below the root
+							// apply three-way parsimony to resolve gaps
+							int c1 = 0, c2 = 0;
+							for (o = 0; o < s1 - 1; o++) {
+								c1 |= *(Ls + o + j*3*width) != 0;
+								c2 |= *(Ls + width + o + j*3*width) != 0;
+							}
+							int c = c1 + c2;
+							if (c >= 1) { // at least one non-gap
+								int side = (T[2*l1 + Up[j]] == j + 1) ? 0 : width; // edge of row
+								if (c == 2 || c2) {
+									int off1 = (side == 0) ? 0 : l1;
+									(*L_unknown_)(Ls, row*3*width + 2*width, Up[j]*3*width + side, j*3*width + 2*width, P, numRates*lu, T[off1 + Up[j]] - 1 + k*lu, s2, epsilon, inv_epsilon, 1);
+									for (o = 0; o < s1; o++)
+										node[j*maxWidth*s1 + i*s1 + o] += *(Ls + 2*width + o + row*3*width) * *(m + numRates + k + params);
+								}
 							}
 						}
 					}
@@ -1617,9 +1932,9 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 			free(mins);
 		}
 	}
-	Free(P);
+	R_Free(P);
 	if (altL > 0)
-		Free(Up);
+		R_Free(Up);
 	
 	SEXP ans;
 	if (s > 0) { // return character states
@@ -1629,7 +1944,7 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 		s = (s >= 1) ? 0.9999999 : s; // machine precision
 		if (t == 3) {
 			for (j = 0; j < l1; j++) {
-				char *rans1 = Calloc(maxWidth + 1, char);
+				char *rans1 = R_Calloc(maxWidth + 1, char);
 				for (i = 0; i < maxWidth; i++) {
 					double La = *(m) * node[j*maxWidth*s1 + i*s1 + 0];
 					double Lr = *(m + 1) * node[j*maxWidth*s1 + i*s1 + 1];
@@ -1652,76 +1967,80 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 					double Ly = *(m + 18) * node[j*maxWidth*s1 + i*s1 + 18];
 					double Lv = *(m + 19) * node[j*maxWidth*s1 + i*s1 + 19];
 					double L = *(m + 20) * node[j*maxWidth*s1 + i*s1 + 20];
-					if (s*L >= La && s*L >= Lr && s*L >= Ln && s*L >= Ld && s*L >= Lc && s*L >= Lq && s*L >= Le && s*L >= Lg && s*L >= Lh && s*L >= Li && s*L >= Ll && s*L >= Lk && s*L >= Lm && s*L >= Lf && s*L >= Lp && s*L >= Lz && s*L >= Lt && s*L >= Lw && s*L >= Ly && s*L >= Lv) {
+					if (s*L > La && s*L > Lr && s*L > Ln && s*L > Ld && s*L > Lc && s*L > Lq && s*L > Le && s*L > Lg && s*L > Lh && s*L > Li && s*L > Ll && s*L > Lk && s*L > Lm && s*L > Lf && s*L > Lp && s*L > Lz && s*L > Lt && s*L > Lw && s*L > Ly && s*L > Lv) {
 						rans1[i] = '-';
-					} else if (s*La >= Lr && s*La >= Ln && s*La >= Ld && s*La >= Lc && s*La >= Lq && s*La >= Le && s*La >= Lg && s*La >= Lh && s*La >= Li && s*La >= Ll && s*La >= Lk && s*La >= Lm && s*La >= Lf && s*La >= Lp && s*La >= Lz && s*La >= Lt && s*La >= Lw && s*La >= Ly && s*La >= Lv) {
+					} else if (s*La > Lr && s*La > Ln && s*La > Ld && s*La > Lc && s*La > Lq && s*La > Le && s*La > Lg && s*La > Lh && s*La > Li && s*La > Ll && s*La > Lk && s*La > Lm && s*La > Lf && s*La > Lp && s*La > Lz && s*La > Lt && s*La > Lw && s*La > Ly && s*La > Lv) {
 						rans1[i] = 'A';
-					} else if (s*Lr >= La && s*Lr >= Ln && s*Lr >= Ld && s*Lr >= Lc && s*Lr >= Lq && s*Lr >= Le && s*Lr >= Lg && s*Lr >= Lh && s*Lr >= Li && s*Lr >= Ll && s*Lr >= Lk && s*Lr >= Lm && s*Lr >= Lf && s*Lr >= Lp && s*Lr >= Lz && s*Lr >= Lt && s*Lr >= Lw && s*Lr >= Ly && s*Lr >= Lv) {
+					} else if (s*Lr > La && s*Lr > Ln && s*Lr > Ld && s*Lr > Lc && s*Lr > Lq && s*Lr > Le && s*Lr > Lg && s*Lr > Lh && s*Lr > Li && s*Lr > Ll && s*Lr > Lk && s*Lr > Lm && s*Lr > Lf && s*Lr > Lp && s*Lr > Lz && s*Lr > Lt && s*Lr > Lw && s*Lr > Ly && s*Lr > Lv) {
 						rans1[i] = 'R';
-					} else if (s*Ln >= La && s*Ln >= Lr && s*Ln >= Ld && s*Ln >= Lc && s*Ln >= Lq && s*Ln >= Le && s*Ln >= Lg && s*Ln >= Lh && s*Ln >= Li && s*Ln >= Ll && s*Ln >= Lk && s*Ln >= Lm && s*Ln >= Lf && s*Ln >= Lp && s*Ln >= Lz && s*Ln >= Lt && s*Ln >= Lw && s*Ln >= Ly && s*Ln >= Lv) {
+					} else if (s*Ln > La && s*Ln > Lr && s*Ln > Ld && s*Ln > Lc && s*Ln > Lq && s*Ln > Le && s*Ln > Lg && s*Ln > Lh && s*Ln > Li && s*Ln > Ll && s*Ln > Lk && s*Ln > Lm && s*Ln > Lf && s*Ln > Lp && s*Ln > Lz && s*Ln > Lt && s*Ln > Lw && s*Ln > Ly && s*Ln > Lv) {
 						rans1[i] = 'N';
-					} else if (s*Ld >= La && s*Ld >= Lr && s*Ld >= Ln && s*Ld >= Lc && s*Ld >= Lq && s*Ld >= Le && s*Ld >= Lg && s*Ld >= Lh && s*Ld >= Li && s*Ld >= Ll && s*Ld >= Lk && s*Ld >= Lm && s*Ld >= Lf && s*Ld >= Lp && s*Ld >= Lz && s*Ld >= Lt && s*Ld >= Lw && s*Ld >= Ly && s*Ld >= Lv) {
+					} else if (s*Ld > La && s*Ld > Lr && s*Ld > Ln && s*Ld > Lc && s*Ld > Lq && s*Ld > Le && s*Ld > Lg && s*Ld > Lh && s*Ld > Li && s*Ld > Ll && s*Ld > Lk && s*Ld > Lm && s*Ld > Lf && s*Ld > Lp && s*Ld > Lz && s*Ld > Lt && s*Ld > Lw && s*Ld > Ly && s*Ld > Lv) {
 						rans1[i] = 'D';
-					} else if (s*Lc >= La && s*Lc >= Lr && s*Lc >= Ln && s*Lc >= Ld && s*Lc >= Lq && s*Lc >= Le && s*Lc >= Lg && s*Lc >= Lh && s*Lc >= Li && s*Lc >= Ll && s*Lc >= Lk && s*Lc >= Lm && s*Lc >= Lf && s*Lc >= Lp && s*Lc >= Lz && s*Lc >= Lt && s*Lc >= Lw && s*Lc >= Ly && s*Lc >= Lv) {
+					} else if (s*Lc > La && s*Lc > Lr && s*Lc > Ln && s*Lc > Ld && s*Lc > Lq && s*Lc > Le && s*Lc > Lg && s*Lc > Lh && s*Lc > Li && s*Lc > Ll && s*Lc > Lk && s*Lc > Lm && s*Lc > Lf && s*Lc > Lp && s*Lc > Lz && s*Lc > Lt && s*Lc > Lw && s*Lc > Ly && s*Lc > Lv) {
 						rans1[i] = 'C';
-					} else if (s*Lq >= La && s*Lq >= Lr && s*Lq >= Ln && s*Lq >= Ld && s*Lq >= Lc && s*Lq >= Le && s*Lq >= Lg && s*Lq >= Lh && s*Lq >= Li && s*Lq >= Ll && s*Lq >= Lk && s*Lq >= Lm && s*Lq >= Lf && s*Lq >= Lp && s*Lq >= Lz && s*Lq >= Lt && s*Lq >= Lw && s*Lq >= Ly && s*Lq >= Lv) {
+					} else if (s*Lq > La && s*Lq > Lr && s*Lq > Ln && s*Lq > Ld && s*Lq > Lc && s*Lq > Le && s*Lq > Lg && s*Lq > Lh && s*Lq > Li && s*Lq > Ll && s*Lq > Lk && s*Lq > Lm && s*Lq > Lf && s*Lq > Lp && s*Lq > Lz && s*Lq > Lt && s*Lq > Lw && s*Lq > Ly && s*Lq > Lv) {
 						rans1[i] = 'Q';
-					} else if (s*Le >= La && s*Le >= Lr && s*Le >= Ln && s*Le >= Ld && s*Le >= Lc && s*Le >= Lq && s*Le >= Lg && s*Le >= Lh && s*Le >= Li && s*Le >= Ll && s*Le >= Lk && s*Le >= Lm && s*Le >= Lf && s*Le >= Lp && s*Le >= Lz && s*Le >= Lt && s*Le >= Lw && s*Le >= Ly && s*Le >= Lv) {
+					} else if (s*Le > La && s*Le > Lr && s*Le > Ln && s*Le > Ld && s*Le > Lc && s*Le > Lq && s*Le > Lg && s*Le > Lh && s*Le > Li && s*Le > Ll && s*Le > Lk && s*Le > Lm && s*Le > Lf && s*Le > Lp && s*Le > Lz && s*Le > Lt && s*Le > Lw && s*Le > Ly && s*Le > Lv) {
 						rans1[i] = 'E';
-					} else if (s*Lg >= La && s*Lg >= Lr && s*Lg >= Ln && s*Lg >= Ld && s*Lg >= Lc && s*Lg >= Lq && s*Lg >= Le && s*Lg >= Lh && s*Lg >= Li && s*Lg >= Ll && s*Lg >= Lk && s*Lg >= Lm && s*Lg >= Lf && s*Lg >= Lp && s*Lg >= Lz && s*Lg >= Lt && s*Lg >= Lw && s*Lg >= Ly && s*Lg >= Lv) {
+					} else if (s*Lg > La && s*Lg > Lr && s*Lg > Ln && s*Lg > Ld && s*Lg > Lc && s*Lg > Lq && s*Lg > Le && s*Lg > Lh && s*Lg > Li && s*Lg > Ll && s*Lg > Lk && s*Lg > Lm && s*Lg > Lf && s*Lg > Lp && s*Lg > Lz && s*Lg > Lt && s*Lg > Lw && s*Lg > Ly && s*Lg > Lv) {
 						rans1[i] = 'G';
-					} else if (s*Lh >= La && s*Lh >= Lr && s*Lh >= Ln && s*Lh >= Ld && s*Lh >= Lc && s*Lh >= Lq && s*Lh >= Le && s*Lh >= Lg && s*Lh >= Li && s*Lh >= Ll && s*Lh >= Lk && s*Lh >= Lm && s*Lh >= Lf && s*Lh >= Lp && s*Lh >= Lz && s*Lh >= Lt && s*Lh >= Lw && s*Lh >= Ly && s*Lh >= Lv) {
+					} else if (s*Lh > La && s*Lh > Lr && s*Lh > Ln && s*Lh > Ld && s*Lh > Lc && s*Lh > Lq && s*Lh > Le && s*Lh > Lg && s*Lh > Li && s*Lh > Ll && s*Lh > Lk && s*Lh > Lm && s*Lh > Lf && s*Lh > Lp && s*Lh > Lz && s*Lh > Lt && s*Lh > Lw && s*Lh > Ly && s*Lh > Lv) {
 						rans1[i] = 'H';
-					} else if (s*Li >= La && s*Li >= Lr && s*Li >= Ln && s*Li >= Ld && s*Li >= Lc && s*Li >= Lq && s*Li >= Le && s*Li >= Lg && s*Li >= Lh && s*Li >= Ll && s*Li >= Lk && s*Li >= Lm && s*Li >= Lf && s*Li >= Lp && s*Li >= Lz && s*Li >= Lt && s*Li >= Lw && s*Li >= Ly && s*Li >= Lv) {
+					} else if (s*Li > La && s*Li > Lr && s*Li > Ln && s*Li > Ld && s*Li > Lc && s*Li > Lq && s*Li > Le && s*Li > Lg && s*Li > Lh && s*Li > Ll && s*Li > Lk && s*Li > Lm && s*Li > Lf && s*Li > Lp && s*Li > Lz && s*Li > Lt && s*Li > Lw && s*Li > Ly && s*Li > Lv) {
 						rans1[i] = 'I';
-					} else if (s*Ll >= La && s*Ll >= Lr && s*Ll >= Ln && s*Ll >= Ld && s*Ll >= Lc && s*Ll >= Lq && s*Ll >= Le && s*Ll >= Lg && s*Ll >= Lh && s*Ll >= Li && s*Ll >= Lk && s*Ll >= Lm && s*Ll >= Lf && s*Ll >= Lp && s*Ll >= Lz && s*Ll >= Lt && s*Ll >= Lw && s*Ll >= Ly && s*Ll >= Lv) {
+					} else if (s*Ll > La && s*Ll > Lr && s*Ll > Ln && s*Ll > Ld && s*Ll > Lc && s*Ll > Lq && s*Ll > Le && s*Ll > Lg && s*Ll > Lh && s*Ll > Li && s*Ll > Lk && s*Ll > Lm && s*Ll > Lf && s*Ll > Lp && s*Ll > Lz && s*Ll > Lt && s*Ll > Lw && s*Ll > Ly && s*Ll > Lv) {
 						rans1[i] = 'L';
-					} else if (s*Lk >= La && s*Lk >= Lr && s*Lk >= Ln && s*Lk >= Ld && s*Lk >= Lc && s*Lk >= Lq && s*Lk >= Le && s*Lk >= Lg && s*Lk >= Lh && s*Lk >= Li && s*Lk >= Ll && s*Lk >= Lm && s*Lk >= Lf && s*Lk >= Lp && s*Lk >= Lz && s*Lk >= Lt && s*Lk >= Lw && s*Lk >= Ly && s*Lk >= Lv) {
+					} else if (s*Lk > La && s*Lk > Lr && s*Lk > Ln && s*Lk > Ld && s*Lk > Lc && s*Lk > Lq && s*Lk > Le && s*Lk > Lg && s*Lk > Lh && s*Lk > Li && s*Lk > Ll && s*Lk > Lm && s*Lk > Lf && s*Lk > Lp && s*Lk > Lz && s*Lk > Lt && s*Lk > Lw && s*Lk > Ly && s*Lk > Lv) {
 						rans1[i] = 'K';
-					} else if (s*Lm >= La && s*Lm >= Lr && s*Lm >= Ln && s*Lm >= Ld && s*Lm >= Lc && s*Lm >= Lq && s*Lm >= Le && s*Lm >= Lg && s*Lm >= Lh && s*Lm >= Li && s*Lm >= Ll && s*Lm >= Lk && s*Lm >= Lf && s*Lm >= Lp && s*Lm >= Lz && s*Lm >= Lt && s*Lm >= Lw && s*Lm >= Ly && s*Lm >= Lv) {
+					} else if (s*Lm > La && s*Lm > Lr && s*Lm > Ln && s*Lm > Ld && s*Lm > Lc && s*Lm > Lq && s*Lm > Le && s*Lm > Lg && s*Lm > Lh && s*Lm > Li && s*Lm > Ll && s*Lm > Lk && s*Lm > Lf && s*Lm > Lp && s*Lm > Lz && s*Lm > Lt && s*Lm > Lw && s*Lm > Ly && s*Lm > Lv) {
 						rans1[i] = 'M';
-					} else if (s*Lf >= La && s*Lf >= Lr && s*Lf >= Ln && s*Lf >= Ld && s*Lf >= Lc && s*Lf >= Lq && s*Lf >= Le && s*Lf >= Lg && s*Lf >= Lh && s*Lf >= Li && s*Lf >= Ll && s*Lf >= Lk && s*Lf >= Lm && s*Lf >= Lp && s*Lf >= Lz && s*Lf >= Lt && s*Lf >= Lw && s*Lf >= Ly && s*Lf >= Lv) {
+					} else if (s*Lf > La && s*Lf > Lr && s*Lf > Ln && s*Lf > Ld && s*Lf > Lc && s*Lf > Lq && s*Lf > Le && s*Lf > Lg && s*Lf > Lh && s*Lf > Li && s*Lf > Ll && s*Lf > Lk && s*Lf > Lm && s*Lf > Lp && s*Lf > Lz && s*Lf > Lt && s*Lf > Lw && s*Lf > Ly && s*Lf > Lv) {
 						rans1[i] = 'F';
-					} else if (s*Lp >= La && s*Lp >= Lr && s*Lp >= Ln && s*Lp >= Ld && s*Lp >= Lc && s*Lp >= Lq && s*Lp >= Le && s*Lp >= Lg && s*Lp >= Lh && s*Lp >= Li && s*Lp >= Ll && s*Lp >= Lk && s*Lp >= Lm && s*Lp >= Lf && s*Lp >= Lz && s*Lp >= Lt && s*Lp >= Lw && s*Lp >= Ly && s*Lp >= Lv) {
+					} else if (s*Lp > La && s*Lp > Lr && s*Lp > Ln && s*Lp > Ld && s*Lp > Lc && s*Lp > Lq && s*Lp > Le && s*Lp > Lg && s*Lp > Lh && s*Lp > Li && s*Lp > Ll && s*Lp > Lk && s*Lp > Lm && s*Lp > Lf && s*Lp > Lz && s*Lp > Lt && s*Lp > Lw && s*Lp > Ly && s*Lp > Lv) {
 						rans1[i] = 'P';
-					} else if (s*Lz >= La && s*Lz >= Lr && s*Lz >= Ln && s*Lz >= Ld && s*Lz >= Lc && s*Lz >= Lq && s*Lz >= Le && s*Lz >= Lg && s*Lz >= Lh && s*Lz >= Li && s*Lz >= Ll && s*Lz >= Lk && s*Lz >= Lm && s*Lz >= Lf && s*Lz >= Lp && s*Lz >= Lt && s*Lz >= Lw && s*Lz >= Ly && s*Lz >= Lv) {
+					} else if (s*Lz > La && s*Lz > Lr && s*Lz > Ln && s*Lz > Ld && s*Lz > Lc && s*Lz > Lq && s*Lz > Le && s*Lz > Lg && s*Lz > Lh && s*Lz > Li && s*Lz > Ll && s*Lz > Lk && s*Lz > Lm && s*Lz > Lf && s*Lz > Lp && s*Lz > Lt && s*Lz > Lw && s*Lz > Ly && s*Lz > Lv) {
 						rans1[i] = 'S';
-					} else if (s*Lt >= La && s*Lt >= Lr && s*Lt >= Ln && s*Lt >= Ld && s*Lt >= Lc && s*Lt >= Lq && s*Lt >= Le && s*Lt >= Lg && s*Lt >= Lh && s*Lt >= Li && s*Lt >= Ll && s*Lt >= Lk && s*Lt >= Lm && s*Lt >= Lf && s*Lt >= Lp && s*Lt >= Lz && s*Lt >= Lw && s*Lt >= Ly && s*Lt >= Lv) {
+					} else if (s*Lt > La && s*Lt > Lr && s*Lt > Ln && s*Lt > Ld && s*Lt > Lc && s*Lt > Lq && s*Lt > Le && s*Lt > Lg && s*Lt > Lh && s*Lt > Li && s*Lt > Ll && s*Lt > Lk && s*Lt > Lm && s*Lt > Lf && s*Lt > Lp && s*Lt > Lz && s*Lt > Lw && s*Lt > Ly && s*Lt > Lv) {
 						rans1[i] = 'T';
-					} else if (s*Lw >= La && s*Lw >= Lr && s*Lw >= Ln && s*Lw >= Ld && s*Lw >= Lc && s*Lw >= Lq && s*Lw >= Le && s*Lw >= Lg && s*Lw >= Lh && s*Lw >= Li && s*Lw >= Ll && s*Lw >= Lk && s*Lw >= Lm && s*Lw >= Lf && s*Lw >= Lp && s*Lw >= Lz && s*Lw >= Lt && s*Lw >= Ly && s*Lw >= Lv) {
+					} else if (s*Lw > La && s*Lw > Lr && s*Lw > Ln && s*Lw > Ld && s*Lw > Lc && s*Lw > Lq && s*Lw > Le && s*Lw > Lg && s*Lw > Lh && s*Lw > Li && s*Lw > Ll && s*Lw > Lk && s*Lw > Lm && s*Lw > Lf && s*Lw > Lp && s*Lw > Lz && s*Lw > Lt && s*Lw > Ly && s*Lw > Lv) {
 						rans1[i] = 'W';
-					} else if (s*Ly >= La && s*Ly >= Lr && s*Ly >= Ln && s*Ly >= Ld && s*Ly >= Lc && s*Ly >= Lq && s*Ly >= Le && s*Ly >= Lg && s*Ly >= Lh && s*Ly >= Li && s*Ly >= Ll && s*Ly >= Lk && s*Ly >= Lm && s*Ly >= Lf && s*Ly >= Lp && s*Ly >= Lz && s*Ly >= Lt && s*Ly >= Lw && s*Ly >= Lv) {
+					} else if (s*Ly > La && s*Ly > Lr && s*Ly > Ln && s*Ly > Ld && s*Ly > Lc && s*Ly > Lq && s*Ly > Le && s*Ly > Lg && s*Ly > Lh && s*Ly > Li && s*Ly > Ll && s*Ly > Lk && s*Ly > Lm && s*Ly > Lf && s*Ly > Lp && s*Ly > Lz && s*Ly > Lt && s*Ly > Lw && s*Ly > Lv) {
 						rans1[i] = 'Y';
-					} else if (s*Lv >= La && s*Lv >= Lr && s*Lv >= Ln && s*Lv >= Ld && s*Lv >= Lc && s*Lv >= Lq && s*Lv >= Le && s*Lv >= Lg && s*Lv >= Lh && s*Lv >= Li && s*Lv >= Ll && s*Lv >= Lk && s*Lv >= Lm && s*Lv >= Lf && s*Lv >= Lp && s*Lv >= Lz && s*Lv >= Lt && s*Lv >= Lw && s*Lv >= Ly) {
+					} else if (s*Lv > La && s*Lv > Lr && s*Lv > Ln && s*Lv > Ld && s*Lv > Lc && s*Lv > Lq && s*Lv > Le && s*Lv > Lg && s*Lv > Lh && s*Lv > Li && s*Lv > Ll && s*Lv > Lk && s*Lv > Lm && s*Lv > Lf && s*Lv > Lp && s*Lv > Lz && s*Lv > Lt && s*Lv > Lw && s*Lv > Ly) {
 						rans1[i] = 'V';
-					} else if (s*Ln >= La && s*Ln >= Lr && s*Ln >= Lc && s*Ln >= Lq && s*Ln >= Le && s*Ln >= Lg && s*Ln >= Lh && s*Ln >= Li && s*Ln >= Ll && s*Ln >= Lk && s*Ln >= Lm && s*Ln >= Lf && s*Ln >= Lp && s*Ln >= Lz && s*Ln >= Lt && s*Ln >= Lw && s*Ln >= Ly && s*Ln >= Lv &&
-						s*Ld >= La && s*Ld >= Lr && s*Ld >= Lc && s*Ld >= Lq && s*Ld >= Le && s*Ld >= Lg && s*Ld >= Lh && s*Ld >= Li && s*Ld >= Ll && s*Ld >= Lk && s*Ld >= Lm && s*Ld >= Lf && s*Ld >= Lp && s*Ld >= Lz && s*Ld >= Lt && s*Ld >= Lw && s*Ld >= Ly && s*Ld >= Lv) {
+					} else if (s*Ln > La && s*Ln > Lr && s*Ln > Lc && s*Ln > Lq && s*Ln > Le && s*Ln > Lg && s*Ln > Lh && s*Ln > Li && s*Ln > Ll && s*Ln > Lk && s*Ln > Lm && s*Ln > Lf && s*Ln > Lp && s*Ln > Lz && s*Ln > Lt && s*Ln > Lw && s*Ln > Ly && s*Ln > Lv &&
+						s*Ld > La && s*Ld > Lr && s*Ld > Lc && s*Ld > Lq && s*Ld > Le && s*Ld > Lg && s*Ld > Lh && s*Ld > Li && s*Ld > Ll && s*Ld > Lk && s*Ld > Lm && s*Ld > Lf && s*Ld > Lp && s*Ld > Lz && s*Ld > Lt && s*Ld > Lw && s*Ld > Ly && s*Ld > Lv) {
 						rans1[i] = 'B';
-					} else if (s*Lq >= La && s*Lq >= Lr && s*Lq >= Ln && s*Lq >= Ld && s*Lq >= Lc && s*Lq >= Lg && s*Lq >= Lh && s*Lq >= Li && s*Lq >= Ll && s*Lq >= Lk && s*Lq >= Lm && s*Lq >= Lf && s*Lq >= Lp && s*Lq >= Lz && s*Lq >= Lt && s*Lq >= Lw && s*Lq >= Ly && s*Lq >= Lv &&
-						s*Le >= La && s*Le >= Lr && s*Le >= Ln && s*Le >= Ld && s*Le >= Lc && s*Le >= Lg && s*Le >= Lh && s*Le >= Li && s*Le >= Ll && s*Le >= Lk && s*Le >= Lm && s*Le >= Lf && s*Le >= Lp && s*Le >= Lz && s*Le >= Lt && s*Le >= Lw && s*Le >= Ly && s*Le >= Lv) {
+					} else if (s*Lq > La && s*Lq > Lr && s*Lq > Ln && s*Lq > Ld && s*Lq > Lc && s*Lq > Lg && s*Lq > Lh && s*Lq > Li && s*Lq > Ll && s*Lq > Lk && s*Lq > Lm && s*Lq > Lf && s*Lq > Lp && s*Lq > Lz && s*Lq > Lt && s*Lq > Lw && s*Lq > Ly && s*Lq > Lv &&
+						s*Le > La && s*Le > Lr && s*Le > Ln && s*Le > Ld && s*Le > Lc && s*Le > Lg && s*Le > Lh && s*Le > Li && s*Le > Ll && s*Le > Lk && s*Le > Lm && s*Le > Lf && s*Le > Lp && s*Le > Lz && s*Le > Lt && s*Le > Lw && s*Le > Ly && s*Le > Lv) {
 						rans1[i] = 'Z';
-					} else if (s*Li >= La && s*Li >= Lr && s*Li >= Ln && s*Li >= Ld && s*Li >= Lc && s*Li >= Lq && s*Li >= Le && s*Li >= Lg && s*Li >= Lh && s*Li >= Lk && s*Li >= Lm && s*Li >= Lf && s*Li >= Lp && s*Li >= Lz && s*Li >= Lt && s*Li >= Lw && s*Li >= Ly && s*Li >= Lv &&
-						s*Ll >= La && s*Ll >= Lr && s*Ll >= Ln && s*Ll >= Ld && s*Ll >= Lc && s*Ll >= Lq && s*Ll >= Le && s*Ll >= Lg && s*Ll >= Lh && s*Ll >= Lk && s*Ll >= Lm && s*Ll >= Lf && s*Ll >= Lp && s*Ll >= Lz && s*Ll >= Lt && s*Ll >= Lw && s*Ll >= Ly && s*Ll >= Lv) {
+					} else if (s*Li > La && s*Li > Lr && s*Li > Ln && s*Li > Ld && s*Li > Lc && s*Li > Lq && s*Li > Le && s*Li > Lg && s*Li > Lh && s*Li > Lk && s*Li > Lm && s*Li > Lf && s*Li > Lp && s*Li > Lz && s*Li > Lt && s*Li > Lw && s*Li > Ly && s*Li > Lv &&
+						s*Ll > La && s*Ll > Lr && s*Ll > Ln && s*Ll > Ld && s*Ll > Lc && s*Ll > Lq && s*Ll > Le && s*Ll > Lg && s*Ll > Lh && s*Ll > Lk && s*Ll > Lm && s*Ll > Lf && s*Ll > Lp && s*Ll > Lz && s*Ll > Lt && s*Ll > Lw && s*Ll > Ly && s*Ll > Lv) {
 						rans1[i] = 'J';
-					} else {
+					} else if (La > 0 || Lr > 0 || Ln > 0 || Ld > 0 || Lc > 0 || Lq > 0 || Le > 0 || Lg > 0 || Lh > 0 || Li > 0 || Ll > 0 || Lk > 0 || Lm > 0 || Lf > 0 || Lp > 0 || Lz > 0 || Lt > 0 || Lw > 0 || Ly > 0 || Lv > 0) {
 						rans1[i] = 'X';
+					} else if (L > 0) { // gap
+						rans1[i] = '-';
+					} else { // missing position
+						rans1[i] = '.';
 					}
 				}
 				rans1[i] = '\0'; // end (null terminate) the string
 				SET_STRING_ELT(ans1, j, mkChar(rans1));
-				Free(rans1);
+				R_Free(rans1);
 			}
 		} else {
 			char TU = t == 1 ? 'T' : 'U';
 			for (j = 0; j < l1; j++) {
-				char *rans1 = Calloc(maxWidth + 1, char);
+				char *rans1 = R_Calloc(maxWidth + 1, char);
 				for (i = 0; i < maxWidth; i++) {
 					double La = *(m) * node[j*maxWidth*s1 + i*s1 + 0];
 					double Lc = *(m + 1) * node[j*maxWidth*s1 + i*s1 + 1];
 					double Lg = *(m + 2) * node[j*maxWidth*s1 + i*s1 + 2];
 					double Lt = *(m + 3) * node[j*maxWidth*s1 + i*s1 + 3];
 					double Li = *(m + 4) * node[j*maxWidth*s1 + i*s1 + 4];
-					if (s*Li >= La && s*Li >= Lc && s*Li >= Lg && s*Li >= Lt) {
+					if (s*Li > La && s*Li > Lc && s*Li > Lg && s*Li > Lt) {
 						rans1[i] = '-';
 					} else if (s*La > Lc && s*La > Lg && s*La > Lt) {
 						rans1[i] = 'A';
@@ -1751,13 +2070,17 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 						rans1[i] = 'D';
 					} else if (s*Lc > La && s*Lg > La && s*Lt > La) { // B = C or G or T
 						rans1[i] = 'B';
-					} else { // N = A or C or G or T
+					} else if (La > 0 || Lc > 0 || Lg > 0 || Lt > 0) { // N = A or C or G or T
 						rans1[i] = 'N';
+					} else if (Li > 0) { // gap
+						rans1[i] = '-';
+					} else { // missing position
+						rans1[i] = '.';
 					}
 				}
 				rans1[i] = '\0'; // end (null terminate) the string
 				SET_STRING_ELT(ans1, j, mkChar(rans1));
-				Free(rans1);
+				R_Free(rans1);
 			}
 		}
 		free(node);
@@ -1787,7 +2110,7 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 		}
 	}
 	
-	Free(sumL);
+	R_Free(sumL);
 	UNPROTECT(1);
 	
 	return ans;

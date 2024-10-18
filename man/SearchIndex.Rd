@@ -14,11 +14,14 @@ SearchIndex(pattern,
             perPatternLimit=0,
             perSubjectLimit=1,
             scoreOnly = FALSE,
-            sepCost = -0.4,
-            gapCost = -2.5,
+            sepCost = -0.9,
+            gapCost = -3,
             maskRepeats = TRUE,
             maskLCRs = TRUE,
             dropScore = -10,
+            correctBackground = TRUE,
+            iterations = 0,
+            threshold = 1e-6,
             processors = 1,
             verbose = TRUE)
 }
@@ -59,6 +62,15 @@ Logical indicating whether to mask low complexity regions when searching for hit
   \item{dropScore}{
 Numeric giving the decrease from maximum score required to stop extending k-mer matches.  Only applicable when \code{subject} is not \code{NULL}.  Values closer to zero will increase speed, potentially at the expense of sensitivity.
 }
+  \item{correctBackground}{
+Logical determining whether to correct the substitution matrix for the background distribution of letter frequencies on a per \code{pattern} basis.  Alternatively, a positive numeric dictating the degree of compositional adjustment, with larger values resulting in less adjustment.  The default (\code{TRUE}) uses an empirically determined value of \code{1e4}.
+}
+  \item{iterations}{
+The number of profile-based iterations to perform, or \code{0} (the default) for none.  Additional iterations make use of previous homologous matches to detect more remote homologs, but each iteration increases the search time.
+}
+  \item{threshold}{
+Numeric controlling profile inclusion when \code{iterations} is non-zero.  Should be a positive number representing the score probability required for matches to be included in the profile.  Values closer to zero will generate less diverse profiles when iterating.
+}
   \item{processors}{
 The number of processors to use, or \code{NULL} to automatically detect and use all available processors.
 }
@@ -67,9 +79,9 @@ Logical indicating whether to display progress.
 }
 }
 \details{
-The \code{invertedIndex} is searched for all umasked k-mers shared by \code{pattern}, and the set of matches meeting the \code{minScore} is returned.  By default, \code{SearchIndex} returns the top hundred scoring match per \code{subject} (target) sequence (above \code{minScore}), but it is also possible to set (or remove) a limit on the number of pattern hits (\code{perPatternLimit}) or subject hits (\code{perSubjectLimit}) returned for each \code{pattern} (query) sequence.  A \code{data.frame} is returned with (by default) or without the \code{Position}(s) of matches, depending on the value of \code{scoreOnly}.
+The \code{invertedIndex} is searched for all umasked k-mers shared with \code{pattern}, and the set of matches meeting the \code{minScore} is returned.  By default, \code{SearchIndex} returns the top hundred scoring matches per \code{subject} (target) sequence (above \code{minScore}), but it is also possible to set (or remove) a limit on the number of pattern hits (\code{perPatternLimit}) or subject hits (\code{perSubjectLimit}) output for each \code{pattern} (query) sequence.  A \code{data.frame} is returned with (by default) or without the \code{Position}(s) of matches, depending on the value of \code{scoreOnly}.
 
-If the set of \code{subject} sequences is provided (i.e., not \code{NULL}), then k-mer matches are extended to increase search sensitivity.  Extension proceeds to the left and right of each k-mer match until another match is encountered or the score falls below \code{dropScore}.  This can decrease search speed, depending on \code{dropScore}, but may help to find more distant matches.  The \code{Score} of any hits is defined by their log-odds regardless of whether \code{subject} is provided.
+If the set of \code{subject} sequences is provided (i.e., not \code{NULL}), then k-mer matches are extended to increase search sensitivity.  Extension proceeds to the left and right of each k-mer match until another match is encountered or the score falls below \code{dropScore}.  This can decrease search speed, depending on \code{dropScore}, but may help to find more distant matches.  Similarly, increasing the number of \code{iterations} can improve homolog detection at the expense of search speed.  Each additional iteration will build a position-specific profile from significant matches and use this profile to find new hits.  The \code{Score} of any hits is defined by their log-odds with respect to the \code{pattern} regardless of whether \code{subject} is provided or \code{iterations} is above zero.
 }
 \value{
 A \code{data.frame} is returned with dimensions with columns \code{Pattern}, \code{Subject}, \code{Score}, and (optionally) \code{Position}.  The \code{Pattern} is the index of the sequence in \code{pattern} and the \code{Subject} is the index of the sequence in the set used to build the \code{invertedIndex}.  Each row contains a hit with \code{Score} meeting the \code{minScore}.  If \code{scoreOnly} is \code{FALSE} (the default), the \code{Position} column contains a list of matrices with four rows: start/end positions of k-mer hits in the \code{Pattern} and start/end positions of k-mer hits in the \code{Subject}.  The \code{data.frame} will always be order by ascending \code{Pattern} index.
@@ -112,6 +124,11 @@ dim(allhits) # number of hits
 
 # include the target sequences to improve sensitivity (but slower)
 morehits <- SearchIndex(query, index, target)
+head(morehits)
+dim(morehits) # number of hits
+
+# further improve sensitivity with profile-based iterations
+morehits <- SearchIndex(query, index, target, iterations=1)
 head(morehits)
 dim(morehits) # number of hits
 }

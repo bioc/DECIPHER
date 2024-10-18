@@ -171,17 +171,17 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 	for (s = 0; s < f_length; s++) { // sequence
 		x_s = get_elt_from_XStringSet_holder(&f_set, s); // 1st reading frame
 		m = x_s.length;
-		int *f1 = Calloc(m, int); // initialized to zero
+		int *f1 = R_Calloc(m, int); // initialized to zero
 		assignNumsAA(&x_s, f1);
 		x_s = get_elt_from_XStringSet_holder(&f_set, s + f_length); // 2nd reading frame
 		if (x_s.length < m)
 			m = x_s.length;
-		int *f2 = Calloc(x_s.length, int); // initialized to zero
+		int *f2 = R_Calloc(x_s.length, int); // initialized to zero
 		assignNumsAA(&x_s, f2);
 		x_s = get_elt_from_XStringSet_holder(&f_set, s + 2*f_length); // 3rd reading frame
 		if (x_s.length < m)
 			m = x_s.length;
-		int *f3 = Calloc(x_s.length, int); // initialized to zero
+		int *f3 = R_Calloc(x_s.length, int); // initialized to zero
 		assignNumsAA(&x_s, f3);
 		
 		bestD = 1000; // initialize to large distance
@@ -189,7 +189,7 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 		for (o = 0; o < mC; o++) { // order of reference translations
 			x_s = get_elt_from_XStringSet_holder(&t_set, *(ind + o*f_length + s) - 1);
 			n = x_s.length;
-			int *ref = Calloc(n, int); // initialized to zero
+			int *ref = R_Calloc(n, int); // initialized to zero
 			assignNumsAA(&x_s, ref);
 			
 			r = m + 1; // number of rows
@@ -197,11 +197,11 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 			rc = r*c; // length of each matrix
 			
 			// initialize an array of scores
-			double *A = Calloc(rc*3, double); // initialized to zero
+			double *A = R_Calloc(rc*3, double); // initialized to zero
 			// initialize an array of arrows
-			int *B = Calloc(rc*3, int); // initialized to zero
+			int *B = R_Calloc(rc*3, int); // initialized to zero
 			// initialize an array of shifts
-			int *C = Calloc(rc*3, int); // initialized to zero
+			int *C = R_Calloc(rc*3, int); // initialized to zero
 			memset(C, -1, rc*3 * sizeof(int)); // initialize to -1
 			
 			// indexing:  A[k*rc + j*r + i] == A[i, j, k]
@@ -308,8 +308,8 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 			k = K;
 			
 			// traceback
-			int *ins = Calloc(1000, int); // initialized to zero
-			int *dels = Calloc(1000, int); // initialized to zero
+			int *ins = R_Calloc(1000, int); // initialized to zero
+			int *dels = R_Calloc(1000, int); // initialized to zero
 			nIns = 0;
 			nDels = 0;
 			pm = 0;
@@ -388,12 +388,12 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 			
 			tempD = 1 - (double)pm/m;
 			if (tempD >= bestD) { // no improvement
-				Free(ref);
-				Free(A);
-				Free(B);
-				Free(C);
-				Free(ins);
-				Free(dels);
+				R_Free(ref);
+				R_Free(A);
+				R_Free(B);
+				R_Free(C);
+				R_Free(ins);
+				R_Free(dels);
 				
 				continue;
 			}
@@ -445,20 +445,20 @@ SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxCo
 			SET_VECTOR_ELT(ret_list, s, list_comp);
 			UNPROTECT(5);
 			
-			Free(ref);
-			Free(A);
-			Free(B);
-			Free(C);
-			Free(ins);
-			Free(dels);
+			R_Free(ref);
+			R_Free(A);
+			R_Free(B);
+			R_Free(C);
+			R_Free(ins);
+			R_Free(dels);
 			
 			if (*(dist) <= aD)
 				break;
 		}
 		
-		Free(f1);
-		Free(f2);
-		Free(f3);
+		R_Free(f1);
+		R_Free(f2);
+		R_Free(f3);
 		
 		if (v) {
 			*rPercentComplete = floor(100*(double)(s + 1)/f_length);

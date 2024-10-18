@@ -728,3 +728,46 @@ plot.Synteny <- function(x,
 	
 	invisible(NULL)
 }
+
+as.dist.Synteny <- function(m, diag=FALSE, upper=FALSE) {
+	
+	n <- nrow(m)
+	dist <- numeric(n*(n - 1)/2)
+	
+	i <- 2L
+	while (i <= n) {
+		j <- 1L
+		while (j < i) {
+			if (nrow(m[i, j][[1]]) > 0L) {
+				l1 <- tapply(m[j, i][[1]][, "width"]/m[[j, j]][m[j, i][[1]][, "index1"]],
+					m[j, i][[1]][, "index1"],
+					sum)
+				l2 <- tapply(m[j, i][[1]][, "width"]/m[[i, i]][m[j, i][[1]][, "index2"]],
+					m[j, i][[1]][, "index2"],
+					sum)
+				l1 <- weighted.mean(l1, m[[j, j]][m[i, j][[1]][, "index1"]][as.integer(names(l1))])
+				l2 <- weighted.mean(l2, m[[i, i]][m[i, j][[1]][, "index2"]][as.integer(names(l2))])
+				k <- (2L*n - j)*(j - 1L)/2L + i - j
+				if (l1 > 1 || l2 > 1) {
+					dist[k] <- 0
+				} else if (l1 > l2) {
+					dist[k] <- 1 - l1
+				} else {
+					dist[k] <- 1 - l2
+				}
+			} else {
+				dist[k] <- NA_real_
+			}
+			j <- j + 1L
+		}
+		i <- i + 1L
+	}
+	
+	attr(dist, "Size") <- n
+	attr(dist, "Labels") <- rownames(m)
+	class(dist) <- "dist"
+	attr(dist, "Diag") <- diag
+	attr(dist, "Upper") <- upper
+	
+	dist
+}

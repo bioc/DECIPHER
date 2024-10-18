@@ -356,7 +356,7 @@ reads <- readDNAStringSet(fas3)
 head(names(reads))
 @
 
-In this case, we are only interested in unambiguous mappings, so we will compare the top two hits for each sequence. We can subtract the score for the second best hit from the score for the top hit to approximate how well a read mapped to a single location on the genome. Also, we will disable masking of the reads in the same manner as we did for the genome above.
+In this case, we are only interested in unambiguous mappings, so we will compare the top two hits for each sequence to discard multi-mapped reads. We can subtract the score for the second best hit from the score for the top hit to approximate how well a read mapped to a single location on the genome. Also, we will disable masking of the reads in the same manner as we did for the genome above.
 
 <<expr17,eval=TRUE>>=
 maps <- SearchIndex(reads,

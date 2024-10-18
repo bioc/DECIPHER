@@ -4,6 +4,7 @@
 \alias{print.Synteny}
 \alias{plot.Synteny}
 \alias{pairs.Synteny}
+\alias{as.dist.Synteny}
 \title{
 Synteny blocks and hits
 }
@@ -34,6 +35,10 @@ Syntenic blocks are DNA segments composed of conserved hits occurring in the sam
      width = 0.7,
      scaleBar = TRUE,
      \dots)
+
+\method{as.dist}{Synteny}(m,
+      diag = FALSE,
+      upper = FALSE)
 
 \method{print}{Synteny}(x,
       quote = FALSE,
@@ -86,6 +91,15 @@ Magnification of the labels.
   \item{font.labels}{
 Font of labels on the diagonal.
 }
+  \item{m}{
+An object of class \code{Synteny} to be converted into a \code{dist} object.
+}
+  \item{diag}{
+Logical determining whether to print the diagonal of the distance matrix.
+}
+  \item{upper}{
+Logical determining whether to print the upper triangle of the distance matrix.
+}
   \item{quote}{
 Logical indicating whether to print the output surrounded by quotes.
 }
@@ -102,6 +116,8 @@ Objects of class \code{Synteny} are stored as square matrices of list elements w
 The \code{pairs} method creates a scatterplot matrix from a \code{Synteny} object.  Dot plots above the diagonal show hits between identifier \emph{i} and \emph{j}, where forward hits are colored in black, and hits to the reverse strand of identifier \emph{j} are colored in red.  Plots below the diagonal show blocks of synteny colored by their score, from green (highest scoring) to blue to magenta (lowest scoring).
 
 The \code{plot} method displays a bar view of the sequences in the same order as the input object (\code{x}).  The coloring scheme of each bar is determined by the  \code{colorBy} argument, and the color palette is set by \code{colorRamp}.  When \code{colorBy} is an index, the sequences are colored according to regions of shared homology with the specified reference sequence (by default \code{1}).  If \code{colorBy} is ``neighbor'' then shared syntenic blocks are connected between neighboring sequences.  If \code{colorBy} is ``frequency'' then positions in each sequence are colored based on the degree of conservation with the other sequences.  In each case, regions that have no correspondence in the other sequence(s) are colored \code{barColor}.
+
+The \code{as.dist} method returns an object of class \code{dist} containing distances between each pair of sequences in a \code{Synteny} object. Distance is defined as one minus the hit coverage for the shorter of the two sequences in the pair.
 }
 \author{
 Erik Wright \email{eswright@pitt.edu}

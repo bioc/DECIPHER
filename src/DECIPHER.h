@@ -51,8 +51,6 @@ SEXP computeOverlap(SEXP x, SEXP y, SEXP v, SEXP wordSize, SEXP mult, SEXP entro
 
 SEXP overlap(SEXP res, SEXP widths1, SEXP widths2);
 
-SEXP cophenetic(SEXP Index1, SEXP N, SEXP D, SEXP H);
-
 // Cluster.c
 
 SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, SEXP nThreads);
@@ -74,10 +72,6 @@ SEXP expM(SEXP x, SEXP model, SEXP type);
 // DesignProbes.c
 
 SEXP designProbes(SEXP x, SEXP max_pl, SEXP min_pl, SEXP max_c, SEXP numMMs, SEXP numPs, SEXP st, SEXP en, SEXP max_ov, SEXP h_percent, SEXP min_f, SEXP max_f, SEXP minS, SEXP verbose, SEXP pBar, SEXP nThreads);
-
-// CommonGaps.c
-
-SEXP commonGaps(SEXP x);
 
 // Utils.c
 
@@ -117,13 +111,11 @@ SEXP splitPartitions(SEXP order, SEXP partition, SEXP var, SEXP minSize, SEXP mi
 
 SEXP detectCores();
 
-// ReplaceChars.c
+SEXP matchColumns(SEXP x, SEXP letters);
 
-SEXP replaceChars(SEXP x, SEXP r, SEXP t);
+SEXP hashList(SEXP x);
 
-SEXP replaceChar(SEXP x, SEXP c, SEXP r);
-
-SEXP replaceGaps(SEXP x, SEXP y, SEXP start, SEXP type);
+SEXP firstRow(SEXP x);
 
 // TerminalMismatch.c
 
@@ -181,23 +173,31 @@ SEXP intDist(SEXP x, SEXP levels, SEXP bins, SEXP maxBins, SEXP numRows, SEXP to
 
 SEXP meltPolymer(SEXP x, SEXP temps, SEXP ions, SEXP output);
 
-// InsertGaps.c
+// ManipulateXStringSet.c
 
 SEXP insertGaps(SEXP x, SEXP positions, SEXP lengths, SEXP type, SEXP nThreads);
 
-// ExpandAmbiguities.c
+SEXP commonGaps(SEXP x);
 
-SEXP expandAmbiguities(SEXP x, SEXP c);
+SEXP consolidateGaps(SEXP x, SEXP type);
 
-// RemoveGaps.c
+SEXP replaceChars(SEXP x, SEXP r, SEXP t);
+
+SEXP replaceChar(SEXP x, SEXP c, SEXP r);
+
+SEXP replaceGaps(SEXP x, SEXP y, SEXP start, SEXP type);
 
 SEXP removeCommonGaps(SEXP x, SEXP type, SEXP mask, SEXP nThreads);
 
 SEXP removeGaps(SEXP x, SEXP type, SEXP mask, SEXP nThreads);
 
+// ExpandAmbiguities.c
+
+SEXP expandAmbiguities(SEXP x, SEXP c);
+
 // PredictHEC.c
 
-SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC_MI2, SEXP output);
+SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC_MI2, SEXP output, SEXP names);
 
 // AssignIndels.c
 
@@ -207,17 +207,13 @@ SEXP all(SEXP x);
 
 SEXP any(SEXP x);
 
-// ConsolidateGaps.c
-
-SEXP consolidateGaps(SEXP x, SEXP type);
-
 // FindFrameshifts.c
 
 SEXP findFrameshifts(SEXP t, SEXP l, SEXP f, SEXP index, SEXP oindex, SEXP maxComp, SEXP go, SEXP ge, SEXP fs, SEXP minD, SEXP maxD, SEXP subMatrix, SEXP verbose, SEXP pBar);
 
 // Order.c
 
-SEXP radixOrder(SEXP x, SEXP ascending, SEXP keepNAs, SEXP keySize, SEXP nThreads);
+SEXP radixOrder(SEXP x, SEXP ascending, SEXP keepNAs, SEXP nThreads);
 
 SEXP dereplicate(SEXP x, SEXP o);
 
@@ -355,7 +351,7 @@ SEXP dist(SEXP x, SEXP nThreads);
 
 // ClusterMP.c
 
-SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEXP weights, SEXP nThreads);
+SEXP clusterMP(SEXP z, SEXP x, SEXP s, SEXP letters, SEXP scoreOnly, SEXP add, SEXP weights, SEXP nThreads);
 
 // PairwiseAlignment.c
 
@@ -365,10 +361,18 @@ SEXP alignPairs(SEXP pattern, SEXP subject, SEXP query, SEXP target, SEXP positi
 
 // Search.c
 
-SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP pattern, SEXP subject, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP limitTarget, SEXP limitQuery, SEXP verbose, SEXP pBar, SEXP nThreads);
+SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP count, SEXP location, SEXP index, SEXP positions, SEXP sepC, SEXP gapC, SEXP total, SEXP minScore, SEXP scoreOnly, SEXP pattern, SEXP subject, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP limitTarget, SEXP limitQuery, SEXP alphabet, SEXP correction, SEXP background, SEXP iterations, SEXP threshold, SEXP verbose, SEXP pBar, SEXP nThreads);
 
 SEXP countIndex(SEXP num, SEXP query, SEXP step);
 
 SEXP updateIndex(SEXP offset, SEXP query, SEXP wordSize, SEXP step, SEXP location, SEXP index, SEXP positions, SEXP count);
 
 SEXP approxFreqs(SEXP offset, SEXP freqs, SEXP count);
+
+// ClusterME.c
+
+SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP flag);
+
+SEXP rowSums(SEXP dist, SEXP n);
+
+SEXP patristic(SEXP x, SEXP y);

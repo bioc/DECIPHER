@@ -2,11 +2,12 @@
  *                  Nucleotide compression/decompression                    *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
- 
- // for OpenMP parallel processing
- #ifdef _OPENMP
- #include <omp.h>
- #endif
+
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#undef match
+#endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -520,10 +521,10 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 	int nthreads = asInteger(nThreads);
 	
 	unsigned char *p;
-	unsigned char **ptrs = Calloc(n, unsigned char *); // compressed strings
+	unsigned char **ptrs = R_Calloc(n, unsigned char *); // compressed strings
 	const char *s;
-	const char **strs = Calloc(n, const char *); // uncompressed strings
-	int *l = Calloc(n, int); // lengths
+	const char **strs = R_Calloc(n, const char *); // uncompressed strings
+	int *l = R_Calloc(n, int); // lengths
 	
 	// build a vector of thread-safe pointers
 	for (i = 0; i < n; i++) {
@@ -1334,7 +1335,7 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 		}
 	}
 	
-	Free(strs);
+	R_Free(strs);
 	
 	SEXP ret, ans;
 	PROTECT(ret = allocVector(VECSXP, n));
@@ -1362,8 +1363,8 @@ SEXP nbit(SEXP x, SEXP y, SEXP compRepeats, SEXP nThreads)
 		UNPROTECT(1); // ans
 	}
 	
-	Free(ptrs);
-	Free(l);
+	R_Free(ptrs);
+	R_Free(l);
 	UNPROTECT(1); // ret
 	
 	return ret;
@@ -1428,10 +1429,10 @@ SEXP qbit(SEXP x, SEXP y, SEXP nThreads)
 	};
 	
 	unsigned char *p;
-	unsigned char **ptrs = Calloc(n, unsigned char *); // compressed strings
+	unsigned char **ptrs = R_Calloc(n, unsigned char *); // compressed strings
 	const char *s;
-	const char **strs = Calloc(n, const char *); // uncompressed strings
-	int *l = Calloc(n, int); // lengths
+	const char **strs = R_Calloc(n, const char *); // uncompressed strings
+	int *l = R_Calloc(n, int); // lengths
 	
 	// build a vector of thread-safe pointers
 	for (i = 0; i < n; i++) {
@@ -1662,7 +1663,7 @@ SEXP qbit(SEXP x, SEXP y, SEXP nThreads)
 		}
 	}
 	
-	Free(strs);
+	R_Free(strs);
 	
 	SEXP ret, ans;
 	PROTECT(ret = allocVector(VECSXP, n));
@@ -1690,8 +1691,8 @@ SEXP qbit(SEXP x, SEXP y, SEXP nThreads)
 		UNPROTECT(1); // ans
 	}
 	
-	Free(ptrs);
-	Free(l);
+	R_Free(ptrs);
+	R_Free(l);
 	UNPROTECT(1); // ret
 	
 	return ret;
@@ -1722,10 +1723,10 @@ SEXP decompress(SEXP x, SEXP nThreads)
 	};
 	
 	char *s;
-	char **strs = Calloc(n, char *); // uncompressed strings
+	char **strs = R_Calloc(n, char *); // uncompressed strings
 	unsigned char *p;
-	unsigned char **ptrs = Calloc(n, unsigned char *); // compressed strings
-	int *l = Calloc(n, int); // lengths
+	unsigned char **ptrs = R_Calloc(n, unsigned char *); // compressed strings
+	int *l = R_Calloc(n, int); // lengths
 	
 	// build a vector of thread-safe pointers
 	for (i = 0; i < n; i++) {
@@ -2390,9 +2391,9 @@ SEXP decompress(SEXP x, SEXP nThreads)
 		}
 	}
 	
-	Free(ptrs);
-	Free(strs);
-	Free(l);
+	R_Free(ptrs);
+	R_Free(strs);
+	R_Free(l);
 	
 	UNPROTECT(1);
 	

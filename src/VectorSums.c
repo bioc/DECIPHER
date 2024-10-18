@@ -6,6 +6,7 @@
 // for OpenMP parallel processing
 #ifdef _OPENMP
 #include <omp.h>
+#undef match
 #endif
 
 /*
@@ -83,8 +84,8 @@ SEXP parallelMatch(SEXP x, SEXP y, SEXP indices, SEXP a, SEXP b, SEXP pos, SEXP 
 	int i, j, k;
 	
 	// build a vector of thread-safe pointers
-	int **ptrs = Calloc(n, int *); // sequences
-	int *size_y = Calloc(n, int); // lengths
+	int **ptrs = R_Calloc(n, int *); // sequences
+	int *size_y = R_Calloc(n, int); // lengths
 	for (i = 0; i < n; i++) {
 		ptrs[i] = INTEGER(VECTOR_ELT(y, u[i] - 1));
 		size_y[i] = length(VECTOR_ELT(y, u[i] - 1));
@@ -145,8 +146,8 @@ SEXP parallelMatch(SEXP x, SEXP y, SEXP indices, SEXP a, SEXP b, SEXP pos, SEXP 
 	}
 	#endif
 	
-	Free(ptrs);
-	Free(size_y);
+	R_Free(ptrs);
+	R_Free(size_y);
 	
 	SEXP ret_list;
 	PROTECT(ret_list = allocVector(VECSXP, 2));

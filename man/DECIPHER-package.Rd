@@ -107,8 +107,7 @@ PAM                      PAM Amino Acid Substitution Matrices
 PFASUM                   PFASUM Amino Acid Substitution Matrices
 PredictDBN               Predict RNA Secondary Structure in Dot-Bracket
                          Notation
-PredictHEC               Predict Protein Secondary Structure as Helix,
-                         Beta-Sheet, or Coil
+PredictHEC               Predict Protein Secondary Structure
 Read Dendrogram          Read a Dendrogram from a Newick Formatted File
 RemoveGaps               Remove Gap Characters in Sequences
 RESTRICTION_ENZYMES      Common Restriction Enzyme's Cut Sites

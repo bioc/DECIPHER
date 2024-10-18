@@ -2,11 +2,12 @@
  *                         Creates Distance Marix                           *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
- 
- // for OpenMP parallel processing
- #ifdef _OPENMP
- #include <omp.h>
- #endif
+
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#undef match
+#endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -511,11 +512,19 @@ SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP
 						rans[index] = distance(&x_i, &x_j, start, end, pGapLetters, width, coverage);
 					}
 					if (E > 0) {
-						if (rans[index] >= E) {
-							rans[index] = R_PosInf;
+						if (E == 1) {
+							if (rans[index] == 1) {
+								rans[index] = R_PosInf;
+							} else {
+								rans[index] = -1*log(1 - rans[index]);
+							}
 						} else {
-							rans[index] = 1 - rans[index]/E;
-							rans[index] = -E*log(rans[index]);
+							if (rans[index] >= E) {
+								rans[index] = R_PosInf;
+							} else {
+								rans[index] = 1 - rans[index]/E;
+								rans[index] = -E*log(rans[index]);
+							}
 						}
 					}
 				}
@@ -702,10 +711,10 @@ SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, S
 	int type = asInteger(t);
 	
 	int sizex = 100, sizey = 100;
-	int *nx = Calloc(sizex, int); // number of gaps in x
-	int *px = Calloc(sizex, int); // position of gaps in x
-	int *ny = Calloc(sizey, int); // number of gaps in y
-	int *py = Calloc(sizey, int); // position of gaps in y
+	int *nx = R_Calloc(sizex, int); // number of gaps in x
+	int *px = R_Calloc(sizex, int); // position of gaps in x
+	int *ny = R_Calloc(sizey, int); // number of gaps in y
+	int *py = R_Calloc(sizey, int); // position of gaps in y
 	
 	int i = sx - 1, j = sy - 1; // position in x or y
 	int cx = 0, cy = 0; // number of sites
@@ -753,8 +762,8 @@ SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, S
 				
 				if (gx >= (sizex - 1)) {
 					sizex += 100;
-					nx = Realloc(nx, sizex, int);
-					px = Realloc(px, sizex, int);
+					nx = R_Realloc(nx, sizex, int);
+					px = R_Realloc(px, sizex, int);
 				}
 				
 				nx[gx] = 1;
@@ -771,8 +780,8 @@ SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, S
 				
 				if (gy >= (sizey - 1)) {
 					sizey += 100;
-					ny = Realloc(ny, sizey, int);
-					py = Realloc(py, sizey, int);
+					ny = R_Realloc(ny, sizey, int);
+					py = R_Realloc(py, sizey, int);
 				}
 				
 				ny[gy] = 1;
@@ -863,10 +872,10 @@ SEXP firstSeqsPosEqual(SEXP x, SEXP y, SEXP start_x, SEXP end_x, SEXP start_y, S
 		SET_VECTOR_ELT(ret_list, 3, ans);
 	}
 	
-	Free(nx);
-	Free(px);
-	Free(ny);
-	Free(py);
+	R_Free(nx);
+	R_Free(px);
+	R_Free(ny);
+	R_Free(py);
 	
 	if (cx == cy) { // same number of sites
 		UNPROTECT(5);
@@ -1486,43 +1495,4 @@ SEXP overlap(SEXP res, SEXP widths1, SEXP widths2)
 	UNPROTECT(1);
 	
 	return ans;
-}
-
-// in-place addition of cophenetic distances
-SEXP cophenetic(SEXP Index1, SEXP N, SEXP D, SEXP H)
-{
-	int i, j, val;
-	int *I = INTEGER(Index1);
-	int l1 = length(Index1);
-	int n = asInteger(N);
-	double *d = REAL(D);
-	double h = asReal(H);
-	
-	char *t = Calloc(n, char);
-	for (i = 0; i < l1; i++)
-		t[I[i] - 1] = 1;
-	int l2 = n;
-	for (i = 0; i < n; i++)
-		if (t[i])
-			l2--;
-	int *J = Calloc(l2, int);
-	j = 0;
-	for (i = 0; i < n; i++)
-		if (!t[i])
-			J[j++] = i + 1;
-	Free(t);
-	
-	for (i = 0; i < l1; i++) {
-		for (j = 0; j < l2; j++) {
-			if (I[i] < J[j]) {
-				val = n*(I[i] - 1) - I[i]*(I[i] - 1)/2 + J[j] - I[i] - 1;
-			} else {
-				val = n*(J[j] - 1) - J[j]*(J[j] - 1)/2 + I[i] - J[j] - 1;
-			}
-			d[val] += h;
-		}
-	}
-	Free(J);
-	
-	return D;
 }

@@ -6,6 +6,7 @@
 // for OpenMP parallel processing
 #ifdef _OPENMP
 #include <omp.h>
+#undef match
 #endif
 
 /*
@@ -153,9 +154,9 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 	int aO = asInteger(allowOverlap);
 	
 	// initialize an array of sep multipliers
-	double *SEPS = Calloc(maxS + 1, double); // initialized to zero
+	double *SEPS = R_Calloc(maxS + 1, double); // initialized to zero
 	// initialize an array of gap multipliers
-	double *GAPS = Calloc(maxG + 1, double); // initialized to zero
+	double *GAPS = R_Calloc(maxG + 1, double); // initialized to zero
 	for (i = 1; i <= maxS; i++)
 		SEPS[i] = pow(i, sepP)*sepC;
 	for (i = 1; i <= maxG; i++)
@@ -170,13 +171,13 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 	double temp, score;
 	
 	// initialize an array of activities
-	int *A = Calloc(l, int); // initialized to zero
+	int *A = R_Calloc(l, int); // initialized to zero
 	// initialize an array of scores
-	double *S = Calloc(l, double); // initialized to zero
+	double *S = R_Calloc(l, double); // initialized to zero
 	// initialize an array of return indicies
-	int *R = Calloc(l, int); // initialized to zero
+	int *R = R_Calloc(l, int); // initialized to zero
 	// initialize an array of origin indices
-	int *O = Calloc(l, int); // initialized to zero
+	int *O = R_Calloc(l, int); // initialized to zero
 	
 	while (i < l || j < (l - 1)) {
 		if (i < l &&
@@ -319,16 +320,16 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 	int *p;
 	int n, min, overlap;
 	int size = 1000;
-	int **ptrs = Calloc(size, int *); // chains
-	int *lens = Calloc(size, int); // length of each chain
-	double *scores = Calloc(size, double); // score of each chain
+	int **ptrs = R_Calloc(size, int *); // chains
+	int *lens = R_Calloc(size, int); // length of each chain
+	double *scores = R_Calloc(size, double); // score of each chain
 	// start and end of the rectangle encompassing each chain
-	int *rectXS = Calloc(size, int);
-	int *rectXE = Calloc(size, int);
-	int *rectYS = Calloc(size, int);
-	int *rectYE = Calloc(size, int);
-	int *rectXI = Calloc(size, int);
-	int *rectYI = Calloc(size, int);
+	int *rectXS = R_Calloc(size, int);
+	int *rectXE = R_Calloc(size, int);
+	int *rectYS = R_Calloc(size, int);
+	int *rectYE = R_Calloc(size, int);
+	int *rectXI = R_Calloc(size, int);
+	int *rectYI = R_Calloc(size, int);
 	
 	for (i = 0; i < l; i++)
 		A[i] = 1; // re-activate all
@@ -539,7 +540,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 			}
 			
 			if (merge) {
-				ptrs[minX] = Realloc(ptrs[minX], j + lens[minX], int);
+				ptrs[minX] = R_Realloc(ptrs[minX], j + lens[minX], int);
 				p = ptrs[minX];
 				
 				if (upX) { // new chain is last
@@ -582,18 +583,18 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 			
 			if (count >= size) {
 				size += 1000;
-				ptrs = Realloc(ptrs, size, int *);
-				lens = Realloc(lens, size, int);
-				scores = Realloc(scores, size, double);
-				rectXS = Realloc(rectXS, size, int);
-				rectXE = Realloc(rectXE, size, int);
-				rectYS = Realloc(rectYS, size, int);
-				rectYE = Realloc(rectYE, size, int);
-				rectXI = Realloc(rectXI, size, int);
-				rectYI = Realloc(rectYI, size, int);
+				ptrs = R_Realloc(ptrs, size, int *);
+				lens = R_Realloc(lens, size, int);
+				scores = R_Realloc(scores, size, double);
+				rectXS = R_Realloc(rectXS, size, int);
+				rectXE = R_Realloc(rectXE, size, int);
+				rectYS = R_Realloc(rectYS, size, int);
+				rectYE = R_Realloc(rectYE, size, int);
+				rectXI = R_Realloc(rectXI, size, int);
+				rectYI = R_Realloc(rectYI, size, int);
 			}
 			
-			ptrs[count] = Calloc(j, int);
+			ptrs[count] = R_Calloc(j, int);
 			lens[count] = j;
 			p = ptrs[count];
 			
@@ -617,18 +618,18 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 		}
 	}
 	
-	Free(SEPS);
-	Free(GAPS);
-	Free(A);
-	Free(S);
-	Free(R);
-	Free(O);
-	Free(rectXS);
-	Free(rectXE);
-	Free(rectYS);
-	Free(rectYE);
-	Free(rectXI);
-	Free(rectYI);
+	R_Free(SEPS);
+	R_Free(GAPS);
+	R_Free(A);
+	R_Free(S);
+	R_Free(R);
+	R_Free(O);
+	R_Free(rectXS);
+	R_Free(rectXE);
+	R_Free(rectYS);
+	R_Free(rectYE);
+	R_Free(rectXI);
+	R_Free(rectYI);
 	
 	SEXP ret, chains, chain, cs;
 	int *pchain;
@@ -644,7 +645,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 		for (j = 0; j < lens[i]; j++)
 			pchain[j] = p[j] + 1;
 		
-		Free(p);
+		R_Free(p);
 		
 		SET_VECTOR_ELT(chains, i, chain);
 		UNPROTECT(1);
@@ -652,9 +653,9 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 		pcs[i] = scores[i] - cost; // apply cost for first search
 	}
 	
-	Free(ptrs);
-	Free(lens);
-	Free(scores);
+	R_Free(ptrs);
+	R_Free(lens);
+	R_Free(scores);
 	
 	PROTECT(ret = allocVector(VECSXP, 2));
 	SET_VECTOR_ELT(ret, 0, chains);

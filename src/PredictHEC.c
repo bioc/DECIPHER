@@ -1,5 +1,5 @@
 /****************************************************************************
- *               Predicts 3 State Secondary Protein Structure               *
+ *                   Predicts Protein Secondary Structure                   *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
 
@@ -29,23 +29,26 @@
 // DECIPHER header file
 #include "DECIPHER.h"
 
-SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC_MI2, SEXP output)
+SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC_MI2, SEXP output, SEXP names)
 {
-	int i, j, k = 0, l, k1, k2, p1, p2;
+	int i, j, k, l, k1, k2, p1, p2, c = 0;
 	int wS1 = INTEGER(windowSize)[0];
 	int wS2 = INTEGER(windowSize)[1];
 	double f1 = (2*(double)wS1 - 1)/(2*(double)wS1 + 1); // fraction of each single
 	double f2 = 2/(2*(double)wS2 + 1); // fraction of each double
-	double *bg = REAL(background);
+	double *bg = REAL(background); // background scores
 	int w = length(background);
-	double *MI1 = REAL(HEC_MI1); // [AA, pos, HEC]
-	int total1 = length(HEC_MI1)/60; // maximum window
+	double *MI1 = REAL(HEC_MI1); // [AA, pos, state]
+	double *MI2 = REAL(HEC_MI2); // [AA1, AA2, pos1, pos2, state]
+	const char *nms = CHAR(STRING_ELT(names, 0)); // state names
+	int N = length(STRING_ELT(names, 0)); // number of states
+	int total1 = length(HEC_MI1)/(20*N); // maximum window
 	int center1 = (total1 - 1)/2; // center of window
-	double *MI2 = REAL(HEC_MI2); // [AA1, AA2, pos1, pos2, HEC]
-	int total2 = (int)sqrt(length(HEC_MI2)/1200); // maximum window
+	int total2 = (int)sqrt(length(HEC_MI2)/(400*N)); // maximum window
 	int center2 = (total2 - 1)/2; // center of window
 	int o = asInteger(output);
-	double H, E, C, sum, *rans;
+	
+	double HEC[N], temp, *rans;
 	char *states;
 	
 	XStringSet_holder x_set;
@@ -56,14 +59,14 @@ SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC
 	SEXP ret, ans;
 	if (o == 1) { // return a character vector
 		PROTECT(ret = allocVector(STRSXP, x_length));
-	} else { // return a list of matrices (x_i.length x 3)
+	} else { // return a list of matrices (x_i.length x N)
 		PROTECT(ret = allocVector(VECSXP, x_length));
 	}
 	
 	for (i = 0; i < x_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
 		
-		int *residues = Calloc(x_i.length, int);
+		int *residues = R_Calloc(x_i.length, int);
 		l = 0;
 		for (j = 0; j < x_i.length; j++) {
 			switch (x_i.ptr[j]) {
@@ -188,16 +191,17 @@ SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC
 		}
 		
 		if (o == 1) {
-			states = Calloc(l + 1, char); // last position is for null terminating
+			states = R_Calloc(l + 1, char); // last position is for null terminating
 		} else  {
-			PROTECT(ans = allocMatrix(REALSXP, 3, l)); // [state][pos]
+			PROTECT(ans = allocMatrix(REALSXP, N, l)); // [state][pos]
 			rans = REAL(ans);
 		}
 		
 		for (j = 0; j < l; j++) {
-			H = *(bg + k);
-			E = *(bg + k + 1);
-			C = *(bg + k + 2);
+			for (k = 0; k < N; k++)
+				HEC[k] = *(bg + c++);
+			if (c == w)
+				c = 0; // recycle background
 			
 			for (k1 = -1*wS1; k1 <= wS1; k1++) {
 				p1 = j + k1;
@@ -208,9 +212,8 @@ SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC
 				
 				if (residues[p1] < 20) {
 					// add mutual information from single residues
-					H -= f1 * *(MI1 + residues[p1] + 20*(center1 + k1));
-					E -= f1 * *(MI1 + residues[p1] + 20*(center1 + k1) + 20*total1);
-					C -= f1 * *(MI1 + residues[p1] + 20*(center1 + k1) + 40*total1);
+					for (k = 0; k < N; k++)
+						HEC[k] -= f1 * *(MI1 + residues[p1] + 20*(center1 + k1) + 20*k*total1);
 				}
 			}
 			
@@ -233,50 +236,45 @@ SEXP predictHEC(SEXP x, SEXP windowSize, SEXP background, SEXP HEC_MI1, SEXP HEC
 					
 					if (residues[p2] < 20) {
 						// add mutual information from pairs of residues
-						H += f2 * *(MI2 + residues[p1] + 20*residues[p2] + 400*(center2 + k1) + 400*total2*(center2 + k2));
-						E += f2 * *(MI2 + residues[p1] + 20*residues[p2] + 400*(center2 + k1) + 400*total2*(center2 + k2) + 400*total2*total2);
-						C += f2 * *(MI2 + residues[p1] + 20*residues[p2] + 400*(center2 + k1) + 400*total2*(center2 + k2) + 800*total2*total2);
+						for (k = 0; k < N; k++)
+							HEC[k] += f2 * *(MI2 + residues[p1] + 20*residues[p2] + 400*(center2 + k1) + 400*total2*(center2 + k2) + 400*k*total2*total2);
 					}
 				}
 			}
 			
 			if (o == 1) { // states
-				if (H > E && H > C) {
-					states[j] = 'H';
-				} else if (E > C) {
-					states[j] = 'E';
-				} else {
-					states[j] = 'C';
+				temp = HEC[0];
+				states[j] = nms[0];
+				for (k = 0; k < N; k++) {
+					if (HEC[k] > temp) {
+						temp = HEC[k];
+						states[j] = nms[k];
+					}
 				}
 			} else if (o == 2) { // log-odds scores
-				*(rans + 3*j) = H;
-				*(rans + 3*j + 1) = E;
-				*(rans + 3*j + 2) = C;
+				for (k = 0; k < N; k++)
+					*(rans + N*j + k) = HEC[k];
 			} else { // normalized probabilities
-				H = exp(H)/3;
-				E = exp(E)/3;
-				C = exp(C)/3;
-				sum = H + E + C;
-				*(rans + 3*j) = H/sum;
-				*(rans + 3*j + 1) = E/sum;
-				*(rans + 3*j + 2) = C/sum;
+				temp = 0;
+				for (k = 0; k < N; k++) {
+					HEC[k] = exp(HEC[k])/N;
+					temp += HEC[k];
+				}
+				for (k = 0; k < N; k++)
+					*(rans + N*j + k) = HEC[k]/temp;
 			}
 		}
-		
-		k += 3;
-		if (k == w)
-			k = 0; // recycle background
 		
 		if (o == 1) {
 			states[l] = '\0'; // end (null terminate) the string
 			SET_STRING_ELT(ret, i, mkChar(states));
-			Free(states);
+			R_Free(states);
 		} else {
 			SET_VECTOR_ELT(ret, i, ans);
 			UNPROTECT(1); // ans
 		}
 		
-		Free(residues);
+		R_Free(residues);
 	}
 	
 	UNPROTECT(1);

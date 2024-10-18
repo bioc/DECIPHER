@@ -2,11 +2,12 @@
  *                        Cluster Maximum Parsimony                         *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
- 
- // for OpenMP parallel processing
- #ifdef _OPENMP
- #include <omp.h>
- #endif
+
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#undef match
+#endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -24,14 +25,18 @@
 /* for R_CheckUserInterrupt */
 #include <R_ext/Utils.h>
 
-/* for Calloc/Free */
-#include <R_ext/RS.h>
-
 // for calloc/free
 #include <stdlib.h>
 
 // DECIPHER header file
 #include "DECIPHER.h"
+
+/*
+ * Biostrings_interface.h is needed for the DNAencode(), get_XString_asRoSeq(),
+ * init_match_reporting(), report_match() and reported_matches_asSEXP()
+ * protoypes, and for the COUNT_MRMODE and START_MRMODE constant symbols.
+ */
+#include "Biostrings_interface.h"
 
 static void allStates(double *R, int *P, double *S, int c, int k0, int o0, int k1, int o1, int k2, int o2, int scoreOnly)
 {
@@ -41,7 +46,7 @@ static void allStates(double *R, int *P, double *S, int c, int k0, int o0, int k
 	double *R1 = R + k1*3*c + o1;
 	double *R2 = R + k2*3*c + o2;
 	
-	if (scoreOnly) {
+	if (scoreOnly == 1) {
 		for (i = 0; i < c; i++) {
 			min1 = R_PosInf;
 			min2 = R_PosInf;
@@ -59,7 +64,7 @@ static void allStates(double *R, int *P, double *S, int c, int k0, int o0, int k
 					*(R0 + i) += min2;
 			} else if (min2 != R_PosInf) {
 				*(R0 + i) = min2;
-			} // else already R_PosInf
+			} // else R0 already R_PosInf
 		}
 	} else {
 		for (i = 0; i < c; i++) {
@@ -81,47 +86,61 @@ static void allStates(double *R, int *P, double *S, int c, int k0, int o0, int k
 			}
 			if (min1 != R_PosInf) {
 				*(R0 + i) = min1;
-				if (min2 != R_PosInf)
+				*(P + k1*2*c + o1 + i) = w1 + 1;
+				if (min2 != R_PosInf) {
 					*(R0 + i) += min2;
+					*(P + k2*2*c + o2 + i) = w2 + 1;
+				}
 			} else if (min2 != R_PosInf) {
 				*(R0 + i) = min2;
-			} // else already R_PosInf
-			*(P + k1*2*c + o1 + i) = w1 + 1;
-			*(P + k2*2*c + o2 + i) = w2 + 1;
+				*(P + k2*2*c + o2 + i) = w2 + 1;
+			} // else R0 already R_PosInf and P already zero
 		}
 	}
 }
 
-SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEXP weights, SEXP nThreads)
+SEXP clusterMP(SEXP z, SEXP x, SEXP s, SEXP letters, SEXP scoreOnly, SEXP add, SEXP weights, SEXP nThreads)
 {
 	// initialize variables
 	int i, j, k, m, w;
-	int *T = INTEGER(x); // Tree Topology
-	int *Z = INTEGER(z); // Sequences
+	int *T = INTEGER(z); // Tree Topology
+	int n = length(z)/2; // number of nodes
 	double *S = REAL(s); // Substitution Matrix
-	int c = INTEGER(sizes)[0]; // Dimensions of S
-	int l = INTEGER(sizes)[1]; // Number of Sites
-	int n = INTEGER(sizes)[2]; // Number of Nodes
-	int N = INTEGER(sizes)[3]; // Number of Sequences
 	int only = asInteger(scoreOnly);
 	int a = asInteger(add); // Sequence To Add
 	int *W = INTEGER(weights);
 	int nthreads = asInteger(nThreads);
 	
+	XStringSet_holder x_set, l_set;
+	Chars_holder x_i, l_i;
+	x_set = hold_XStringSet(x);
+	x_i = get_elt_from_XStringSet_holder(&x_set, 0);
+	int l = x_i.length; // number of sites
+	l_set = hold_XStringSet(letters);
+	l_i = get_elt_from_XStringSet_holder(&l_set, 0);
+	int c = l_i.length; // number of states
+	int *lkup = (int *) malloc(256*sizeof(int)); // thread-safe on Windows
+	for (i = 0; i < 256; i++)
+		lkup[i] = NA_INTEGER;
+	for (i = 0; i < c; i++)
+		lkup[(unsigned char)l_i.ptr[i]] = i;
+	
 	double *lengths, *score;
-	int *nodes, *subM;
-	if (only == 0) {
+	int size, *nodes, *subM;
+	if (only != 1) {
 		lengths = (double *) calloc(2*n, sizeof(double)); // initialized to zero (thread-safe on Windows)
-		nodes = (int *) calloc(n*l, sizeof(int)); // initialized to zero (thread-safe on Windows)
 		subM = (int *) calloc(c*c, sizeof(int)); // initialized to zero (thread-safe on Windows)
+		if (only != 0)
+			nodes = (int *) malloc(n*l*sizeof(int)); // thread-safe on Windows
 	}
 	if (a > 0) { // insert leaf
-		score = (double *) calloc(2*n + 2, sizeof(double)); // initialized to zero (thread-safe on Windows)
+		size = 2*n + 2;
 	} else if (a < 0) { // NNIs
-		score = (double *) calloc(2*n - 1, sizeof(double)); // initialized to zero (thread-safe on Windows)
+		size = 2*n - 1;
 	} else {
-		score = (double *) calloc(1, sizeof(double)); // initialized to zero (thread-safe on Windows)
+		size = 1;
 	}
+	score = (double *) calloc(size, sizeof(double)); // initialized to zero (thread-safe on Windows)
 	
 	int *Up;
 	if (a != 0) {
@@ -137,521 +156,449 @@ SEXP clusterMP(SEXP x, SEXP z, SEXP s, SEXP sizes, SEXP scoreOnly, SEXP add, SEX
 	}
 	
 	#ifdef _OPENMP
-	#pragma omp parallel for private(i,j,k,m,w) num_threads(nthreads)
+	#pragma omp parallel num_threads(nthreads)
+	{
 	#endif
-	for (i = 0; i < l; i++) {
-		int weight;
-		if (only == 0) { // reconstruct ancestral states
-			weight = 1;
-		} else {
-			weight = *(W + i);
+		double *temp_score, *temp_lengths;
+		int *temp_subM, *temp_nodes;
+		temp_score = (double *) calloc(size, sizeof(double)); // initialized to zero (thread-safe on Windows)
+		if (only != 1) {
+			temp_lengths = (double *) calloc(2*n, sizeof(double)); // initialized to zero (thread-safe on Windows)
+			temp_subM = (int *) calloc(c*c, sizeof(int)); // initialized to zero (thread-safe on Windows)
+			temp_nodes = (int *) malloc(n*sizeof(int)); // thread-safe on Windows
 		}
-		if (weight > 0) {
-			double *R = (double *) calloc(3*c*(n + 1), sizeof(double)); // initialized to zero (thread-safe on Windows)
-			for (j = 0; j < 3*c*(n + 1); j++)
-				*(R + j) = R_PosInf;
-			int *P;
-			if (only == 0)
-				P = (int *) calloc(2*c*n, sizeof(int)); // initialized to zero (thread-safe on Windows)
-			
-			// determine states going up the tree
-			for (j = 0; j < n; j++) {
-				k = *(T + j);
-				if (k < 0) {
-					m = *(Z + i*N - k - 1);
-					if (m != NA_INTEGER)
-						*(R + j*3*c + m - 1) = 0;
-				} else {
-					allStates(R, P, S, c, j, 0, k - 1, 0, k - 1, c, only);
-				}
-				k = *(T + n + j);
-				if (k < 0) {
-					m = *(Z + i*N - k - 1);
-					if (m != NA_INTEGER)
-						*(R + j*3*c + m - 1 + c) = 0;
-				} else {
-					allStates(R, P, S, c, j, c, k - 1, 0, k - 1, c, only);
-				}
+		
+		#ifdef _OPENMP
+		#pragma omp for private(i,j,k,m,w)
+		#endif
+		for (i = 0; i < l; i++) {
+			int weight;
+			if (only == 0 || only == 1) {
+				weight = *(W + i);
+			} else { // reconstruct ancestral states
+				weight = 1;
 			}
-			allStates(R, P, S, c, n - 1, 2*c, n - 1, 0, n - 1, c, only);
-			
-			w = 0;
-			double temp[c];
-			for (j = 0; j < c; j++) {
-				temp[j] = *(R + 3*c*(n - 1) + 2*c + j);
-				if (temp[j] < temp[w])
-					w = j;
-			}
-			if (temp[w] != R_PosInf) {
-				#ifdef _OPENMP
-				#pragma omp critical
-				{
-					score[0] += weight*temp[w];
-				}
-				#else
-				score[0] += weight*temp[w];
-				#endif
-			}
-			
-			if (only == 0) {
-				if (temp[w] != R_PosInf) {
-					*(nodes + i*n + n - 1) = w + 1;
-				} else {
-					*(nodes + i*n + n - 1) = NA_INTEGER;
-				}
-				*(P + (n - 1)*2*c + w) *= -1;
-				*(P + (n - 1)*2*c + c + w) *= -1;
-			}
-			
-			// determine states going down the tree
-			if (a < 0 ||
-				(a > 0 &&
-				*(Z + i*N + a - 1) != NA_INTEGER)) {
-				j = n - 2;
-				while (j >= 0) {
-					if (Up[j] == n - 1) { // root is above
-						// pass through opposite node
-						if (*(T + Up[j]) == j + 1) {
-							for (k = 0; k < c; k++)
-								*(R + j*3*c + 2*c + k) = *(R + (n - 1)*3*c + c + k);
-						} else {
-							for (k = 0; k < c; k++)
-								*(R + j*3*c + 2*c + k) = *(R + (n - 1)*3*c + k);
-						}
-					} else {
-						if (*(T + Up[j]) == j + 1) {
-							k = c;
-						} else {
-							k = 0;
-						}
-						allStates(R, P, S, c, j, 2*c, Up[j], 2*c, Up[j], k, 1);
-					}
-					j--;
+			if (weight > 0) {
+				double *R = (double *) calloc(3*c*(n + 1), sizeof(double)); // initialized to zero (thread-safe on Windows)
+				for (j = 0; j < 3*c*(n + 1); j++)
+					*(R + j) = R_PosInf;
+				int *P;
+				if (only != 1) {
+					P = (int *) calloc(2*c*n, sizeof(int)); // initialized to zero (thread-safe on Windows)
+					if (only != 0)
+						for (j = 0; j < n; j++)
+							temp_nodes[j] = 0;
 				}
 				
-				if (a < 0) { // NNIs
-					int count = 0;
-					for (j = n - 1; j >= 0; j--) {
+				// determine states going up the tree
+				for (j = 0; j < n; j++) {
+					k = *(T + j);
+					if (k < 0) {
+						x_i = get_elt_from_XStringSet_holder(&x_set, -k - 1);
+						m = lkup[(unsigned char)x_i.ptr[i]];
+						if (m != NA_INTEGER)
+							*(R + j*3*c + m) = 0;
+					} else {
+						allStates(R, P, S, c, j, 0, k - 1, 0, k - 1, c, only);
+					}
+					k = *(T + n + j);
+					if (k < 0) {
+						x_i = get_elt_from_XStringSet_holder(&x_set, -k - 1);
+						m = lkup[(unsigned char)x_i.ptr[i]];
+						if (m != NA_INTEGER)
+							*(R + j*3*c + m + c) = 0;
+					} else {
+						allStates(R, P, S, c, j, c, k - 1, 0, k - 1, c, only);
+					}
+				}
+				allStates(R, P, S, c, n - 1, 2*c, n - 1, 0, n - 1, c, only);
+				
+				w = 0;
+				double temp[c];
+				for (j = 0; j < c; j++) {
+					temp[j] = *(R + 3*c*(n - 1) + 2*c + j);
+					if (temp[j] < temp[w])
+						w = j;
+				}
+				if (temp[w] != R_PosInf)
+					temp_score[0] += weight*temp[w];
+				
+				if (only != 1) {
+					if (temp[w] != R_PosInf) {
+						*(temp_nodes + n - 1) = w + 1;
+					} else {
+						*(temp_nodes + n - 1) = NA_INTEGER;
+					}
+					*(P + (n - 1)*2*c + w) *= -1;
+					*(P + (n - 1)*2*c + c + w) *= -1;
+				}
+				
+				// determine states going down the tree
+				if (a > 0) {
+					x_i = get_elt_from_XStringSet_holder(&x_set, a - 1);
+					m = lkup[(unsigned char)x_i.ptr[i]];
+				}
+				if (a < 0 ||
+					(a > 0 &&
+					m != NA_INTEGER)) {
+					j = n - 2;
+					while (j >= 0) {
+						if (Up[j] == n - 1) { // root is above
+							// pass through opposite node
+							if (*(T + Up[j]) == j + 1) {
+								for (k = 0; k < c; k++)
+									*(R + j*3*c + 2*c + k) = *(R + (n - 1)*3*c + c + k);
+							} else {
+								for (k = 0; k < c; k++)
+									*(R + j*3*c + 2*c + k) = *(R + (n - 1)*3*c + k);
+							}
+						} else {
+							if (*(T + Up[j]) == j + 1) {
+								k = c;
+							} else {
+								k = 0;
+							}
+							allStates(R, P, S, c, j, 2*c, Up[j], 2*c, Up[j], k, 1);
+						}
+						j--;
+					}
+					
+					if (a < 0) { // NNIs
+						int count = 0;
+						for (j = n - 1; j >= 0; j--) {
+							k = *(T + j);
+							if (k > 0) {
+								// swap left-left with right
+								count++;
+								for (m = 0; m < 3*c; m++)
+									*(R + 3*c*n + m) = R_PosInf;
+								allStates(R, P, S, c, n, 0, k - 1, c, j, c, 1);
+								allStates(R, P, S, c, n, c, k - 1, 0, n, 0, 1);
+								if (j < n - 1) {
+									allStates(R, P, S, c, n, 2*c, j, 2*c, n, c, 1);
+									w = 0;
+									for (m = 0; m < c; m++) {
+										temp[m] = *(R + 3*c*n + 2*c + m);
+										if (temp[m] < temp[w])
+											w = m;
+									}
+									if (temp[w] != R_PosInf)
+										temp_score[count] += weight*temp[w];
+								} else {
+									w = 0;
+									for (m = 0; m < c; m++) {
+										temp[m] = *(R + 3*c*n + c + m);
+										if (temp[m] < temp[w])
+											w = m;
+									}
+									if (temp[w] != R_PosInf)
+										temp_score[count] += weight*temp[w];
+								}
+								
+								// swap left-right with right
+								count++;
+								for (m = 0; m < 3*c; m++)
+									*(R + 3*c*n + m) = R_PosInf;
+								allStates(R, P, S, c, n, 0, k - 1, 0, j, c, 1);
+								allStates(R, P, S, c, n, c, k - 1, c, n, 0, 1);
+								if (j < n - 1) {
+									allStates(R, P, S, c, n, 2*c, j, 2*c, n, c, 1);
+									w = 0;
+									for (m = 0; m < c; m++) {
+										temp[m] = *(R + 3*c*n + 2*c + m);
+										if (temp[m] < temp[w])
+											w = m;
+									}
+									if (temp[w] != R_PosInf)
+										temp_score[count] += weight*temp[w];
+								} else {
+									w = 0;
+									for (m = 0; m < c; m++) {
+										temp[m] = *(R + 3*c*n + c + m);
+										if (temp[m] < temp[w])
+											w = m;
+									}
+									if (temp[w] != R_PosInf)
+										temp_score[count] += weight*temp[w];
+								}
+							}
+							
+							k = *(T + n + j);
+							if (k > 0) {
+								// swap right-left with left
+								count++;
+								for (m = 0; m < 3*c; m++)
+									*(R + 3*c*n + m) = R_PosInf;
+								allStates(R, P, S, c, n, 0, k - 1, c, j, 0, 1);
+								allStates(R, P, S, c, n, c, k - 1, 0, n, 0, 1);
+								if (j < n - 1) {
+									allStates(R, P, S, c, n, 2*c, j, 2*c, n, c, 1);
+									w = 0;
+									for (m = 0; m < c; m++) {
+										temp[m] = *(R + 3*c*n + 2*c + m);
+										if (temp[m] < temp[w])
+											w = m;
+									}
+									if (temp[w] != R_PosInf)
+										temp_score[count] += weight*temp[w];
+								} else {
+									w = 0;
+									for (m = 0; m < c; m++) {
+										temp[m] = *(R + 3*c*n + c + m);
+										if (temp[m] < temp[w])
+											w = m;
+									}
+									if (temp[w] != R_PosInf)
+										temp_score[count] += weight*temp[w];
+								}
+								
+								// swap right-right with left
+								count++;
+								for (m = 0; m < 3*c; m++)
+									*(R + 3*c*n + m) = R_PosInf;
+								allStates(R, P, S, c, n, 0, k - 1, 0, j, 0, 1);
+								allStates(R, P, S, c, n, c, k - 1, c, n, 0, 1);
+								if (j < n - 1) {
+									allStates(R, P, S, c, n, 2*c, j, 2*c, n, c, 1);
+									w = 0;
+									for (m = 0; m < c; m++) {
+										temp[m] = *(R + 3*c*n + 2*c + m);
+										if (temp[m] < temp[w])
+											w = m;
+									}
+									if (temp[w] != R_PosInf)
+										temp_score[count] += weight*temp[w];
+								} else {
+									w = 0;
+									for (m = 0; m < c; m++) {
+										temp[m] = *(R + 3*c*n + c + m);
+										if (temp[m] < temp[w])
+											w = m;
+									}
+									if (temp[w] != R_PosInf)
+										temp_score[count] += weight*temp[w];
+								}
+							}
+						}
+					} else { // insert leaf
+						// add to root
+						*(R + 3*c*n + m) = 0;
+						allStates(R, P, S, c, n, c, n - 1, 2*c, n, 0, 1);
+						w = 0;
+						for (j = 0; j < c; j++) {
+							temp[j] = *(R + 3*c*n + c + j);
+							if (temp[j] < temp[w])
+								w = j;
+						}
+						if (*(R + 3*c*n + c + w) != R_PosInf)
+							temp_score[2*n + 1] += weight*temp[w];
+						
+						for (j = 0; j < c; j++)
+							*(R + 3*c*(n - 1) + 2*c + j) = R_PosInf;
+						*(R + 3*c*(n - 1) + 2*c + m) = 0;
+						for (j = 0; j < n; j++) {
+							// add to the first column of row j
+							for (k = 0; k < 3*c; k++)
+								*(R + 3*c*n + k) = R_PosInf;
+							allStates(R, P, S, c, n, 0, j, 0, n - 1, 2*c, 1);
+							allStates(R, P, S, c, n, c, j, c, n, 0, 1);
+							if (j < n - 1) {
+								allStates(R, P, S, c, n, 2*c, j, 2*c, n, c, 1);
+								w = 0;
+								for (k = 0; k < c; k++) {
+									temp[k] = *(R + 3*c*n + 2*c + k);
+									if (temp[k] < temp[w])
+										w = k;
+								}
+							} else {
+								w = 0;
+								for (k = 0; k < c; k++) {
+									temp[k] = *(R + 3*c*n + c + k);
+									if (temp[k] < temp[w])
+										w = k;
+								}
+							}
+							if (temp[w] != R_PosInf)
+								temp_score[j + 1] += weight*temp[w];
+							
+							// add to the second column of row j
+							for (k = 0; k < 3*c; k++)
+								*(R + 3*c*n + k) = R_PosInf;
+							allStates(R, P, S, c, n, 0, j, c, n - 1, 2*c, 1);
+							allStates(R, P, S, c, n, c, j, 0, n, 0, 1);
+							if (j < n - 1) {
+								allStates(R, P, S, c, n, 2*c, j, 2*c, n, c, 1);
+								w = 0;
+								for (k = 0; k < c; k++) {
+									temp[k] = *(R + 3*c*n + 2*c + k);
+									if (temp[k] < temp[w])
+										w = k;
+								}
+							} else {
+								w = 0;
+								for (k = 0; k < c; k++) {
+									temp[k] = *(R + 3*c*n + c + k);
+									if (temp[k] < temp[w])
+										w = k;
+								}
+							}
+							if (temp[w] != R_PosInf)
+								temp_score[n + j + 1] += weight*temp[w];
+						}
+					}
+				}
+				
+				if (only == 1) {
+					free(R);
+					continue;
+				}
+				
+				for (j = n - 1; j >= 0; j--) {
+					for (w = 0; w < c; w++) {
+						m = *(P + 2*c*j + w);
+						if (m < 0)
+							break;
+					}
+					if (m < 0) {
+						m *= -1;
+						m--;
+						*(temp_lengths + j) += *(S + w*c + m)*weight;
 						k = *(T + j);
 						if (k > 0) {
-							// swap left-left with right
-							count++;
-							for (m = 0; m < 3*c; m++)
-								*(R + 3*c*n + m) = R_PosInf;
-							allStates(R, P, S, c, n, 0, k - 1, c, j, c, 1);
-							allStates(R, P, S, c, n, c, k - 1, 0, n, 0, 1);
-							if (j < n - 1) {
-								allStates(R, P, S, c, n, 2*c, j, 2*c, n, c, 1);
-								w = 0;
-								for (m = 0; m < c; m++) {
-									temp[m] = *(R + 3*c*n + 2*c + m);
-									if (temp[m] < temp[w])
-										w = m;
-								}
-								if (temp[w] != R_PosInf) {
-									#ifdef _OPENMP
-									#pragma omp critical
-									{
-										score[count] += weight*temp[w];
-									}
-									#else
-									score[count] += weight*temp[w];
-									#endif
-								}
+							k--;
+							if (*(R + 3*c*j + m) != R_PosInf) {
+								*(temp_nodes + k) = m + 1;
+								w = *(temp_nodes + j);
+								if (w != NA_INTEGER && w - 1 != m)
+									*(temp_subM + c*m + w - 1) += weight;
 							} else {
-								w = 0;
-								for (m = 0; m < c; m++) {
-									temp[m] = *(R + 3*c*n + c + m);
-									if (temp[m] < temp[w])
-										w = m;
-								}
-								if (temp[w] != R_PosInf) {
-									#ifdef _OPENMP
-									#pragma omp critical
-									{
-										score[count] += weight*temp[w];
-									}
-									#else
-									score[count] += weight*temp[w];
-									#endif
-								}
+								*(temp_nodes + k) = NA_INTEGER;
 							}
-							
-							// swap left-right with right
-							count++;
-							for (m = 0; m < 3*c; m++)
-								*(R + 3*c*n + m) = R_PosInf;
-							allStates(R, P, S, c, n, 0, k - 1, 0, j, c, 1);
-							allStates(R, P, S, c, n, c, k - 1, c, n, 0, 1);
-							if (j < n - 1) {
-								allStates(R, P, S, c, n, 2*c, j, 2*c, n, c, 1);
-								w = 0;
-								for (m = 0; m < c; m++) {
-									temp[m] = *(R + 3*c*n + 2*c + m);
-									if (temp[m] < temp[w])
-										w = m;
-								}
-								if (temp[w] != R_PosInf) {
-									#ifdef _OPENMP
-									#pragma omp critical
-									{
-										score[count] += weight*temp[w];
-									}
-									#else
-									score[count] += weight*temp[w];
-									#endif
-								}
-							} else {
-								w = 0;
-								for (m = 0; m < c; m++) {
-									temp[m] = *(R + 3*c*n + c + m);
-									if (temp[m] < temp[w])
-										w = m;
-								}
-								if (temp[w] != R_PosInf) {
-									#ifdef _OPENMP
-									#pragma omp critical
-									{
-										score[count] += weight*temp[w];
-									}
-									#else
-									score[count] += weight*temp[w];
-									#endif
-								}
-							}
-						}
-						
-						k = *(T + n + j);
-						if (k > 0) {
-							// swap right-left with left
-							count++;
-							for (m = 0; m < 3*c; m++)
-								*(R + 3*c*n + m) = R_PosInf;
-							allStates(R, P, S, c, n, 0, k - 1, c, j, 0, 1);
-							allStates(R, P, S, c, n, c, k - 1, 0, n, 0, 1);
-							if (j < n - 1) {
-								allStates(R, P, S, c, n, 2*c, j, 2*c, n, c, 1);
-								w = 0;
-								for (m = 0; m < c; m++) {
-									temp[m] = *(R + 3*c*n + 2*c + m);
-									if (temp[m] < temp[w])
-										w = m;
-								}
-								if (temp[w] != R_PosInf) {
-									#ifdef _OPENMP
-									#pragma omp critical
-									{
-										score[count] += weight*temp[w];
-									}
-									#else
-									score[count] += weight*temp[w];
-									#endif
-								}
-							} else {
-								w = 0;
-								for (m = 0; m < c; m++) {
-									temp[m] = *(R + 3*c*n + c + m);
-									if (temp[m] < temp[w])
-										w = m;
-								}
-								if (temp[w] != R_PosInf) {
-									#ifdef _OPENMP
-									#pragma omp critical
-									{
-										score[count] += weight*temp[w];
-									}
-									#else
-									score[count] += weight*temp[w];
-									#endif
-								}
-							}
-							
-							// swap right-right with left
-							count++;
-							for (m = 0; m < 3*c; m++)
-								*(R + 3*c*n + m) = R_PosInf;
-							allStates(R, P, S, c, n, 0, k - 1, 0, j, 0, 1);
-							allStates(R, P, S, c, n, c, k - 1, c, n, 0, 1);
-							if (j < n - 1) {
-								allStates(R, P, S, c, n, 2*c, j, 2*c, n, c, 1);
-								w = 0;
-								for (m = 0; m < c; m++) {
-									temp[m] = *(R + 3*c*n + 2*c + m);
-									if (temp[m] < temp[w])
-										w = m;
-								}
-								if (temp[w] != R_PosInf) {
-									#ifdef _OPENMP
-									#pragma omp critical
-									{
-										score[count] += weight*temp[w];
-									}
-									#else
-									score[count] += weight*temp[w];
-									#endif
-								}
-							} else {
-								w = 0;
-								for (m = 0; m < c; m++) {
-									temp[m] = *(R + 3*c*n + c + m);
-									if (temp[m] < temp[w])
-										w = m;
-								}
-								if (temp[w] != R_PosInf) {
-									#ifdef _OPENMP
-									#pragma omp critical
-									{
-										score[count] += weight*temp[w];
-									}
-									#else
-									score[count] += weight*temp[w];
-									#endif
-								}
-							}
-						}
-					}
-				} else { // insert leaf
-					m = *(Z + i*N + a - 1) - 1;
-					
-					// add to root
-					*(R + 3*c*n + m) = 0;
-					allStates(R, P, S, c, n, c, n - 1, 2*c, n, 0, 1);
-					w = 0;
-					for (j = 0; j < c; j++) {
-						temp[j] = *(R + 3*c*n + c + j);
-						if (temp[j] < temp[w])
-							w = j;
-					}
-					if (*(R + 3*c*n + c + w) != R_PosInf) {
-						#ifdef _OPENMP
-						#pragma omp critical
-						{
-							score[2*n + 1] += weight*temp[w];
-						}
-						#else
-						score[2*n + 1] += weight*temp[w];
-						#endif
-					}
-					
-					for (j = 0; j < c; j++)
-						*(R + 3*c*(n - 1) + 2*c + j) = R_PosInf;
-					*(R + 3*c*(n - 1) + 2*c + m) = 0;
-					for (j = 0; j < n; j++) {
-						// add to the first column of row j
-						for (k = 0; k < 3*c; k++)
-							*(R + 3*c*n + k) = R_PosInf;
-						allStates(R, P, S, c, n, 0, j, 0, n - 1, 2*c, 1);
-						allStates(R, P, S, c, n, c, j, c, n, 0, 1);
-						if (j < n - 1) {
-							allStates(R, P, S, c, n, 2*c, j, 2*c, n, c, 1);
-							w = 0;
-							for (k = 0; k < c; k++) {
-								temp[k] = *(R + 3*c*n + 2*c + k);
-								if (temp[k] < temp[w])
-									w = k;
-							}
+							*(P + 2*c*k + m) *= -1;
+							*(P + 2*c*k + c + m) *= -1;
 						} else {
-							w = 0;
-							for (k = 0; k < c; k++) {
-								temp[k] = *(R + 3*c*n + c + k);
-								if (temp[k] < temp[w])
-									w = k;
+							x_i = get_elt_from_XStringSet_holder(&x_set, -k - 1);
+							m = lkup[(unsigned char)x_i.ptr[i]];
+							if (m != NA_INTEGER) {
+								w = *(temp_nodes + j);
+								if (w != NA_INTEGER && w - 1 != m)
+									*(temp_subM + c*m + w - 1) += weight;
 							}
-						}
-						if (temp[w] != R_PosInf) {
-							#ifdef _OPENMP
-							#pragma omp critical
-							{
-								score[j + 1] += weight*temp[w];
-							}
-							#else
-							score[j + 1] += weight*temp[w];
-							#endif
-						}
-						
-						// add to the second column of row j
-						for (k = 0; k < 3*c; k++)
-							*(R + 3*c*n + k) = R_PosInf;
-						allStates(R, P, S, c, n, 0, j, c, n - 1, 2*c, 1);
-						allStates(R, P, S, c, n, c, j, 0, n, 0, 1);
-						if (j < n - 1) {
-							allStates(R, P, S, c, n, 2*c, j, 2*c, n, c, 1);
-							w = 0;
-							for (k = 0; k < c; k++) {
-								temp[k] = *(R + 3*c*n + 2*c + k);
-								if (temp[k] < temp[w])
-									w = k;
-							}
-						} else {
-							w = 0;
-							for (k = 0; k < c; k++) {
-								temp[k] = *(R + 3*c*n + c + k);
-								if (temp[k] < temp[w])
-									w = k;
-							}
-						}
-						if (temp[w] != R_PosInf) {
-							#ifdef _OPENMP
-							#pragma omp critical
-							{
-								score[n + j + 1] += weight*temp[w];
-							}
-							#else
-							score[n + j + 1] += weight*temp[w];
-							#endif
-						}
-					}
-				}
-			}
-			
-			if (only != 0) {
-				free(R);
-				continue;
-			}
-			
-			for (j = n - 1; j >= 0; j--) {
-				for (w = 0; w < c; w++) {
-					m = *(P + 2*c*j + w);
-					if (m < 0)
-						break;
-				}
-				m *= -1;
-				m--;
-				#ifdef _OPENMP
-				#pragma omp critical
-				{
-					*(lengths + j) += *(S + w*c + m);
-				}
-				#else 
-				*(lengths + j) += *(S + w*c + m);
-				#endif
-				k = *(T + j);
-				if (k > 0) {
-					k--;
-					if (*(R + 3*c*j + m) != R_PosInf) {
-						*(nodes + i*n + k) = m + 1;
-						w = *(nodes + i*n + j);
-						if (w != NA_INTEGER) {
-							#ifdef _OPENMP
-							#pragma omp critical
-							{
-								*(subM + c*m + w - 1) += 1;
-							}
-							#else
-							*(subM + c*m + w - 1) += 1;
-							#endif
 						}
 					} else {
-						*(nodes + i*n + k) = NA_INTEGER;
+						k = *(T + j);
+						if (k > 0)
+							*(temp_nodes + k - 1) = NA_INTEGER;
 					}
-					*(P + 2*c*k + m) *= -1;
-					*(P + 2*c*k + c + m) *= -1;
-				} else {
-					m = *(Z + i*N - k - 1);
-					if (m != NA_INTEGER) {
-						w = *(nodes + i*n + j);
-						if (w != NA_INTEGER) {
-							#ifdef _OPENMP
-							#pragma omp critical
-							{
-								*(subM + c*(m - 1) + w - 1) += 1;
+					
+					for (w = 0; w < c; w++) {
+						m = *(P + 2*c*j + c + w);
+						if (m < 0)
+							break;
+					}
+					if (m < 0) {
+						m *= -1;
+						m--;
+						*(temp_lengths + n + j) += *(S + w*c + m)*weight;
+						k = *(T + n + j);
+						if (k > 0) {
+							k--;
+							if (*(R + 3*c*j + c + m) != R_PosInf) {
+								*(temp_nodes + k) = m + 1;
+								w = *(temp_nodes + j);
+								if (w != NA_INTEGER && w - 1 != m)
+									*(temp_subM + c*m + w - 1) += weight;
+							} else {
+								*(temp_nodes + k) = NA_INTEGER;
 							}
-							#else
-							*(subM + c*(m - 1) + w - 1) += 1;
-							#endif
+							*(P + 2*c*k + m) *= -1;
+							*(P + 2*c*k + c + m) *= -1;
+						} else {
+							x_i = get_elt_from_XStringSet_holder(&x_set, -k - 1);
+							m = lkup[(unsigned char)x_i.ptr[i]];
+							if (m != NA_INTEGER) {
+								w = *(temp_nodes + j);
+								if (w != NA_INTEGER && w - 1 != m)
+									*(temp_subM + c*m + w - 1) += weight;
+							}
 						}
+					} else {
+						k = *(T + n + j);
+						if (k > 0)
+							*(temp_nodes + k - 1) = NA_INTEGER;
 					}
 				}
 				
-				for (w = 0; w < c; w++) {
-					m = *(P + 2*c*j + c + w);
-					if (m < 0)
-						break;
-				}
-				m *= -1;
-				m--;
+				free(R);
+				free(P);
+				
+				// perform array reduction
 				#ifdef _OPENMP
 				#pragma omp critical
 				{
-					*(lengths + n + j) += *(S + w*c + m);
-				}
-				#else
-				*(lengths + n + j) += *(S + w*c + m);
 				#endif
-				k = *(T + n + j);
-				if (k > 0) {
-					k--;
-					if (*(R + 3*c*j + c + m) != R_PosInf) {
-						*(nodes + i*n + k) = m + 1;
-						w = *(nodes + i*n + j);
-						if (w != NA_INTEGER) {
-							#ifdef _OPENMP
-							#pragma omp critical
-							{
-								*(subM + c*m + w - 1) += 1;
-							}
-							#else
-							*(subM + c*m + w - 1) += 1;
-							#endif
-						}
-					} else {
-						*(nodes + i*n + k) = NA_INTEGER;
-					}
-					*(P + 2*c*k + m) *= -1;
-					*(P + 2*c*k + c + m) *= -1;
-				} else {
-					m = *(Z + i*N - k - 1);
-					if (m != NA_INTEGER) {
-						w = *(nodes + i*n + j);
-						if (w != NA_INTEGER) {
-							#ifdef _OPENMP
-							#pragma omp critical
-							{
-								*(subM + c*(m - 1) + w - 1) += 1;
-							}
-							#else
-							*(subM + c*(m - 1) + w - 1) += 1;
-							#endif
-						}
-					}
+					if (only != 0)
+						for (j = 0; j < n; j++)
+							nodes[i*n + j] = temp_nodes[j];
+				#ifdef _OPENMP
 				}
+				#endif
 			}
-			
-			free(R);
-			if (only == 0)
-				free(P);
 		}
+		
+		// perform array reductions
+		#ifdef _OPENMP
+		#pragma omp critical
+		{
+		#endif
+			for (i = 0; i < size; i++)
+				score[i] += temp_score[i];
+			if (only != 1) {
+				for (i = 0; i < 2*n; i++)
+					lengths[i] += temp_lengths[i];
+				for (i = 0; i < c*c; i++)
+					subM[i] += temp_subM[i];
+			}
+		#ifdef _OPENMP
+		}
+		#endif
+		free(temp_score);
+		if (only != 1) {
+			free(temp_lengths);
+			free(temp_subM);
+			free(temp_nodes);
+		}
+	#ifdef _OPENMP
 	}
+	#endif
+	free(lkup);
 	
 	SEXP ans1;
-	if (a > 0) {
-		j = 2*n + 2;
-	} else if (a < 0) {
-		j = 2*n - 1;
-	} else {
-		j = 1;
-	}
-	PROTECT(ans1 = allocVector(REALSXP, j));
+	PROTECT(ans1 = allocVector(REALSXP, size));
 	double *rans = REAL(ans1);
-	for (i = 0; i < j; i++)
+	for (i = 0; i < size; i++)
 		rans[i] = score[i];
 	
 	if (a != 0)
 		free(Up);
 	free(score);
 	
-	if (only != 0) {
+	if (only == 1) {
 		UNPROTECT(1);
 		
 		return ans1;
 	}
 	
 	SEXP ans2;
-	PROTECT(ans2 = allocMatrix(INTSXP, n, l));
-	int *rans_int = INTEGER(ans2);
-	for (i = 0; i < n*l; i++)
-		rans_int[i] = nodes[i];
-	free(nodes);
+	if (only == 0) {
+		PROTECT(ans2 = allocMatrix(INTSXP, 0, 0));
+	} else {
+		PROTECT(ans2 = allocMatrix(INTSXP, n, l));
+		int *rans_int = INTEGER(ans2);
+		for (i = 0; i < n*l; i++)
+			rans_int[i] = nodes[i];
+		free(nodes);
+	}
 	
 	SEXP ans3;
 	PROTECT(ans3 = allocMatrix(REALSXP, n, 2));

@@ -2,11 +2,12 @@
  *                Predicts 3 State Secondary RNA Structure                  *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
- 
- // for OpenMP parallel processing
- #ifdef _OPENMP
- #include <omp.h>
- #endif
+
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#undef match
+#endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -176,7 +177,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 	int width = x_s.length;
 	
 	// initialize an array of terminal gap lengths
-	int *endpoints = Calloc(2*x_length, int); // initialized to zero
+	int *endpoints = R_Calloc(2*x_length, int); // initialized to zero
 	
 	for (i = 0; i < x_length; i++) {
 		x_s = get_elt_from_XStringSet_holder(&x_set, i);
@@ -185,7 +186,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 	}
 	
 	// initialize an array of letter (A, C, G, T/U, other) frequencies
-	double *counts = Calloc(5*width, double); // initialized to zero
+	double *counts = R_Calloc(5*width, double); // initialized to zero
 	
 	for (s = 0; s < x_length; s++) {
 		x_s = get_elt_from_XStringSet_holder(&x_set, s);
@@ -212,7 +213,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 	}
 	
 	// initialize an array of positions
-	int *pos = Calloc(width, int); // initialized to zero
+	int *pos = R_Calloc(width, int); // initialized to zero
 	double sum; // sum of weights
 	int tot = 0; // total number of positions >= minO
 	for (p = 0; p < width; p++) {
@@ -233,8 +234,8 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 	}
 	
 	// initialize an array of mutual information
-	double *MI = Calloc(tot*tot, double); // initialized to zero
-	double *rowMeans = Calloc(tot, double); // initialized to zero
+	double *MI = R_Calloc(tot*tot, double); // initialized to zero
+	double *rowMeans = R_Calloc(tot, double); // initialized to zero
 	
 	last = tot - 1;
 	for (i = 0; i < (tot - 1); i++) {
@@ -371,8 +372,8 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 			R_CheckUserInterrupt();
 		}
 	}
-	Free(endpoints);
-	Free(counts);
+	R_Free(endpoints);
+	R_Free(counts);
 	
 	// apply Average Product Correction (APC)
 	double avg;
@@ -388,7 +389,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 			for (j = i + 1; j < tot; j++)
 				MI[i*tot + j] -= APC*rowMeans[i]*rowMeans[j]/avg;
 	}
-	Free(rowMeans);
+	R_Free(rowMeans);
 	
 //	for (i = 0; i < tot; i++) {
 //		Rprintf("\n");
@@ -398,7 +399,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 	
 	// determine the nth highest value
 	int n = (int)(tot/2); // max number of MI values that could be paired
-	double *vals = Calloc(n, double); // initialized to zero
+	double *vals = R_Calloc(n, double); // initialized to zero
 	for (i = 0; i < n; i++)
 		vals[i] = -1e12;
 	double minVal = -1e12; // minimum value in vals
@@ -421,7 +422,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 			}
 		}
 	}
-	Free(vals);
+	R_Free(vals);
 	
 	// apply sigmoidal transformation
 	sh *= minVal; // shift
@@ -487,26 +488,26 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 	if (o < 3) { // perform traceback
 		l = tot; // number remaining unpaired
 		q = 10; // block size
-		states = Calloc(width + 1, char);
+		states = R_Calloc(width + 1, char);
 		for (i = 0; i < width; i++)
 			states[i] = '-';
 		for (i = 0; i < tot; i++)
 			states[pos[i]] = '.';
 		states[width] = '\0'; // end (null terminate) the string
-		unpaired = Calloc(tot, int); // initialized to zero
+		unpaired = R_Calloc(tot, int); // initialized to zero
 		for (i = 1; i < tot; i++)
 			unpaired[i] = i;
 		for (p = 0; p <= pseudo; p++) {
 			if (p < pseudo) { // copy MI
-				MI2 = Calloc(tot*tot, double); // initialized to zero
+				MI2 = R_Calloc(tot*tot, double); // initialized to zero
 				for (i = 0; i < (tot - 1); i++)
 					for (j = i + 1; j < tot; j++)
 						MI2[i*tot + j] = MI[i*tot + j];
 			}
 			
 			n = ceil((double)l/(double)q);
-			rowMax = Calloc(l*n, double); // initialized to zero
-			colMax = Calloc(l*n, double); // initialized to zero
+			rowMax = R_Calloc(l*n, double); // initialized to zero
+			colMax = R_Calloc(l*n, double); // initialized to zero
 			for (d = 2; d <= l; d++) {
 				#ifdef _OPENMP
 				#pragma omp parallel for private(i,j,k,match,left,right,prevL,prevR) schedule(guided) num_threads(nthreads)
@@ -577,8 +578,8 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 						colMax[j*n + (i - 1)/q] = MI[unpaired[i]*tot + unpaired[j]];
 				}
 			}
-			Free(rowMax);
-			Free(colMax);
+			R_Free(rowMax);
+			R_Free(colMax);
 			
 			if (p == 0) {
 				leftSymbol = '(';
@@ -597,7 +598,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 			Traceback(MI, tot, unpaired, pos, states, leftSymbol, rightSymbol, 0, l - 1);
 			
 			if (p < pseudo) { // replace MI with the original
-				Free(MI);
+				R_Free(MI);
 				MI = MI2;
 				
 				// excluded paired positions from unpaired
@@ -610,11 +611,11 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 					break;
 			}
 		}
-		Free(unpaired);
+		R_Free(unpaired);
 		
 		PROTECT(ans = allocVector(STRSXP, 1));
 		SET_STRING_ELT(ans, 0, mkChar(states));
-		Free(states);
+		R_Free(states);
 	} else if (o == 3) { // scores
 		PROTECT(ans = allocMatrix(REALSXP, 3, width)); // [state][pos]
 		rans = REAL(ans);
@@ -683,8 +684,8 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 			0.93, 0.00, 0.55, 0.00, 0.00, 0.00, 0.00, 0.00, 1.27, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00 // UU
 		};
 		
-		leftMax = Calloc(tot, int); // initialized to zero
-		rightMax = Calloc(tot, int); // initialized to zero
+		leftMax = R_Calloc(tot, int); // initialized to zero
+		rightMax = R_Calloc(tot, int); // initialized to zero
 		
 		// locate the largest value in each row/column
 		for (i = 0; i < (tot - 1); i++) {
@@ -703,8 +704,8 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 			x_s = get_elt_from_XStringSet_holder(&x_set, s);
 			
 			n = 0;
-			int *nucs = Calloc(width, int); // initialized to zero
-			int *nogaps = Calloc(width, int); // initialized to zero
+			int *nucs = R_Calloc(width, int); // initialized to zero
+			int *nogaps = R_Calloc(width, int); // initialized to zero
 			
 			for (i = 0; i < width; i++) {
 				if (x_s.ptr[i] != 16 && x_s.ptr[i] != 32 && x_s.ptr[i] != 64) {
@@ -728,7 +729,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 				rans[i] = 0;
 			
 			// record anchor positions that agree with the consensus structure
-			int *anchor = Calloc(tot, int); // initialized to zero
+			int *anchor = R_Calloc(tot, int); // initialized to zero
 			for (i = 0; i < tot; i++) {
 				if (((x_s.ptr[pos[i]] & 0x1) && (x_s.ptr[pos[leftMax[i]]] & 0x8)) || // A/U
 					((x_s.ptr[pos[i]] & 0x8) && (x_s.ptr[pos[leftMax[i]]] & 0x1)) || // U/A
@@ -880,15 +881,15 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 								if (l1 <= 0 || l2 <= 0)
 									break;
 								
-								int *s1 = Calloc(l1, int); // initialized to zero
+								int *s1 = R_Calloc(l1, int); // initialized to zero
 								for (j = 0; j < l1; j++)
 									s1[j] = 4*nogaps[range1[0] + j] + nogaps[range1[0] + j + 1];
-								int *s2 = Calloc(l2, int); // initialized to zero
+								int *s2 = R_Calloc(l2, int); // initialized to zero
 								for (j = 0; j < l2; j++)
 									s2[j] = nogaps[range2[0] + j] + 4*nogaps[range2[0] + j + 1];
 								
-								double *foldm = Calloc(l1*l2, double); // initialized to zero
-								int *foldn = Calloc(l1*l2, int); // initialized to zero
+								double *foldm = R_Calloc(l1*l2, double); // initialized to zero
+								int *foldn = R_Calloc(l1*l2, int); // initialized to zero
 								
 								int maxd = 0; // longest possible diagonal traceback
 								int first, pi, pj;
@@ -961,7 +962,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 								pj = maxpos[1];
 								//Rprintf("\nmyMax = %d %d", pi, pj);
 								
-								double *prob = Calloc(maxd, double); // initialized to zero
+								double *prob = R_Calloc(maxd, double); // initialized to zero
 								for (j = 0; j < maxd; j++)
 									prob[j] = -1;
 								
@@ -1024,11 +1025,11 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 									}
 								}
 								
-								Free(s1);
-								Free(s2);
-								Free(foldm);
-								Free(foldn);
-								Free(prob);
+								R_Free(s1);
+								R_Free(s2);
+								R_Free(foldm);
+								R_Free(foldn);
+								R_Free(prob);
 								
 								i--; // allow current anchor to be reused
 								break;
@@ -1042,9 +1043,9 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 					} // else unanchored
 				}
 				
-				Free(anchor);
-				Free(nucs);
-				Free(nogaps);
+				R_Free(anchor);
+				R_Free(nucs);
+				R_Free(nogaps);
 			} else {
 				// normalize the scores
 				for (i = 0; i < tot; i++) {
@@ -1064,12 +1065,12 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 			UNPROTECT(1); // ans_s
 		}
 		
-		Free(leftMax);
-		Free(rightMax);
+		R_Free(leftMax);
+		R_Free(rightMax);
 	}
 	
-	Free(MI);
-	Free(pos);
+	R_Free(MI);
+	R_Free(pos);
 	
 	if (v) {
 		UNPROTECT(3);

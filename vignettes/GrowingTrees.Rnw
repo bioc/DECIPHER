@@ -59,33 +59,35 @@ options(width=80)
 \section{Introduction}
 %------------------------------------------------------------
 
-This document describes how to grow phylogenetic trees using the \Rfunction{TreeLine} function in the \Rpackage{DECIPHER} package.  \Rfunction{TreeLine} takes as input a set of aligned nucleotide or amino acid sequences and returns a phylogenetic tree (i.e., \Rclass{dendrogram} object) as output.  This vignette focuses on building maximum likelihood (ML) and maximum parsimony (MP) phylogenetic trees starting from sequences, but \Rfunction{TreeLine} can also be used to build additive trees from a distance matrix.
+This document describes how to grow phylogenetic trees using the \Rfunction{TreeLine} function in the \Rpackage{DECIPHER} package.  \Rfunction{TreeLine} takes as input a set of aligned nucleotide or amino acid sequences and returns a phylogenetic tree (i.e., \Rclass{dendrogram} object) as output.  This vignette focuses on optimizing, balanced minimum evolution (ME), maximum likelihood (ML), and maximum parsimony (MP) phylogenetic trees starting from sequences.
 
-Why is the function called \Rfunction{TreeLine}?  The goal of \Rfunction{TreeLine} is to find the most likely/parsimonious tree for a given sequence alignment.  There are often many trees with nearly maximal likelihood/parsimony.  Therefore, \Rfunction{TreeLine} seeks to find a tree as close as possible to the treeline, analogous to how no trees can grow above the treeline on a mountain.
+Why is the function called \Rfunction{TreeLine}?  The goal of \Rfunction{TreeLine} is to find the best tree according to an optimality criterion.  There are often many trees near the optimum.  Therefore, \Rfunction{TreeLine} seeks to find a tree as close as possible to the treeline, analogous to how trees cannot grow above the treeline on a mountain.
 
-Why use \Rfunction{TreeLine} versus other programs?  The \Rfunction{TreeLine} function is designed to return an excellent phylogenetic tree with minimal user intervention.  Many tree building programs have a large set of complex options for niche applications.  In contrast, \Rfunction{TreeLine} simply builds a great tree when relying on its defaults.  This vignette is intended to get you started and introduce additional options/functions that might be useful.
+Why use \Rfunction{TreeLine} versus other programs?  The \Rfunction{TreeLine} function is designed to return an excellent phylogenetic tree with minimal user intervention.  Many tree building programs have a large set of complex options for niche applications.  In contrast, \Rfunction{TreeLine} simply builds a great tree by default.  This vignette is intended to get you started and introduce additional options/functions that might be useful.
 
-TreeLine uses multi-start optimization followed by hill-climbing to find the highest trees on the likelihood or parsimony landscapes.  Since TreeLine is a stochastic optimizer, it optimizes many trees to prevent luck from influencing the final result.  The main difference from most other approaches to tree optimization is that TreeLine heavily uses past trees to generate new trees as it optimizes.  With any luck it'll find the treeline!
+TreeLine uses multi-start optimization followed by hill-climbing to find the highest trees on the optimality landscape.  Since TreeLine is a stochastic optimizer, it optimizes many trees to prevent chance from influencing the final result.  With any luck it'll find the treeline!
 
 %------------------------------------------------------------
 \section{Performance Considerations}
 %------------------------------------------------------------
 
-Finding a tree with very high likelihood/parsimony is no easy feat.  \Rfunction{TreeLine} systematically optimizes hundreds to thousands of candidate trees before returning the best one.  This takes time, but there are things you can do to make it go faster.
+Finding an optimal tree is no easy feat.  \Rfunction{TreeLine} systematically optimizes hundreds of candidate trees before returning the best one.  This takes time, but there are things you can do to make it go faster.
 
 \begin{itemize}
-\item Only use the sequences you need:  \Rfunction{TreeLine} scales approximately quadratically with the number of sequences.  Hence, limiting the number of sequences is a worthwhile consideration.  In particular, always eliminate redundant sequences, as shown below, and remove any sequences that are not necessary.  This concern is shared for all tree building programs, and \Rfunction{TreeLine} is no exception.
-\item Choose a model:  Automatic model selection is a useful feature, but frequently this time-consuming step can be skipped.  For most modestly large sets of nucleotide sequences, the \code{"GTR+G4"} model will be automatically selected.  Typical amino acid sequences will tend to pick the \code{"LG+G4"} or \code{"WAG+G4"} models, unless the sequences are from a particular origin (e.g., mitochondria).  Pre-selecting a subset of the available \Robject{MODELS} and supplying this as the \Rfunarg{model} argument can save considerable time.
-\item Set a timeout:  The \code{maxTime} argument specifies the (approximate) maximum number of hours you are willing to let \Rfunction{TreeLine} run.  If you are concerned about the code running too long then simply specify this argument.
-\item Compile with OpenMP support:  Significant speed-ups can be achieved with multi-threading using OpenMP.  See the ``Getting Started DECIPHERing'' vignette for how to do this on your computer platform.  Then you only need to set the argument \code{processors=NULL} and \Rfunction{TreeLine} will use all available processors.
+\item Only use the sequences you need:  \Rfunction{TreeLine}'s runtime scales approximately quadratically with the number of sequences.  Hence, limiting the number of sequences is a worthwhile consideration.  In particular, always eliminate redundant sequences, as shown in the example below, and remove any sequences that are not necessary.
+\item Set a timeout:  The \Rfunarg{maxTime} argument specifies the (approximate) maximum number of hours you are willing to let \Rfunction{TreeLine} run.  If you are concerned about the code running for too long then simply specify this argument.
+\item Compile with OpenMP support:  Significant speed-ups can be achieved with multi-threading using OpenMP, particularly for ML and MP \Rfunarg{method}s.  See the ``Getting Started DECIPHERing'' vignette for how to enable OpenMP on your computer.  Then you only need to set the argument \code{processors=NULL} and \Rfunction{TreeLine} will use all available processors.
 \item Compile for SIMD support:  \Rfunction{TreeLine} is configured to make use of SIMD operations, which are available on some processors.  The easiest way to enable SIMD is to add `` -O3 -march=native'' to the end of \code{PKG_CFLAGS} in the ``DECIPHER/src/MAKEVARS'' text file.  Then, after recompiling, there may be an automatic speed-up on systems with SIMD support.  Note that enabling SIMD makes the compiled code non-portable, so the code always needs to be compiled on the hardware being used.
+\item For ML, choose a model:  Automatic model selection is a useful feature, but frequently this time-consuming step can be skipped.  For most modestly large sets of nucleotide sequences, the \code{"GTR+G4"} model will be automatically selected.  Typical amino acid sequences will tend to pick the \code{"LG+G4"} or \code{"WAG+G4"} models, unless the sequences are from a particular origin (e.g., mitochondria).  Pre-selecting a subset of the available \Robject{MODELS} and supplying this as the \Rfunarg{model} argument can save considerable time.
 \end{itemize}
 
 %------------------------------------------------------------
 \section{Growing a Phylogenetic Tree}
 %------------------------------------------------------------
 
-\Rfunction{TreeLine} takes as input a multiple sequence alignment when constructing a maximum likelihood or maximum parsimony phylogenetic tree.  Multiple sequence alignments can be constructed from a set of (unaligned) sequences using \Rfunction{AlignSeqs} or related functions.  \Rfunction{TreeLine} will optimize trees for amino acid (i.e., \code{AAStringSet}) or nucleotide (i.e., \code{DNAStringSet} or \code{RNAStringSet}) sequences.  Here, we are going to use a set of sequences that is included with \Rpackage{DECIPHER}.  These sequences are from the internal transcribed spacer (ITS) between the 16S and 23S ribosomal RNA genes in several \textit{Streptomyces} species.
+\Rfunction{TreeLine} takes as input a multiple sequence alignment and/or a distance matrix.  All distance-based methods (including ME) only require specification of \code{myDistMatrix} but will generate a distance matrix using \Rfunction{DistanceMatrix} if \code{myXStringSet} is provided instead.  The character-based methods (i.e., ML and MP) require a multiple sequence alignment and will generate a distance matrix to construct the first candidate tree unless one is provided.
+
+Multiple sequence alignments can be constructed from a set of (unaligned) sequences using \Rfunction{AlignSeqs} or related functions.  \Rfunction{TreeLine} will optimize trees for amino acid (i.e., \code{AAStringSet}) or nucleotide (i.e., \code{DNAStringSet} or \code{RNAStringSet}) sequences.  Here, we are going to use a set of sequences that is included with \Rpackage{DECIPHER}.  These sequences are from the internal transcribed spacer (ITS) between the 16S and 23S ribosomal RNA genes in several \textit{Streptomyces} species.
 
 <<expr1,eval=TRUE,echo=TRUE>>=
 library(DECIPHER)
@@ -112,11 +114,9 @@ seqs
 
 Now, it's time to try our luck at finding the most likely tree.  Here, we will set a stringent time limit (0.01 hours) to make this example faster, although longer time limits (e.g., 24 hours) are advised because setting very short time limits leaves the result partly up to luck.
 
-Note that \Rfunction{TreeLine} automatically selects a substitution model based on Akaike information criterion (by default).  It is possible to specify specific model(s) (e.g., \code{model="GTR+G4"}) to limit the possible selections and test your luck with fewer models.
+Here, it is necessary to choose a \Rfunarg{method} for optimizing the tree.  The default \Rfunarg{method} is \code{"ME"} because it is fast and performs best on empirical datasets.  For maximum parsimony, set \Rfunarg{method} to \code{"MP"} and (optionally) specify a \Rfunarg{costMatrix}.  For maximum likelihood, set \Rfunarg{method} to \code{"ML"}, which requires a model of sequence evolution.  Note that \Rfunction{TreeLine} automatically selects the best \Rfunarg{model} according to Akaike information criterion (by default).  It is possible to choose specific model(s) (e.g., \code{model="GTR+G4"}) to limit the possible selections and test your luck with fewer models.
 
-Also, since \Rfunction{TreeLine} is a stochastic optimizer, it is critical to always set the random number seed for reproducibility.  You can pick any lucky number, and if you ever wonder how much you pushed your luck, you can try running again from a different random number seed to see how much the result came down to luck of the draw.
-
-Note that setting a time limit, as done below with \Rfunarg{maxTime}, negates the purpose of setting a seed -- never set a time limit if reproducibility is desired or you'll have no such luck.
+Also, since \Rfunction{TreeLine} is a stochastic optimizer, it is critical to always set the random number seed for reproducibility.  You can pick any lucky number, and if you ever wonder how much you pushed your luck, you can try running again from a different random number seed to see how much the result came down to luck of the draw.  Note that setting a time limit, as done below with \Rfunarg{maxTime}, negates the purpose of setting a seed -- never set a time limit if reproducibility is desired or you'll have no such luck.
 
 \begin{centerfig}
 <<expr3,eval=TRUE,echo=TRUE,fig=TRUE,height=3.5,width=6>>=
@@ -166,7 +166,7 @@ plot(dendrapply(tree,
 			s <- formatC(as.numeric(s), digits=2, format="f")
 			attr(x, "edgetext") <- paste(s, "\n")
 		}
-		attr(x, "edgePar") <- list(p.col=NA, p.lwd=1e-5, t.col="#CC55AA", t.cex=0.7)
+		attr(x, "edgePar") <- list(p.col=NA, p.border=NA, t.col="#CC55AA", t.cex=0.7)
 		if (is.leaf(x))
 			attr(x, "nodePar") <- list(lab.font=3, pch=NA)
 		x
@@ -182,44 +182,16 @@ text(0.2, 0, "0.4 subs./site", pos=3, xpd=TRUE)
 
 \clearpage
 
-We lucked out because maximum likelihood and maximum parsimony trees both provide branch supports in the form of the fraction of optimized trees that contained a given partition (branch).  These are accessible from the ``support'' attribute.  As luck would have it, support values and (aBayes) probabilities are correlated, but support tends to be more conservative.
-
-\begin{centerfig}
-<<expr6,eval=TRUE,echo=TRUE,fig=TRUE,height=3.5,width=3.5>>=
-getSupports <- function(x) {
-	if (is.leaf(x)) {
-		NULL
-	} else if (is.null(attr(x, "support"))) {
-		rbind(getSupports(x[[1]]), getSupports(x[[2]]))
-	} else {
-		rbind(cbind(attr(x, "support"),
-				attr(x, "probability"),
-				attr(x, "members")),
-			getSupports(x[[1]]), getSupports(x[[2]]))
-	}
-}
-support <- getSupports(tree)
-plot(support[, 1],
-	support[, 2],
-	cex=log10(support[, 3]),
-	xlab="Support", ylab="aBayes probability", asp=1)
-abline(a=0, b=1, lty=2) # line of identity (y=x)
-@
-\caption{\label{f3} Comparison of aBayes probabilities and branch support values.}
-\end{centerfig}
-
-\clearpage
-
 %------------------------------------------------------------
 \section{Ancestral State Reconstruction}
 %------------------------------------------------------------
 
-We're in luck \textemdash one of the advantages of maximum likelihood and maximum parsimony tree building methods is that they automatically predict states at each internal node on the tree \cite{Joy:2016}.  This feature is enabled when \Rfunarg{reconstruct} is set to \code{TRUE}.  These character states can be used by the function \Rfunction{MapCharacters} to determine state transitions along each edge of the tree. This information enables us to plot the total number of substitutions occurring along each edge. The state transitions can be accessed along each edge by querying a new ``change'' attribute.
+We're in luck \textemdash since we set \Rfunarg{reconstruct} to \code{TRUE} \Rfunction{TreeLine} automatically predict states at each internal node on the tree \cite{Joy:2016}.  These character states can be used by the function \Rfunction{MapCharacters} to determine state transitions along each edge of the tree. This information enables us to plot the total number of substitutions occurring along each edge.  The state transitions can be accessed along each edge by querying a new ``change'' attribute.
 
 \begin{centerfig}
 <<expr7,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
 new_tree <- MapCharacters(tree, labelEdges=TRUE)
-plot(new_tree, edgePar=list(p.col=NA, p.lwd=1e-5, t.col="#55CC99", t.cex=0.7))
+plot(new_tree, edgePar=list(p.col=NA, p.border=NA, t.col="#55CC99", t.cex=0.7))
 attr(new_tree[[1]], "change") # state changes on first branch left of (virtual) root
 @
 \caption{\label{f4} Edges labeled with the number of state transitions.}

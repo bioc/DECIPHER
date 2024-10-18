@@ -37,7 +37,7 @@ Logical specifying whether or not to consider gap-to-letter matches as mismatche
 Numeric giving the minimum fraction of sequence positions (not gap or mask) that must be overlapping in each pair.  If positive then coverage is relative to the shortest sequence.  If negative then coverage is relative to both sequences.  Sequences failing to meet \code{minCoverage} will be assigned \code{NA} distances.  Note that completely non-overlapping sequences are always given \code{NA} distances, regardless of \code{minCoverage}, unless \code{includeTerminalGaps} is \code{TRUE} (i.e., distance = 100\%).
 }
   \item{correction}{
-The substitution model used for distance correction.  This should be (an abbreviation of) either \code{"none"}, \code{"Jukes-Cantor"} (i.e., \code{"JC69"}), or \code{"F81"}.  For \code{"F81"} letter frequencies are derived from \code{myXStringSet}.
+The evolutionary model used for distance correction.  This should be (an abbreviation of) either \code{"none"}, \code{"Jukes-Cantor"} (i.e., \code{"JC69"}), \code{"F81"}, or \code{"Poisson"}.  For \code{"F81"} letter frequencies are derived from \code{myXStringSet}.
 }
   \item{processors}{
 The number of processors to use, or \code{NULL} to automatically detect and use all available processors.
@@ -53,9 +53,7 @@ If \code{includeTerminalGaps = FALSE} then terminal gaps ("-" or "." characters)
 
 Penalizing gap-to-letter mismatches specifies whether to penalize these special mismatch types and include them in the total length when calculating distance.  Both "-" and "." characters are interpreted as gaps.  The default behavior is to calculate distance as the fraction of positions that differ across the region of the alignment shared by both sequences (not including gap-to-gap matches).
 
-Two correction factors are available, \code{"JC69"} and \code{"F81"}, which are described in \code{\link{MODELS}}.  Both transform raw distance (\eqn{d}) by \deqn{-E * \log \left( 1 - d / E \right)}, where \deqn{E = 1 - \sum_{i \in sym} f_i^2} and (\eqn{f}) is the relative frequency of each symbol (\eqn{sym}).  In the \code{"JC69"} model symbols are assumed to have equal frequency, whereas in the \code{"F81"} model the symbol frequencies are empirically derived from the input \code{myXStringSet}.  Note that gaps are treated as an additional symbol when \code{penalizeGapLetterMatches} is \code{TRUE}.
-
-The elements of the distance matrix can be referenced by \code{dimnames} corresponding to the \code{names} of the \code{XStringSet}.  Additionally, an attribute named "correction" specifying the method of correction used can be accessed using the function \code{attr}.
+Three correction factors are available to transform distances into an expected number of changes per site.  All can be applied to nucleotides or amino acids, but two are intended for nucleotides and one for amino acids.  The two nucleotide correction factors are \code{"JC69"} and \code{"F81"}, which are described in \code{\link{MODELS}}.  Both transform raw distance (\eqn{d}) by \deqn{-E * \log \left( 1 - d / E \right)}, where \deqn{E = 1 - \sum_{i \in sym} f_i^2} and (\eqn{f}) is the relative frequency of each symbol (\eqn{sym}).  In the \code{"JC69"} model symbols are assumed to have equal frequency, whereas in the \code{"F81"} model the symbol frequencies are empirically derived from the input \code{myXStringSet}.  The correction factor intended for amino acids is \code{"Poisson"}, which assumes the number of substitutions per site follows the Poisson distribution.  The raw distance (\eqn{d}) is transformed by \deqn{- \log \left( 1 - d \right)}.  Note that gaps are treated as an additional symbol when \code{penalizeGapLetterMatches} is \code{TRUE}, and all correction factors will result in an infinite distance when the sequences are 100\% different (i.e., \eqn{d = 1}).
 }
 \value{
 If \code{type} is \code{"matrix"}, a symmetric matrix where each element is the distance between the sequences referenced by the respective row and column.  The \code{dimnames} of the matrix correspond to the \code{names} of the \code{XStringSet}.
@@ -85,6 +83,9 @@ length(m) # more memory space required
 aa <- AAStringSet(c("ASYK", "ATYK", "CTWN"))
 aa
 DistanceMatrix(aa)
+
+# correct for multiple substitutions per site:
+DistanceMatrix(aa, correction="Poisson")
 
 # defaults compare intersection of internal ranges:
 dna <- DNAStringSet(c("ANGCT-", "-ACCT-"))

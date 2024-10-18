@@ -2,11 +2,12 @@
  *                         Solves SCA NNLS PROBLEM                          *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
- 
- // for OpenMP parallel processing
- #ifdef _OPENMP
- #include <omp.h>
- #endif
+
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#undef match
+#endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -48,7 +49,7 @@ SEXP NNLS(SEXP row, SEXP col, SEXP value, SEXP nrows, SEXP ncols, SEXP b, SEXP t
 	v = asLogical(verbose);
 	int nthreads = asInteger(nThreads);
 	
-	float *H = Calloc(n*n, float); // initialized to zero
+	float *H = R_Calloc(n*n, float); // initialized to zero
 	
 	if (v) { // initialize progress variables
 		before = 0;
@@ -150,7 +151,7 @@ SEXP NNLS(SEXP row, SEXP col, SEXP value, SEXP nrows, SEXP ncols, SEXP b, SEXP t
 		}
 	}
 	
-	Free(H);
+	R_Free(H);
 	
 	if (v) {
 		UNPROTECT(3);

@@ -2,11 +2,12 @@
  *                       Converts Sequence To Numbers                       *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
- 
- // for OpenMP parallel processing
- #ifdef _OPENMP
- #include <omp.h>
- #endif
+
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#undef match
+#endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -232,8 +233,8 @@ static void maskNumerous(int *x, int n, int tot, int l, int wS)
 	} else {
 		mod = (unsigned int)tot; // collisions impossible
 	}
-	int *counts = Calloc(mod, int); // initialized to zero
-	int *keys = Calloc(mod, int); // initialized to zero
+	int *counts = R_Calloc(mod, int); // initialized to zero
+	int *keys = R_Calloc(mod, int); // initialized to zero
 	
 	// count k-mers (assumes most frequent occur before maxCollisions)
 	for (i = 0; i < l; i++) {
@@ -284,8 +285,8 @@ static void maskNumerous(int *x, int n, int tot, int l, int wS)
 		}
 	}
 	
-	Free(counts);
-	Free(keys);
+	R_Free(counts);
+	R_Free(keys);
 }
 
 SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP maskNum, SEXP fastMovingSide, SEXP nThreads)
@@ -339,7 +340,7 @@ SEXP enumerateSequence(SEXP x, SEXP wordSize, SEXP mask, SEXP maskLCRs, SEXP mas
 	}
 	
 	// build a vector of thread-safe pointers
-	int **ptrs = Calloc(x_length, int *); // vectors
+	int **ptrs = R_Calloc(x_length, int *); // vectors
 	for (i = 0; i < x_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
 		SEXP ans;
@@ -576,8 +577,8 @@ SEXP enumerateGappedSequence(SEXP x, SEXP wordSize, SEXP ordering)
 			PROTECT(ans = allocVector(INTSXP, 0));
 			PROTECT(pos = allocVector(INTSXP, 0));
 		} else {
-			int *POS = Calloc(x_i.length - wS + 1, int); // initialized to zero
-			int *ANS = Calloc(x_i.length - wS + 1, int); // initialized to zero
+			int *POS = R_Calloc(x_i.length - wS + 1, int); // initialized to zero
+			int *ANS = R_Calloc(x_i.length - wS + 1, int); // initialized to zero
 			int bases[wS];
 			int count = 0;
 			int repeat[66] = {-1}; // array of previous occurrences
@@ -652,8 +653,8 @@ SEXP enumerateGappedSequence(SEXP x, SEXP wordSize, SEXP ordering)
 					*(p + j) = *(POS + j);
 				}
 			}
-			Free(POS);
-			Free(ANS);
+			R_Free(POS);
+			R_Free(ANS);
 		}
 		
 		SET_VECTOR_ELT(ret_list, 2*i, ans);
@@ -697,8 +698,8 @@ SEXP enumerateGappedSequenceAA(SEXP x, SEXP wordSize, SEXP ordering)
 			PROTECT(ans = allocVector(INTSXP, 0));
 			PROTECT(pos = allocVector(INTSXP, 0));
 		} else {
-			int *POS = Calloc(x_i.length - wS + 1, int); // initialized to zero
-			int *ANS = Calloc(x_i.length - wS + 1, int); // initialized to zero
+			int *POS = R_Calloc(x_i.length - wS + 1, int); // initialized to zero
+			int *ANS = R_Calloc(x_i.length - wS + 1, int); // initialized to zero
 			int bases[wS];
 			int count = 0;
 			int repeat[66] = {-1}; // array of previous occurrences
@@ -773,8 +774,8 @@ SEXP enumerateGappedSequenceAA(SEXP x, SEXP wordSize, SEXP ordering)
 					*(p + j) = *(POS + j);
 				}
 			}
-			Free(POS);
-			Free(ANS);
+			R_Free(POS);
+			R_Free(ANS);
 		}
 		
 		SET_VECTOR_ELT(ret_list, 2*i, ans);
@@ -936,7 +937,7 @@ SEXP enumerateSequenceReducedAA(SEXP x, SEXP wordSize, SEXP alphabet, SEXP mask,
 	}
 	
 	// build a vector of thread-safe pointers
-	int **ptrs = Calloc(x_length, int *); // vectors
+	int **ptrs = R_Calloc(x_length, int *); // vectors
 	for (i = 0; i < x_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
 		SEXP ans;

@@ -9,7 +9,7 @@ import(DBI)
 
 importFrom("grDevices", "colorRampPalette", "colors", "dev.flush", "dev.hold", "dev.size", "rainbow", "rgb", "as.graphicsAnnot", "col2rgb")
 importFrom("graphics", "abline", "axis", "box", "legend", "mtext", "par", "plot", "points", "rect", "segments", "strheight", "strwidth", "text", "axTicks", "hist", "layout", "lines", "polygon", "locator")
-importFrom("stats", "dendrapply", "dist", "is.leaf", "nlminb", "optimize", "order.dendrogram", "pbinom", "reorder", "setNames", "step", "uniroot", "weighted.mean", "binomial", "glm", "glm.control", "optim", "predict", "smooth.spline", "dlnorm", "plnorm", "qlnorm", "chisq.test", "dmultinom", "ecdf", "pchisq", "qbinom", "as.dist", "pgamma", "prcomp", "qgamma", "qnorm", "rnorm", "runif", "kmeans")
+importFrom("stats", "dendrapply", "dist", "is.leaf", "nlminb", "optimize", "order.dendrogram", "pbinom", "reorder", "setNames", "step", "uniroot", "weighted.mean", "binomial", "glm", "glm.control", "optim", "predict", "smooth.spline", "dlnorm", "plnorm", "qlnorm", "chisq.test", "dmultinom", "ecdf", "pchisq", "qbinom", "as.dist", "pgamma", "prcomp", "qgamma", "qnorm", "rnorm", "runif", "kmeans", "rlnorm")
 importFrom("utils", "browseURL", "data", "flush.console", "object.size", "setTxtProgressBar", "txtProgressBar", "packageVersion", "write.table")
 
 export(
@@ -51,6 +51,7 @@ S3method(`[`, "Synteny")
 S3method(pairs, "Synteny")
 S3method(plot, "Synteny")
 S3method(print, "Synteny")
+S3method(as.dist, "Synteny")
 S3method(`[`, "Taxa")
 S3method(c, "Taxa")
 S3method(plot, "Taxa")

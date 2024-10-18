@@ -21,7 +21,7 @@ DistanceMatrix <- function(myXStringSet,
 		stop("Invalid method.")
 	if (method == -1)
 		stop("Ambiguous method.")
-	CORRECTIONS <- c("none", "Jukes-Cantor", "JC", "JC69", "F81")
+	CORRECTIONS <- c("none", "Jukes-Cantor", "JC", "JC69", "F81", "Poisson")
 	correction <- pmatch(correction, CORRECTIONS)
 	if (is.na(correction))
 		stop("Invalid distance correction method.")
@@ -78,21 +78,23 @@ DistanceMatrix <- function(myXStringSet,
 	}
 	
 	# calculate distance correction
-	if (correction != 1L) {
+	if (correction == 6L) { # Poisson
+		E <- 1
+	} else if (correction != 1L) {
 		if (is(myXStringSet, "DNAStringSet")) {
-			if (penalizeGapLetterMatches) {
+			if (is.na(penalizeGapLetterMatches) || penalizeGapLetterMatches) {
 				alphabet <- c(DNA_BASES, "-")
 			} else {
 				alphabet <- DNA_BASES
 			}
 		} else if (is(myXStringSet, "RNAStringSet")) {
-			if (penalizeGapLetterMatches) {
+			if (is.na(penalizeGapLetterMatches) || penalizeGapLetterMatches) {
 				alphabet <- c(RNA_BASES, "-")
 			} else {
 				alphabet <- RNA_BASES
 			}
 		} else if (is(myXStringSet, "AAStringSet")) {
-			if (penalizeGapLetterMatches) {
+			if (is.na(penalizeGapLetterMatches) || penalizeGapLetterMatches) {
 				alphabet <- c(AA_STANDARD, "-")
 			} else {
 				alphabet <- AA_STANDARD
@@ -100,15 +102,15 @@ DistanceMatrix <- function(myXStringSet,
 		}
 		if (correction == 5L) {
 			E <- letterFrequency(myXStringSet,
-				alphabet)
-			E <- colSums(E)
+				alphabet,
+				collapse=TRUE)
 			E <- E/sum(E)
 			E <- 1 - sum(E^2)
 		} else { # JC69
 			E <- 1/length(alphabet) # assumes even frequencies
 			E <- 1 - length(alphabet)*sum(E^2)
 		}
-	} else {
+	} else { # none
 		E <- 0
 	}
 	

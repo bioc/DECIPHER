@@ -2,11 +2,12 @@
  *                       Aligns Two Sequence Profiles                       *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
- 
- // for OpenMP parallel processing
- #ifdef _OPENMP
- #include <omp.h>
- #endif
+
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#undef match
+#endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -108,8 +109,8 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 	int l = lp + ls;
 	
 	// create arrays of normalization factors (coverge^POW)
-	double *pnorm = Calloc(lp, double); // initialized to zero
-	double *snorm = Calloc(ls, double); // initialized to zero
+	double *pnorm = R_Calloc(lp, double); // initialized to zero
+	double *snorm = R_Calloc(ls, double); // initialized to zero
 	for (i = 0; i < lp; i++)
 		if (pprofile[7 + size*i] > 0)
 			pnorm[i] = pow(pprofile[7 + size*i], POW1)*pow(1 - pprofile[4 + size*i], POW2);
@@ -141,8 +142,8 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 	double *Pp, *Ps;
 	if (RNA == 2) { // prepare for scoring pairs
 		// initialize arrays of pair frequencies
-		Pp = Calloc(lp*16, double); // initialized to zero
-		Ps = Calloc(ls*16, double); // initialized to zero
+		Pp = R_Calloc(lp*16, double); // initialized to zero
+		Ps = R_Calloc(ls*16, double); // initialized to zero
 		
 		for (i = 1; i < lp; i++) {
 			z = 0;
@@ -168,8 +169,8 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 		}
 		
 		// initialize arrays of nucleotide orders
-		Op = Calloc(lp*16, int); // initialized to zero
-		Os = Calloc(ls*16, int); // initialized to zero
+		Op = R_Calloc(lp*16, int); // initialized to zero
+		Os = R_Calloc(ls*16, int); // initialized to zero
 		
 		for (i = 0; i < lp; i++) {
 			k = 0;
@@ -201,14 +202,14 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 		}
 	}
 */	
-	float *m = Calloc((lp+1)*(ls+1), float); // initialized to zero
-	int *o = Calloc(lp*ls, int); // initialized to zero
+	float *m = R_Calloc((lp+1)*(ls+1), float); // initialized to zero
+	int *o = R_Calloc(lp*ls, int); // initialized to zero
 	
 	// initialize arrays for recording the last gap that existed
-	float *scoreLastGp = Calloc(lp, float); // initialized to zero
-	float *scoreLastGs = Calloc(ls, float); // initialized to zero
-	int *posLastGp = Calloc(lp, int); // initialized to zero
-	int *posLastGs = Calloc(ls, int); // initialized to zero
+	float *scoreLastGp = R_Calloc(lp, float); // initialized to zero
+	float *scoreLastGs = R_Calloc(ls, float); // initialized to zero
+	int *posLastGp = R_Calloc(lp, int); // initialized to zero
+	int *posLastGs = R_Calloc(ls, int); // initialized to zero
 
 	// zipfian distribution for gap cost
 	if (lp > ls) {
@@ -216,15 +217,15 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 	} else {
 		j = ls;
 	}
-	double *zip = Calloc(j + 1, double); // initialized to zero
+	double *zip = R_Calloc(j + 1, double); // initialized to zero
 	for (i = 1; i <= j; i++)
 		zip[i] = pow((double)i, EX);
 		
 	// deterine the fraction of sequences starting or ending
-	double *pstarts = Calloc(lp, double); // initialized to zero
-	double *pstops = Calloc(lp, double); // initialized to zero
-	double *sstarts = Calloc(ls, double); // initialized to zero
-	double *sstops = Calloc(ls, double); // initialized to zero
+	double *pstarts = R_Calloc(lp, double); // initialized to zero
+	double *pstops = R_Calloc(lp, double); // initialized to zero
+	double *sstarts = R_Calloc(ls, double); // initialized to zero
+	double *sstops = R_Calloc(ls, double); // initialized to zero
 	double past, current;
 	past = 0;
 	for (i = 0; i < lp; i++) {
@@ -606,10 +607,10 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 	}
 /*	
 	if (RNA == 2) {
-		Free(Pp);
-		Free(Ps);
-		Free(Op);
-		Free(Os);
+		R_Free(Pp);
+		R_Free(Ps);
+		R_Free(Op);
+		R_Free(Os);
 	}
 */	
 	if (egpR != 0) {
@@ -625,10 +626,10 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 		}
 	}
 	
-	Free(posLastGp);
-	Free(posLastGs);
-	Free(scoreLastGp);
-	Free(scoreLastGs);
+	R_Free(posLastGp);
+	R_Free(posLastGs);
+	R_Free(scoreLastGp);
+	R_Free(scoreLastGs);
 	
 	// subtract background score expected without alignment
 	if (normalize) {
@@ -644,8 +645,8 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 		}
 	}
 	
-	Free(pnorm);
-	Free(snorm);
+	R_Free(pnorm);
+	R_Free(snorm);
 	
 	// find the max scoring alignment
 	int maxp = 0;
@@ -680,14 +681,14 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 	Rprintf("\n");
 	*/
 	
-	Free(m);
-	Free(zip);
-	Free(pstarts);
-	Free(pstops);
-	Free(sstarts);
-	Free(sstops);
+	R_Free(m);
+	R_Free(zip);
+	R_Free(pstarts);
+	R_Free(pstops);
+	R_Free(sstarts);
+	R_Free(sstops);
 	
-	int *t = Calloc(l, int); // initialized to zero
+	int *t = R_Calloc(l, int); // initialized to zero
 	
 	i = maxp - 1;
 	j = maxs - 1;
@@ -710,10 +711,10 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 	int minp = i + 2;
 	int mins = j + 2;
 	
-	int *p_ins = Calloc(l, int); // initialized to zero
-	int *s_ins = Calloc(l, int); // initialized to zero
-	int *p_ats = Calloc(l, int); // initialized to zero
-	int *s_ats = Calloc(l, int); // initialized to zero
+	int *p_ins = R_Calloc(l, int); // initialized to zero
+	int *s_ins = R_Calloc(l, int); // initialized to zero
+	int *p_ats = R_Calloc(l, int); // initialized to zero
+	int *s_ats = R_Calloc(l, int); // initialized to zero
 	
 	int p_count, s_count, value;
 	
@@ -801,12 +802,12 @@ SEXP alignProfiles(SEXP p, SEXP s, SEXP type, SEXP subMatrix, SEXP dbnMatrix, SE
 	SET_VECTOR_ELT(ret_list, 2, ans3);
 	SET_VECTOR_ELT(ret_list, 3, ans4);
 	
-	Free(o);
-	Free(t);
-	Free(p_ins);
-	Free(s_ins);
-	Free(p_ats);
-	Free(s_ats);
+	R_Free(o);
+	R_Free(t);
+	R_Free(p_ins);
+	R_Free(s_ins);
+	R_Free(p_ats);
+	R_Free(s_ats);
 	
 	UNPROTECT(5);
 	
@@ -857,8 +858,8 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 	int N21[20] = {0, 21, 42, 63, 84, 105, 126, 147, 168, 189, 210, 231, 252, 273, 294, 315, 336, 357, 378, 399};
 	
 	// initialize arrays of residue orders
-	int *Op = Calloc(lp*20, int); // initialized to zero
-	int *Os = Calloc(ls*20, int); // initialized to zero
+	int *Op = R_Calloc(lp*20, int); // initialized to zero
+	int *Os = R_Calloc(ls*20, int); // initialized to zero
 	int SIZE20, ISIZE;
 	
 	for (i = 0; i < lp; i++) {
@@ -926,14 +927,14 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 	};
 	
 	// gap extension based on residues opposing the gap
-	double *GCp = Calloc(lp, double); // initialized to zero
-	double *GCs = Calloc(ls, double); // initialized to zero
+	double *GCp = R_Calloc(lp, double); // initialized to zero
+	double *GCs = R_Calloc(ls, double); // initialized to zero
 	// gap opening based on local sequence context
-	double *GOp = Calloc(lp, double); // initialized to zero
-	double *GOs = Calloc(ls, double); // initialized to zero
+	double *GOp = R_Calloc(lp, double); // initialized to zero
+	double *GOs = R_Calloc(ls, double); // initialized to zero
 	// gap opening in the opposing sequence based on runs
-	double *GRp = Calloc(lp, double); // initialized to zero
-	double *GRs = Calloc(ls, double); // initialized to zero
+	double *GRp = R_Calloc(lp, double); // initialized to zero
+	double *GRs = R_Calloc(ls, double); // initialized to zero
 	
 	// start of run of length 2 at position zero
 	//          -2          -1            0           +1
@@ -1040,14 +1041,14 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 		}
 	}
 	
-	float *m = Calloc((lp+1)*(ls+1), float); // initialized to zero
-	int *o = Calloc(lp*ls, int); // initialized to zero
+	float *m = R_Calloc((lp+1)*(ls+1), float); // initialized to zero
+	int *o = R_Calloc(lp*ls, int); // initialized to zero
 	
 	// initialize arrays for recording the last gap that existed
-	float *scoreLastGp = Calloc(lp, float); // initialized to zero
-	float *scoreLastGs = Calloc(ls, float); // initialized to zero
-	int *posLastGp = Calloc(lp, int); // initialized to zero
-	int *posLastGs = Calloc(ls, int); // initialized to zero
+	float *scoreLastGp = R_Calloc(lp, float); // initialized to zero
+	float *scoreLastGs = R_Calloc(ls, float); // initialized to zero
+	int *posLastGp = R_Calloc(lp, int); // initialized to zero
+	int *posLastGs = R_Calloc(ls, int); // initialized to zero
 	
 	// zipfian distribution for gap cost
 	if (lp > ls) {
@@ -1055,15 +1056,15 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 	} else {
 		j = ls;
 	}
-	double *zip = Calloc(j + 1, double); // initialized to zero
+	double *zip = R_Calloc(j + 1, double); // initialized to zero
 	for (i = 1; i <= j; i++)
 		zip[i] = pow((double)i, EX);
 	
 	// deterine the fraction of sequences starting or ending
-	double *pstarts = Calloc(lp, double); // initialized to zero
-	double *pstops = Calloc(lp, double); // initialized to zero
-	double *sstarts = Calloc(ls, double); // initialized to zero
-	double *sstops = Calloc(ls, double); // initialized to zero
+	double *pstarts = R_Calloc(lp, double); // initialized to zero
+	double *pstops = R_Calloc(lp, double); // initialized to zero
+	double *sstarts = R_Calloc(ls, double); // initialized to zero
+	double *sstops = R_Calloc(ls, double); // initialized to zero
 	double past, current;
 	past = 0;
 	for (i = 0; i < lp; i++) {
@@ -1115,8 +1116,8 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 	}
 	
 	// create array of normalization factors (coverge^POW)
-	double *pnorm = Calloc(lp, double); // initialized to zero
-	double *snorm = Calloc(ls, double); // initialized to zero
+	double *pnorm = R_Calloc(lp, double); // initialized to zero
+	double *snorm = R_Calloc(ls, double); // initialized to zero
 	for (i = 0; i < lp; i++)
 		if (pprofile[26 + size*i] > 0)
 			pnorm[i] = pow(pprofile[26 + size*i], POW1)*pow(1 - pprofile[23 + size*i], POW2);
@@ -1463,10 +1464,10 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 		}
 	}
 	
-	Free(posLastGp);
-	Free(posLastGs);
-	Free(scoreLastGp);
-	Free(scoreLastGs);
+	R_Free(posLastGp);
+	R_Free(posLastGs);
+	R_Free(scoreLastGp);
+	R_Free(scoreLastGs);
 	
 	// subtract background score expected without alignment
 	if (normalize) {
@@ -1482,8 +1483,8 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 		}
 	}
 	
-	Free(pnorm);
-	Free(snorm);
+	R_Free(pnorm);
+	R_Free(snorm);
 	
 	// find the max scoring alignment
 	int maxp = 0;
@@ -1518,22 +1519,22 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 	Rprintf("\n");
 	*/
 	
-	Free(m);
-	Free(Op);
-	Free(Os);
-	Free(zip);
-	Free(GCp);
-	Free(GCs);
-	Free(GOp);
-	Free(GOs);
-	Free(GRp);
-	Free(GRs);
-	Free(pstarts);
-	Free(pstops);
-	Free(sstarts);
-	Free(sstops);
+	R_Free(m);
+	R_Free(Op);
+	R_Free(Os);
+	R_Free(zip);
+	R_Free(GCp);
+	R_Free(GCs);
+	R_Free(GOp);
+	R_Free(GOs);
+	R_Free(GRp);
+	R_Free(GRs);
+	R_Free(pstarts);
+	R_Free(pstops);
+	R_Free(sstarts);
+	R_Free(sstops);
 	
-	int *t = Calloc(l, int); // initialized to zero
+	int *t = R_Calloc(l, int); // initialized to zero
 	
 	i = maxp - 1;
 	j = maxs - 1;
@@ -1556,10 +1557,10 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 	int minp = i + 2;
 	int mins = j + 2;
 	
-	int *p_ins = Calloc(l, int); // initialized to zero
-	int *s_ins = Calloc(l, int); // initialized to zero
-	int *p_ats = Calloc(l, int); // initialized to zero
-	int *s_ats = Calloc(l, int); // initialized to zero
+	int *p_ins = R_Calloc(l, int); // initialized to zero
+	int *s_ins = R_Calloc(l, int); // initialized to zero
+	int *p_ats = R_Calloc(l, int); // initialized to zero
+	int *s_ats = R_Calloc(l, int); // initialized to zero
 	
 	int p_count, s_count, value;
 	
@@ -1647,12 +1648,12 @@ SEXP alignProfilesAA(SEXP p, SEXP s, SEXP subMatrix, SEXP hecMatrix, SEXP go, SE
 	SET_VECTOR_ELT(ret_list, 2, ans3);
 	SET_VECTOR_ELT(ret_list, 3, ans4);
 	
-	Free(o);
-	Free(t);
-	Free(p_ins);
-	Free(s_ins);
-	Free(p_ats);
-	Free(s_ats);
+	R_Free(o);
+	R_Free(t);
+	R_Free(p_ins);
+	R_Free(s_ins);
+	R_Free(p_ats);
+	R_Free(s_ats);
 	
 	UNPROTECT(5);
 	

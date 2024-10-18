@@ -2,11 +2,12 @@
  *                      Utilities for Gene Prediction                       *
  *                           Author: Erik Wright                            *
  ****************************************************************************/
- 
- // for OpenMP parallel processing
- #ifdef _OPENMP
- #include <omp.h>
- #endif
+
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#undef match
+#endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -157,10 +158,10 @@ SEXP getORFs(SEXP x, SEXP start_codons, SEXP stop_codons, SEXP min_gene_length, 
 	
 	int count = 0;
 	int size = 10000;
-	int *ORFstarts = Calloc(size, int);
-	int *ORFstops = Calloc(size, int);
-	int *ORFstrands = Calloc(size, int);
-	int *ORFindices = Calloc(size, int);
+	int *ORFstarts = R_Calloc(size, int);
+	int *ORFstops = R_Calloc(size, int);
+	int *ORFstrands = R_Calloc(size, int);
+	int *ORFindices = R_Calloc(size, int);
 	
 	for (i = 0; i < x_length; i++) {
 		x_i = get_elt_from_XStringSet_holder(&x_set, i);
@@ -201,10 +202,10 @@ SEXP getORFs(SEXP x, SEXP start_codons, SEXP stop_codons, SEXP min_gene_length, 
 							(lastStop - j + 3) >= minL) {
 							if (count >= size) {
 								size += 10000;
-								ORFstarts = Realloc(ORFstarts, size, int);
-								ORFstops = Realloc(ORFstops, size, int);
-								ORFstrands = Realloc(ORFstrands, size, int);
-								ORFindices = Realloc(ORFindices, size, int);
+								ORFstarts = R_Realloc(ORFstarts, size, int);
+								ORFstops = R_Realloc(ORFstops, size, int);
+								ORFstrands = R_Realloc(ORFstrands, size, int);
+								ORFindices = R_Realloc(ORFindices, size, int);
 							}
 							if (s) { // negative strand
 								ORFstarts[count] = x_i.length - lastStop - 3;
@@ -234,10 +235,10 @@ SEXP getORFs(SEXP x, SEXP start_codons, SEXP stop_codons, SEXP min_gene_length, 
 		rans[i + 3*count] = ORFstops[i];
 	}
 	
-	Free(ORFstarts);
-	Free(ORFstops);
-	Free(ORFstrands);
-	Free(ORFindices);
+	R_Free(ORFstarts);
+	R_Free(ORFstops);
+	R_Free(ORFstrands);
+	R_Free(ORFindices);
 	
 	UNPROTECT(1);
 	
@@ -255,8 +256,8 @@ SEXP codonModel(SEXP x, SEXP orftable, SEXP stop_codons, SEXP min_orf_length, SE
 	double *scores = REAL(coding_scores);
 	int inside = 0;
 	
-	int *freq = Calloc(64, int);
-	int *bg = Calloc(64, int);
+	int *freq = R_Calloc(64, int);
+	int *bg = R_Calloc(64, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -358,8 +359,8 @@ SEXP codonModel(SEXP x, SEXP orftable, SEXP stop_codons, SEXP min_orf_length, SE
 		}
 	}
 	
-	Free(freq);
-	Free(bg);
+	R_Free(freq);
+	R_Free(bg);
 	
 	UNPROTECT(1);
 	
@@ -489,8 +490,8 @@ SEXP dicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 	int *orfs = INTEGER(orftable);
 	int inside = 0;
 	
-	int *freq = Calloc(4096, int);
-	int *bg = Calloc(4096, int);
+	int *freq = R_Calloc(4096, int);
+	int *bg = R_Calloc(4096, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -626,8 +627,8 @@ SEXP dicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 		}
 	}
 	
-	Free(freq);
-	Free(bg);
+	R_Free(freq);
+	R_Free(bg);
 	
 	UNPROTECT(1);
 	
@@ -643,8 +644,8 @@ SEXP unicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 	int *orfs = INTEGER(orftable);
 	int inside = 0;
 	
-	int *freq = Calloc(64, int);
-	int *bg = Calloc(64, int);
+	int *freq = R_Calloc(64, int);
+	int *bg = R_Calloc(64, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -744,8 +745,8 @@ SEXP unicodonModel(SEXP x, SEXP orftable, SEXP stop_codons)
 		}
 	}
 	
-	Free(freq);
-	Free(bg);
+	R_Free(freq);
+	R_Free(bg);
 	
 	UNPROTECT(1);
 	
@@ -764,8 +765,8 @@ SEXP startCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP start_codons)
 	int count = 0;
 	int curr_i = 0;
 	
-	double *freq = Calloc(64, double);
-	double *bg = Calloc(64, double);
+	double *freq = R_Calloc(64, double);
+	double *bg = R_Calloc(64, double);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -848,8 +849,8 @@ SEXP startCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP start_codons)
 		}
 	}
 	
-	Free(freq);
-	Free(bg);
+	R_Free(freq);
+	R_Free(bg);
 	
 	UNPROTECT(1);
 	
@@ -921,8 +922,8 @@ SEXP initialCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP initial_codons)
 	int l = length(indices);
 	int curr_i = 0;
 	
-	int *freq = Calloc(64*ini, int);
-	int *bg = Calloc(64, int);
+	int *freq = R_Calloc(64*ini, int);
+	int *bg = R_Calloc(64, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -1009,8 +1010,8 @@ SEXP initialCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP initial_codons)
 		}
 	}
 	
-	Free(freq);
-	Free(bg);
+	R_Free(freq);
+	R_Free(bg);
 	
 	UNPROTECT(1);
 	
@@ -1085,8 +1086,8 @@ SEXP terminationCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP terminal_co
 	int l = length(indices);
 	int curr_i = 0;
 	
-	int *freq = Calloc(64*ter, int);
-	int *bg = Calloc(64, int);
+	int *freq = R_Calloc(64*ter, int);
+	int *bg = R_Calloc(64, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -1167,8 +1168,8 @@ SEXP terminationCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP terminal_co
 		}
 	}
 	
-	Free(freq);
-	Free(bg);
+	R_Free(freq);
+	R_Free(bg);
 	
 	UNPROTECT(1);
 	
@@ -1342,9 +1343,9 @@ SEXP autocorrelationModel(SEXP x, SEXP orftable, SEXP indices, SEXP aatable)
 	int l = length(indices);
 	int curr_i = 0;
 	
-	int *freq = Calloc(4096, int);
-	int *prev = Calloc(20, int);
-	int *pos = Calloc(20, int);
+	int *freq = R_Calloc(4096, int);
+	int *prev = R_Calloc(20, int);
+	int *pos = R_Calloc(20, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -1403,13 +1404,13 @@ SEXP autocorrelationModel(SEXP x, SEXP orftable, SEXP indices, SEXP aatable)
 		}
 	}
 	
-	Free(prev);
-	Free(pos);
+	R_Free(prev);
+	R_Free(pos);
 	
 	// calculate the row sums
-	int *rowSums = Calloc(64, int);
-	int *colSums = Calloc(64, int);
-	int *AAsums = Calloc(20, int);
+	int *rowSums = R_Calloc(64, int);
+	int *colSums = R_Calloc(64, int);
+	int *AAsums = R_Calloc(20, int);
 	for (i = 0; i < 64; i++) {
 		for (j = 0; j < 64; j++) {
 			if (freq[64*j + i] > 0) {
@@ -1434,10 +1435,10 @@ SEXP autocorrelationModel(SEXP x, SEXP orftable, SEXP indices, SEXP aatable)
 		}
 	}
 	
-	Free(freq);
-	Free(rowSums);
-	Free(colSums);
-	Free(AAsums);
+	R_Free(freq);
+	R_Free(rowSums);
+	R_Free(colSums);
+	R_Free(AAsums);
 	
 	UNPROTECT(1);
 	
@@ -1454,8 +1455,8 @@ SEXP scoreAutocorrelationModel(SEXP x, SEXP orftable, SEXP codon_scores, SEXP aa
 	int curr_i = 0;
 	double score;
 	
-	int *prev = Calloc(20, int);
-	int *pos = Calloc(20, int);
+	int *prev = R_Calloc(20, int);
+	int *pos = R_Calloc(20, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -1546,8 +1547,8 @@ SEXP scoreAutocorrelationModel(SEXP x, SEXP orftable, SEXP codon_scores, SEXP aa
 		}
 	}
 	
-	Free(prev);
-	Free(pos);
+	R_Free(prev);
+	R_Free(pos);
 	
 	UNPROTECT(1);
 	
@@ -1565,9 +1566,9 @@ SEXP couplingModel(SEXP x, SEXP orftable, SEXP indices, SEXP aatable, SEXP maxDi
 	int maxD = asInteger(maxDist);
 	int curr_i = 0;
 	
-	int *freq = Calloc(400*maxD, int); // 20 x 20 x maxD
-	int *vals = Calloc(maxD, int);
-	int *counts = Calloc(20, int);
+	int *freq = R_Calloc(400*maxD, int); // 20 x 20 x maxD
+	int *vals = R_Calloc(maxD, int);
+	int *counts = R_Calloc(20, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -1624,7 +1625,7 @@ SEXP couplingModel(SEXP x, SEXP orftable, SEXP indices, SEXP aatable, SEXP maxDi
 		}
 	}
 	
-	Free(vals);
+	R_Free(vals);
 	
 	count = 0;
 	for (i = 0; i < 20; i++) {
@@ -1634,7 +1635,7 @@ SEXP couplingModel(SEXP x, SEXP orftable, SEXP indices, SEXP aatable, SEXP maxDi
 	}
 	
 	// calculate the row sums
-	int *colSums = Calloc(maxD, int);
+	int *colSums = R_Calloc(maxD, int);
 	for (j = 0; j < maxD; j++)
 		for (i = 0; i < 400; i++)
 			colSums[j] += freq[j*400 + i];
@@ -1655,9 +1656,9 @@ SEXP couplingModel(SEXP x, SEXP orftable, SEXP indices, SEXP aatable, SEXP maxDi
 		}
 	}
 	
-	Free(freq);
-	Free(colSums);
-	Free(counts);
+	R_Free(freq);
+	R_Free(colSums);
+	R_Free(counts);
 	
 	UNPROTECT(1);
 	
@@ -1675,7 +1676,7 @@ SEXP scoreCouplingModel(SEXP x, SEXP orftable, SEXP coupling_scores, SEXP aatabl
 	int curr_i = 0;
 	double score;
 	
-	int *vals = Calloc(maxD, int);
+	int *vals = R_Calloc(maxD, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -1763,7 +1764,7 @@ SEXP scoreCouplingModel(SEXP x, SEXP orftable, SEXP coupling_scores, SEXP aatabl
 		}
 	}
 	
-	Free(vals);
+	R_Free(vals);
 	
 	UNPROTECT(1);
 	
@@ -1781,8 +1782,8 @@ SEXP nucleotideBiasModel(SEXP x, SEXP orftable, SEXP indices, SEXP positions)
 	int count = 0;
 	int curr_i = 0;
 	
-	int *freq = Calloc(4*pos, int);
-	int *bg = Calloc(4*pos, int);
+	int *freq = R_Calloc(4*pos, int);
+	int *bg = R_Calloc(4*pos, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -1861,8 +1862,8 @@ SEXP nucleotideBiasModel(SEXP x, SEXP orftable, SEXP indices, SEXP positions)
 			rans[p*4 + i] = log(((double)freq[p*4 + i]/(double)sumfreq)/((double)bg[p*4 + i]/(double)sumbg));
 	}
 	
-	Free(freq);
-	Free(bg);
+	R_Free(freq);
+	R_Free(bg);
 	
 	UNPROTECT(1);
 	
@@ -1938,8 +1939,8 @@ SEXP upstreamMotifModel(SEXP x, SEXP orftable, SEXP indices, SEXP begin, SEXP di
 	int count = 0;
 	int curr_i = 0;
 	
-	int *freq = Calloc(n, int);
-	int *bg = Calloc(n, int);
+	int *freq = R_Calloc(n, int);
+	int *bg = R_Calloc(n, int);
 	
 	int mult[kmer];
 	mult[0] = 1;
@@ -2028,8 +2029,8 @@ SEXP upstreamMotifModel(SEXP x, SEXP orftable, SEXP indices, SEXP begin, SEXP di
 	for (i = 0; i < n; i++)
 		rans[i] = log(((double)freq[i]/(double)sumfreq)/((double)bg[i]/(double)sumbg));
 	
-	Free(freq);
-	Free(bg);
+	R_Free(freq);
+	R_Free(bg);
 	
 	UNPROTECT(1);
 	
@@ -2142,8 +2143,8 @@ SEXP runLengthModel(SEXP x, SEXP orftable, SEXP codon_scores)
 	int inside = 0;
 	int runLength;
 	
-	int *freq = Calloc(20, int);
-	int *bg = Calloc(20, int);
+	int *freq = R_Calloc(20, int);
+	int *bg = R_Calloc(20, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -2253,8 +2254,8 @@ SEXP runLengthModel(SEXP x, SEXP orftable, SEXP codon_scores)
 	for (i = 0; i < 20; i++)
 		rans[i] = log((double)freq[i]/(double)sumfreq/((double)bg[i]/(double)sumbg));
 	
-	Free(freq);
-	Free(bg);
+	R_Free(freq);
+	R_Free(bg);
 	
 	UNPROTECT(1);
 	
@@ -2392,8 +2393,8 @@ SEXP stopCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP stop_codons)
 	int count = 0;
 	int curr_i = 0;
 	
-	int *freq = Calloc(64, int);
-	int *bg = Calloc(64, int);
+	int *freq = R_Calloc(64, int);
+	int *bg = R_Calloc(64, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -2476,8 +2477,8 @@ SEXP stopCodonModel(SEXP x, SEXP orftable, SEXP indices, SEXP stop_codons)
 		}
 	}
 	
-	Free(freq);
-	Free(bg);
+	R_Free(freq);
+	R_Free(bg);
 	
 	UNPROTECT(1);
 	
@@ -2548,7 +2549,7 @@ SEXP codonFrequencies(SEXP x, SEXP orftable, SEXP indices)
 	int l = length(indices);
 	int curr_i = 0;
 	
-	int *freq = Calloc(64*l, int);
+	int *freq = R_Calloc(64*l, int);
 	
 	XStringSet_holder x_set;
 	Chars_holder x_i;
@@ -2606,7 +2607,7 @@ SEXP codonFrequencies(SEXP x, SEXP orftable, SEXP indices)
 		}
 	}
 	
-	Free(freq);
+	R_Free(freq);
 	
 	UNPROTECT(1);
 	
@@ -2643,8 +2644,8 @@ SEXP chainGenes(SEXP orftable, SEXP topScore, SEXP topLength, SEXP scoreIntergen
 //	PROTECT(cumscore = duplicate(topScore));
 //	double *c = REAL(cumscore);
 	
-	int *p = Calloc(tot, int);
-	double *c = Calloc(tot, double);
+	int *p = R_Calloc(tot, int);
+	double *c = R_Calloc(tot, double);
 	for (i = 0; i < tot; i++) {
 		p[i] = i;
 		c[i] = topS[i];
@@ -2759,7 +2760,7 @@ SEXP chainGenes(SEXP orftable, SEXP topScore, SEXP topLength, SEXP scoreIntergen
 		if (c[i] > c[pointer])
 			pointer = i;
 	
-	int *indices = Calloc(pointer + 1, int);
+	int *indices = R_Calloc(pointer + 1, int);
 	int position = 0;
 	indices[position] = pointer;
 	while (pointer != p[pointer]) {
@@ -2775,9 +2776,9 @@ SEXP chainGenes(SEXP orftable, SEXP topScore, SEXP topLength, SEXP scoreIntergen
 	while (position >= 0)
 		rans[i++] = indices[position--] + 1;
 	
-	Free(p);
-	Free(c);
-	Free(indices);
+	R_Free(p);
+	R_Free(c);
+	R_Free(indices);
 	
 //	UNPROTECT(3);
 	UNPROTECT(1);
@@ -2792,7 +2793,7 @@ SEXP longestORFs(SEXP orftable)
 	int *orfs = INTEGER(orftable);
 	int count = 0;
 	int lastI = 0;
-	int *longest = Calloc(tot, int);
+	int *longest = R_Calloc(tot, int);
 	
 	// initialize lastVal from first row
 	if (orfs[tot]) {
@@ -2841,7 +2842,7 @@ SEXP longestORFs(SEXP orftable)
 		if (longest[i])
 			rans[count++] = i + 1;
 	
-	Free(longest);
+	R_Free(longest);
 	
 	UNPROTECT(1);
 	
@@ -2928,9 +2929,9 @@ SEXP getBounds(SEXP widths, SEXP start, SEXP end, SEXP minL, SEXP maxL, SEXP len
 	int lX = length(widths);
 	int l = length(start);
 	
-	int *ws = Calloc(lX, int);
-	int *offsets = Calloc(lX, int);
-	int *rev_width = Calloc(lX, int);
+	int *ws = R_Calloc(lX, int);
+	int *offsets = R_Calloc(lX, int);
+	int *rev_width = R_Calloc(lX, int);
 	for (j = 0; j < lX; j++) {
 		rev_width[lX - j - 1] = w[j];
 		if (j > 0) {
@@ -2942,7 +2943,7 @@ SEXP getBounds(SEXP widths, SEXP start, SEXP end, SEXP minL, SEXP maxL, SEXP len
 	}
 	
 	int size = 9e2;
-	double *r = Calloc(size, double);
+	double *r = R_Calloc(size, double);
 	int count = 0;
 	
 	i = 1;
@@ -2995,7 +2996,7 @@ SEXP getBounds(SEXP widths, SEXP start, SEXP end, SEXP minL, SEXP maxL, SEXP len
 						score >= minScore) {
 						if (count + 9 >= size) {
 							size *= 2;
-							r = Realloc(r, size, double);
+							r = R_Realloc(r, size, double);
 						}
 						
 						if (strand) {
@@ -3036,9 +3037,9 @@ SEXP getBounds(SEXP widths, SEXP start, SEXP end, SEXP minL, SEXP maxL, SEXP len
 		i++;
 	}
 	
-	Free(rev_width);
-	Free(offsets);
-	Free(ws);
+	R_Free(rev_width);
+	R_Free(offsets);
+	R_Free(ws);
 	
 	int nrow = count/9;
 	SEXP ans;
@@ -3060,7 +3061,7 @@ SEXP getBounds(SEXP widths, SEXP start, SEXP end, SEXP minL, SEXP maxL, SEXP len
 		j++;
 	}
 	
-	Free(r);
+	R_Free(r);
 	UNPROTECT(1);
 	
 	return ans;
@@ -3092,7 +3093,7 @@ SEXP kmerScores(SEXP oligos, SEXP ints, SEXP windowSize, SEXP kSize)
 	
 	int hS = wS/2; // half the windowSize
 	int l = length(ints);
-	int *bg = Calloc(length(oligos), int); // rolling distribution of k-mers
+	int *bg = R_Calloc(length(oligos), int); // rolling distribution of k-mers
 	
 	SEXP ans;
 	PROTECT(ans = allocVector(REALSXP, l + 1));
@@ -3151,7 +3152,7 @@ SEXP kmerScores(SEXP oligos, SEXP ints, SEXP windowSize, SEXP kSize)
 	for (k = 2; k <= l; k++)
 		rans[k] += rans[k - 1];
 	
-	Free(bg);
+	R_Free(bg);
 	UNPROTECT(1);
 	
 	return ans;

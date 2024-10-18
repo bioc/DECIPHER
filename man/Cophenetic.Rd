@@ -15,7 +15,7 @@ A dendrogram object.
 }
 }
 \details{
-The cophenetic distance between two observations is defined as the branch length separating them on a dendrogram.  This function differs from the \code{cophenetic} function in that it does not assume the tree is ultrametric and outputs the branch length separating pairs of observations rather than the height of their merger. A dendrogram that better preserves a distance matrix will show higher correlation between the distance matrix and it cophenetic distances.
+The cophenetic distance between two observations is defined here as the branch length separating them on a dendrogram, also known as the patristic distance.  This function differs from the \code{cophenetic} function in that it does not assume the tree is ultrametric and outputs the branch length separating pairs of observations rather than the height of their merger. A dendrogram that better preserves a distance matrix will show higher correlation between the distance matrix and its cophenetic distances.
 }
 \value{
 An object of class 'dist'.
@@ -30,7 +30,7 @@ Erik Wright \email{eswright@pitt.edu}
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
 dna <- readDNAStringSet(fas)
 d1 <- DistanceMatrix(dna, type="dist")
-dend <- TreeLine(myDistMatrix=d1, method="NJ")
+dend <- TreeLine(myDistMatrix=d1)
 d2 <- Cophenetic(dend)
 cor(d1, d2)
 }

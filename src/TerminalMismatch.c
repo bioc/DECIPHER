@@ -6,6 +6,7 @@
 // for OpenMP parallel processing
 #ifdef _OPENMP
 #include <omp.h>
+#undef match
 #endif
 
 /*

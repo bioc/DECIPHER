@@ -42,7 +42,7 @@ SEXP collapse(SEXP x, SEXP index1, SEXP index2)
 			tot += length(STRING_ELT(x, j));
 		}
 		
-		s = Calloc(tot, char);
+		s = R_Calloc(tot, char);
 		count = 0;
 		for (j = i1[i] - 1; j <  i2[i]; j++) {
 			l = length(STRING_ELT(x, j));
@@ -54,7 +54,7 @@ SEXP collapse(SEXP x, SEXP index1, SEXP index2)
 		}
 		s[count] = '\0'; // null-terminate
 		SET_STRING_ELT(ans, i, mkChar(s));
-		Free(s);
+		R_Free(s);
 	}
 	
 	UNPROTECT(1);
@@ -70,7 +70,7 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 	int l = length(starts);
 	const char *str, *field;
 	int maxlen = 1000;
-	char *s = Calloc(maxlen, char);
+	char *s = R_Calloc(maxlen, char);
 	int *ss = INTEGER(starts);
 	int *se = INTEGER(ends);
 	
@@ -128,14 +128,14 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 						if (curlen != 0) {
 							if (curlen == maxlen) {
 								maxlen *= 2;
-								s = Realloc(s, maxlen, char);
+								s = R_Realloc(s, maxlen, char);
 							}
 							s[curlen] = '\n';
 							curlen++;
 							
 							if (curlen == maxlen) {
 								maxlen *= 2;
-								s = Realloc(s, maxlen, char);
+								s = R_Realloc(s, maxlen, char);
 							}
 							s[curlen] = '\n';
 							curlen++;
@@ -144,7 +144,7 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 						while (p < l2) {
 							if (curlen == maxlen) {
 								maxlen *= 2;
-								s = Realloc(s, maxlen, char);
+								s = R_Realloc(s, maxlen, char);
 							}
 							s[curlen] = str[p];
 							curlen++;
@@ -168,7 +168,7 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 							if (hit == 1) {
 								if (curlen == maxlen) {
 									maxlen *= 2;
-									s = Realloc(s, maxlen, char);
+									s = R_Realloc(s, maxlen, char);
 								}
 								s[curlen] = '\n';
 								curlen++;
@@ -176,7 +176,7 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 								while (p < l2) {
 									if (curlen == maxlen) {
 										maxlen *= 2;
-										s = Realloc(s, maxlen, char);
+										s = R_Realloc(s, maxlen, char);
 									}
 									s[curlen] = str[p];
 									curlen++;
@@ -194,7 +194,7 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 			
 			if (curlen == maxlen) {
 				maxlen *= 2;
-				s = Realloc(s, maxlen, char);
+				s = R_Realloc(s, maxlen, char);
 			}
 			s[curlen] = '\0';
 			
@@ -205,7 +205,7 @@ SEXP extractFields(SEXP x, SEXP fields, SEXP starts, SEXP ends)
 		UNPROTECT(1);
 	}
 	
-	Free(s);
+	R_Free(s);
 	UNPROTECT(1); // ret
 	
 	return ret;

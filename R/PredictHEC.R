@@ -30,35 +30,52 @@ PredictHEC <- function(myAAStringSet,
 	windowSize <- as.integer(windowSize)
 	if (!is.double(background))
 		stop("background must be a numeric.")
-	if (length(background) < 3L || length(background) %% 3L != 0L)
-		stop("The length of background must be evenly divisible by 3.")
+	if (is(background, "matrix")) {
+		N <- nrow(background)
+		nms <- rownames(background)
+		if (ncol(background) != length(myAAStringSet))
+			stop("background must have as many columns as sequences in myAAStringSet.")
+	} else {
+		N <- length(background)
+		nms <- names(background)
+	}
+	if (N < 2L)
+		stop("The number of states in background must be at least 2.")
+	if (length(nms) != N)
+		stop("background must have state names.")
+	if (sum(nchar(names(background)) != 1L) > 0L)
+		stop("background must have single letter state names.")
 	if (is.null(HEC_MI1)) {
 		data("HEC_MI1", envir=environment(), package="DECIPHER")
 	} else {
 		if (!is.double(HEC_MI1))
 			stop("HEC_MI1 must be an array of numerics.")
-		if (length(dim(HEC_MI1)) != 3)
+		if (length(dim(HEC_MI1)) != 3L)
 			stop("HEC_MI1 must be a three dimensional array.")
-		if (dim(HEC_MI1)[1] != 20 ||
-			windowSize[1L] > ((dim(HEC_MI1)[2] - 1)/2) ||
-			(dim(HEC_MI1)[2] %% 2) != 1 ||
-			dim(HEC_MI1)[3] != 3)
-			stop("HEC_MI1 must have dimensions 20 x (2*windowSize + 1) x 3.")
+		if (dim(HEC_MI1)[1L] != 20L ||
+			windowSize[1L] > ((dim(HEC_MI1)[2L] - 1)/2) ||
+			(dim(HEC_MI1)[2L] %% 2L) != 1L ||
+			dim(HEC_MI1)[3L] != N)
+			stop("HEC_MI1 must have dimensions 20 x (2*windowSize + 1) x ", N, ".")
+		if (sum(dimnames(HEC_MI1)[[3L]] != nms) > 0L)
+			stop("HEC_MI1 states must be in the same order as background.")
 	}
 	if (is.null(HEC_MI2)) {
 		data("HEC_MI2", envir=environment(), package="DECIPHER")
 	} else {
 		if (!is.double(HEC_MI2))
 			stop("HEC_MI2 must be an array of numerics.")
-		if (length(dim(HEC_MI2)) != 5)
+		if (length(dim(HEC_MI2)) != 5L)
 			stop("HEC_MI2 must be a three dimensional array.")
-		if (dim(HEC_MI2)[1] != 20 ||
-			dim(HEC_MI2)[2] != 20 ||
-			windowSize[2L] > ((dim(HEC_MI2)[3] - 1)/2) ||
-			dim(HEC_MI2)[3] != dim(HEC_MI2)[4] ||
-			(dim(HEC_MI2)[3] %% 2) != 1 ||
-			dim(HEC_MI2)[5] != 3)
-			stop("HEC_MI2 must have dimensions 20 x 20 x (2*windowSize + 1) x (2*windowSize + 1) x 3.")
+		if (dim(HEC_MI2)[1L] != 20L ||
+			dim(HEC_MI2)[2L] != 20L ||
+			windowSize[2L] > ((dim(HEC_MI2)[3L] - 1)/2) ||
+			dim(HEC_MI2)[3L] != dim(HEC_MI2)[4L] ||
+			(dim(HEC_MI2)[3L] %% 2L) != 1L ||
+			dim(HEC_MI2)[5L] != N)
+			stop("HEC_MI2 must have dimensions 20 x 20 x (2*windowSize + 1) x (2*windowSize + 1) x ", N, ".")
+		if (sum(dimnames(HEC_MI2)[[5L]] != nms) > 0L)
+			stop("HEC_MI2 states must be in the same order as background.")
 	}
 	
 	states <- .Call("predictHEC",
@@ -67,11 +84,13 @@ PredictHEC <- function(myAAStringSet,
 		background,
 		HEC_MI1,
 		HEC_MI2,
-		type)
+		type,
+		paste(nms, collapse=""),
+		PACKAGE="DECIPHER")
 	
 	if (type > 1) {
 		states <- lapply(states, function(x) {
-			rownames(x) <- c("H", "E", "C")
+			rownames(x) <- nms
 			return(x)
 		})
 	}

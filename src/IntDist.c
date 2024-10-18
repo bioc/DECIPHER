@@ -64,7 +64,7 @@ SEXP intDist(SEXP x, SEXP levels, SEXP bins, SEXP maxBins, SEXP numRows, SEXP to
 	
 	// calculate the difference in area between integer vectors
 	double avg = 0, avg_j, diff;
-	int *skip = Calloc(n, int); // initialized to zero
+	int *skip = R_Calloc(n, int); // initialized to zero
 	int weight;
 	for (i = 0; i < n; i++) {
 		if (skip[i] != 0)
@@ -92,7 +92,7 @@ SEXP intDist(SEXP x, SEXP levels, SEXP bins, SEXP maxBins, SEXP numRows, SEXP to
 			}
 		}
 	}
-	Free(skip);
+	R_Free(skip);
 	
 	SEXP dist;
 	PROTECT(dist = allocVector(REALSXP, 1));

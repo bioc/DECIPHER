@@ -3,10 +3,11 @@
  *                           Author: Erik Wright                            *
  ****************************************************************************/
 
- // for OpenMP parallel processing
- #ifdef _OPENMP
- #include <omp.h>
- #endif
+// for OpenMP parallel processing
+#ifdef _OPENMP
+#include <omp.h>
+#undef match
+#endif
 
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
@@ -27,11 +28,18 @@
 // for math functions
 #include <math.h>
 
-// for calloc/free
+// for calloc/free and qsort
 #include <stdlib.h>
 
 // DECIPHER header file
 #include "DECIPHER.h"
+
+/*
+ * Biostrings_interface.h is needed for the DNAencode(), get_XString_asRoSeq(),
+ * init_match_reporting(), report_match() and reported_matches_asSEXP()
+ * protoypes, and for the COUNT_MRMODE and START_MRMODE constant symbols.
+ */
+#include "Biostrings_interface.h"
 
 // first matches of x[z...] == y[1]
 SEXP multiMatch(SEXP x, SEXP y, SEXP z)
@@ -454,7 +462,7 @@ SEXP matchRanges(SEXP x, SEXP y, SEXP wordSize, SEXP maxLength, SEXP threshold)
 	int l = asInteger(maxLength);
 	double thresh = asReal(threshold);
 	wS = asInteger(wordSize);
-	int *bits = Calloc(l*2, int); // initialized to zero
+	int *bits = R_Calloc(l*2, int); // initialized to zero
 	
 	if (size_x > size_y) {
 		size = size_x;
@@ -508,7 +516,7 @@ SEXP matchRanges(SEXP x, SEXP y, SEXP wordSize, SEXP maxLength, SEXP threshold)
 	
 	size /= 2;
 	// calculate ranges of anchors
-	int *temp = Calloc(l, int); // initialized to zero
+	int *temp = R_Calloc(l, int); // initialized to zero
 	int match = 0, count = -1, last_end_x = -10000, last_end_y = -10000;
 	for (i = 0; i < l; i++) {
 		//Rprintf("\n%d start_x=%d start_y=%d end_x=%d end_y=%d last_end_x=%d last_end_y=%d", i, i - wS + 2, *(bits + i + l) - wS + 1, i+1, *(bits + i + l), last_end_x, last_end_y);
@@ -558,8 +566,8 @@ SEXP matchRanges(SEXP x, SEXP y, SEXP wordSize, SEXP maxLength, SEXP threshold)
 	}
 	
 	UNPROTECT(1);
-	Free(bits);
-	Free(temp);
+	R_Free(bits);
+	R_Free(temp);
 	
 	return ans;
 }
@@ -1071,6 +1079,207 @@ SEXP detectCores()
 	#else
 	rans[0] = 1;
 	#endif
+	
+	UNPROTECT(1);
+	
+	return ans;
+}
+
+int comparePointers(const void *one, const void *two)
+{
+	const unsigned int **left  = (const unsigned int **)one;
+	const unsigned int **right = (const unsigned int **)two;
+	
+	return (**left < **right) - (**right < **left);
+}
+
+int *orderInt(unsigned int *a, int n)
+{
+	int i;
+	
+	unsigned int **pointers = malloc(n*sizeof(unsigned int *));
+	
+	for (i = 0; i < n; i++)
+		pointers[i] = a + i;
+	
+	qsort(pointers, n, sizeof(unsigned int *), comparePointers); // unstable sort
+	
+	int *indices = malloc(n*sizeof(int));
+	for (i = 0; i < n; i++)
+		indices[i] = pointers[i] - a;
+	
+	free(pointers);
+	
+	return indices;
+}
+
+// matching occurrence of columns in a set of sequences
+// optionally flag uninformative (constant or missing) columns
+SEXP matchColumns(SEXP x, SEXP letters)
+{
+	// initialize variables
+	int i, j, k, l, p;
+	
+	XStringSet_holder x_set, l_set;
+	Chars_holder x_i, l_i;
+	x_set = hold_XStringSet(x);
+	int n = get_length_from_XStringSet_holder(&x_set); // number of sequences
+	l_set = hold_XStringSet(letters);
+	l_i = get_elt_from_XStringSet_holder(&l_set, 0);
+	int c = l_i.length; // number of states
+	int *lkup;
+	if (c > 0) {
+		lkup = (int *) malloc(256*sizeof(int)); // thread-safe on Windows
+		for (i = 0; i < 256; i++)
+			lkup[i] = NA_INTEGER;
+		for (i = 0; i < c; i++)
+			lkup[(unsigned char)l_i.ptr[i]] = i;
+	}
+	
+	// determine longest sequence
+	l = 0;
+	for (i = 0; i < n; i++) {
+		x_i = get_elt_from_XStringSet_holder(&x_set, i);
+		if (x_i.length > l)
+			l = x_i.length;
+	}
+	
+	// hash the columns using xorshift
+	unsigned int *hash = (unsigned int *) calloc(l, sizeof(unsigned int)); // initialized to zero (thread-safe on Windows)
+	for (i = 0; i < n; i++) {
+		x_i = get_elt_from_XStringSet_holder(&x_set, i);
+		
+		for (j = 0; j < x_i.length; j++) {
+			hash[j] ^= (unsigned int)x_i.ptr[j];
+			hash[j] ^= hash[j] << 13;
+			hash[j] ^= hash[j] >> 17;
+			hash[j] ^= hash[j] << 5;
+		}
+	}
+	
+	int *o = orderInt(hash, l);
+	SEXP ans;
+	PROTECT(ans = allocVector(INTSXP, l));
+	int *rans = INTEGER(ans);
+	
+	// compare columns
+	k = 0; // position in hash
+	for (j = 0; j < l; j++) { // column in x
+		rans[o[j]] = o[j] + 1; // no match yet
+		while (k < j && hash[o[k]] > hash[o[j]])
+			k++;
+		p = k;
+		while (p < j && hash[o[j]] == hash[o[p]]) {
+			int match = 1;
+			for (i = 0; i < n; i++) {
+				x_i = get_elt_from_XStringSet_holder(&x_set, i);
+				if (x_i.length > o[j]) {
+					if (x_i.length <= o[p] || x_i.ptr[o[j]] != x_i.ptr[o[p]]) {
+						match = 0;
+						break;
+					}
+				} else if (x_i.length > o[p]) {
+					match = 0;
+					break;
+				}
+			}
+			if (match) {
+				rans[o[j]] = rans[o[p]];
+				break;
+			}
+			p++;
+		}
+		if (c > 0 && rans[o[j]] == o[j] + 1) { // filter uninformative sites
+			int first = c;
+			int second = c;
+			for (i = 0; i < n; i++) {
+				x_i = get_elt_from_XStringSet_holder(&x_set, i);
+				if (o[j] < x_i.length) {
+					int val = lkup[(unsigned char)x_i.ptr[o[j]]];
+					if (val != NA_INTEGER) {
+						if (first == c) {
+							first = val;
+							second = val;
+						} else if (val != first) {
+							second = val;
+							break;
+						}
+					}
+				}
+			}
+			if (first == second) // missing or constant column
+				rans[o[j]] = 0; // flag as uninformative
+		}
+	}
+	
+	free(hash);
+	free(o);
+	if (c > 0)
+		free(lkup);
+	
+	UNPROTECT(1);
+	
+	return ans;
+}
+
+// hash list of integer vectors into an integer vector
+SEXP hashList(SEXP x)
+{
+	int i, j, *X, lx;
+	int l = length(x);
+	
+	SEXP ans;
+	PROTECT(ans = allocVector(INTSXP, l));
+	int *rans = INTEGER(ans);
+	
+	for (i = 0; i < l; i++) {
+		X = INTEGER(VECTOR_ELT(x, i));
+		lx = length(VECTOR_ELT(x, i));
+		
+		rans[i] = 0;
+		for (j = 0; j < lx; j++) {
+			rans[i] ^= (unsigned int)X[j];
+			rans[i] ^= rans[i] << 13;
+			rans[i] ^= rans[i] >> 17;
+			rans[i] ^= rans[i] << 5;
+		}
+	}
+	
+	UNPROTECT(1);
+	
+	return ans;
+}
+
+// first row and value of two column integer matrix with value greater than row index
+SEXP firstRow(SEXP x)
+{
+	int i = 0;
+	int *X = INTEGER(x);
+	int l = length(x);
+	int j = l/2;
+	
+	SEXP ans;
+	PROTECT(ans = allocVector(INTSXP, 2));
+	int *rans = INTEGER(ans);
+	rans[0] = 0;
+	
+	while (j < l) {
+		if (X[i] > X[j]) {
+			if (X[i] > i) {
+				rans[0] = i + 1;
+				rans[1] = X[i];
+				break;
+			}
+		} else {
+			if (X[j] > i) {
+				rans[0] = i + 1;
+				rans[1] = X[j];
+				break;
+			}
+		}
+		i++;
+		j++;
+	}
 	
 	UNPROTECT(1);
 	

@@ -21,6 +21,8 @@ Clusterize(myXStringSet,
            probability = 0.99,
            invertCenters = FALSE,
            singleLinkage = FALSE,
+           maskRepeats = FALSE,
+           maskLCRs = FALSE,
            alphabet = AA_REDUCED[[186]],
            processors = 1,
            verbose = TRUE)
@@ -67,6 +69,12 @@ Logical controlling whether the cluster center is inverted (i.e., multiplied by 
 }
   \item{singleLinkage}{
 Logical specifying whether to perform single-linkage clustering. The default (\code{FALSE}) only establishes linkage to the cluster center. Single-linkage clustering creates broader clusters that may better correspond to natural groups depending on the application.
+}
+  \item{maskRepeats}{
+Logical specifying whether to mask repeats when clustering.
+}
+  \item{maskLCRs}{
+Logical indicating whether to mask low complexity regions when clustering.
 }
   \item{alphabet}{
 Character vector of amino acid groupings used to reduce the 20 standard amino acids into smaller groups.  Alphabet reduction helps to find more distant homologies between sequences.
