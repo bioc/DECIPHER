@@ -115,7 +115,7 @@ At this point it is necessary to define groups of related sequences in the datab
 
 In this example, we will define groups based on the allele's name, which was included in the description of each FASTA record that we imported.  This is the most common case, and simply uses each sequence's name as its group name.
 
-To assign group names directly from the sequence names (FASTA identifiers), simply run the code shown below.  In more complex cases, we could use the functions \Rfunction{IdentifyByRank}, \Rfunction{FormGroups}, \Rfunction{Clusterize}, or \Rfunction{TreeLine} to define groups.
+To assign group names directly from the sequence names (FASTA identifiers), simply run the code shown below.  In more complex cases, we could use the functions \Rfunction{IdentifyByRank}, \Rfunction{FormGroups}, \Rfunction{Clusterize}, or \Rfunction{Treeline} to define groups.
 
 <<expr3,eval=FALSE>>=
 # if each sequence belongs to its own group,
@@ -358,7 +358,7 @@ for (i in seq_along(ids)) {
 
 if (TYPE=="sequence") {
     d <- dist(t(signatures), "minkowski", p=1) # L1-Norm
-    TreeLine(myDistMatrix=as.matrix(d), method="UPGMA", showPlot=TRUE)
+    Treeline(myDistMatrix=as.matrix(d), method="UPGMA", showPlot=TRUE)
     mtext(paste(RESOLUTION, "-mer Profile Distance", sep=""),
         side=2, padj=-4)
 } else if (TYPE=="melt") {

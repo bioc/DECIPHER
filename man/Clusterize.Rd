@@ -109,7 +109,7 @@ Wright, E. S. (2024). Accurately clustering biological sequences in linear time 
 Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
-\code{\link{AA_REDUCED}}, \code{\link{DistanceMatrix}}, \code{\link{TreeLine}}
+\code{\link{AA_REDUCED}}, \code{\link{DistanceMatrix}}, \code{\link{Treeline}}
 }
 \examples{
 fas <- system.file("extdata", "50S_ribosomal_protein_L2.fas", package="DECIPHER")

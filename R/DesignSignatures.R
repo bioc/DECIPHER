@@ -1528,7 +1528,7 @@ DesignSignatures <- function(dbFile,
 		d <- dist(signatures,
 			method="maximum")
 		if (length(d) > 0) {
-			c <- TreeLine(myDistMatrix=d,
+			c <- Treeline(myDistMatrix=d,
 				type="clusters",
 				method="single",
 				cutoff=levels/5,
@@ -1993,7 +1993,7 @@ DesignSignatures <- function(dbFile,
 				d <- dist(signatures,
 					method="maximum")
 				if (length(d) > 0) {
-					c <- TreeLine(myDistMatrix=d,
+					c <- Treeline(myDistMatrix=d,
 						type="clusters",
 						method="single",
 						cutoff=levels/5,

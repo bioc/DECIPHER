@@ -94,7 +94,7 @@ There's no need to memor\emph{ize} the inputs to \Rfunction{Clusterize}, because
 \end{Sinput}
 \end{Schunk}
 
-Note that, while it's easy to fantas\emph{ize} about using \Rfunction{Clusterize}, if you only have a moderate number of \textbf{homologous} sequences (<< 100k) then it's more accurate to use \Rfunction{TreeLine} with a distance matrix created from a multiple sequence alignment. This function provides hierarchical clustering (i.e., single-linkage, UPGMA, or complete-linkage) that is impossible to critic\emph{ize} as inexact.
+Note that, while it's easy to fantas\emph{ize} about using \Rfunction{Clusterize}, if you only have a moderate number of \textbf{homologous} sequences (<< 100k) then it's more accurate to use \Rfunction{Treeline} with a distance matrix created from a multiple sequence alignment. This function provides hierarchical clustering (i.e., single-linkage, UPGMA, or complete-linkage) that is impossible to critic\emph{ize} as inexact.
 
 %------------------------------------------------------------
 \section{Optimize your inputs to Clusterize}
@@ -180,7 +180,7 @@ It's possible to util\emph{ize} the \Rfunction{heatmap} function to view the clu
 <<expr6,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=
 aligned_seqs <- AlignSeqs(seqs, verbose=FALSE)
 d <- DistanceMatrix(aligned_seqs, verbose=FALSE)
-tree <- TreeLine(myDistMatrix=d, method="UPGMA", verbose=FALSE)
+tree <- Treeline(myDistMatrix=d, method="UPGMA", verbose=FALSE)
 heatmap(as.matrix(clusters), scale="column", Colv=NA, Rowv=tree)
 @
 \caption{\label{f1} Visualization of the clustering.}

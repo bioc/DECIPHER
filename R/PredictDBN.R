@@ -23,7 +23,7 @@
 				cat("Determining sequence weights:\n")
 				flush.console()
 			}
-			suppressWarnings(guideTree <- TreeLine(myDistMatrix=d,
+			suppressWarnings(guideTree <- Treeline(myDistMatrix=d,
 				method="UPGMA",
 				verbose=verbose,
 				processors=processors))

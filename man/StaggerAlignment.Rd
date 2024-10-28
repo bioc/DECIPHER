@@ -19,7 +19,7 @@ StaggerAlignment(myXStringSet,
 An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object of aligned sequences.
 }
   \item{tree}{
-A bifurcating \code{dendrogram} representing the evolutionary relationships between sequences, such as that created by \code{\link{TreeLine}}.  The root should be the topmost node of the \code{tree}.  The default (\code{NULL}) will automatically infer a \code{tree} from \code{myXStringSet}.
+A bifurcating \code{dendrogram} representing the evolutionary relationships between sequences, such as that created by \code{\link{Treeline}}.  The root should be the topmost node of the \code{tree}.  The default (\code{NULL}) will automatically infer a \code{tree} from \code{myXStringSet}.
 }
   \item{threshold}{
 Numeric giving the ratio of insertions to deletions that must be met to stagger a region of the alignment.  Specifically, the number of insertions divided by deletions must be less than \code{threshold} to stagger.
@@ -46,7 +46,7 @@ An \code{XStringSet} of aligned sequences.
 Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
-\code{\link{AdjustAlignment}}, \code{\link{AlignSeqs}}, \code{\link{TreeLine}}
+\code{\link{AdjustAlignment}}, \code{\link{AlignSeqs}}, \code{\link{Treeline}}
 }
 \examples{
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")

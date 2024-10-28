@@ -5,7 +5,7 @@
 Available Models of Sequence Evolution
 }
 \description{
-The \code{MODELS} contains the models of sequence evolution that can be used by \code{TreeLine}.
+The \code{MODELS} contains the models of sequence evolution that can be used by \code{Treeline}.
 }
 \usage{
 MODELS
@@ -121,7 +121,7 @@ Zharkikh, A. (1994) Estimation of evolutionary distances between nucleotide sequ
 Zhong, B., Yonezawa, T., Zhong, Y., and Hasegawa, M. (2010) Molecular Biology and Evolution, \bold{27}, 2855-2863.
 }
 \seealso{
-\code{\link{TreeLine}}
+\code{\link{Treeline}}
 }
 \examples{
 str(MODELS)

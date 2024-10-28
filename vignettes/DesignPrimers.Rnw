@@ -134,7 +134,7 @@ Seqs2DB(fas, "FASTA", dbConn, "Streptomyces")
 
 \subsection{Defining Groups}
 
-At this point we need to define groups of related sequences in the database we just created.  In this case we wish to define a unique group for the sequences belonging to each species of \textit{Streptomyces}.  In order to accomplish this we must parse the information contained in the description of each FASTA sequence record that we just imported.  Alternatively we could use the functions \Rfunction{IdentifyByRank}, \Rfunction{FormGroups}, \Rfunction{Clusterize}, or \Rfunction{TreeLine} to define groups.
+At this point we need to define groups of related sequences in the database we just created.  In this case we wish to define a unique group for the sequences belonging to each species of \textit{Streptomyces}.  In order to accomplish this we must parse the information contained in the description of each FASTA sequence record that we just imported.  Alternatively we could use the functions \Rfunction{IdentifyByRank}, \Rfunction{FormGroups}, \Rfunction{Clusterize}, or \Rfunction{Treeline} to define groups.
 
 <<expr3,eval=FALSE>>=
 # get the FASTA record description

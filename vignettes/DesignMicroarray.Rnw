@@ -112,7 +112,7 @@ At this point we need to define groups of related sequences among the sequences.
 
 <<expr3,eval=TRUE>>=
 dMatrix <- DistanceMatrix(dna, verbose=FALSE)
-clusters <- TreeLine(myDistMatrix=dMatrix, type="clusters", cutoff=0.03, method="complete", verbose=FALSE)
+clusters <- Treeline(myDistMatrix=dMatrix, type="clusters", cutoff=0.03, method="complete", verbose=FALSE)
 @
 
 Now that we have identified 100 operational taxonomic units (OTUs), we must form a set of consensus sequences that represent each OTU.

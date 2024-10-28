@@ -471,7 +471,7 @@ AlignSeqs <- function(myXStringSet,
 			flush.console()
 		}
 		dimnames(d) <- NULL
-		suppressWarnings(guideTree <- TreeLine(myDistMatrix=d,
+		suppressWarnings(guideTree <- Treeline(myDistMatrix=d,
 			method="single",
 			verbose=verbose,
 			processors=processors))
@@ -1002,7 +1002,7 @@ AlignSeqs <- function(myXStringSet,
 		
 		orgTree <- guideTree
 		dimnames(d) <- NULL
-		suppressWarnings(guideTree <- TreeLine(myDistMatrix=d,
+		suppressWarnings(guideTree <- Treeline(myDistMatrix=d,
 			method="UPGMA",
 			collapse=0,
 			verbose=verbose,

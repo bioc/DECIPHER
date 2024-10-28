@@ -87,7 +87,7 @@ Wright, E. S. (2020). RNAconTest: comparing tools for noncoding RNA multiple seq
 Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
-\code{\link{AdjustAlignment}}, \code{\link{AlignDB}}, \code{\link{AlignProfiles}}, \code{\link{AlignSynteny}}, \code{\link{AlignTranslation}}, \code{\link{ReadDendrogram}}, \code{\link{TreeLine}}, \code{\link{StaggerAlignment}}
+\code{\link{AdjustAlignment}}, \code{\link{AlignDB}}, \code{\link{AlignProfiles}}, \code{\link{AlignSynteny}}, \code{\link{AlignTranslation}}, \code{\link{ReadDendrogram}}, \code{\link{Treeline}}, \code{\link{StaggerAlignment}}
 }
 \examples{
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")

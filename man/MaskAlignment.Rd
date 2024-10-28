@@ -72,7 +72,7 @@ Yu, Y.-K., et al. (2015). Log-odds sequence logos. Bioinformatics, 31(3), 324-33
 Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
-\code{\link{AlignSeqs}}, \code{\link{TreeLine}}
+\code{\link{AlignSeqs}}, \code{\link{Treeline}}
 }
 \examples{
 fas <- system.file("extdata", "Streptomyces_ITS_aligned.fas", package="DECIPHER")

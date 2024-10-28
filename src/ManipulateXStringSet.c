@@ -698,8 +698,12 @@ SEXP removeCommonGaps(SEXP x, SEXP type, SEXP mask, SEXP nThreads)
 	x_length = get_length_from_XStringSet_holder(&x_set);
 	
 	Chars_holder x_i;
-	x_i = get_elt_from_XStringSet_holder(&x_set, 0);
-	l = x_i.length;
+	if (x_length > 0) {
+		x_i = get_elt_from_XStringSet_holder(&x_set, 0);
+		l = x_i.length;
+	} else {
+		l = 0;
+	}
 	
 	// initialize a vector of columns that are 100% gaps
 	int *remove = (int *) R_alloc(l, sizeof(int));

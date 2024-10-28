@@ -24,13 +24,13 @@ An object of class 'dist'.
 Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
-\code{\link{TreeLine}}
+\code{\link{Treeline}}
 }
 \examples{
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
 dna <- readDNAStringSet(fas)
 d1 <- DistanceMatrix(dna, type="dist")
-dend <- TreeLine(myDistMatrix=d1)
+dend <- Treeline(myDistMatrix=d1)
 d2 <- Cophenetic(dend)
 cor(d1, d2)
 }

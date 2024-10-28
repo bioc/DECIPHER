@@ -78,11 +78,14 @@ SEXP rowSums(SEXP dist, SEXP n)
 }
 
 // patristic distances from clusters
-SEXP patristic(SEXP x, SEXP y)
+// multiplies distance between partitions by elements of z
+SEXP patristic(SEXP x, SEXP y, SEXP z)
 {
-	int i, j, k, posE;
+	int i, j, k, posE, count = 0;
 	int *C = INTEGER(x); // node indices
 	double *H = REAL(y); // node heights
+	double *mult = REAL(z); // standard deviations
+	int num = length(z);
 	int n = length(x)/2; // number of rows in x
 	int N = n + 1;
 	R_len_t l = (R_len_t)N*(R_len_t)n/2;
@@ -116,7 +119,10 @@ SEXP patristic(SEXP x, SEXP y)
 			node_depth[i] *= 2;
 			for (k = posL[i]; k < posR[i]; k++)
 				for (j = posR[i]; j < posE; j++)
-					rans[index1D(index[j], index[k], N)] = leaf_depth[index[k]] + leaf_depth[index[j]] - node_depth[i];
+					rans[index1D(index[j], index[k], N)] = mult[count]*(leaf_depth[index[k]] + leaf_depth[index[j]] - node_depth[i]);
+			count++;
+			if (count == num)
+				count = 0;
 			i = ups[i]; // ascend tree
 		} else {
 			k = C[i + n*sides[i]];

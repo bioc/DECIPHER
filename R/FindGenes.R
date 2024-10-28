@@ -928,7 +928,7 @@ FindGenes <- function(myDNAStringSet,
 				PACKAGE="DECIPHER")
 			attr(dists, "Size") <- nrow(codFreqs)
 			class(dists) <- "dist"
-			clust <- TreeLine(myDistMatrix=dists,
+			clust <- Treeline(myDistMatrix=dists,
 				type="clusters",
 				method="UPGMA",
 				cutoff=codonFreqCutoff,
@@ -1287,7 +1287,7 @@ FindGenes <- function(myDNAStringSet,
 				dists <- DistanceMatrix(motif,
 					processors=processors,
 					verbose=FALSE)
-				clusts <- TreeLine(myDistMatrix=dists,
+				clusts <- Treeline(myDistMatrix=dists,
 					type="clusters",
 					method="complete",
 					cutoff=1/RBSk, # 1 mismatch

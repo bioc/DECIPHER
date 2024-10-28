@@ -64,7 +64,7 @@ If \code{type} is \code{"dist"}, an object of \code{class} \code{"dist"} that co
 Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
-\code{\link{TreeLine}}
+\code{\link{Treeline}}
 }
 \examples{
 # example of using the defaults:

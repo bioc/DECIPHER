@@ -122,7 +122,7 @@ TerminalChar             Determine the Number of Terminal Characters
 TileSeqs                 Form a Set of Tiles for Each Group of Sequences
 TrainingSet_16S          Training Set for Classification of 16S rRNA Gene
                          Sequences
-TreeLine                 Construct a Phylogenetic Tree
+Treeline                 Construct a Phylogenetic Tree
 TrimDNA                  Trims DNA Sequences to the High Quality Region
                          Between Patterns
 WriteDendrogram          Write a Dendrogram to Newick Format

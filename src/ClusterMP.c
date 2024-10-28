@@ -169,7 +169,7 @@ SEXP clusterMP(SEXP z, SEXP x, SEXP s, SEXP letters, SEXP scoreOnly, SEXP add, S
 		}
 		
 		#ifdef _OPENMP
-		#pragma omp for private(i,j,k,m,w)
+		#pragma omp for private(i,j,k,m,w,x_i)
 		#endif
 		for (i = 0; i < l; i++) {
 			int weight;

@@ -218,12 +218,12 @@ names(seqs) <- seq_along(seqs) # number from left to right
 seqs
 @
 
-Note that the repeats are numbered from leftmost to rightmost in the tandem repeat. Then we can infer a phylogenetic tree using the \Rfunction{TreeLine} function in \Rpackage{DECIPHER}:
+Note that the repeats are numbered from leftmost to rightmost in the tandem repeat. Then we can infer a phylogenetic tree using the \Rfunction{Treeline} function in \Rpackage{DECIPHER}:
 
 \begin{centerfig}
 <<expr8,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=
 d <- DistanceMatrix(seqs)
-dend <- TreeLine(myDistMatrix=d, method="NJ", verbose=FALSE)
+dend <- Treeline(myDistMatrix=d, method="NJ", verbose=FALSE)
 dend <- reorder(dend, seq_along(seqs))
 layout(matrix(1:2))
 plot(dend)

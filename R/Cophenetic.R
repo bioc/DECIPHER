@@ -81,7 +81,7 @@ Cophenetic <- function(x) {
 		}
 	}
 	
-	d <- .Call("patristic", C, H, PACKAGE="DECIPHER")
+	d <- .Call("patristic", C, H, 1, PACKAGE="DECIPHER")
 	
 	class(d) <- "dist"
 	attr(d, "Size") <- n

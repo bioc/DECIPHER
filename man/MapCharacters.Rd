@@ -44,13 +44,13 @@ If \code{type} is \code{"dendrogram"} (the default) then the original \code{dend
 Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
-\code{\link{TreeLine}}
+\code{\link{Treeline}}
 }
 \examples{
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
 dna <- readDNAStringSet(fas)
 
-tree <- TreeLine(myXStringSet=dna, reconstruct=TRUE)
+tree <- Treeline(myXStringSet=dna, reconstruct=TRUE)
 
 out <- MapCharacters(tree,
                      labelEdges=TRUE,

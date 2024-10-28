@@ -135,7 +135,7 @@ Seqs2DB(gb, "GenBank", dbConn, "Bacteria")
 
 \subsection{Defining Groups}
 
-At this point we need to define groups of related sequences in the database we just created.  In this case we wish to define phylogenetic groups based on the taxonomic information included in the original GenBank file.  The advantage of using a GenBank file is that the taxonomic information is automatically imported from the ORGANISM field into a ``rank'' column in the sequence database.  When importing from a FASTA or FASTQ file the taxonomic information must come from another source, such as parsing the sequence identifiers or by building a tree with the function \Rfunction{TreeLine}.  In the case of a GenBank file, the ``rank'' column can be used by the function \Rfunction{IdentifyByRank} to identify the groups at any taxonomic level (e.g., genus).
+At this point we need to define groups of related sequences in the database we just created.  In this case we wish to define phylogenetic groups based on the taxonomic information included in the original GenBank file.  The advantage of using a GenBank file is that the taxonomic information is automatically imported from the ORGANISM field into a ``rank'' column in the sequence database.  When importing from a FASTA or FASTQ file the taxonomic information must come from another source, such as parsing the sequence identifiers or by building a tree with the function \Rfunction{Treeline}.  In the case of a GenBank file, the ``rank'' column can be used by the function \Rfunction{IdentifyByRank} to identify the groups at any taxonomic level (e.g., genus).
 
 <<expr3,eval=FALSE>>=
 ids <- IdentifyByRank(dbConn, level=Inf, add2tbl=TRUE)

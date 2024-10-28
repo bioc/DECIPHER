@@ -96,7 +96,7 @@ StaggerAlignment <- function(myXStringSet,
 			flush.console()
 		}
 		
-		suppressWarnings(tree <- TreeLine(myDistMatrix=d,
+		suppressWarnings(tree <- Treeline(myDistMatrix=d,
 			method="NJ",
 			processors=processors,
 			verbose=verbose))
