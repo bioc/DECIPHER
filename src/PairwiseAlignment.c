@@ -1118,7 +1118,15 @@ SEXP alignPairs(SEXP pattern, SEXP subject, SEXP query, SEXP target, SEXP positi
 			int n = tot[i];
 			int signal; // completion signal (success == 0)
 			int *res, p1, p2, q1, q2, k;
-			if (N == 0) { // no anchor positions
+			if (p_i.length == 0) {
+				abort[0] = 4; // empty sequence flag
+				abort[1] = index1; // sequence flag
+				continue;
+			} else if (s_i.length == 0) {
+				abort[0] = 4; // empty sequence flag
+				abort[1] = -index2; // sequence flag
+				continue;
+			} else if (N == 0) { // no anchor positions
 				starts1[i] = 1;
 				starts2[i] = 1;
 				ends1[i] = p_i.length;
@@ -1378,6 +1386,12 @@ SEXP alignPairs(SEXP pattern, SEXP subject, SEXP query, SEXP target, SEXP positi
 				error("Out-of-bounds pattern anchor in Position[%d] column %d.", abort[1], abort[2]);
 			} else {
 				error("Out-of-bounds subject anchor in Position[%d] column %d.", -1*abort[1], abort[2]);
+			}
+		} else if (abort[0] == 4) {
+			if (abort[1] > 0) {
+				error("Empty sequence in pattern[%d].", abort[1]);
+			} else {
+				error("Empty sequence in subject[%d].", -1*abort[1]);
 			}
 		} else {
 			error("Unknown error.");

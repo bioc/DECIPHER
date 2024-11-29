@@ -55,7 +55,7 @@ options(width=80)
 \section{Introduction}
 %------------------------------------------------------------
 
-RNA leads a double life as both messenger (mRNA) and an alphabet soup of roles in the cell (e.g., rRNA, tRNA, snRNA, tmRNA, etc.).  RNAs that take on a life of their own are notoriously difficult to detect \emph{ab initio} using bioinformatics.  This is in part because their signature characteristic, that a single strand of RNA folds into a stable structure, can be found in many regions of the genome.  This makes life difficult because there is no clear signature that a genomic region contains a non-coding RNA in the way there is for protein coding regions.  The most promising approach is to search for intergenic regions with high GC-content a folded structure that is conserved across many genomes.  But what do you do if you only have a single genome and want to find non-coding RNAs? That is exactly what this vignette shows you how to do!
+RNA leads a double life as both messenger (mRNA) and number of other roles in the cell (e.g., rRNA, tRNA, snRNA, tmRNA, etc.).  RNAs that take on a life of their own are notoriously difficult to detect \emph{ab initio} using bioinformatics.  This is in part because their signature characteristic, that the sequence of RNA folds into a stable structure, can be found for sequences in many regions of the genome.  The ubiquity of stable secondary structures makes life difficult because there is no clear signature that a genomic region contains a non-coding RNA in the way there are distinct signatures for protein coding regions.  The most promising approach is to search for intergenic regions with high GC-content and a folded structure that is conserved across many genomes.  But what do you do if you only have a single genome and want to find non-coding RNAs? That is exactly what this vignette shows you how to do!
 
 Before we can have the time of our lives finding non-coding RNAs, we must first train models on examples of known RNAs.  As a case study, this tutorial focuses on finding all known non-coding RNAs in the genome of \emph{Chlamydia trachomatis}, an intracellular bacterial pathogen known for causing chlamydia.  This genome was chosen because it is relatively small (only ~1 Mbp) so the examples run quickly.  \emph{Chlamydia} harbors all of the standard non-coding RNAs that date back near the origin of life (i.e., rRNAs, tRNAs, etc.).  It also has one small RNA (sRNA), named IhtA, that has only been found in Chlamydiae and is believed to play a role in regulating its life stages.  We are going to find IhtA in the genome of \emph{C. trachomatis}, then we are going to use the same approach to find all of the standard non-coding RNAs that are conserved across many forms of life.
 
@@ -127,7 +127,7 @@ RNA <- AlignSeqs(rna)
 RNA
 @
 
-We can see from the alignment that the sequences have both conserved and variable regions.  But if we really want to bring the sequences to life we need to look at their predicted secondary structures.  The IhtA is believed to form three back-to-back hairpin loops based on its minimum free energy structure.  We can use \Rfunction{PredictDBN} to predict the secondary structures of the sequences.
+We can see from the alignment that the sequences have both conserved and variable regions.  But if we really want to bring the sequences to life we need to look at their predicted secondary structures.  The IhtA is believed to form three back-to-back hairpin loops based on its minimum free energy structure.  We can use \Rfunction{PredictDBN} (Predict Dot-Bracket Notation) to predict the secondary structures of the sequences.
 
 <<expr3,eval=TRUE>>=
 p <- PredictDBN(RNA, type="structures")
@@ -145,7 +145,7 @@ In this color scheme, blue regions pair to green regions and red regions are unp
 
 \clearpage
 
-We can also visualize the secondary structure through a dot plot (Fig. \ref{f2}).  One half of the dot plot shows the probabilities of pairing, and the other half shows the predicted structure.  This view reveals the level of ambiguity in the secondary structure based on the (low) amount of available information.
+We can also visualize the secondary structure through a dot plot (Fig. \ref{f2}).  The top half of the dot plot shows the probabilities of pairing, and the bottom half shows the pairs selected for the predicted structure.  This view reveals the level of ambiguity in the secondary structure based on the (low) amount of available information.
 
 \begin{centerfig}
 <<expr4,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=
@@ -189,7 +189,7 @@ y <- LearnNonCoding(RNA)
 y
 @
 
-The output object is a list containing patterns of three types:  ``motifs'', ``hairpins'', and ``kmers''.  Motifs are short regions of the sequence that can be used to identify the sequences:
+The output object is a list containing patterns of three types:  ``motifs'', ``hairpins'', and ``kmers''.  Motifs are short regions of the sequence that can be used to identify the sequences.  Each row stores information about where the motif is expected relative to the ncRNA, as well as its position weight matrix (pwm) and associated scores.
 
 <<expr7,eval=TRUE>>=
 y[["motifs"]]
@@ -208,7 +208,7 @@ head(y[["kmers"]])
 tail(y[["kmers"]])
 @
 
-Finally, the sequences are identifiable by their k-mer frequencies.  In general, non-coding RNAs have higher GC-content than protein coding regions of genomes.  Note that the value of ``k'' is set automatically depending on the amount of information in the input sequence alignment.
+Finally, the sequences are identifiable by their k-mer frequencies, which are stored in a vector as shown above.  In general, non-coding RNAs have higher GC-content than protein coding regions of genomes.  Note that the value of ``k'' is set automatically depending on the amount of information in the input sequence alignment.
 
 %------------------------------------------------------------
 \section{Finding Non-Coding RNAs}
@@ -235,7 +235,7 @@ The function \Rfunction{FindNonCoding} finds matches to \Rclass{NonCoding} model
 FindNonCoding(y, genome)
 @
 
-And there it is!  The output tells us that the IhtA gene is found on the forward strand of the first sequence (\code{"Index"}) in the genome.  This match had a high score to first (and only) model in \code{y} (i.e., \code{"Gene"} is \code{-1}).  Values in the \code{"Gene"} column are negative to signify that these are non-coding RNAs and not protein coding genes.
+And there it is!  The output tells us that the IhtA gene is found on the forward strand of the first sequence (\code{"Index"}) in the genome.  This match had a high score to first (and only) model in \code{y} (i.e., \code{"Gene"} is \code{-1}).  Values in the \code{"Gene"} column are negative to signify that these rows are predicted non-coding RNAs and not protein coding genes.  In this manner, non-coding and coding genes can be combined in the same \Rclass{Genes} object.
 
 Life's too short to build models for every non-coding RNA, so we can load a set of pre-built models for our bacterial genome.  Replace ``Bacteria'' with ``Archaea'' or ``Eukarya'' for genomes from organisms belonging to other domains of life.
 

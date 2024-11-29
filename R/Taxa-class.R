@@ -575,13 +575,10 @@ plot.Taxa <- function(x, y=NULL, showRanks=TRUE, n=NULL, ...) {
 			t <- table(x$ranks)
 			w <- which(!duplicated(x$ranks))
 			u <- x$ranks[w]
-			p <- c(0,
-				match(x$ranks[x$parents[w]],
-					u))
 			c <- match(x$ranks[sapply(x$children[w], `[`, 1)],
 				u)
 			c[is.na(c)] <- length(w) + 1L
-			o <- order(p, c)
+			o <- order(c(0, match(x$ranks[x$parents[w]], u)), c)
 			t <- t[u[o]]
 		}
 		plot(t,

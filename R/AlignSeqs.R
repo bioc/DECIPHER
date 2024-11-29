@@ -993,7 +993,8 @@ AlignSeqs <- function(myXStringSet,
 			type="dist",
 			verbose=verbose,
 			processors=processors,
-			includeTerminalGaps=TRUE)
+			includeTerminalGaps=TRUE,
+			penalizeGapLetterMatches=TRUE)
 		
 		if (verbose) {
 			cat("Reclustering into groups by similarity:\n")

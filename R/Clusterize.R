@@ -322,6 +322,7 @@ Clusterize <- function(myXStringSet,
 			TRUE, # full matrix
 			2L, # type = "dist"
 			0, # correction (none)
+			NULL, # lkup
 			minCoverage,
 			method,
 			FALSE, # verbose

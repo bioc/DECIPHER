@@ -37,7 +37,7 @@ SEXP shiftGapsAA(SEXP x, SEXP subMatrix, SEXP go, SEXP ge, SEXP gl, SEXP sc, SEX
 
 // DistanceMatrix.c
 
-SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP fullMatrix, SEXP output, SEXP e, SEXP minCoverage, SEXP method, SEXP verbose, SEXP pBar, SEXP nThreads);
+SEXP distMatrix(SEXP x, SEXP t, SEXP terminalGaps, SEXP penalizeGapLetters, SEXP fullMatrix, SEXP output, SEXP e, SEXP lkup, SEXP minCoverage, SEXP method, SEXP verbose, SEXP pBar, SEXP nThreads);
 
 SEXP gaps(SEXP x, SEXP t);
 
@@ -66,8 +66,6 @@ SEXP adjustHeights(SEXP x);
 // ClusterML.c
 
 SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP states, SEXP type, SEXP weights, SEXP uLengths, SEXP nThreads);
-
-SEXP expM(SEXP x, SEXP model, SEXP type);
 
 // DesignProbes.c
 

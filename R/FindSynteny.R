@@ -418,7 +418,7 @@ FindSynteny <- function(dbFile,
 					o2,
 					PACKAGE="DECIPHER")
 			} else {
-				# match E1 to itself
+				# match to itself
 				m <- .Call("intMatchSelfOnce",
 					E1,
 					O1,
@@ -575,7 +575,7 @@ FindSynteny <- function(dbFile,
 								store[g2][[1L]][["O"]][["aa"]][[rF2]][[N_AA]] <- o2
 						}
 						
-						if (identifier[g1] != identifier[g2]) {
+						if (identifier[g1] != identifier[g2] || rF1 != rF2) {
 							# match e1 to e2
 							m <- .Call("intMatchOnce",
 								e1,
@@ -584,7 +584,7 @@ FindSynteny <- function(dbFile,
 								o2,
 								PACKAGE="DECIPHER")
 						} else {
-							# match E1 to itself
+							# match to itself
 							m <- .Call("intMatchSelfOnce",
 								e1,
 								o1,

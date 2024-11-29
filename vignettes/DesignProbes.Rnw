@@ -54,7 +54,7 @@ options(width=80)
 \section{Introduction}
 %------------------------------------------------------------
 
-This document describes how to design group-specific FISH probes using the \Rpackage{DECIPHER} package through the use of the \Rfunction{DesignProbes} function.  Fluorescent In-Situ Hybridization (FISH) is an laboratory technique that enables visualizing specific microorganisms in their natural environment using fluorescent microscopy.  As a case study, this tutorial focuses on the small-subunit ribosomal RNA (SSU rRNA) from a collection of bacteria found in drinking water.  Here we describe how to design probes targeting a group of interest that will not cross-hybridize with other bacteria from the same sample.  A similar strategy could be used with any set of aligned sequences that are separated into groups.  For example, genus-specific probes designed with this program that target all named bacteria and archaea genera are provided online at \underline{\url{http://DECIPHER.codes/16SOligos.html}}.
+This document describes how to design group-specific FISH probes using the \Rpackage{DECIPHER} package through the use of the \Rfunction{DesignProbes} function.  Fluorescent In-Situ Hybridization (FISH) is a laboratory technique that enables visualizing specific specific sequences using fluorescent microscopy.  As a case study, this tutorial focuses on targeting the small-subunit ribosomal RNA (SSU rRNA) from a collection of bacteria found in drinking water.  Here we describe how to design probes targeting a group of interest that will not cross-hybridize with other sequences from the same sample.  A similar strategy could be used with any set of aligned sequences that are separated into groups, including mRNA.
 
 A database of aligned DNA sequences separated into groups is used as input to the program.  First the function \Rfunction{TileSeqs} is used to pre-process the sequences into overlapping tiles, which will serve as the template DNA for probe design.  Second, the \Rfunction{DesignProbes} function determines the set of all possible probes that meet certain design constraints, such as the ability to hybridize with the group of interest under specified experimental conditions.  Next, the complete set of probes is scored by its potential to cross-hybridize with sequences from other groups including a comprehensive database of non-target sequences.  Finally, the optimal set of dual probes is chosen that could be used in a FISH experiment to identify the microbes of interest.
 
@@ -72,7 +72,7 @@ In cases where the desired level of specificity cannot be achieved, \Rfunction{D
 
 \subsection{Installing OligoArrayAux}
 
-The program OligoArrayAux (\underline{\url{http://www.unafold.org/Dinamelt/software/oligoarrayaux.php}}) is used to predict hybridization efficiency and must be installed in a location accessible by the system.  For example, the following code should print the installed OligoArrayAux version when executed from the \term{R} console:
+The program OligoArrayAux (\underline{\url{http://www.unafold.org/Dinamelt/software/oligoarrayaux.php}}) is used to predict hybridization efficiency and must be installed in a location accessible by the system.  See the installation instructions in the \Rfunction{DesignPrimers} manual page (\code{?DesignPrimers}).  Once installed, the following code should print the OligoArrayAux version when executed from the \term{R} console:
 
 <<expr0,eval=FALSE>>=
 system("hybrid-min -V")
@@ -123,13 +123,16 @@ gb <- "<<path to GenBank file>>"
 gb <- system.file("extdata", "Bacteria_175seqs.gen", package="DECIPHER")
 @
 
-Next, there are two options for importing the sequences into a database:  either save a database file or maintain the database in memory.  Here we will build the database in memory because it is a small set of sequences and we do not intend to use the database later:
+Next, it is necessary to build a sequence database.  We will use \Rpackage{RSQLite} for this purpose, but other database drives are supported.  There are two options for importing the sequences into a database:  either save a database file or maintain the database in memory.  Here we will build the database in memory because it is a small set of sequences and we do not intend to use the database later:
 
 <<expr2,eval=FALSE>>=
+require(RSQLite)
 # specify a path for where to write the sequence database
 dbConn <- "<<path to write sequence database>>"
 # OR create the sequence database in memory
 dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
+
+# then import the sequences into the database
 Seqs2DB(gb, "GenBank", dbConn, "Bacteria")
 @
 
@@ -177,7 +180,7 @@ Time difference of 250 secs
 \end{Sinput}
 \end{Schunk}
 
-We can now examine the top-scoring probe with maximal sensitivity and specificity to the target group.
+We can now examine the top-scoring probe with maximal sensitivity and specificity to the target group.  Multiple probe permutations are required to target the whole group, each with a different fraction of group coverage.  Hybridization efficiencies are modest (<< 100\%), because we want to avoid hybridizing with non-target groups.  The predicted formamide melt point (\code{FAm}) of each probe also listed.
 
 <<expr6,eval=FALSE>>=
 o <- order(probes$score, decreasing=TRUE)
@@ -257,7 +260,7 @@ legend("topright", legend=c("Targets", "Non-Targets", "50% Efficiency",
 
 \subsection{Finding Non-targets in a Comprehensive Reference Database}
 
-It is now important to find potential non-targets not included in the sequence set used for design.  For this purpose we can either build a new comprehensive reference database, or download one online from \underline{\url{http://DECIPHER.cee.wisc.edu/Download.html}}.  The reference database must be unzipped after download.  Each database includes a pre-processed set of tiles, generated in the same manner as shown above, that can be found in the table named ``Tiles''.  Be sure to change the path names to those on your system by replacing all of the text inside quotes labeled ``$<<$path to ...$>>$'' with the actual path on your system.
+It is now important to find potential non-targets not included in the sequence set used for design.  For this purpose we can build a new comprehensive reference database with a table named ``Tiles''.  Be sure to change the path names to those on your system by replacing all of the text inside quotes labeled ``$<<$path to ...$>>$'' with the actual path on your system.
 
 <<expr9,eval=FALSE>>=
 dbConn_ref <- dbConnect(dbDriver("SQLite"), "<<path to reference database>>")

@@ -5,7 +5,7 @@
 Available Models of Sequence Evolution
 }
 \description{
-The \code{MODELS} contains the models of sequence evolution that can be used by \code{Treeline}.
+Models of sequence evolution that are supported.
 }
 \usage{
 MODELS
@@ -18,36 +18,111 @@ Nucleotide models are described in order of increasing number of parameters as f
 \bold{JC69 (Jukes and Cantor, 1969)}
 The simplest substitution model that assumes equal base frequencies (1/4) and equal mutation rates.
 
-\bold{K80 (Kimura, 1980)}
+\bold{K80} (Kimura, 1980)
 Assumes equal base frequencies, but distinguishes between the rate of transitions and transversions.
 
-\bold{T92 (Tamura, 1992)}
+\bold{T92} (Tamura, 1992)
 In addition to distinguishing between transitions and transversions, a parameter is added to represent G+C content bias.
 
-\bold{F81 (Felsenstein, 1981)}
+\bold{F81} (Felsenstein, 1981)
 Assumes equal mutation rates, but allows all bases to have different frequencies.
 
-\bold{HKY85 (Hasegawa, Kishino and Yano, 1985)}
-Distinguishes transitions from transversions and allows bases to have different frequencies.
+\bold{HKY85} (Hasegawa, Kishino and Yano, 1985)
+Distinguishes transitions from transversions and allows bases to have different frequencies.  Note that a similar model is known as \bold{F84} (Felsenstein, 1984).
 
-\bold{TN93 (Tamura and Nei, 1993)}
+\bold{TN93} (Tamura and Nei, 1993)
 Allows for unequal base frequencies and distinguishes between transversions and the two possible types of transitions (i.e., A <-> G & C <-> T).
 
-\bold{SYM (Zharkikh, 1994)}
+\bold{SYM} (Zharkikh, 1994)
 Equal base frequencies but all substitution rates are free parameters.
 
-\bold{GTR (Tavare, 1986)}
+\bold{GTR} (Tavare, 1986)
 The general time reversible model allowing for unequal base frequencies and substitution rates.
 
-Protein models are described in the following publications:
+Protein models are described in the following publications, which include both a rate matrix and corresponding frequencies:
 
-AB (Mirsky, 2015), BLOSUM62 (Henikoff, 1992), cpREV (Adachi, 2000), cpREV64 (Zhong, 2010), Dayhoff (Dayhoff, 1978), DCMut-Dayhoff (Kosiol, 2005), DCMut-JTT (Kosiol, 2005), DEN (Le, 2018), FLAVI (Le, 2020), FLU (Dang, 2010), gcpREV (Cox, 2013), HIVb (Nickle, 2007), HIVw (Nickle, 2007), JTT (Jones, 1992), LG (Le, 2008), MtArt (Abascal, 2007), mtDeu (Le, 2017), mtInv (Le, 2017), mtMam (Yang, 1998), mtMet (Le, 2017), mtOrt (Chang, 2020), mtREV (Adachi, 1996), mtVer (Le, 2017), MtZoa (Rota-Stabelli, 2009), PMB (Veerassamy, 2003), Q.bird (Minh, 2021), Q.insect (Minh, 2021), Q.LG (Minh, 2021), Q.mammal (Minh, 2021), Q.pfam (Minh, 2021), Q.plant (Minh, 2021), Q.yeast (Minh, 2021), rtREV (Dimmic, 2002), stmtREV (Liu, 2014), VT (Muller, 2000), WAG (Whelan, 2001), WAGstar (Whelan, 2001).
+\bold{AB} (Mirsky, 2015) [Antibody]
 
-\bold{+G (Yang, 1993)}
-Specifying any model+G4 adds a single parameter to any of the above models to relax the assumption of equal rates among sites in the sequence.  The single parameter specifies the shape of the Gamma Distribution.  The continuous distribution is represented with 2-10 discrete rates and their respective probabilities as determined by equal bins or the Laguerre Quadrature method (Felsenstein, 2001).  For example, specifying a model+G8 would represent the continuous Gamma Distribution with eight rates and their associated probabilities.
+\bold{BLOSUM62} (Henikoff, 1992) [General]
+
+\bold{cpREV} (Adachi, 2000) [Plastid]
+
+\bold{cpREV64} (Zhong, 2010) [Plastid]
+
+\bold{Dayhoff} (Dayhoff, 1978) [General]
+
+\bold{DCMut-Dayhoff} (Kosiol, 2005) [General]
+
+\bold{DCMut-JTT} (Kosiol, 2005) [General]
+
+\bold{DEN} (Le, 2018) [Dengue virus]
+
+\bold{FLAVI} (Le, 2020) [Flavi virus]
+
+\bold{FLU} (Dang, 2010) [Influenza virus]
+
+\bold{gcpREV} (Cox, 2013) [Green plant chloroplast]
+
+\bold{HIVb} (Nickle, 2007) [Human immunodeficiency virus]
+
+\bold{HIVw} (Nickle, 2007) [Human immunodeficiency virus]
+
+\bold{JTT} (Jones, 1992) [General]
+
+\bold{LG} (Le, 2008) [General]
+
+\bold{MtArt} (Abascal, 2007) [Arthropoda mitochondrion]
+
+\bold{mtDeu} (Le, 2017) [Deuterostomia mitochondrion]
+
+\bold{mtInv} (Le, 2017) [Invertebrate mitochondrion]
+
+\bold{mtMam} (Yang, 1998) [Mammal mitochondrion]
+
+\bold{mtMet} (Le, 2017) [Metazoan mitochondrion]
+
+\bold{mtOrt} (Chang, 2020) [Orthoptera mitochondrion]
+
+\bold{mtREV} (Adachi, 1996) [Vertebrate mitochondrion]
+
+\bold{mtVer} (Le, 2017) [Vertebrate mitochondrion]
+
+\bold{MtZoa} (Rota-Stabelli, 2009) [Metazoa mitochondrion]
+
+\bold{PMB} (Veerassamy, 2003) [General]
+
+\bold{Q.bird} (Minh, 2021) [Birds]
+
+\bold{Q.insect} (Minh, 2021) [Insects]
+
+\bold{Q.LG} (Minh, 2021) [General]
+
+\bold{Q.mammal} (Minh, 2021) [Mammals]
+
+\bold{Q.pfam} (Minh, 2021) [General]
+
+\bold{Q.plant} (Minh, 2021) [Plants]
+
+\bold{Q.yeast} (Minh, 2021) [Yeast]
+
+\bold{rtREV} (Dimmic, 2002) [Retrovirus]
+
+\bold{stmtREV} (Liu, 2014) [Land plant mitochrondrion]
+
+\bold{VT} (Muller, 2000) [General]
+
+\bold{WAG} (Whelan, 2001) [General]
+
+\bold{WAGstar} (Whelan, 2001) [General]
+
+\bold{+G} (Yang, 1993)
+Specifying any model+G# adds a single parameter to any of the above models to relax the assumption of equal rates among sites in the sequence.  The single parameter specifies the shape of the Gamma distribution, which is represented with 2-10 discrete rates and their respective probabilities.  For example, specifying a model+G8 would represent the continuous Gamma Distribution with eight rates and their associated probabilities.
 
 \bold{+F}
-Specifying any model+F uses empirical frequencies rather than optimized state frequencies.  This is only applicable for models having state frequencies with free parameters.
+Specifying any model+F uses fixed empirical frequencies rather than optimized state frequencies.  This is only applicable for models having state frequencies with free parameters.
+
+\bold{+Indels}
+Specifying any model+Indels adds an additional state for gaps (``-'' and ``.'' characters) and parameters for the frequency of gaps and the transition rate from non-gaps to gaps.
 }
 \references{
 Abascal, F., Posada, D., and Zardoya, R. (2007) Molecular Biology and Evolution, \bold{24}, 1-5.
@@ -64,9 +139,11 @@ Dang, C., Le, S., Gascuel, O., and Le, V. (2010) BMC Evolutionary Biology, \bold
 
 Dayhoff, M., Schwartz, R., and Orcutt, B. (1978) Atlas of Protein Sequence and Structure, National Biomedical Research Foundation, Washington DC, \bold{5}, 345-352.
 
-Dimmic, M., Rest, J., Mindell, D., and Goldstein, R. (2002) Journal of Molecular Evolution, \bold{55}, 65-73. 
+Dimmic, M., Rest, J., Mindell, D., and Goldstein, R. (2002) Journal of Molecular Evolution, \bold{55}, 65-73.
 
 Felsenstein, J. (1981) Evolutionary trees from DNA sequences: a maximum likelihood approach. Journal of Molecular Evolution, \bold{17(6)}, 368-376.
+
+Felsenstein, J. (1984) A Hidden Markov Model approach to variation among sites in rate of evolution. Molecular Biology and Evolution, \bold{13(1)}, 93-104.
 
 Felsenstein, J. (2001) Taking Variation of Evolutionary Rates Between Sites into Account in Inferring Phylogenies. Journal of molecular evolution, \bold{53(4-5)}, 447-455.
 
@@ -121,7 +198,7 @@ Zharkikh, A. (1994) Estimation of evolutionary distances between nucleotide sequ
 Zhong, B., Yonezawa, T., Zhong, Y., and Hasegawa, M. (2010) Molecular Biology and Evolution, \bold{27}, 2855-2863.
 }
 \seealso{
-\code{\link{Treeline}}
+\code{\link{DistanceMatrix}}, \code{\link{Treeline}}
 }
 \examples{
 str(MODELS)

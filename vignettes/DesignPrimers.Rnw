@@ -62,7 +62,7 @@ A database of aligned DNA sequences separated into groups is used as input to th
 \section{The Objective of Primer Design}
 %------------------------------------------------------------
 
-The objective of primer design is straightforward:  to determine a set of forward the reverse primers that will amplify one group of sequences (the target) but no others (the non-targets).  If such a primer set is unattainable then the goal becomes to accurately predict potential cross-amplification with non-target groups.  This knowledge enables an educated assessment of the different primer options that could be used to minimize non-target interference.  The chosen primers could then be synthesized and experimentally characterized with PCR or quantitative PCR (qPCR).  Possible applications include allele specific PCR, quantifying a subset of organisms in a sample, or enriching for the DNA of a target group before downstream sequencing.
+The objective of primer design is straightforward:  to determine a set of forward and reverse primers that will amplify one group of sequences (the target) but no others (the non-targets).  If such a primer set is unattainable then the goal becomes to accurately predict potential cross-amplification with non-target groups.  This knowledge enables an educated assessment of the different primer options that could be used to minimize non-target interference.  The chosen primers could then be synthesized and experimentally characterized with PCR or quantitative PCR (qPCR).  Possible applications include allele specific PCR, quantifying a subset of organisms in a sample, or enriching for the DNA of a target group before downstream sequencing.
 
 Improved specificity to the target group is achieved in two ways:  first by decreasing hybridization efficiency and second by minimizing elongation efficiency of the primer with non-target DNA.  Hybridization efficiency is a theoretical variable that represents the fraction of DNA template bound to primer during the annealing step of PCR thermal cycling.  In this manner, mismatches between the primer and DNA templates are utilized to lower the affinity of the primers to non-target DNA.  Elongation efficiency represents the efficiency of the DNA polymerase at initiating extension of the DNA template from a mismatched 3' primer terminus, and is measured relative to the perfectly matched primer's ability to elongate.  Mismatches near the 3' end of the primer are used to hinder extension of non-target DNA templates thereby increasing specificity of the primers to target DNA.  Therefore, this model of terminal mismatches offers the dual benefits of decreased hybridization and elongation efficiency, which allows for more accurate predictions of amplification efficiency and increased specificity to the target group.
 
@@ -72,7 +72,7 @@ Improved specificity to the target group is achieved in two ways:  first by decr
 
 \subsection{Installing OligoArrayAux}
 
-The program OligoArrayAux (\underline{\url{http://www.unafold.org/Dinamelt/software/oligoarrayaux.php}}) is used to predict hybridization efficiency and must be installed in a location accessible by the system.  For example, the following code should print the installed OligoArrayAux version when executed from the \term{R} console:
+The program OligoArrayAux (\underline{\url{http://www.unafold.org/Dinamelt/software/oligoarrayaux.php}}) is used to predict hybridization efficiency and must be installed in a location accessible by the system.  See the installation instructions in the \Rfunction{DesignPrimers} manual page (\code{?DesignPrimers}).  Once installed, the following code should print the OligoArrayAux version when executed from the \term{R} console:
 
 <<expr0,eval=FALSE>>=
 system("hybrid-min -V")
@@ -122,13 +122,16 @@ fas <- "<<path to FASTA file>>"
 fas <- system.file("extdata", "Streptomyces_ITS_aligned.fas", package="DECIPHER")
 @
 
-Next, there are two options for importing the sequences into a database:  either save a database file or maintain the database in memory.  Here we will build the database in memory because it is a small set of sequences and we do not intend to use the database later:
+Next, it is necessary to build a sequence database.  We will use \Rpackage{RSQLite} for this purpose, but other database drives are supported.  There are two options for importing the sequences into a database:  either save a database file or maintain the database in memory.  Here we will build the database in memory because it is a small set of sequences and we do not intend to use the database later:
 
 <<expr2,eval=FALSE>>=
+require(RSQLite)
 # specify a path for where to write the sequence database
 dbConn <- "<<path to write sequence database>>"
 # OR create the sequence database in memory
 dbConn <- dbConnect(dbDriver("SQLite"), ":memory:")
+
+# then import the sequences into the database
 Seqs2DB(fas, "FASTA", dbConn, "Streptomyces")
 @
 
@@ -173,7 +176,7 @@ Time difference of 34.79 secs
 \end{Sinput}
 \end{Schunk}
 
-Now we can examine the first few tiles by using the \Rfunction{head} command.  Here we see that some tiles have been flagged as \code{misprime=TRUE}, which in this case was caused by some permutations of this target site containing degenerate bases (N's).  Ambiguity codes are not used in primer design and are thus excluded from consideration as potential target sites for primers.  Other reasons for mispriming include runs of a single base and di-nucleotide repeats, which increase primer entropy and could result in non-specific annealing.  If at least a \Rfunarg{minCoverage} fraction of the group could not be represented in \Rfunarg{maxPermutations} then \code{misprime} is also marked as \code{TRUE}.
+Now we can examine the first few tiles by using the \Rfunction{head} command.  Here we see that some tiles have been flagged as \code{misprime=TRUE}, which in this case was caused by some permutations of this target site containing degenerate bases (N's).  Regions with ambiguity codes are not used in primer design and are thus excluded from consideration as potential target sites for primers.  Other reasons for mispriming include runs of a single base and di-nucleotide repeats, which increase primer entropy and could result in non-specific annealing.  If at least a \Rfunarg{minCoverage} fraction of the group could not be represented in \Rfunarg{maxPermutations} then \code{misprime} is also marked as \code{TRUE}.
 
 <<expr6,eval=FALSE>>=
 head(tiles)
@@ -216,7 +219,7 @@ Time difference of 20 secs
 \end{Sinput}
 \end{Schunk}
 
-Not that this command designs individual primers and a different command is required to design pairs of forward and reverse primers (see below).  Let's examine the first primer that is available, out of 499 potential target sites.  We can see that only one permutation was required to cover 100\% of the species in this target site.  However, the score of this primer is relatively bad (negative) because it has a high efficiency of amplification predicted with other groups (i.e., species).
+Note that this command designs individual primers and a different command is required to select pairs of forward and reverse primers (see below).  Let's examine the first primer that is available, out of 499 potential target sites.  We can see that only one permutation was required to cover 100\% of the species in this target site.  However, the score of this primer is relatively bad (negative) because it has a high efficiency of amplification predicted with other groups (i.e., species).
 
 <<expr8,eval=FALSE>>=
 primers[1,]
@@ -252,7 +255,7 @@ The predicted forward and reverse primer efficiencies are respectively 84.4\% an
 
 \subsection{Designing the Best Possible Primer Set}
 
-We could potentially examine all primers one-by-one to find the best forward and reverse primers to amplify only the target group.  Another option is to allow the program to find the best primer sets by searching through all combinations of forward and reverse primers.  To do this we simply change the parameter \Rfunarg{numPrimerSets} to a positive number from its default of zero.  In doing so the \Rfunction{DesignPrimers} function will search through the best forward and reverse primers to find the option that minimizes forward and reverse primer overlap.  Furthermore, the program will search potential target sites within 20 nucleotides of where the primer might bind upstream and downstream of its target site in the alignment.
+We could potentially examine all primers one-by-one to find the best forward and reverse primers to amplify only the target group.  Another option is to allow the program to find the best primer sets by searching through all combinations of forward and reverse primers.  To do this we simply change the parameter \Rfunarg{numPrimerSets} to a positive number from its default of zero, which will then return the specified number of primer sets.  In doing so the \Rfunction{DesignPrimers} function will search through the best forward and reverse primers to find the option that minimizes forward and reverse primer overlap.  Furthermore, the program will search potential target sites within \Rfunarg{maxSearchSize} nucleotides of where the primer might bind upstream and downstream of its target site in the alignment.
 
 <<expr10,eval=FALSE>>=
 primers <- DesignPrimers(tiles, identifier="avermitilis", minCoverage=1,
@@ -408,7 +411,7 @@ BrowseSeqs(amplicon, colorPatterns=c(4, 27, 76, 94), highlight=1)
 
 \subsection{Finishing Up}
 
-Finally, we can order the forward and reverse primers for synthesis and try them out in a PCR reaction!  The forward and reverse primers should be synthesized in the same orientation and sense that they are listed in the output (\code{primers}).  Initially it may be useful to perform a temperature gradient PCR reaction with the target DNA in order to experimentally determine the melt point.  For example, in this case we would run several reactions with the target species at increasing temperature, from about $56^{\circ}C$ to $72^{\circ}C$.  As the annealing temperature is increased the hybridization efficiency will eventually decrease until no amplification is observed.  In subsequent experiments the annealing temperature should be set just below the highest temperature where robust amplification was observed.
+Finally, we can order the forward and reverse primers for synthesis and try them out in a PCR reaction!  The forward and reverse primers should be synthesized in the same orientation and sense that they are listed in the output (\code{primers}) --- they should \textbf{not} be reverse complemented.  Initially it may be useful to perform a temperature gradient PCR reaction with the target DNA in order to experimentally determine the melt point.  For example, in this case we would run several reactions with the target species at increasing temperature, from about $56^{\circ}C$ to $72^{\circ}C$.  As the annealing temperature is increased the hybridization efficiency will eventually decrease until no amplification is observed.  In subsequent experiments the annealing temperature should be set just below the highest temperature where robust amplification was observed.
 
 \section{Session Information}
 All of the output in this vignette was produced under the following conditions:

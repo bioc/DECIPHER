@@ -84,4 +84,7 @@ plot(x, colorBy="RibosomeBindingSiteScore", colorGenes=NA)
 plot(x, colorBy="FractionReps", colorGenes=NA)
 # color by which codon model was selected for each ORF
 plot(x, colorBy="CodonModel", xlim=c(1, 3e4))
+
+# example of splitting a Genes object by "Strand"
+tapply(seq_len(nrow(x)), x[, "Strand"], function(i) x[i])
 }

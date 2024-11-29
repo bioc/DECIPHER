@@ -227,34 +227,85 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 	const double *P2 = P + j2*s2;
 	
 	int Z1 = 0, Z2 = 0;
-	#ifdef _OPENMP
-	#pragma omp simd
-	#endif
-	for (i = 0; i < s0; i++) {
-		Z1 |= *(Ls1 + i) != 0;
-		Z2 |= *(Ls2 + i) != 0;
+	for (i = 1; i < s0; i++) {
+		if (*(Ls1 + i) != 0) {
+			Z1 = i;
+			break;
+		}
+	}
+	for (i = 1; i < s0; i++) {
+		if (*(Ls2 + i) != 0) {
+			Z2 = i;
+			break;
+		}
 	}
 	
-	if (root == 0 && Z1) {
-		if (Z2) {
+	if (root == 0 && *(Ls1 + Z1) != 0) {
+		if (*(Ls2 + Z2) != 0) {
 			// neither branch can be disregarded
 			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++) {
-				L1[i] = *(P1++)*(*(Ls1));
-				L2[i] = *(P2++)*(*(Ls2));
-			}
-			for (j = 1; j < s0; j++) {
-				P1++;
-				P2++;
+			if (*(Ls1 + Z1) == 1 && *(Ls2 + Z2) == 1) {
+				P1 += s1*Z1;
+				P2 += s1*Z2;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
 				for (i = 0; i < s0; i++) {
-					L1[i] += *(P1++)*(*(Ls1 + j));
-					L2[i] += *(P2++)*(*(Ls2 + j));
+					L1[i] = *(P1++);
+					L2[i] = *(P2++);
+				}
+			} else if (*(Ls1 + Z1) == 1) {
+				P1 += s1*Z1;
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					L1[i] = *(P1++);
+					L2[i] = *(P2++)*(*(Ls2));
+				}
+				for (j = 1; j < s0; j++) {
+					P2++;
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L2[i] += *(P2++)*(*(Ls2 + j));
+				}
+			} else if (*(Ls2 + Z2) == 1) {
+				P2 += s1*Z2;
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					L1[i] = *(P1++)*(*(Ls1));
+					L2[i] = *(P2++);
+				}
+				for (j = 1; j < s0; j++) {
+					P1++;
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L1[i] += *(P1++)*(*(Ls1 + j));
+				}
+			} else {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					L1[i] = *(P1++)*(*(Ls1));
+					L2[i] = *(P2++)*(*(Ls2));
+				}
+				for (j = 1; j < s0; j++) {
+					P1++;
+					P2++;
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++) {
+						L1[i] += *(P1++)*(*(Ls1 + j));
+						L2[i] += *(P2++)*(*(Ls2 + j));
+					}
 				}
 			}
 			
@@ -279,18 +330,27 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 		} else {
 			// second branch can be disregarded
 			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				L1[i] = *(P1++)*(*(Ls1));
-			for (j = 1; j < s0; j++) {
-				P1++;
+			if (*(Ls1 + Z1) == 1) {
+				P1 += s1*Z1;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
 				for (i = 0; i < s0; i++)
-					L1[i] += *(P1++)*(*(Ls1 + j));
+					L1[i] = *(P1++);
+			} else {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++)
+					L1[i] = *(P1++)*(*(Ls1));
+				for (j = 1; j < s0; j++) {
+					P1++;
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L1[i] += *(P1++)*(*(Ls1 + j));
+				}
 			}
 			
 			int Z3 = 0;
@@ -313,46 +373,52 @@ static void L_unknown(double *__restrict Ls, const int i3, const int i1, const i
 			}
 		}
 	} else {
-		if (Z2) {
+		if (*(Ls2 + Z2) != 0) {
 			// first branch can be disregarded
 			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				L2[i] = *(P2++)*(*(Ls2));
-			for (j = 1; j < s0; j++) {
-				P2++;
+			if (*(Ls2 + Z2) == 1) {
+				P2 += s1*Z2;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
 				for (i = 0; i < s0; i++)
-					L2[i] += *(P2++)*(*(Ls2 + j));
-			}
-			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				*(Ls3 + i) = L2[i];
-			
-			if (root && Z1) {
-				#ifdef _OPENMP
-				#pragma omp simd
-				#endif
-				for (i = 0; i < s0; i++)
-					*(Ls3 + i) *= *(Ls1 + i);
-				*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
+					L2[i] = *(P2++);
 			} else {
-				*(Ls3 + s1) = *(Ls2 + s1);
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++)
+					L2[i] = *(P2++)*(*(Ls2));
+				for (j = 1; j < s0; j++) {
+					P2++;
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L2[i] += *(P2++)*(*(Ls2 + j));
+				}
 			}
 			
 			int Z3 = 0;
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+			if (root && *(Ls1 + Z1) != 0) {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					*(Ls3 + i) = *(Ls1 + i)*L2[i];
+					Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+				}
+				*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
+			} else {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					*(Ls3 + i) = L2[i];
+					Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+				}
+				*(Ls3 + s1) = *(Ls2 + s1);
+			}
 			
 			if (Z3) {
 				#ifdef _OPENMP
@@ -388,32 +454,81 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 	const double *P2 = P + j2*s2;
 	
 	int Z1 = 0, Z2 = 0;
-	#ifdef _OPENMP
-	#pragma omp simd
-	#endif
-	for (i = 0; i < s0; i++) {
-		Z1 |= *(Ls1 + i) != 0;
-		Z2 |= *(Ls2 + i) != 0;
+	for (i = 1; i < s0; i++) {
+		if (*(Ls1 + i) != 0) {
+			Z1 = i;
+			break;
+		}
+	}
+	for (i = 1; i < s0; i++) {
+		if (*(Ls2 + i) != 0) {
+			Z2 = i;
+			break;
+		}
 	}
 	
-	if (root == 0 && Z1) {
-		if (Z2) {
+	if (root == 0 && *(Ls1 + Z1) != 0) {
+		if (*(Ls2 + Z2) != 0) {
 			// neither branch can be disregarded
 			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++) {
-				L1[i] = *(P1++)*(*(Ls1));
-				L2[i] = *(P2++)*(*(Ls2));
-			}
-			for (j = 1; j < s0; j++) {
+			if (*(Ls1 + Z1) == 1 && *(Ls2 + Z2) == 1) {
+				P1 += s1*Z1;
+				P2 += s1*Z2;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
 				for (i = 0; i < s0; i++) {
-					L1[i] += *(P1++)*(*(Ls1 + j));
-					L2[i] += *(P2++)*(*(Ls2 + j));
+					L1[i] = *(P1++);
+					L2[i] = *(P2++);
+				}
+			} else if (*(Ls1 + Z1) == 1) {
+				P1 += s1*Z1;
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					L1[i] = *(P1++);
+					L2[i] = *(P2++)*(*(Ls2));
+				}
+				for (j = 1; j < s0; j++) {
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L2[i] += *(P2++)*(*(Ls2 + j));
+				}
+			} else if (*(Ls2 + Z2) == 1) {
+				P2 += s1*Z2;
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					L1[i] = *(P1++)*(*(Ls1));
+					L2[i] = *(P2++);
+				}
+				for (j = 1; j < s0; j++) {
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L1[i] += *(P1++)*(*(Ls1 + j));
+				}
+			} else {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					L1[i] = *(P1++)*(*(Ls1));
+					L2[i] = *(P2++)*(*(Ls2));
+				}
+				for (j = 1; j < s0; j++) {
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++) {
+						L1[i] += *(P1++)*(*(Ls1 + j));
+						L2[i] += *(P2++)*(*(Ls2 + j));
+					}
 				}
 			}
 			
@@ -438,17 +553,26 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 		} else {
 			// second branch can be disregarded
 			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				L1[i] = *(P1++)*(*(Ls1));
-			for (j = 1; j < s0; j++) {
+			if (*(Ls1 + Z1) == 1) {
+				P1 += s1*Z1;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
 				for (i = 0; i < s0; i++)
-					L1[i] += *(P1++)*(*(Ls1 + j));
+					L1[i] = *(P1++);
+			} else {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++)
+					L1[i] = *(P1++)*(*(Ls1));
+				for (j = 1; j < s0; j++) {
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L1[i] += *(P1++)*(*(Ls1 + j));
+				}
 			}
 			
 			int Z3 = 0;
@@ -471,45 +595,51 @@ static void L_unknown_Indels(double *__restrict Ls, const int i3, const int i1, 
 			}
 		}
 	} else {
-		if (Z2) {
+		if (*(Ls2 + Z2) != 0) {
 			// first branch can be disregarded
 			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				L2[i] = *(P2++)*(*(Ls2));
-			for (j = 1; j < s0; j++) {
+			if (*(Ls2 + Z2) == 1) {
+				P2 += s1*Z2;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
 				for (i = 0; i < s0; i++)
-					L2[i] += *(P2++)*(*(Ls2 + j));
-			}
-			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				*(Ls3 + i) = L2[i];
-			
-			if (root && Z1) {
-				#ifdef _OPENMP
-				#pragma omp simd
-				#endif
-				for (i = 0; i < s0; i++)
-					*(Ls3 + i) *= *(Ls1 + i);
-				*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
+					L2[i] = *(P2++);
 			} else {
-				*(Ls3 + s1) = *(Ls2 + s1);
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++)
+					L2[i] = *(P2++)*(*(Ls2));
+				for (j = 1; j < s0; j++) {
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L2[i] += *(P2++)*(*(Ls2 + j));
+				}
 			}
 			
 			int Z3 = 0;
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+			if (root && *(Ls1 + Z1) != 0) {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					*(Ls3 + i) = *(Ls1 + i)*L2[i];
+					Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+				}
+				*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
+			} else {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					*(Ls3 + i) = L2[i];
+					Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+				}
+				*(Ls3 + s1) = *(Ls2 + s1);
+			}
 			
 			if (Z3) {
 				#ifdef _OPENMP
@@ -544,34 +674,85 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 	const double *P2 = P + j2*s2;
 	
 	int Z1 = 0, Z2 = 0;
-	#ifdef _OPENMP
-	#pragma omp simd
-	#endif
-	for (i = 0; i < s0; i++) {
-		Z1 |= *(Ls1 + i) != 0;
-		Z2 |= *(Ls2 + i) != 0;
+	for (i = 1; i < s0; i++) {
+		if (*(Ls1 + i) != 0) {
+			Z1 = i;
+			break;
+		}
+	}
+	for (i = 1; i < s0; i++) {
+		if (*(Ls2 + i) != 0) {
+			Z2 = i;
+			break;
+		}
 	}
 	
-	if (root == 0 && Z1) {
-		if (Z2) {
+	if (root == 0 && *(Ls1 + Z1) != 0) {
+		if (*(Ls2 + Z2) != 0) {
 			// neither branch can be disregarded
 			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++) {
-				L1[i] = *(P1++)*(*(Ls1));
-				L2[i] = *(P2++)*(*(Ls2));
-			}
-			for (j = 1; j < s0; j++) {
-				P1++;
-				P2++;
+			if (*(Ls1 + Z1) == 1 && *(Ls2 + Z2) == 1) {
+				P1 += s1*Z1;
+				P2 += s1*Z2;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
 				for (i = 0; i < s0; i++) {
-					L1[i] += *(P1++)*(*(Ls1 + j));
-					L2[i] += *(P2++)*(*(Ls2 + j));
+					L1[i] = *(P1++);
+					L2[i] = *(P2++);
+				}
+			} else if (*(Ls1 + Z1) == 1) {
+				P1 += s1*Z1;
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					L1[i] = *(P1++);
+					L2[i] = *(P2++)*(*(Ls2));
+				}
+				for (j = 1; j < s0; j++) {
+					P2++;
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L2[i] += *(P2++)*(*(Ls2 + j));
+				}
+			} else if (*(Ls2 + Z2) == 1) {
+				P2 += s1*Z2;
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					L1[i] = *(P1++)*(*(Ls1));
+					L2[i] = *(P2++);
+				}
+				for (j = 1; j < s0; j++) {
+					P1++;
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L1[i] += *(P1++)*(*(Ls1 + j));
+				}
+			} else {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					L1[i] = *(P1++)*(*(Ls1));
+					L2[i] = *(P2++)*(*(Ls2));
+				}
+				for (j = 1; j < s0; j++) {
+					P1++;
+					P2++;
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++) {
+						L1[i] += *(P1++)*(*(Ls1 + j));
+						L2[i] += *(P2++)*(*(Ls2 + j));
+					}
 				}
 			}
 			
@@ -596,18 +777,27 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 		} else {
 			// second branch can be disregarded
 			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				L1[i] = *(P1++)*(*(Ls1));
-			for (j = 1; j < s0; j++) {
-				P1++;
+			if (*(Ls1 + Z1) == 1) {
+				P1 += s1*Z1;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
 				for (i = 0; i < s0; i++)
-					L1[i] += *(P1++)*(*(Ls1 + j));
+					L1[i] = *(P1++);
+			} else {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++)
+					L1[i] = *(P1++)*(*(Ls1));
+				for (j = 1; j < s0; j++) {
+					P1++;
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L1[i] += *(P1++)*(*(Ls1 + j));
+				}
 			}
 			
 			int Z3 = 0;
@@ -630,46 +820,52 @@ static void L_unknown_AA(double *__restrict Ls, const int i3, const int i1, cons
 			}
 		}
 	} else {
-		if (Z2) {
+		if (*(Ls2 + Z2) != 0) {
 			// first branch can be disregarded
 			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				L2[i] = *(P2++)*(*(Ls2));
-			for (j = 1; j < s0; j++) {
-				P2++;
+			if (*(Ls2 + Z2) == 1) {
+				P2 += s1*Z2;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
 				for (i = 0; i < s0; i++)
-					L2[i] += *(P2++)*(*(Ls2 + j));
-			}
-			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				*(Ls3 + i) = L2[i];
-			
-			if (root && Z1) {
-				#ifdef _OPENMP
-				#pragma omp simd
-				#endif
-				for (i = 0; i < s0; i++)
-					*(Ls3 + i) *= *(Ls1 + i);
-				*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
+					L2[i] = *(P2++);
 			} else {
-				*(Ls3 + s1) = *(Ls2 + s1);
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++)
+					L2[i] = *(P2++)*(*(Ls2));
+				for (j = 1; j < s0; j++) {
+					P2++;
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L2[i] += *(P2++)*(*(Ls2 + j));
+				}
 			}
 			
 			int Z3 = 0;
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+			if (root && *(Ls1 + Z1) != 0) {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					*(Ls3 + i) = *(Ls1 + i)*L2[i];
+					Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+				}
+				*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
+			} else {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					*(Ls3 + i) = L2[i];
+					Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+				}
+				*(Ls3 + s1) = *(Ls2 + s1);
+			}
 			
 			if (Z3) {
 				#ifdef _OPENMP
@@ -705,32 +901,81 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 	const double *P2 = P + j2*s2;
 	
 	int Z1 = 0, Z2 = 0;
-	#ifdef _OPENMP
-	#pragma omp simd
-	#endif
-	for (i = 0; i < s0; i++) {
-		Z1 |= *(Ls1 + i) != 0;
-		Z2 |= *(Ls2 + i) != 0;
+	for (i = 1; i < s0; i++) {
+		if (*(Ls1 + i) != 0) {
+			Z1 = i;
+			break;
+		}
+	}
+	for (i = 1; i < s0; i++) {
+		if (*(Ls2 + i) != 0) {
+			Z2 = i;
+			break;
+		}
 	}
 	
-	if (root == 0 && Z1) {
-		if (Z2) {
+	if (root == 0 && *(Ls1 + Z1) != 0) {
+		if (*(Ls2 + Z2) != 0) {
 			// neither branch can be disregarded
 			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++) {
-				L1[i] = *(P1++)*(*(Ls1));
-				L2[i] = *(P2++)*(*(Ls2));
-			}
-			for (j = 1; j < s0; j++) {
+			if (*(Ls1 + Z1) == 1 && *(Ls2 + Z2) == 1) {
+				P1 += s1*Z1;
+				P2 += s1*Z2;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
 				for (i = 0; i < s0; i++) {
-					L1[i] += *(P1++)*(*(Ls1 + j));
-					L2[i] += *(P2++)*(*(Ls2 + j));
+					L1[i] = *(P1++);
+					L2[i] = *(P2++);
+				}
+			} else if (*(Ls1 + Z1) == 1) {
+				P1 += s1*Z1;
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					L1[i] = *(P1++);
+					L2[i] = *(P2++)*(*(Ls2));
+				}
+				for (j = 1; j < s0; j++) {
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L2[i] += *(P2++)*(*(Ls2 + j));
+				}
+			} else if (*(Ls2 + Z2) == 1) {
+				P2 += s1*Z2;
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					L1[i] = *(P1++)*(*(Ls1));
+					L2[i] = *(P2++);
+				}
+				for (j = 1; j < s0; j++) {
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L1[i] += *(P1++)*(*(Ls1 + j));
+				}
+			} else {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					L1[i] = *(P1++)*(*(Ls1));
+					L2[i] = *(P2++)*(*(Ls2));
+				}
+				for (j = 1; j < s0; j++) {
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++) {
+						L1[i] += *(P1++)*(*(Ls1 + j));
+						L2[i] += *(P2++)*(*(Ls2 + j));
+					}
 				}
 			}
 			
@@ -755,17 +1000,26 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 		} else {
 			// second branch can be disregarded
 			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				L1[i] = *(P1++)*(*(Ls1));
-			for (j = 1; j < s0; j++) {
+			if (*(Ls1 + Z1) == 1) {
+				P1 += s1*Z1;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
 				for (i = 0; i < s0; i++)
-					L1[i] += *(P1++)*(*(Ls1 + j));
+					L1[i] = *(P1++);
+			} else {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++)
+					L1[i] = *(P1++)*(*(Ls1));
+				for (j = 1; j < s0; j++) {
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L1[i] += *(P1++)*(*(Ls1 + j));
+				}
 			}
 			
 			int Z3 = 0;
@@ -788,45 +1042,51 @@ static void L_unknown_AA_Indels(double *__restrict Ls, const int i3, const int i
 			}
 		}
 	} else {
-		if (Z2) {
+		if (*(Ls2 + Z2) != 0) {
 			// first branch can be disregarded
 			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				L2[i] = *(P2++)*(*(Ls2));
-			for (j = 1; j < s0; j++) {
+			if (*(Ls2 + Z2) == 1) {
+				P2 += s1*Z2;
 				#ifdef _OPENMP
 				#pragma omp simd
 				#endif
 				for (i = 0; i < s0; i++)
-					L2[i] += *(P2++)*(*(Ls2 + j));
-			}
-			
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				*(Ls3 + i) = L2[i];
-			
-			if (root && Z1) {
-				#ifdef _OPENMP
-				#pragma omp simd
-				#endif
-				for (i = 0; i < s0; i++)
-					*(Ls3 + i) *= *(Ls1 + i);
-				*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
+					L2[i] = *(P2++);
 			} else {
-				*(Ls3 + s1) = *(Ls2 + s1);
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++)
+					L2[i] = *(P2++)*(*(Ls2));
+				for (j = 1; j < s0; j++) {
+					#ifdef _OPENMP
+					#pragma omp simd
+					#endif
+					for (i = 0; i < s0; i++)
+						L2[i] += *(P2++)*(*(Ls2 + j));
+				}
 			}
 			
 			int Z3 = 0;
-			#ifdef _OPENMP
-			#pragma omp simd
-			#endif
-			for (i = 0; i < s0; i++)
-				Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+			if (root && *(Ls1 + Z1) != 0) {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					*(Ls3 + i) = *(Ls1 + i)*L2[i];
+					Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+				}
+				*(Ls3 + s1) = *(Ls1 + s1) + *(Ls2 + s1);
+			} else {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++) {
+					*(Ls3 + i) = L2[i];
+					Z3 |= *(Ls3 + i) > 0 && *(Ls3 + i) < inv_epsilon;
+				}
+				*(Ls3 + s1) = *(Ls2 + s1);
+			}
 			
 			if (Z3) {
 				#ifdef _OPENMP
@@ -858,25 +1118,35 @@ static void L_component(double *__restrict Ls, const int i3, const int i1, const
 	const double *P1 = P + j1*s2;
 	
 	int Z1 = 0;
-	#ifdef _OPENMP
-	#pragma omp simd
-	#endif
-	for (i = 0; i < s0; i++)
-		Z1 |= *(Ls1 + i) != 0;
+	for (i = 1; i < s0; i++) {
+		if (*(Ls1 + i) != 0) {
+			Z1 = i;
+			break;
+		}
+	}
 	
-	if (Z1) {
-		#ifdef _OPENMP
-		#pragma omp simd
-		#endif
-		for (i = 0; i < s0; i++)
-			*(Ls3 + i) = *(P1++)*(*(Ls1));
-		for (j = 1; j < s0; j++) {
-			P1++;
+	if (*(Ls1 + Z1) != 0) {
+		if (*(Ls1 + Z1) == 1) {
+			P1 += s1*Z1;
 			#ifdef _OPENMP
 			#pragma omp simd
 			#endif
 			for (i = 0; i < s0; i++)
-				*(Ls3 + i) += *(P1++)*(*(Ls1 + j));
+				*(Ls3 + i) = *(P1++);
+		} else {
+			#ifdef _OPENMP
+			#pragma omp simd
+			#endif
+			for (i = 0; i < s0; i++)
+				*(Ls3 + i) = *(P1++)*(*(Ls1));
+			for (j = 1; j < s0; j++) {
+				P1++;
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++)
+					*(Ls3 + i) += *(P1++)*(*(Ls1 + j));
+			}
 		}
 		*(Ls3 + s0) = 0;
 		*(Ls3 + s1) = *(Ls1 + s1);
@@ -916,24 +1186,34 @@ static void L_component_Indels(double *__restrict Ls, const int i3, const int i1
 	const double *P1 = P + j1*s2;
 	
 	int Z1 = 0;
-	#ifdef _OPENMP
-	#pragma omp simd
-	#endif
-	for (i = 0; i < s0; i++)
-		Z1 |= *(Ls1 + i) != 0;
+	for (i = 1; i < s0; i++) {
+		if (*(Ls1 + i) != 0) {
+			Z1 = i;
+			break;
+		}
+	}
 	
-	if (Z1) {
-		#ifdef _OPENMP
-		#pragma omp simd
-		#endif
-		for (i = 0; i < s0; i++)
-			*(Ls3 + i) = *(P1++)*(*(Ls1));
-		for (j = 1; j < s0; j++) {
+	if (*(Ls1 + Z1) != 0) {
+		if (*(Ls1 + Z1) == 1) {
+			P1 += s1*Z1;
 			#ifdef _OPENMP
 			#pragma omp simd
 			#endif
 			for (i = 0; i < s0; i++)
-				*(Ls3 + i) += *(P1++)*(*(Ls1 + j));
+				*(Ls3 + i) = *(P1++);
+		} else {
+			#ifdef _OPENMP
+			#pragma omp simd
+			#endif
+			for (i = 0; i < s0; i++)
+				*(Ls3 + i) = *(P1++)*(*(Ls1));
+			for (j = 1; j < s0; j++) {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++)
+					*(Ls3 + i) += *(P1++)*(*(Ls1 + j));
+			}
 		}
 		*(Ls3 + s1) = *(Ls1 + s1);
 		
@@ -972,25 +1252,35 @@ static void L_component_AA(double *__restrict Ls, const int i3, const int i1, co
 	const double *P1 = P + j1*s2;
 	
 	int Z1 = 0;
-	#ifdef _OPENMP
-	#pragma omp simd
-	#endif
-	for (i = 0; i < s0; i++)
-		Z1 |= *(Ls1 + i) != 0;
+	for (i = 1; i < s0; i++) {
+		if (*(Ls1 + i) != 0) {
+			Z1 = i;
+			break;
+		}
+	}
 	
-	if (Z1) {
-		#ifdef _OPENMP
-		#pragma omp simd
-		#endif
-		for (i = 0; i < s0; i++)
-			*(Ls3 + i) = *(P1++)*(*(Ls1));
-		for (j = 1; j < s0; j++) {
-			P1++;
+	if (*(Ls1 + Z1) != 0) {
+		if (*(Ls1 + Z1) == 1) {
+			P1 += s1*Z1;
 			#ifdef _OPENMP
 			#pragma omp simd
 			#endif
 			for (i = 0; i < s0; i++)
-				*(Ls3 + i) += *(P1++)*(*(Ls1 + j));
+				*(Ls3 + i) = *(P1++);
+		} else {
+			#ifdef _OPENMP
+			#pragma omp simd
+			#endif
+			for (i = 0; i < s0; i++)
+				*(Ls3 + i) = *(P1++)*(*(Ls1));
+			for (j = 1; j < s0; j++) {
+				P1++;
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++)
+					*(Ls3 + i) += *(P1++)*(*(Ls1 + j));
+			}
 		}
 		*(Ls3 + s0) = 0;
 		*(Ls3 + s1) = *(Ls1 + s1);
@@ -1030,24 +1320,34 @@ static void L_component_AA_Indels(double *__restrict Ls, const int i3, const int
 	const double *P1 = P + j1*s2;
 	
 	int Z1 = 0;
-	#ifdef _OPENMP
-	#pragma omp simd
-	#endif
-	for (i = 0; i < s0; i++)
-		Z1 |= *(Ls1 + i) != 0;
+	for (i = 1; i < s0; i++) {
+		if (*(Ls1 + i) != 0) {
+			Z1 = i;
+			break;
+		}
+	}
 	
-	if (Z1) {
-		#ifdef _OPENMP
-		#pragma omp simd
-		#endif
-		for (i = 0; i < s0; i++)
-			*(Ls3 + i) = *(P1++)*(*(Ls1));
-		for (j = 1; j < s0; j++) {
+	if (*(Ls1 + Z1) != 0) {
+		if (*(Ls1 + Z1) == 1) {
+			P1 += s1*Z1;
 			#ifdef _OPENMP
 			#pragma omp simd
 			#endif
 			for (i = 0; i < s0; i++)
-				*(Ls3 + i) += *(P1++)*(*(Ls1 + j));
+				*(Ls3 + i) = *(P1++);
+		} else {
+			#ifdef _OPENMP
+			#pragma omp simd
+			#endif
+			for (i = 0; i < s0; i++)
+				*(Ls3 + i) = *(P1++)*(*(Ls1));
+			for (j = 1; j < s0; j++) {
+				#ifdef _OPENMP
+				#pragma omp simd
+				#endif
+				for (i = 0; i < s0; i++)
+					*(Ls3 + i) += *(P1++)*(*(Ls1 + j));
+			}
 		}
 		*(Ls3 + s1) = *(Ls1 + s1);
 		
@@ -1277,7 +1577,9 @@ static void L_final_AA_Indels(double *__restrict Ls, const int i3, const int i1,
 
 static void ProbChangeExp(double *m, double *E, double v)
 {
-	v = (v < 1e-6) ? 1e-6 : v;
+	const double epsilon = 1e-6; // tolerance
+	
+	v = (v < epsilon) ? epsilon : v;
 	double A = *(m), C = *(m + 1), G = *(m + 2), T = *(m + 3), I = *(m + 4);
 	double k1 = *(m + 5), k2 = *(m + 6), k3 = *(m + 7), k4 = *(m + 8), k5 = *(m + 9), k6 = *(m + 10);
 	v = v/(2*(A*I*k6 + C*I*k6 + G*I*k6 + I*T*k6 + G*T + A*C*k3 + A*G*k1 + C*G*k5 + A*T*k4 + C*T*k2));
@@ -1387,7 +1689,7 @@ static void ProbChangeExp(double *m, double *E, double v)
 				y = r; // maximum absolute column sum
 			i = j;
 		}
-	} while (y > 0);
+	} while (y > epsilon);
 	
 	if (x > 0) {
 		for (k = 1; k <= x; k++) {
@@ -1412,6 +1714,7 @@ static void ProbChangeExpAA(double *m, double *E, double v)
 {
 	int i, j, k, l;
 	double r, x = 0, y;
+	const double epsilon = 1e-6; // tolerance
 	
 	double *Q = (double *) calloc(441, sizeof(double)); // initialized to zero (thread-safe on Windows)
 	double *F = (double *) calloc(441, sizeof(double)); // initialized to zero (thread-safe on Windows)
@@ -1436,7 +1739,7 @@ static void ProbChangeExpAA(double *m, double *E, double v)
 		for (i = 0; i < 21; i++)
 			r += *(Q + 21*j + i) * *(m + 190 + j);
 	
-	v = (v < 1e-6) ? 1e-6 : v;
+	v = (v < epsilon) ? epsilon : v;
 	v /= r;
 	for (j = 0; j < 21; j++) {
 		for (i = 0; i < 21; i++) {
@@ -1532,7 +1835,7 @@ static void ProbChangeExpAA(double *m, double *E, double v)
 				y = r; // maximum absolute column sum
 			i = j;
 		}
-	} while (y > 0);
+	} while (y > epsilon);
 	
 	if (x > 0) {
 		for (k = 1; k <= x; k++) {
@@ -1724,7 +2027,6 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 	
 	for (k = 0; k < numRates; k++) { // for each bin of the gamma distribution determined by alpha
 		// P = expM(Q*v)
-		// transpose for cache efficiency
 		#ifdef _OPENMP
 		#pragma omp parallel for num_threads(nthreads)
 		#endif
@@ -1734,7 +2036,7 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 			} else {
 				ProbChangeExp(m, (P + i*s2 + k*size), ul[i] * *(m + k + params));
 			}
-			Transpose(P + i*s2 + k*size, s1);
+			Transpose(P + i*s2 + k*size, s1); // transpose for cache efficiency
 		}
 	}
 	
@@ -2267,32 +2569,6 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 	}
 	
 	R_Free(sumL);
-	UNPROTECT(1);
-	
-	return ans;
-}
-
-SEXP expM(SEXP x, SEXP model, SEXP type)
-{
-	// initialize variables
-	double l = asReal(x);
-	double *m = REAL(model); // Substitution Model
-	int t = asInteger(type);
-	int size = (t == 3) ? 21 : 5;
-	
-	SEXP ans;
-	PROTECT(ans = allocMatrix(REALSXP, size, size));
-	double *rans = REAL(ans);
-	size *= size;
-	for (int i = 0; i < size; i++)
-		rans[i] = 0;
-	
-	if (t == 3) {
-		ProbChangeExpAA(m, rans, l);
-	} else {
-		ProbChangeExp(m, rans, l);
-	}
-	
 	UNPROTECT(1);
 	
 	return ans;

@@ -87,7 +87,7 @@ StaggerAlignment <- function(myXStringSet,
 		}
 		
 		d <- DistanceMatrix(myXStringSet,
-			correction="F81",
+			correction="TN93+F",
 			processors=processors,
 			verbose=verbose)
 		

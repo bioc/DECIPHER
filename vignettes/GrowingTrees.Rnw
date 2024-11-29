@@ -61,33 +61,36 @@ options(width=80)
 
 This document describes how to grow phylogenetic trees using the \Rfunction{Treeline} function in the \Rpackage{DECIPHER} package.  \Rfunction{Treeline} takes as input a set of aligned nucleotide or amino acid sequences and returns a phylogenetic tree (i.e., \Rclass{dendrogram} object) as output.  This vignette focuses on optimizing, balanced minimum evolution (ME), maximum likelihood (ML), and maximum parsimony (MP) phylogenetic trees starting from sequences.
 
-Why is the function called \Rfunction{Treeline}?  The goal of \Rfunction{Treeline} is to find the best tree according to an optimality criterion.  There are often many trees near the optimum.  Therefore, \Rfunction{Treeline} seeks to find a tree as close as possible to the Treeline, analogous to how trees cannot grow above the treeline on a mountain.
+Why is the function called \Rfunction{Treeline}?  The goal of \Rfunction{Treeline} is to find the best tree according to an optimality criterion.  There are often many trees near the optimum.  Therefore, \Rfunction{Treeline} seeks to find a tree as close as possible to the treeline, analogous to how trees cannot grow above the treeline on a mountain.
 
-Why use \Rfunction{Treeline} versus other programs?  The \Rfunction{Treeline} function is designed to return an excellent phylogenetic tree with minimal user intervention.  Many tree building programs have a large set of complex options for niche applications.  In contrast, \Rfunction{Treeline} simply builds a great tree by default.  This vignette is intended to get you started and introduce additional options/functions that might be useful.
+Why use \Rfunction{Treeline} versus other programs?  The \Rfunction{Treeline} function is designed to return an excellent phylogenetic tree with minimal user intervention.  Many tree building programs have a large set of complex options for niche applications.  In contrast, \Rfunction{Treeline} simply builds a great tree by default.  \Rfunction{Treeline}'s unified optimization strategy also makes it easy to compare trees optimized under different optimality criteria.  This vignette is intended to get you started and introduce additional options/functions that might be useful.
 
-Treeline uses multi-start optimization followed by hill-climbing to find the highest trees on the optimality landscape.  Since Treeline is a stochastic optimizer, it optimizes many trees to prevent chance from influencing the final result.  With any luck it'll find the Treeline!
+Treeline uses multi-start optimization followed by hill-climbing to find the highest trees on the optimality landscape.  Since Treeline is a stochastic optimizer, it optimizes many trees to prevent chance from influencing the final result.  With any luck it'll find the treeline!
 
 %------------------------------------------------------------
 \section{Performance Considerations}
 %------------------------------------------------------------
 
-Finding an optimal tree is no easy feat.  \Rfunction{Treeline} systematically optimizes hundreds of candidate trees before returning the best one.  This takes time, but there are things you can do to make it go faster.
+Finding an optimal tree is no easy feat.  \Rfunction{Treeline} systematically optimizes many candidate trees before returning the best one.  This takes time, but there are things you can do to make it go faster.
 
 \begin{itemize}
-\item Only use the sequences you need:  \Rfunction{Treeline}'s runtime scales approximately quadratically with the number of sequences.  Hence, limiting the number of sequences is a worthwhile consideration.  In particular, always eliminate redundant sequences, as shown in the example below, and remove any sequences that are not necessary.
-\item Set a timeout:  The \Rfunarg{maxTime} argument specifies the (approximate) maximum number of hours you are willing to let \Rfunction{Treeline} run.  If you are concerned about the code running for too long then simply specify this argument.
-\item Compile with OpenMP support:  Significant speed-ups can be achieved with multi-threading using OpenMP, particularly for ML and MP \Rfunarg{method}s.  See the ``Getting Started DECIPHERing'' vignette for how to enable OpenMP on your computer.  Then you only need to set the argument \code{processors=NULL} and \Rfunction{Treeline} will use all available processors.
-\item Compile for SIMD support:  \Rfunction{Treeline} is configured to make use of SIMD operations, which are available on some processors.  The easiest way to enable SIMD is to add a line with ``CFLAGS += -O3 -march=native'' to your $\sim$/.R/Makevars text file.  Then, after recompiling, there may be an automatic speed-up on systems with SIMD support.  Note that enabling SIMD makes the compiled code non-portable, so the code always needs to be compiled on the hardware being used.
-\item For ML, choose a model:  Automatic model selection is a useful feature, but frequently this time-consuming step can be skipped.  For most modestly large sets of nucleotide sequences, the \code{"GTR+G4"} model will be automatically selected.  Typical amino acid sequences will tend to pick the \code{"LG+G4"} or \code{"WAG+G4"} models, unless the sequences are from a particular origin (e.g., mitochondria).  Pre-selecting a subset of the available \Robject{MODELS} and supplying this as the \Rfunarg{model} argument can save considerable time.
+\item Only use the sequences you need:  \Rfunction{Treeline}'s optimization runtime scales approximately quadratically with the number of sequences.  Hence, limiting the number of sequences is a worthwhile consideration.  In particular, always eliminate redundant sequences, as shown in the example below.
+\item Compile with OpenMP support:  Significant speed-ups can be achieved with multi-threading using OpenMP, particularly for ML and MP \Rfunarg{method}s.  See the ``Getting Started DECIPHERing'' vignette for how to enable OpenMP on your computer.  Then you will only need to set the argument \code{processors=NULL} and \Rfunction{Treeline} will use all available processors.
+\item Compile for SIMD support:  \Rfunction{Treeline} is configured to make use of SIMD operations, which are available on most processors.  The easiest way to enable SIMD is to add a line with ``CFLAGS += -O3 -march=native'' to your $\sim$/.R/Makevars text file.  Then, after recompiling, there should be a speed-up on systems with SIMD support.  Note that enabling SIMD makes the compiled code non-portable, so the code always needs to be compiled on the hardware being used.
+\item Set a timeout:  The \Rfunarg{maxTime} argument specifies the (approximate) maximum number of hours you are willing to let \Rfunction{Treeline} run.  If you are concerned about the code running for too long then simply set this argument.
+\item Limit iterations:  \Rfunction{Treeline} will converge after \Rfunarg{minIterations} when the score is expected to change less than \Rfunarg{tolerance} per iteration, unless \Rfunarg{maxIterations} is met before convergence.  A reasonable way to converge early is to set \Rfunarg{minIterations} to a lower value (e.g., \code{20}).  There is evidence supporting the notion that exhaustive searching is unlikely to result in a significantly more correct tree \cite{Kumar:2023}, even as the score continues to improve.
+\item For ML, choose a model:  Automatic model selection is a useful feature, but frequently this time-consuming step can be skipped.  For many nucleotide sequences the \code{"GTR+G4"} model will be automatically selected.  Typical amino acid sequences will tend to pick the \code{"LG+G4"} or \code{"WAG+G4"} models, unless the sequences are from a particular origin (e.g., mitochondria).  Pre-selecting a subset of the available \Robject{MODELS} and supplying this as the \Rfunarg{model} argument can save time.
 \end{itemize}
 
 %------------------------------------------------------------
-\section{Growing a Phylogenetic Tree}
+\section{Preparing the Input Data}
 %------------------------------------------------------------
 
 \Rfunction{Treeline} takes as input a multiple sequence alignment and/or a distance matrix.  All distance-based methods (including ME) only require specification of \code{myDistMatrix} but will generate a distance matrix using \Rfunction{DistanceMatrix} if \code{myXStringSet} is provided instead.  The character-based methods (i.e., ML and MP) require a multiple sequence alignment and will generate a distance matrix to construct the first candidate tree unless one is provided.
 
-Multiple sequence alignments can be constructed from a set of (unaligned) sequences using \Rfunction{AlignSeqs} or related functions.  \Rfunction{Treeline} will optimize trees for amino acid (i.e., \code{AAStringSet}) or nucleotide (i.e., \code{DNAStringSet} or \code{RNAStringSet}) sequences.  Here, we are going to use a set of sequences that is included with \Rpackage{DECIPHER}.  These sequences are from the internal transcribed spacer (ITS) between the 16S and 23S ribosomal RNA genes in several \textit{Streptomyces} species.
+Multiple sequence alignments can be constructed from a set of (unaligned) sequences using \Rfunction{AlignSeqs} or related functions.  \Rfunction{Treeline} will optimize trees for amino acid (i.e., \code{AAStringSet}) or nucleotide (i.e., \code{DNAStringSet} or \code{RNAStringSet}) sequences.  For coding sequences, it is intuitive to assume that nucleotide data would better resolve close taxa, whereas amino acid data would be preferable to determine the branching order of deep taxa.  However, recent work challenges this assumption by showing nucleotide data is adequate for determining distant relationships \cite{Kapli:2023}.  A good bet is use nucleotide sequences with the \code{"ME"} \Rfunarg{method}, possibly specifying a model (e.g., \code{"F81+F"} that corrects for multiple substitutions per site.
+
+Here, we are going to use a set of sequences that is included with \Rpackage{DECIPHER}.  These sequences are from the internal transcribed spacer (ITS) between the 16S and 23S ribosomal RNA genes in several \textit{Streptomyces} species.  To avoid letting the result come down to good old-fashioned luck, it is always best to compare multiple trees optimized for different objectives (ME, ML, and MP) and alternative models of evolution.  \Rfunction{Treeline} is designed to facilitate this type of comparison, ideally across multiple loci.
 
 <<expr1,eval=TRUE,echo=TRUE>>=
 library(DECIPHER)
@@ -101,7 +104,7 @@ seqs <- readDNAStringSet(fas) # use readAAStringSet for amino acid sequences
 seqs # the aligned sequences
 @
 
-Many of these sequences are redundant or from the same genome.  We can de-replicate the sequences to accelerate tree building:
+Many of these sequences are redundant or from the same genome.  We can de-replicate the sequences to accelerate tree building and simplify analyses:
 
 <<expr2,eval=TRUE,echo=TRUE>>=
 seqs <- unique(seqs) # remove duplicated sequences
@@ -112,73 +115,117 @@ seqs <- seqs[!duplicated(ns)] # remove redundant sequences from the same species
 seqs
 @
 
-Now, it's time to try our luck at finding the most likely tree.  Here, we will set a stringent time limit (0.01 hours) to make this example faster, although longer time limits (e.g., 24 hours) are advised because setting very short time limits leaves the result partly up to luck.
+%------------------------------------------------------------
+\section{Choosing a Method and Model of Evolution}
+%------------------------------------------------------------
 
-Here, it is necessary to choose a \Rfunarg{method} for optimizing the tree.  The default \Rfunarg{method} is \code{"ME"} because it is fast and performs best on empirical datasets.  For maximum parsimony, set \Rfunarg{method} to \code{"MP"} and (optionally) specify a \Rfunarg{costMatrix}.  For maximum likelihood, set \Rfunarg{method} to \code{"ML"}, which requires a model of sequence evolution.  Note that \Rfunction{Treeline} automatically selects the best \Rfunarg{model} according to Akaike information criterion (by default).  It is possible to choose specific model(s) (e.g., \code{model="GTR+G4"}) to limit the possible selections and test your luck with fewer models.
+Before choosing a \code{model} of evolution, it is necessary to choose a \Rfunarg{method} for optimizing the tree.  The default \Rfunarg{method} is \code{"ME"} because it is fast and performs best on empirical datasets \cite{Gonnet:2012,Spirin:2024}.  The ME \Rfunarg{method} accepts \Rfunarg{myDistMatrix} as input, or \Rfunarg{myXStringSet} can be given with or without a \Rfunarg{model} to use with \Rfunction{DistanceMatrix} for building a distance matrix.  For maximum likelihood, set \Rfunarg{method} to \code{"ML"}, which requires a \Rfunarg{model} of sequence evolution.  For maximum parsimony, set \Rfunarg{method} to \code{"MP"} and (optionally) specify a \Rfunarg{costMatrix}.
 
-Also, since \Rfunction{Treeline} is a stochastic optimizer, it is critical to always set the random number seed for reproducibility.  You can pick any lucky number, and if you ever wonder how much you pushed your luck, you can try running again from a different random number seed to see how much the result came down to luck of the draw.  Note that setting a time limit, as done below with \Rfunarg{maxTime}, negates the purpose of setting a seed -- never set a time limit if reproducibility is desired or you'll have no such luck.
+\begin{figure}
+\begin{center}
+\includegraphics[width=1\textwidth]{NucleotideModels}
+\caption{\label{f1} Free rates and frequencies in nucleotide models.}
+\end{center}
+\end{figure}
+
+\Rfunction{Treeline} supports many \Robject{MODELS} of evolution (Fig. \ref{f1}).  In many cases, these \Robject{MODELS} can be extended by appending the model with \code{"+F"}, \code{"+G\#"}, or \code{"+Indels"}.  Here is the list of built-in \Robject{MODELS}:
+
+<<expr3,eval=TRUE,echo=TRUE>>=
+MODELS
+@
+
+\subsection{Minimum Evolution}
+
+Empirical benchmarks suggest ME with Hamming distance results in the most accurate trees, at least for alignments of single protein domains.  Hence, this is the default configuration when \Rfunarg{myXStringSet} is supplied without \code{myDistMatrix}, which returns branch lengths in units of differences per site.  If you would prefer to have branch lengths in units of substitutions per site, it is possible correct for multiple substitutions (e.g., \textit{A} to \textit{G} back to \textit{A}) by setting \Rfunarg{model} to any of the \Robject{MODELS} of evolution supported by \Rfunction{DistanceMatrix} (e.g., \code{"JC"} or \code{"F81+F"} for nucleotides, and \code{"WAG"} or \code{"WAG+F"} for amino acids).  When \Rfunarg{method} is \code{"ME"}, maximum control is gained by supplying \Rfunarg{myDistMatrix}, which can be calculated with \Rfunction{DistanceMatrix} beforehand.
+
+For example, a standard \Rfunarg{model} to select for nucleotide sequences would be \code{"TN93+F"} and for amino acid sequences would be \code{"WAG"}.  These models return trees with branch lengths in units of substitutions per site.
+
+\subsection{Maximum Likelihood}
+
+For ML trees, \Rfunction{Treeline} will automatically select an appropriate \Rfunarg{model} according to Akaike information criterion (by default).  It is possible to choose specific model(s) (e.g., \code{model="GTR+G4"}) to limit the possible selections and test your luck with fewer options.  There is evidence that the choice of nucleotide model does not substantially alter tree accuracy \cite{Ripplinger:2008,Hoff:2016,Abadi:2019}, and picking the most complex model every time is a reasonable decision.  All \Rfunarg{model}s can be used with fixed (empirical) letter frequencies (i.e., by appending with \code{+F}) and/or gamma rate variation across sites (e.g., \code{+G4}).  Note \Rfunction{Treeline} supports two discretizations of the gamma distribution: the default of equal binning, or the Laguerre quadrature if \Rfunarg{quadrature} is set to \code{TRUE}.  The former will give likelihoods comparable with other programs, but the latter is more accurate at representing the gamma distribution with limited bins.
+
+For example, a standard \Rfunarg{model} to select for nucleotide sequences would be \code{"GTR+G4+F"} and for amino acid sequences would be \code{"WAG+G4"}, with \Rfunarg{quadrature} set to \code{TRUE} in both cases.  These models return trees with branch lengths in units of substitutions per site.
+
+\subsection{Maximum Parsimony}
+
+For MP trees, the best results are typically obtained by providing a \Rfunarg{costMatrix} rather than relying on the default binary costs.  The choice of \Rfunarg{costMatrix} is up to you, and several rational options are provided in the examples section of the \Rfunction{Treeline} manual page (see \code{?Treeline}).  A more systematic approach to deriving a substitution matrix is provided as an example below.
+
+\subsection{Treatment of gaps}
+
+The standard models of evolution described above all ignore gap (``-'' and ``.'') characters representing insertions or deletions (indels).  But you're in luck --- \Rfunction{Treeline} has the ability to incorporate gaps into all \Rfunarg{method}s.  For ME trees, \Rfunction{DistanceMatrix} allows gaps to be penalized in Hamming distance or added to any distance corrected from multiple substitutions per site.  You can either specify a model with \code{"+Indels"} in \Rfunction{Treeline}, or supply \Rfunarg{myDistMatrix} after setting \Rfunarg{penalizeGapLetterMatches} to \code{TRUE} or \code{NA} (see \code{?DistanceMatrix}).  For ML trees, gaps can be added to any model of evolution as an additional state by specifying a model \code{"+Indels"}, which adds two free parameters (Fig. \ref{f1}).  Incorporating gaps results in branch lengths in units of \textit{changes} per site, since both substitutions and indels contribute to distance.  For MP trees, gaps can be added as a character to the \Rfunarg{costMatrix}.  As luck would have it, incorporating gaps tends to result in \textit{slightly} better trees on empirical datasets, although the average improvement is typically very small.
+
+%------------------------------------------------------------
+\section{Minimum Evolution Phylogenetic Trees}
+%------------------------------------------------------------
+
+Now, it's time to try our luck at finding the most likely tree.  We will use the default settings, which returns a minimum evolution tree based on a Hamming distance matrix.  Simply specify a \Rfunarg{model} to correct for multiple substitutions (e.g., \code{"TN93+F"} or \code{"WAG"}).
+
+Since \Rfunction{Treeline} is a stochastic optimizer, it is critical to always set the random number seed for reproducibility.  You can pick any lucky number, and if you ever wonder how much you pushed your luck, you can try running again from a different random number seed to see how much the result came down to luck of the draw.  Note that setting a time limit, as done below with \Rfunarg{maxTime}, negates the purpose of setting a seed -- never set a time limit if reproducibility is desired or you'll have no such luck.
+
+<<expr4,eval=TRUE,echo=TRUE>>=
+set.seed(123) # set the random number seed
+
+treeME <- Treeline(seqs, verbose=FALSE, processors=1)
+
+set.seed(NULL) # reset the seed
+@
+
+\Rfunction{Treeline} returns an object of class \Rclass{dendrogram} that stores the tree in a nested list structure.  We can take an initial look at the tree and its attributes.
+
+<<expr5,eval=TRUE,echo=TRUE>>=
+treeME
+
+attributes(treeME)
+
+str(treeME, max.level=4)
+@
+
+%------------------------------------------------------------
+\section{Maximum Likelihood Phylogenetic Trees}
+%------------------------------------------------------------
+
+For the next example, we will grow a maximum likelihood phylogenetic tree, which is the most computationally demanding optimization objective that is supported. We will set a stringent time limit (0.01 hours) to make this example faster, although longer time limits (e.g., 24 hours) are advised because setting very short time limits leaves the result partly up to luck.
 
 \begin{centerfig}
-<<expr3,eval=TRUE,echo=TRUE,fig=TRUE,height=3.5,width=6>>=
+<<expr6,eval=TRUE,echo=TRUE,fig=TRUE,height=3.5,width=6>>=
 set.seed(123) # set the random number seed
 
 tree <- Treeline(seqs,
 	method="ML",
 	model="GTR+G4",
-	reconstruct=TRUE,
-	maxTime=0.01)
+	maxTime=0.01,
+	verbose=FALSE,
+	processors=1)
 
-set.seed(NULL) # reset seed
+set.seed(NULL) # reset the seed
 
 plot(tree)
 @
-\caption{\label{f1} Maximum likelihood tree showing the relationships between \textit{Streptomyces} species.}
+\caption{\label{f2} ML tree showing the relationships between \textit{Streptomyces} species.}
 \end{centerfig}
 
 \clearpage
 
-%------------------------------------------------------------
-\section{Ancestral State Reconstruction}
-%------------------------------------------------------------
-
-We're in luck \textemdash since we set \Rfunarg{reconstruct} to \code{TRUE} \Rfunction{Treeline} automatically predict states at each internal node on the tree \cite{Joy:2016}.  These character states can be used by the function \Rfunction{MapCharacters} to determine state transitions along each edge of the tree. This information enables us to plot the total number of substitutions occurring along each edge.  The state transitions can be accessed along each edge by querying a new ``change'' attribute.
-
-\begin{centerfig}
-<<expr4,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
-new_tree <- MapCharacters(tree, labelEdges=TRUE)
-plot(new_tree, edgePar=list(p.col=NA, p.border=NA, t.col="#55CC99", t.cex=0.7))
-attr(new_tree[[1]], "change") # state changes on first branch left of (virtual) root
-@
-\caption{\label{f2} Edges labeled with the number of state transitions.}
-\end{centerfig}
-
-\clearpage
-
-%------------------------------------------------------------
-\section{Plotting Branch Support Values}
-%------------------------------------------------------------
+\subsection{Plotting Branch Support Values}
 
 Maybe it was just beginner's luck, but we already have a reasonable looking starting tree!  \Rfunction{Treeline} automatically returns a variety of information about the tree that can be accessed with the \Rfunction{attributes} and \Rfunction{attr} functions:
 
-<<expr5,eval=TRUE,echo=TRUE>>=
-#attributes(tree) # view all attributes
+<<expr7,eval=TRUE,echo=TRUE>>=
 attr(tree, "members") # number of leaves below this (root) node
 attr(tree, "height") # height of the node (in this case, the midpoint root)
-attr(tree, "state") # ancestral state reconstruction (if reconstruct=TRUE)
-head(attr(tree, "siteLnLs")) # LnL for every alignment column (site)
 attr(tree, "score") # best score (in this case, the -LnL)
 attr(tree, "model") # either the specified or automatically select transition model
 attr(tree, "parameters") # the free model parameters (or NA if unoptimized)
 attr(tree, "midpoint") # center of the edge (for plotting)
 @
 
-The tree is (virtually) rooted at its midpoint by default.  For maximum likelihood trees, all internal nodes include aBayes branch support values \cite{Anisimova:2011}.  These are given as probabilities that can be used in plotting on top of each edge.  We can also italicize the leaf labels (species names).
+The tree is (virtually) rooted at its midpoint by default.  For maximum likelihood trees, all internal nodes include aBayes branch support values \cite{Anisimova:2011}.  These are given as probabilities that can be used in plotting on top of each edge.  We can also italicize the leaf labels (species names) and add a scale bar.
 
 \begin{centerfig}
-<<expr6,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
+<<expr8,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
 plot(dendrapply(tree,
 	function(x) {
-		s <- attr(x, "probability") # choose "probability" (aBayes) or "support"
+		s <- attr(x, "probability") # choose "probability" (aBayes)
 		if (!is.null(s) && !is.na(s)) {
 			s <- formatC(as.numeric(s), digits=2, format="f")
 			attr(x, "edgetext") <- paste(s, "\n")
@@ -191,25 +238,114 @@ plot(dendrapply(tree,
 	horiz=TRUE,
 	yaxt='n')
 # add a scale bar (placed manually)
-arrows(0, 0, 0.4, 0, code=3, angle=90, len=0.05, xpd=TRUE)
-text(0.2, 0, "0.4 subs./site", pos=3, xpd=TRUE)
+arrows(2, 0, 2.4, 0, code=3, angle=90, len=0.05, xpd=TRUE)
+text(2.2, 0, "0.4 subs./site", pos=3, xpd=TRUE)
 @
-\caption{\label{f3} Tree with aBayes probabilities at each internal node.}
+\caption{\label{f3} ML tree with aBayes probabilities at each internal node.}
 \end{centerfig}
 
 \clearpage
 
 %------------------------------------------------------------
-\section{Calculating bootstrap support values}
+\section{Maximum Parsimony Phylogenetic Trees}
 %------------------------------------------------------------
+
+While ME and ML trees are based on models of evolution, MP relies on a cost matrix giving the penalty for switching characters along a branch.  The default \Rfunarg{costMatrix} is binary, which is biologically implausible and may invite bad luck.  Hence, we will construct a binary tree and use the result to infer a more appropriate \Rfunarg{costMatrix}.
+
+<<expr9,eval=TRUE,echo=TRUE>>=
+set.seed(123) # set the random number seed
+
+tree_UniformCosts <- Treeline(seqs,
+	method="MP",
+	reconstruct=TRUE,
+	verbose=FALSE,
+	processors=1)
+
+set.seed(NULL) # reset the seed
+@
+
+Since we set \Rfunarg{reconstruct} to \code{TRUE}, \Rfunction{Treeline} output the state transition matrix as an attribute of the tree.  We will use this to make our own luck by deriving a more biologically plausible \Rfunarg{costMatrix}.  It is apparent that transitions are more frequent than transversions and, therefore, are presumably less costly.
+
+<<expr10,eval=TRUE,echo=TRUE>>=
+mat <- attr(tree_UniformCosts, "transitions")
+mat # count of state transitions
+
+mat <- mat + t(mat) # make symmetric
+mat <- mat/(sum(mat)/2) # normalize
+mat <- -log2(mat) # convert to bits
+diag(mat) <- 0 # reset diagonal
+mat # a derived cost matrix
+@
+
+Now we can compare the two trees to see whether specifying a non-uniform cost matrix made a difference.  We will highlight different partitions between the trees with dashed edges.  Note the scale of the two trees is different, because branch lengths are in units of average cost (per site) according to each \Rfunarg{costMatrix}.
+
+\begin{centerfig}
+<<expr11,eval=TRUE,echo=TRUE,fig=TRUE,height=4,width=6>>=
+set.seed(123) # set the random number seed
+
+tree_NonUniformCosts <- Treeline(seqs,
+	method="MP",
+	costMatrix=mat,
+	reconstruct=TRUE,
+	verbose=FALSE,
+	processors=1)
+
+set.seed(NULL) # reset the seed
+
+splits <- function(x) {
+	y <- sapply(x, function(x) paste(sort(unlist(x)), collapse=" "))
+	if (!is.leaf(x))
+		y <- c(y, splits(x[[1]]), splits(x[[2]]))
+	y
+}
+splits_UniformCosts <- splits(tree_UniformCosts)
+splits_NonUniformCosts <- splits(tree_NonUniformCosts)
+
+dashEdges <- function(x, splits) {
+	y <- paste(sort(unlist(x)), collapse=" ")
+	if (!y %in% splits)
+		attr(x, "edgePar") <- list(lty=2)
+	x
+}
+
+layout(matrix(1:2, nrow=1))
+plot(dendrapply(tree_UniformCosts, dashEdges, splits_NonUniformCosts),
+	main="MP uniform costs")
+plot(dendrapply(tree_NonUniformCosts, dashEdges, splits_UniformCosts),
+	main="MP non-uniform costs")
+@
+\caption{\label{f4} Comparison of MP trees built with different cost matrices.}
+\end{centerfig}
+
+\clearpage
+
+\subsection{Ancestral State Reconstruction}
+
+We're in luck \textemdash when \Rfunarg{reconstruct} is \code{TRUE}, \Rfunction{Treeline} infers ancestors for each internal node on the tree \cite{Joy:2016}.  These character states can be used by the function \Rfunction{MapCharacters} to determine state transitions along each edge of the tree. This information enables us to plot the total number of substitutions occurring along each edge.  The state transitions can be accessed along each edge by querying a new ``change'' attribute.
+
+\begin{centerfig}
+<<expr12,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
+new_tree <- MapCharacters(tree_NonUniformCosts, labelEdges=TRUE)
+plot(new_tree, edgePar=list(p.col=NA, p.border=NA, t.col="#55CC99", t.cex=0.7))
+attr(new_tree[[1]], "change") # state changes on first branch left of (virtual) root
+@
+\caption{\label{f5} Edges labeled with the number of state transitions.}
+\end{centerfig}
+
+\clearpage
+
+%------------------------------------------------------------
+\section{Calculating Bootstrap Support Values}
+%------------------------------------------------------------
+
+Phylogenetic trees output by \Rfunction{Treeline} contain information in both their topology and branch lengths.  The goal of phylogenetics is often to determine the branching order of a set of taxa, but this requires a test for statistical significance.  It is usually best to compare trees across different genes, such as how often trees constructed from different genes support the same hypothesis.  In the absence of multiple genes, another option is to quantify the amount of support for each branch separating two sets of taxa.
 
 The aBayes probabilities are a good proxy for whether a partition in the tree is correct \cite{Ecker:2024}, but they are only available for maximum likelihood trees.  For the other trees we need to make our own luck by bootstrapping the alignment.  The idea behind bootstrapping is to resample columns (sites) of the alignment with replacement and determine whether each partition was found in the original tree.  Repeating this process allows us to measure the level of support for each branch.
 
-\begin{centerfig}
-<<expr7,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
+<<expr13,eval=TRUE,echo=TRUE>>=
 reps <- 100 # number of bootstrap replicates
 
-tree1 <- Treeline(seqs, verbose=FALSE, processors=1L)
+tree1 <- Treeline(seqs, verbose=FALSE, processors=1)
 
 partitions <- function(x) {
 	if (is.leaf(x))
@@ -234,7 +370,12 @@ for (i in seq_len(reps)) {
 	setTxtProgressBar(pBar, i/reps)
 }
 close(pBar)
+@
 
+Now we can label edges by the percentage of times each partition appeared among the bootstrap replicates.
+
+\begin{centerfig}
+<<expr14,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
 bootstraps <- table(unlist(bootstraps))
 original <- unlist(partitions(tree1))
 hits <- bootstraps[original]
@@ -252,11 +393,122 @@ labelEdges <- function(x) {
 	return(x)
 }
 tree2 <- dendrapply(tree1, labelEdges)
-attr(tree2, "edgetext") <- NULL
+attr(tree2, "edgetext") <- NULL # remove text from (virtual) root branch
 
 plot(tree2, edgePar=list(t.cex=0.5), nodePar=list(lab.cex=0.7, pch=NA))
 @
-\caption{\label{f4} Tree with bootstrap support probabilities at each internal node.}
+\caption{\label{f6} Tree with bootstrap support probabilities at each internal node.}
+\end{centerfig}
+
+\clearpage
+
+%------------------------------------------------------------
+\section{More Examples of Manipulating Dendrograms}
+%------------------------------------------------------------
+
+It is sometimes useful to alter \Rclass{dendrogram} objects output by \Rfunction{Treeline}.  There are three main ways for working with \Rclass{dendrogram}s:  apply a function to each leaf with \Rfunction{rapply}, apply a function to every node with \Rfunction{dendrapply}, or apply your own function recursively.  The next examples will illustrate each of these approaches with increasing complexity.
+
+In the first example, we will use \Rfunction{rapply} to query and set attributes of each leaf.
+
+<<expr15,eval=TRUE,echo=TRUE>>=
+rapply(tree, attr, which="label") # label of each leaf (left to right)
+labels(tree) # alternative
+rapply(tree, attr, which="height") # height of each leaf (left to right)
+italicize <- function(x) {
+	if(is.leaf(x)) 
+		attr(x, "label") <- as.expression(substitute(italic(leaf),
+			list(leaf=attr(x, "label"))))
+	x
+}
+rapply(tree, italicize, how="replace") # italicize leaf labels
+@
+
+In the second example, we will use \Rfunction{dendrapply} to identify exclusive groups wherein the members of each group are more similar to each other than they are to those outside the group \cite{Wright:2018}.
+
+\begin{centerfig}
+<<expr16,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
+d <- DistanceMatrix(seqs, correction="F81+F", verbose=FALSE, processors=1)
+exclusive <- function(x) {
+	if (!is.leaf(x)) { # leaves are trivially exclusive
+		leaves <- unlist(x)
+		max_dist <- max(d[leaves, leaves]) # max within group
+		if (all(max_dist < d[-leaves, leaves]))
+			attr(x, "edgePar") <- list(col="purple")
+	}
+	x
+}
+plot(dendrapply(tree, exclusive))
+@
+\caption{\label{f7} Tree with colored branches above exclusive groups.}
+\end{centerfig}
+
+\clearpage
+
+In the third example, we will extract the branching order of five species of interest using a recursive function.  This might be useful if we wanted to count how many times different topologies occurred among a set of trees.  Recursion is the most flexible approach and can be applied with more sophisticated functions to accomplish goals beyond what is possible with \Rfunction{dendrapply}.
+
+<<expr17,eval=TRUE,echo=TRUE>>=
+Spp <- c("coelicolor", "lividans", "AA4", "Mg1", "scabiei") # species to retain
+
+extractClade <- function(x) {
+	if (is.leaf(x)) {
+		if (sum(Spp %in% labels(x)) > 0L) {
+			labels(x)
+		} else {
+			NULL
+		}
+	} else {
+		x <- lapply(x, extractClade)
+		x <- x[lengths(x) > 0]
+		if (length(x) == 1)
+			x <- x[[1]]
+		x
+	}
+}
+
+extractClade(tree)
+@
+
+%------------------------------------------------------------
+\section{Inspecting the Inputs and Outputs}
+%------------------------------------------------------------
+
+If you are feeling down on your luck, you might want to double-check the inputs and outputs for any issues.  First, we can check for any input sequences with unexpected few or many characters by comparing character frequencies across all input sequences.  We can also look for input sequences that significantly deviate from the expected background frequencies using Pearson's chi-squared test.  Outliers may point to spurious sequences that should be double-checked for correctness or completion.
+
+<<expr18,eval=TRUE,echo=TRUE>>=
+freqs <- alphabetFrequency(seqs, baseOnly=TRUE)
+head(freqs)
+# summarize the number of non-base characters (gaps/ambiguities)
+summary(freqs) # "other" is non-base characters
+
+freqs <- freqs[, DNA_BASES]
+background <- colMeans(freqs)
+background
+
+chi2 <- colSums((t(freqs) - background)^2/background)
+pval <- pchisq(chi2, length(background) - 1, lower.tail=FALSE)
+w <- which(pval < 0.05)
+seqs[w] # outlier sequences
+freqs[w,] # frequencies of outliers
+@
+
+It is also possible to check whether the output tree reasonably represents the distances between sequences.  For ME trees, the tree should explain greater than \code{0.9} of the variance in the distance matrix used to construct the tree.  We can use Pearson's correlation for trees with branch lengths in different units than the distance matrix (i.e., ML or MP).  Lower correlations may result from alignments with sites having different genealogies, such as concatenated alignments or non-orthologous sequences.
+
+\begin{centerfig}
+<<expr19,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
+D <- DistanceMatrix(seqs, type="dist", verbose=FALSE, processors=1)
+P <- Cophenetic(treeME) # patristic distances
+
+plot(D, P, xlab="Pairwise distance", ylab="Patristic distance", log="xy")
+abline(a=0, b=1)
+
+# for ME trees we want explained variance > 0.9
+V <- 1 - sum((P - D)^2)/sum((D - mean(D))^2)
+V # check the input data if V << 1
+
+cor(P, D) # should be >> 0
+cor(log(P), log(D)) # should be >> 0
+@
+\caption{\label{f8} Confirming correlation between input distances and output patristic distances.}
 \end{centerfig}
 
 \clearpage
@@ -267,15 +519,16 @@ plot(tree2, edgePar=list(t.cex=0.5), nodePar=list(lab.cex=0.7, pch=NA))
 
 We've had a run of good luck with this tree, so we'd better save it before our luck runs out!  The functions \Rfunction{ReadDendrogram} and \Rfunction{WriteDendrogram} will import and export trees in Newick file format.  If we leave the \Rfunarg{file} argument blank then it will print the output to the console for our viewing:
 
-<<expr8,eval=TRUE,echo=TRUE>>=
+<<expr20,eval=TRUE,echo=TRUE>>=
 WriteDendrogram(tree, file="")
 @
 
 To keep up our lucky streak, we should probably include any model parameters in the output along with the tree.  Luckily, Newick format supports square brackets (i.e., ``[]'') for comments, which we can append to the end of the file for good luck:
 
-<<expr9,eval=TRUE,echo=TRUE>>=
+<<expr21,eval=TRUE,echo=TRUE>>=
 params <- attr(tree, "parameters")
-cat("[", paste(names(params), params, sep="=", collapse=","), "]", sep="", append=TRUE, file="")
+cat("[", paste(names(params), params, sep="=", collapse=","), "]",
+	sep="", append=TRUE, file="")
 @
 
 %------------------------------------------------------------
@@ -291,20 +544,60 @@ toLatex(sessionInfo(), locale=FALSE)
 
 \begin{thebibliography}{}
 
+\bibitem{Abadi:2019}
+{Abadi, S.}, {Azouri, D.}, {Pupko, T.}, \& {Mayrose, I.}
+\newblock Model selection may not be a mandatory step for phylogeny reconstruction.
+\newblock {\em Nat. Comm.}, 10(1).
+
 \bibitem{Anisimova:2011}
 {Anisimova, M.}, {Gil, M.}, {Dufayard, J.}, {Dessimoz, C.}, \& {Gascuel, O.}
 \newblock Survey of branch support methods demonstrates accuracy, power, and robustness of fast likelihood-based approximation schemes.
-\newblock {\em Syst Biol.}, 60(5), 685-699.
+\newblock {\em Syst. Biol.}, 60(5), 685-699.
 
 \bibitem{Ecker:2024}
 {Ecker, N.}, {Huchon, D.}, {Mansour, Y.}, {Mayrose, I.}, \& {Pupko, T.}
 \newblock A machine-learning-based alternative to phylogenetic bootstrap.
 \newblock {\em Bioinformatics}, 40, i208-i217.
 
+\bibitem{Gonnet:2012}
+{Gonnet, G.}
+\newblock Surprising results on phylogenetic tree building methods based on molecular sequences.
+\newblock {\em BMC Bioinformatics}, 13(148).
+
+\bibitem{Hoff:2016}
+{Hoff, M.}, {Orf, S.}, {Riehm, B.}, {Darriba, D.}, \& {Stamatakis, A.}
+\newblock Does the choice of nucleotide substitution models matter topologically?
+\newblock {\em BMC Bioinformatics}, 17(143).
+
 \bibitem{Joy:2016}
 {Joy, J.}, {Liang, R.}, {McCloskey, R.}, {Nguyen, T.}, \& {Poon, A.}
 \newblock Ancestral Reconstruction.
 \newblock {\em PLoS Comp. Biol.}, 12(7), e1004763.
+
+\bibitem{Kapli:2023}
+{Kapli, P.}, {Kotari, I.}, {Telford, M.}, {Goldman, N.}, \& {Yang, Z.}
+\newblock DNA Sequences Are as Useful as Protein Sequences for Inferring Deep Phylogenies.
+\newblock {\em Syst. Biol.}, 72(5), 1119-1135.
+
+\bibitem{Kumar:2023}
+{Kumar, S.}, {Tao, Q.}, {Lamarca, A.}, \& {Tamura, K.}
+\newblock Computational Reproducibility of Molecular Phylogenies.
+\newblock {\em Mol. Biol. Evol.}, 40(7).
+
+\bibitem{Ripplinger:2008}
+{Ripplinger, J.} \& {Sullivan, J.}
+\newblock Does Choice in Model Selection Affect Maximum Likelihood Analysis?
+\newblock {\em Syst. Biol.}, 57(1), 76-85.
+
+\bibitem{Spirin:2024}
+{Ripplinger, S.}, {Sigorskikh, A.}, {Efremov, A.}, {Penzar, D.}, \& {Karyagina, A.}
+\newblock PhyloBench: A Benchmark for Evaluating Phylogenetic Programs.
+\newblock {\em Mol. Biol. Evol.}, 41(6).
+
+\bibitem{Wright:2018}
+{Wright, E.} \& {Baum, D.}
+\newblock Exclusivity offers a sound yet practical species criterion for bacteria despite abundant gene flow.
+\newblock {\em BMC Genomics}, 19(724).
 
 \end{thebibliography}
 

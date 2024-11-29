@@ -160,7 +160,7 @@ p <- AlignPairs(windows,
 	Ig,
 	pairs=data.frame(Pattern=seq_along(windows), Subject=1),
 	verbose=FALSE)
-plot(p$Score, ylab="Score", xlab="Amino acid position", type="l")
+plot(p$Score, ylab="Pairwise alignment score", xlab="Amino acid position", type="l")
 @
 \caption{\label{f2} Peaks marking the start of Ig domains in the human protein Obscurin.}
 \end{centerfig}
@@ -180,7 +180,9 @@ reps <- DetectRepeats(AA, allScores=TRUE)
 reps[which.max(reps[, "Score"]),]
 @
 
-The result is a \Rclass{data.frame} giving the beginning and ending positions of the tandem repeat, as well as every repeat within it. The top scoring repeat spans the Ig domains we found earlier. Since we asked for \Rfunarg{allScores}, the output contains all repeats with scores above \Rfunarg{minScore}, even if they are overlapping. This allows us to easily plot the different repeats that were identified in Obscurin:
+The result is a \Rclass{data.frame} giving the beginning and ending positions of the tandem repeat, as well as every repeat within it. The top scoring repeat spans the Ig domains we found earlier (i.e., from \code{Begin} to \code{End}). The \code{Left} and \code{Right} boundaries of each repeat unit are listed, and well as the \code{Index} of the sequence containing the repeat.
+
+Note that \Rfunction{DetectRepeat} scores are calibrated such that repeats are expected to be found by chance every $e^{Score}$ positions. That is, approximately every 22,000 positions would be within a repeat meeting the default \Rfunarg{minScore} of \code{10} by chance. Since we asked for \Rfunarg{allScores}, the output contains all repeats with scores above \Rfunarg{minScore}, even if they are overlapping. This allows us to easily plot the different repeats that were identified in Obscurin:
 
 \begin{centerfig}
 <<expr6,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=
@@ -199,7 +201,7 @@ for (i in seq_len(nrow(reps)))
 \caption{\label{f3} The different repeats detected in the human protein Obscurin.}
 \end{centerfig}
 
-All of the adjacent Ig domains were identified multiple times with different beginning and ending positions. If we set \Rfunarg{allScores} to \code{FALSE} (the default) then we would only obtain the top scoring repeat in each region.
+Here, the repeats are shown as separate colored line segments within each identified repeat. All of the adjacent Ig domains were identified multiple times, often with different beginning and ending positions since the start and end boundaries of each unit are difficult to determine. If we set \Rfunarg{allScores} to \code{FALSE} (the default) then we would only obtain the top scoring repeat in each region.
 
 \clearpage
 
@@ -218,12 +220,11 @@ names(seqs) <- seq_along(seqs) # number from left to right
 seqs
 @
 
-Note that the repeats are numbered from leftmost to rightmost in the tandem repeat. Then we can infer a phylogenetic tree using the \Rfunction{Treeline} function in \Rpackage{DECIPHER}:
+Then we can infer a phylogenetic tree using the \Rfunction{Treeline} function in \Rpackage{DECIPHER}. Note that the repeats are numbered from leftmost to rightmost in the tandem repeat. There is a signal of adjacent repeats branching later from each other in the phylogeny. From this it is possible to hypothesize the set of duplication events that resulted in the observed set and locations of repeats in Obscurin.
 
 \begin{centerfig}
 <<expr8,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=
-d <- DistanceMatrix(seqs)
-dend <- Treeline(myDistMatrix=d, method="NJ", verbose=FALSE)
+dend <- Treeline(seqs, verbose=FALSE)
 dend <- reorder(dend, seq_along(seqs))
 layout(matrix(1:2))
 plot(dend)
@@ -231,8 +232,6 @@ plot(unlist(dend), xlab="Position on tree", ylab="Repeat number")
 @
 \caption{\label{f4} Inferred phylogeny of Ig domain repeats detected in Obscurin.}
 \end{centerfig}
-
-There is a signal of adjacent repeats branching later from each other in the phylogeny. From this it is possible to hypothesize the set of duplication events that resulted in the observed set and locations of repeats in Obscurin.
 
 \clearpage
 
