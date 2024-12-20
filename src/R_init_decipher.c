@@ -170,6 +170,7 @@ static const R_CallMethodDef callMethods[] = { // method call, pointer, num args
 	{"matchColumns", (DL_FUNC) &matchColumns, 2},
 	{"hashList", (DL_FUNC) &hashList, 1},
 	{"firstRow", (DL_FUNC) &firstRow, 1},
+	{"correlationProfile", (DL_FUNC) &correlationProfile, 5},
 	{NULL, NULL, 0}
 };
 

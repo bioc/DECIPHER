@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{Design Primers That Yield Group-Specific Signatures}
+%\VignetteIndexEntry{Design Primers that Yield Group-Specific Signatures}
 %\VignettePackage{DECIPHER}
 
 \documentclass[10pt]{article}
@@ -32,7 +32,7 @@
 \begin{document}
 %\setkeys{Gin}{width=0.55\textwidth}
 
-\title{Design Primers That Yield Group-Specific Signatures}
+\title{Design Primers that Yield Group-Specific Signatures}
 \author{Erik S. Wright}
 \date{\today}
 \maketitle

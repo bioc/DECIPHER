@@ -84,6 +84,7 @@ static double likelihood(double d, int *counts, double *E, const int m)
 
 static double optimize(double sim, int *counts, double *E, const int m)
 {
+	const double maxShift = 1; // maximum shift per iteration
 	const double epsilon = 1e-6; // convergence tolerance
 	const double maxDist = log(-log(epsilon)); // maximum distance allowed
 	double delta = 0.01; // offset in log-space
@@ -111,7 +112,18 @@ static double optimize(double sim, int *counts, double *E, const int m)
 		if (f2 == 0) // handle numerical inaccuracy
 			f2 = delta;
 		
-		d -= f1/f2;
+		shift = f1/f2;
+		if (shift > maxShift) {
+			shift = maxShift;
+		} else if (shift < -maxShift) {
+			shift = -maxShift;
+		}
+		
+		if (f2 < 0) {
+			d += shift;
+		} else {
+			d -= shift;
+		}
 		if (d > maxDist)
 			d = maxDist;
 		delta /= 2; // lower offset approaching minimum
@@ -363,6 +375,8 @@ static double distance(const Chars_holder *P, const Chars_holder *S, int start, 
 						distance = -2*E[0]*log(1 - P/(2*E[0]) - (E[0] - E[1])*Q/(2*E[0]*E[2])) + 2*(E[0] - E[1] - E[2])*log(1 - Q/(2*E[2]));
 					}
 				}
+				if (ISNAN(distance))
+					distance = R_PosInf;
 			}
 			
 			if (pGapLetters != 0) { // add indel component to distance

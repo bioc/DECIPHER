@@ -37,7 +37,7 @@
 \begin{document}
 %\setkeys{Gin}{width=0.55\textwidth}
 
-\title{Growing phylogenetic trees with Treeline}
+\title{Growing Phylogenetic Trees with Treeline}
 \author{Erik S. Wright}
 \date{\today}
 \maketitle
@@ -59,7 +59,7 @@ options(width=80)
 \section{Introduction}
 %------------------------------------------------------------
 
-This document describes how to grow phylogenetic trees using the \Rfunction{Treeline} function in the \Rpackage{DECIPHER} package.  \Rfunction{Treeline} takes as input a set of aligned nucleotide or amino acid sequences and returns a phylogenetic tree (i.e., \Rclass{dendrogram} object) as output.  This vignette focuses on optimizing, balanced minimum evolution (ME), maximum likelihood (ML), and maximum parsimony (MP) phylogenetic trees starting from sequences.
+This document describes how to grow phylogenetic trees using the \Rfunction{Treeline} function in the \Rpackage{DECIPHER} package.  \Rfunction{Treeline} takes as input a set of aligned nucleotide or amino acid sequences and returns a phylogenetic tree (i.e., \Rclass{dendrogram} object) as output.  This vignette focuses on optimizing balanced minimum evolution (ME), maximum likelihood (ML), and maximum parsimony (MP) phylogenetic trees starting from sequences.
 
 Why is the function called \Rfunction{Treeline}?  The goal of \Rfunction{Treeline} is to find the best tree according to an optimality criterion.  There are often many trees near the optimum.  Therefore, \Rfunction{Treeline} seeks to find a tree as close as possible to the treeline, analogous to how trees cannot grow above the treeline on a mountain.
 
@@ -82,13 +82,15 @@ Finding an optimal tree is no easy feat.  \Rfunction{Treeline} systematically op
 \item For ML, choose a model:  Automatic model selection is a useful feature, but frequently this time-consuming step can be skipped.  For many nucleotide sequences the \code{"GTR+G4"} model will be automatically selected.  Typical amino acid sequences will tend to pick the \code{"LG+G4"} or \code{"WAG+G4"} models, unless the sequences are from a particular origin (e.g., mitochondria).  Pre-selecting a subset of the available \Robject{MODELS} and supplying this as the \Rfunarg{model} argument can save time.
 \end{itemize}
 
+Accuracy is another performance consideration.  \Rfunction{Treeline} is a stochastic optimizer, so it will continue searching the space of possible trees until convergence.  It is possible to find the best tree on the first iteration, but most of the time additional iterations will yield a better scoring tree.  If you are feeling unlucky, you can simply increase the number of iterations to ensure a good (scoring) tree is found.  Increasing \Rfunarg{minIterations} (e.g., to \code{100}) will largely remove luck from the equation.  There is a decreasing marginal return to more iterations, and it's probably not worth searching (almost) endlessly for a slightly better tree.  \Rfunction{Treeline}'s default settings are designed to balance runtime versus the reward of better scoring trees.
+
 %------------------------------------------------------------
 \section{Preparing the Input Data}
 %------------------------------------------------------------
 
 \Rfunction{Treeline} takes as input a multiple sequence alignment and/or a distance matrix.  All distance-based methods (including ME) only require specification of \code{myDistMatrix} but will generate a distance matrix using \Rfunction{DistanceMatrix} if \code{myXStringSet} is provided instead.  The character-based methods (i.e., ML and MP) require a multiple sequence alignment and will generate a distance matrix to construct the first candidate tree unless one is provided.
 
-Multiple sequence alignments can be constructed from a set of (unaligned) sequences using \Rfunction{AlignSeqs} or related functions.  \Rfunction{Treeline} will optimize trees for amino acid (i.e., \code{AAStringSet}) or nucleotide (i.e., \code{DNAStringSet} or \code{RNAStringSet}) sequences.  For coding sequences, it is intuitive to assume that nucleotide data would better resolve close taxa, whereas amino acid data would be preferable to determine the branching order of deep taxa.  However, recent work challenges this assumption by showing nucleotide data is adequate for determining distant relationships \cite{Kapli:2023}.  A good bet is use nucleotide sequences with the \code{"ME"} \Rfunarg{method}, possibly specifying a model (e.g., \code{"F81+F"} that corrects for multiple substitutions per site.
+Multiple sequence alignments can be constructed from a set of (unaligned) sequences using \Rfunction{AlignSeqs} or related functions.  \Rfunction{Treeline} will optimize trees for amino acid (i.e., \code{AAStringSet}) or nucleotide (i.e., \code{DNAStringSet} or \code{RNAStringSet}) sequences.  For coding sequences, it is intuitive to assume that nucleotide data would better resolve close taxa, whereas amino acid data would be preferable to determine the branching order of deep taxa.  However, recent work challenges this assumption by showing nucleotide data is adequate for determining distant relationships \cite{Kapli:2023}.  A good bet is to use nucleotide sequences with the \code{"ME"} \Rfunarg{method}, possibly specifying a model (e.g., \code{"F81+F"} that corrects for multiple substitutions per site.
 
 Here, we are going to use a set of sequences that is included with \Rpackage{DECIPHER}.  These sequences are from the internal transcribed spacer (ITS) between the 16S and 23S ribosomal RNA genes in several \textit{Streptomyces} species.  To avoid letting the result come down to good old-fashioned luck, it is always best to compare multiple trees optimized for different objectives (ME, ML, and MP) and alternative models of evolution.  \Rfunction{Treeline} is designed to facilitate this type of comparison, ideally across multiple loci.
 
@@ -109,7 +111,9 @@ Many of these sequences are redundant or from the same genome.  We can de-replic
 <<expr2,eval=TRUE,echo=TRUE>>=
 seqs <- unique(seqs) # remove duplicated sequences
 
-ns <- gsub("^.*Streptomyces( subsp\\. | sp\\. | | sp_)([^ ]+).*$", "\\2", names(seqs))
+ns <- gsub("^.*Streptomyces( subsp\\. | sp\\. | | sp_)([^ ]+).*$",
+	"\\2",
+	names(seqs))
 names(seqs) <- ns # name by species (or any other preferred names)
 seqs <- seqs[!duplicated(ns)] # remove redundant sequences from the same species
 seqs
@@ -128,15 +132,17 @@ Before choosing a \code{model} of evolution, it is necessary to choose a \Rfunar
 \end{center}
 \end{figure}
 
-\Rfunction{Treeline} supports many \Robject{MODELS} of evolution (Fig. \ref{f1}).  In many cases, these \Robject{MODELS} can be extended by appending the model with \code{"+F"}, \code{"+G\#"}, or \code{"+Indels"}.  Here is the list of built-in \Robject{MODELS}:
+\Rfunction{Treeline} supports many \Robject{MODELS} of evolution.  In many cases, these \Robject{MODELS} can be extended by appending the model with \code{"+F"}, \code{"+G\#"}, or \code{"+Indels"}.  Here is the list of built-in \Robject{MODELS}:
 
 <<expr3,eval=TRUE,echo=TRUE>>=
 MODELS
 @
 
+The nucleotide models each have different numbers of free parameters (Fig. \ref{f1}).  The \Robject{MODELS} with few free parameters are supported by \Rfunction{DistanceMatrix} and, therefore, \Rfunarg{method} \code{"ME"}.  This is because distance for few-parameter models can be analytically estimated from the sequences with relatively little error.  High-parameter models, such as \code{"GTR"}, must be optimized and are only supported by \Rfunction{Treeline} \Rfunarg{method} \code{"ML"}.  All base built-in amino acid \Robject{MODELS} have no free parameters and are supported by \Rfunction{DistanceMatrix} and \Rfunction{Treeline}.  See \code{?MODELS} for more information.
+
 \subsection{Minimum Evolution}
 
-Empirical benchmarks suggest ME with Hamming distance results in the most accurate trees, at least for alignments of single protein domains.  Hence, this is the default configuration when \Rfunarg{myXStringSet} is supplied without \code{myDistMatrix}, which returns branch lengths in units of differences per site.  If you would prefer to have branch lengths in units of substitutions per site, it is possible correct for multiple substitutions (e.g., \textit{A} to \textit{G} back to \textit{A}) by setting \Rfunarg{model} to any of the \Robject{MODELS} of evolution supported by \Rfunction{DistanceMatrix} (e.g., \code{"JC"} or \code{"F81+F"} for nucleotides, and \code{"WAG"} or \code{"WAG+F"} for amino acids).  When \Rfunarg{method} is \code{"ME"}, maximum control is gained by supplying \Rfunarg{myDistMatrix}, which can be calculated with \Rfunction{DistanceMatrix} beforehand.
+Empirical benchmarks suggest ME with Hamming distance results in the most accurate trees, at least for alignments of single protein domains.  Therefore, this is the default configuration when \Rfunarg{myXStringSet} is supplied without \code{myDistMatrix}, which returns branch lengths in units of differences per site.  If you would prefer to have branch lengths in units of substitutions per site, it is possible correct for multiple substitutions (e.g., \textit{A} to \textit{G} back to \textit{A}) by setting \Rfunarg{model} to any of the \Robject{MODELS} of evolution supported by \Rfunction{DistanceMatrix} (e.g., \code{"JC"} or \code{"F81+F"} for nucleotides, and \code{"WAG"} or \code{"WAG+F"} for amino acids).  See Figure \ref{f1} for a list of models supported by \Rfunction{DistanceMatrix}.  When \Rfunarg{method} is \code{"ME"}, maximum control is gained by supplying \Rfunarg{myDistMatrix}, which can be calculated with \Rfunction{DistanceMatrix} beforehand.
 
 For example, a standard \Rfunarg{model} to select for nucleotide sequences would be \code{"TN93+F"} and for amino acid sequences would be \code{"WAG"}.  These models return trees with branch lengths in units of substitutions per site.
 
@@ -160,7 +166,7 @@ The standard models of evolution described above all ignore gap (``-'' and ``.''
 
 Now, it's time to try our luck at finding the most likely tree.  We will use the default settings, which returns a minimum evolution tree based on a Hamming distance matrix.  Simply specify a \Rfunarg{model} to correct for multiple substitutions (e.g., \code{"TN93+F"} or \code{"WAG"}).
 
-Since \Rfunction{Treeline} is a stochastic optimizer, it is critical to always set the random number seed for reproducibility.  You can pick any lucky number, and if you ever wonder how much you pushed your luck, you can try running again from a different random number seed to see how much the result came down to luck of the draw.  Note that setting a time limit, as done below with \Rfunarg{maxTime}, negates the purpose of setting a seed -- never set a time limit if reproducibility is desired or you'll have no such luck.
+Since \Rfunction{Treeline} is a stochastic optimizer, it is critical to always set the random number seed for reproducibility.  This will result in the same sequence of random numbers every time and, therefore, reproductibility.  You can pick any lucky number, and if you ever wonder how much you pushed your luck, you can try running again from a different random number seed to see how much the result came down to luck of the draw.  Note that setting a time limit, as done below with \Rfunarg{maxTime}, negates the purpose of setting a seed -- never set a time limit if reproducibility is desired or you'll have no such luck.
 
 <<expr4,eval=TRUE,echo=TRUE>>=
 set.seed(123) # set the random number seed
@@ -277,7 +283,7 @@ diag(mat) <- 0 # reset diagonal
 mat # a derived cost matrix
 @
 
-Now we can compare the two trees to see whether specifying a non-uniform cost matrix made a difference.  We will highlight different partitions between the trees with dashed edges.  Note the scale of the two trees is different, because branch lengths are in units of average cost (per site) according to each \Rfunarg{costMatrix}.
+Now we can compare the two trees to see whether specifying a non-uniform cost matrix made a difference.  We will highlight different partitions between the trees with dashed edges.  Ideally the two tree topologies would be identical, implying the tree is robust to the specification of the cost matrix.  The fact that this isn't the case suggests the cost matrix has a substantial influence over the tree, as might be expected.  Note the scale of the two trees is different, because branch lengths are in units of average cost (per site) according to each \Rfunarg{costMatrix}.
 
 \begin{centerfig}
 <<expr11,eval=TRUE,echo=TRUE,fig=TRUE,height=4,width=6>>=
@@ -433,7 +439,7 @@ exclusive <- function(x) {
 		leaves <- unlist(x)
 		max_dist <- max(d[leaves, leaves]) # max within group
 		if (all(max_dist < d[-leaves, leaves]))
-			attr(x, "edgePar") <- list(col="purple")
+			attr(x, "edgePar") <- list(col="orange")
 	}
 	x
 }
@@ -472,7 +478,7 @@ extractClade(tree)
 \section{Inspecting the Inputs and Outputs}
 %------------------------------------------------------------
 
-If you are feeling down on your luck, you might want to double-check the inputs and outputs for any issues.  First, we can check for any input sequences with unexpected few or many characters by comparing character frequencies across all input sequences.  We can also look for input sequences that significantly deviate from the expected background frequencies using Pearson's chi-squared test.  Outliers may point to spurious sequences that should be double-checked for correctness or completion.
+If you are feeling down on your luck, you might want to double-check the inputs and outputs for any issues.  First, we can check for any input sequences with unexpectedly few or many characters by comparing character frequencies across all input sequences.  Next, we can look for input sequences that significantly deviate from the expected background frequencies using Pearson's chi-squared test.  We can also check for sequences with extreme distances that might be incorrectly aligned.  Outliers in any of these checks may point to spurious sequences that should be double-checked for correctness or completion.
 
 <<expr18,eval=TRUE,echo=TRUE>>=
 freqs <- alphabetFrequency(seqs, baseOnly=TRUE)
@@ -480,23 +486,32 @@ head(freqs)
 # summarize the number of non-base characters (gaps/ambiguities)
 summary(freqs) # "other" is non-base characters
 
+# index of sequence with the most non-base characters
+which.max(freqs[, "other"])
+
 freqs <- freqs[, DNA_BASES]
 background <- colMeans(freqs)
 background
 
+# look for sequences deviating from background frequencies
 chi2 <- colSums((t(freqs) - background)^2/background)
 pval <- pchisq(chi2, length(background) - 1, lower.tail=FALSE)
 w <- which(pval < 0.05)
 seqs[w] # outlier sequences
 freqs[w,] # frequencies of outliers
+
+# get sequence index of any very distant outlier sequences
+D <- DistanceMatrix(seqs, verbose=FALSE, processors=1)
+t <- table(which(D > 0.9, arr.ind=TRUE)) # choose a cutoff
+head(sort(t, decreasing=TRUE)) # index of top outliers, if any
 @
 
 It is also possible to check whether the output tree reasonably represents the distances between sequences.  For ME trees, the tree should explain greater than \code{0.9} of the variance in the distance matrix used to construct the tree.  We can use Pearson's correlation for trees with branch lengths in different units than the distance matrix (i.e., ML or MP).  Lower correlations may result from alignments with sites having different genealogies, such as concatenated alignments or non-orthologous sequences.
 
 \begin{centerfig}
 <<expr19,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
-D <- DistanceMatrix(seqs, type="dist", verbose=FALSE, processors=1)
 P <- Cophenetic(treeME) # patristic distances
+D <- as.dist(D) # conver to 'dist' object
 
 plot(D, P, xlab="Pairwise distance", ylab="Patristic distance", log="xy")
 abline(a=0, b=1)

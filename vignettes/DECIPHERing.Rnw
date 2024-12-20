@@ -69,7 +69,7 @@ options(width=80)
 \item Sequence alignment: accurately align thousands of DNA, RNA, or amino acid sequences. Quickly find and align the syntenic regions of multiple genomes.
 \item Oligo design: test oligos in silico, or create new primer and probe sequences optimized for a variety of objectives.
 \item Manipulate sequences: trim low quality regions, correct frameshifts, reorient nucleotides, determine consensus, or digest with restriction enzymes.
-\item Analyze sequences: find chimeras, classify into a taxonomy of organisms or functions, detect repeats, predict secondary structure, create phylogenetic trees, and reconstruct ancestral states.
+\item Analyze sequences: find chimeras, classify into a taxonomy of organisms or functions, detect repeats, infer recombination, predict secondary structure, create phylogenetic trees, and reconstruct ancestral states.
 \item Gene finding: predict coding and non-coding genes in a genome, extract them from the genome, and export them to a file.
 \end{itemize}
 \Rpackage{DECIPHER} is available under the terms of the \underline{\href{http://www.gnu.org/copyleft/gpl.html}{GNU Public License version 3}}.

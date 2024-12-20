@@ -89,6 +89,7 @@ IdLengths                Determine the Number of Characters in Each Sequence
                          of Each Sequence
 IdTaxa                   Assign Sequences a Taxonomic Classification
 IndexSeqs                Build an inverted index
+InferRecombination       Fit Recombination Parameters to Correlation Profiles
 InvertedIndex-class      InvertedIndex objects
 LearnNonCoding           Learn a Non-Coding RNA Model
 LearnTaxa                Train a Classifier for Assigning Taxonomy

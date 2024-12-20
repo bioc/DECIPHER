@@ -374,3 +374,7 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP flag);
 SEXP rowSums(SEXP dist, SEXP n);
 
 SEXP patristic(SEXP x, SEXP y, SEXP z);
+
+// PopulationGenetics.c
+
+SEXP correlationProfile(SEXP x, SEXP readingFrame, SEXP maxN, SEXP verbose, SEXP pBar);

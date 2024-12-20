@@ -37,7 +37,7 @@
 \begin{document}
 %\setkeys{Gin}{width=0.55\textwidth}
 
-\title{Repeat, Repeat!}
+\title{Detecting Obscure Tandem Repeats in Sequences}
 \author{Erik S. Wright}
 \date{\today}
 \maketitle

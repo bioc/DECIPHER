@@ -33,8 +33,10 @@ AmplifyDNA, CalculateEfficiencyPCR, DesignPrimers, DesignSignatures, DigestDNA, 
 CalculateEfficiencyFISH, DesignProbes,
 # viewing information:
 BrowseSeqs, BrowseDB,
-# sequence analysis/manipulation:
-CorrectFrameshifts, DetectRepeats, OrientNucleotides, PredictDBN, PredictHEC, RemoveGaps, TrimDNA,
+# sequence manipulation:
+CorrectFrameshifts, OrientNucleotides, RemoveGaps, TrimDNA,
+# sequence analysis
+DetectRepeats, InferRecombination, PredictDBN, PredictHEC,
 # sequence alignment:
 AdjustAlignment, AlignDB, AlignPairs, AlignProfiles, AlignSeqs, AlignTranslation, MaskAlignment, ScoreAlignment, StaggerAlignment,
 # synteny:
