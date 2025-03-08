@@ -189,6 +189,10 @@ SEXP removeCommonGaps(SEXP x, SEXP type, SEXP mask, SEXP nThreads);
 
 SEXP removeGaps(SEXP x, SEXP type, SEXP mask, SEXP nThreads);
 
+SEXP placeGaps(SEXP x, SEXP indices, SEXP starts, SEXP ends, SEXP locations, SEXP lengths, SEXP type, SEXP nThreads);
+
+SEXP mergePairs(SEXP x1, SEXP x2, SEXP q1, SEXP q2, SEXP indices1, SEXP indices2, SEXP starts1, SEXP starts2, SEXP ends1, SEXP ends2, SEXP type, SEXP nThreads);
+
 // ExpandAmbiguities.c
 
 SEXP expandAmbiguities(SEXP x, SEXP c);
@@ -221,7 +225,7 @@ SEXP fillOverlaps(SEXP m, SEXP n);
 
 SEXP indexByContig(SEXP starts, SEXP ends, SEXP order, SEXP index, SEXP widths);
 
-SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, SEXP y_i, SEXP y_f, SEXP weights, SEXP sepCost, SEXP sepPower, SEXP gapCost, SEXP gapPower, SEXP shiftCost, SEXP codingCost, SEXP maxSep, SEXP maxGap, SEXP ordering, SEXP minScore, SEXP maxW, SEXP allowOverlap);
+SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, SEXP y_i, SEXP y_f, SEXP weights, SEXP sepCost, SEXP sepPower, SEXP gapCost, SEXP gapPower, SEXP shiftCost, SEXP codingCost, SEXP maxSep, SEXP maxGap, SEXP ordering, SEXP minScore, SEXP maxW);
 
 SEXP extendMatches(SEXP X1, SEXP X2, SEXP starts1, SEXP ends1, SEXP index1, SEXP starts2, SEXP ends2, SEXP index2, SEXP width1, SEXP width2, SEXP subMatrix, SEXP letters, SEXP dropScore, SEXP nThreads);
 

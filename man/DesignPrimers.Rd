@@ -56,7 +56,7 @@ Integer providing the minimum length of primers to consider in the design.
 Integer providing the maximum length of primers to consider in the design, which must be less than or equal to the \code{maxLength} of tiles.
 }
   \item{maxPermutations}{
-Integer providing the maximum number of permutations considered as part of a forward or reverse primer set.
+Integer providing the maximum number of allowable forward or reverse primer permutations.
 }
   \item{minCoverage}{
 Numeric giving the minimum fraction of the target group's sequences that must be covered with the primer set.
@@ -142,16 +142,6 @@ Erik Wright \email{eswright@pitt.edu}
 The program OligoArrayAux (\url{http://www.unafold.org/Dinamelt/software/oligoarrayaux.php}) must be installed in a location accessible by the system.  For example, the following code should print the installed OligoArrayAux version when executed from the R console:
 
 \code{system("hybrid-min -V")}
-
-To install OligoArrayAux from the downloaded source folder on Unix-like platforms, open the shell (or Terminal on Mac OS) and type:
-
-\code{cd oligoarrayaux # change directory to the correct folder name}
-
-\code{./configure}
-
-\code{make}
-
-\code{sudo make install}
 }
 \seealso{
 \code{\link{AmplifyDNA}}, \code{\link{CalculateEfficiencyPCR}}, \code{\link{DesignSignatures}}, \code{\link{TileSeqs}}

@@ -16,7 +16,8 @@ Clusterize <- function(myXStringSet,
 	maskLCRs=FALSE,
 	alphabet=AA_REDUCED[[186]],
 	processors=1,
-	verbose=TRUE) {
+	verbose=TRUE,
+	...) {
 	
 	# error checking
 	if (!is.numeric(cutoff))
@@ -24,13 +25,18 @@ Clusterize <- function(myXStringSet,
 	if (is.integer(cutoff))
 		cutoff <- as.numeric(cutoff)
 	if (any(is.na(cutoff)))
-		stop("cutoff must not contain NA values.")
-	if (any(cutoff < 0))
-		stop("cutoff must be at least zero.")
-	if (any(cutoff >= 1))
-		stop("cutoff must be less than one.")
+		stop("cutoff cannot be NA.")
+	if (any(is.infinite(cutoff)))
+		stop("cutoff cannot be infinite.")
 	if (any(duplicated(cutoff)))
 		stop("cutoff cannot contain duplicated values.")
+	bounded <- length(list(...)) == 0L # distance bounded [0, 1]
+	if (bounded) {
+		if (any(cutoff < 0))
+			stop("cutoff must be at least zero.")
+		if (any(cutoff >= 1))
+			stop("cutoff must be less than one.")
+	}
 	METHODS <- c("overlap", "shortest", "longest")
 	method <- pmatch(method[1], METHODS)
 	if (is.na(method))
@@ -160,7 +166,7 @@ Clusterize <- function(myXStringSet,
 	alpha1 <- 0.05 # weight of exponential moving average to smooth changes in variance of rank order (>= 0 and <= 1)
 	halfMax <- maxPhase3/2 # decrease in rank order variance required to split partitions (> 0 and < maxPhase3)
 	attempts <- 20L # alignment attempts before possibly skipping (>> 0)
-	binSize <- 0.05 # size of bins for distributing k-mer similarities (> 0 and << 1)
+	binSize <- 0.05 # size of bins for distributing k-mer similarities (> 0)
 	minSimilarities <- 1000L # minimum similarities per cutoff to stop collecting data (>> 0)
 	needAlignments <- 10L # minimum alignments within binSize needed to set k-mer similarity limit (>= 0 and <= minSimilarities)
 	minAlignments <- 1L # minimum alignments to perform per sequence in phase 3 (> 0)
@@ -288,7 +294,6 @@ Clusterize <- function(myXStringSet,
 		bins,
 		include.lowest=TRUE)
 	incBins <- unique(which(tabulate(incBins, length(counts)) > 0))
-	cutoff <- 1 - cutoff
 	
 	overlapSimilarity <- function(x, y, processors=1L, coverage=minCoverage) {
 		.Call("computeOverlap",
@@ -313,23 +318,18 @@ Clusterize <- function(myXStringSet,
 			PACKAGE="DECIPHER")
 	}
 	
-	dist <- function(ali) {
-		.Call("distMatrix",
-			ali,
-			typeX,
-			includeTerminalGaps,
-			penalizeGapLetterMatches,
-			TRUE, # full matrix
-			2L, # type = "dist"
-			0, # correction (none)
-			NULL, # lkup
-			minCoverage,
-			method,
-			FALSE, # verbose
-			NULL, # progress bar
-			1L, # processors
-			PACKAGE="DECIPHER")
-	}
+	.dist <- .DistanceMatrix(myXStringSet=myXStringSet,
+		method=METHODS[method],
+		type="dist",
+		includeTerminalGaps=FALSE,
+		penalizeGapLetterMatches=penalizeGapLetterMatches,
+		minCoverage=minCoverage,
+		processors=1L,
+		verbose=FALSE,
+		...)
+	
+	dist <- function(ali)
+		.dist(ali, typeX, NULL)
 	
 	align <- function(pair, # pair of indices in myXStringSet
 		anchor=NULL, # optional anchors
@@ -708,7 +708,7 @@ Clusterize <- function(myXStringSet,
 	} else {
 		maxPhase2 <- as.integer(min(maxPhase2, max(ls/2)))
 	}
-	ksims <- psims <- vector("list", maxPhase2)
+	ksims <- pdists <- vector("list", maxPhase2)
 	var <- pmin(maxPhase3, ls[partition]/2) # doubles to avoid overflow
 	avg_cor <- sum(var < halfMax)/l # initialize to expected value by chance
 	resTime1 <- resTime2 <- rep(NA_real_, processors)
@@ -878,10 +878,10 @@ Clusterize <- function(myXStringSet,
 			w <- which(w %in% incBins)
 			counts <- counts + (tabulate(b2[s2[w]], length(counts)) > 0)
 			ksims[[i]] <- c(ksim1, ksim2)
-			psims[[i]] <- 1 - c(pdist1, pdist2)
+			pdists[[i]] <- c(pdist1, pdist2)
 			
 			for (k in seq_along(cutoff)) {
-				w <- which(psims[[i]] >= cutoff[k] - binSize & psims[[i]] <= cutoff[k] + binSize)
+				w <- which(pdists[[i]] >= cutoff[k] - binSize & pdists[[i]] <= cutoff[k] + binSize)
 				alignments[k] <- alignments[k] + length(w)
 			}
 		}
@@ -972,41 +972,60 @@ Clusterize <- function(myXStringSet,
 		O <- R <- seq_along(u)
 	}
 	
-	# fit similarity limit based on k-mer similarity
+	# fit similarity limits based on k-mer similarity
 	ksims <- unlist(ksims)
-	limits <- rep(1e-6, length(cutoff)) # initialize above zero
+	limits1 <- rep(1e-9, length(cutoff)) # initialize above zero
+	if (bounded) {
+		limits2 <- 1 - cutoff
+	} else {
+		limits2 <- rep(1, length(cutoff))
+	}
 	if (length(ksims) > 1) {
-		psims <- unlist(psims)
-		psims[is.na(psims)] <- 0
-		z <- c(0, sqrt(ksims), 1) # perform logistic regression in sqrt-space
+		pdists <- unlist(pdists)
+		pdists[is.na(pdists)] <- Inf
+		z <- c(0, ksims, 1) # add fixed endpoints
 		w <- .bincode(z, bins, include.lowest=TRUE)
 		w <- (1/tabulate(w, length(counts)))[w] # weight bins equally
+		z <- sqrt(z) # perform logistic regression in sqrt-space
 		fit <- function(ksim) {
 			p <- predict(g,
 				newdata=data.frame(z=ksim))
 			abs(p - interval)
 		}
 		for (j in which(alignments >= needAlignments)) {
-			y <- psims >= cutoff[j]
+			y <- pdists <= cutoff[j]
 			if (sum(y) >= 1) {
+				# fit reject boundary
 				y <- c(FALSE, y, TRUE) # add fixed endpoints
-				
 				g <- suppressWarnings(glm(y ~ z,
 					binomial(link="logit"),
 					weights=w,
 					control=glm.control(1e-6)))
-				limits[j] <- optimize(fit, c(0, 1))$minimum # exclusive of bounds
-				limits[j] <- limits[j]^2
+				limits1[j] <- optimize(fit, c(0, 1))$minimum # exclusive of bounds
+				limits1[j] <- limits1[j]^2
+				
+				if (!bounded) { # fit trust boundary
+					y <- !y
+					g <- suppressWarnings(glm(y ~ z,
+						binomial(link="logit"),
+						weights=w,
+						control=glm.control(1e-6)))
+					limits2[j] <- optimize(fit, c(0, 1))$minimum # exclusive of bounds
+					limits2[j] <- max(limits2[j], z[y])^2
+				}
 			} else { # no data above above cutoff
-				limits[j] <- max(ksims)
+				limits1[j] <- limits2[j] <- max(ksims)
 			}
 		}
+		rm(z)
 	}
 	if (lc > 1) {
 		if (ASC) {
-			limits <- rev(cummax(rev(limits)))
+			limits1 <- rev(cummax(rev(limits1)))
+			limits2 <- rev(cummax(rev(limits2)))
 		} else {
-			limits <- cummax(limits)
+			limits1 <- cummax(limits1)
+			limits2 <- cummax(limits2)
 		}
 	}
 	
@@ -1065,9 +1084,9 @@ Clusterize <- function(myXStringSet,
 	}
 	
 	if (maxPhase2 > 0) {
-		rm(b1, b2, bins, d, inPlay, keep, ksims, psims, ls, m1, m2, ov, ksim1, ksim2, pdist1, pdist2, res1, res2, s1, s2, var, b, rS)
+		rm(b1, b2, bins, d, inPlay, keep, ksims, pdists, ls, m1, m2, ov, ksim1, ksim2, pdist1, pdist2, res1, res2, s1, s2, var, b, rS)
 	} else {
-		rm(bins, inPlay, keep, ksims, psims, ls, var)
+		rm(bins, inPlay, keep, ksims, pdists, ls, var)
 	}
 	
 	partition <- partition[O]
@@ -1291,19 +1310,21 @@ Clusterize <- function(myXStringSet,
 			w <- sort.list(m, method="radix", decreasing=TRUE)
 			if (length(w) > maxAlignments)
 				length(w) <- maxAlignments
-			W <- which(m[w] >= limits[i])
+			W <- which(m[w] >= limits1[i]) # may meet cutoff
 			if (length(W) >= minAlignments) {
 				w <- w[W]
 			} else {
 				w <- head(w, minAlignments)
 			}
 			
-			if (m[w[1L]] < cutoff[i]) {
+			if (m[w[1L]] < limits2[i]) { # need to align
 				for (k in seq_along(w)) {
 					if (k > attempts) {
 						s <- seq(to=k - 1L, length.out=attempts)
-						if (max(m[w[s]]) + stdDevs*sd(m[w[s]]) < cutoff[i]) {
-							w <- w[seq_len(k - 1L)] # prevent matching clusters without alignment
+						s <- s[is.finite(m[w[s]])]
+						if (length(s) >= attempts &&
+							min(m[w[s]]) - stdDevs*sd(m[w[s]]) > cutoff[i]) {
+							k <- k - 1L
 							break
 						}
 					}
@@ -1311,21 +1332,19 @@ Clusterize <- function(myXStringSet,
 						anchor=res[[w[k]]],
 						processors=optProcessors2)
 					m[w[k]] <- dist(ali)
-					if (is.na(m[w[k]])) {
-						m[w[k]] <- 0
-					} else {
-						m[w[k]] <- 1 - m[w[k]]
-					}
-					if (m[w[k]] >= cutoff[i])
+					if (is.na(m[w[k]])) # insufficient coverage
+						m[w[k]] <- Inf
+					if (m[w[k]] <= cutoff[i])
 						break
 				}
-				w <- w[which.max(m[w])]
+				w <- w[k]
 			} else {
 				w <- w[1L] # max similarity
+				m[w] <- cutoff[i] # ensure passing
 			}
 			
 			if (length(w) == 0L ||
-				m[w] < cutoff[i]) { # form a new group
+				m[w] > cutoff[i]) { # form a new group
 				cluster_num <- cluster_num + 1L
 				c[p[j]] <- cluster_num + offset
 				if (invertCenters)
@@ -1369,7 +1388,7 @@ Clusterize <- function(myXStringSet,
 				}
 				if (!ASC && i < lc) {
 					cols <- (i + 1):lc
-					cols <- cols[which(m[w] >= cutoff[cols])]
+					cols <- cols[m[w] <= cutoff[cols]]
 					for (k in cols) # assign forward
 						C[[k]][p[j]] <- P[combined[w]]
 				}

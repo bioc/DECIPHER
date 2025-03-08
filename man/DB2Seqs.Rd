@@ -85,7 +85,7 @@ Logical indicating whether to display status.
 \details{
 Sequences are exported into either a FASTA or FASTQ file as determined by the \code{type} of sequences.  If \code{type} is an \code{XStringSet} then sequences are exported to FASTA format.  Quality information for \code{QualityScaledXStringSet}s are interpreted as \code{PredQuality} scores before export to FASTQ format.
 
-If \code{type} is \code{"BStringSet"} (the default) then sequences are exported to a FASTA file exactly the same as they were when imported.  If \code{type} is \code{"DNAStringSet"} then all U's are converted to T's before export, and vise-versa if \code{type} is \code{"RNAStringSet"}.  All remaining characters not in the \code{XStringSet}'s alphabet are converted to \code{replaceChar} or removed if \code{replaceChar} is \code{""}.  Note that if \code{replaceChar} is \code{NA} (the default), it will result in an error when an unexpected character is found.
+If \code{type} is \code{"BStringSet"} (the default) then sequences are exported to a FASTA file exactly the same as they were when imported.  If \code{type} is \code{"DNAStringSet"} then all U's are converted to T's before export, and vice versa if \code{type} is \code{"RNAStringSet"}.  All remaining characters not in the \code{XStringSet}'s alphabet are converted to \code{replaceChar} or removed if \code{replaceChar} is \code{""}.  Note that if \code{replaceChar} is \code{NA} (the default), it will result in an error when an unexpected character is found.
 }
 \value{
 Writes a FASTA or FASTQ formatted file containing the sequence records in the database.

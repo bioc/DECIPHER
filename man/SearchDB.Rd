@@ -67,7 +67,7 @@ Logical indicating whether to display queries as they are sent to the database.
 }
 }
 \details{
-If \code{type} is \code{"DNAStringSet"} then all U's are converted to T's before creating the \code{DNAStringSet}, and vise-versa if \code{type} is \code{"RNAStringSet"}.  All remaining characters not in the \code{XStringSet}'s alphabet are converted to \code{replaceChar} or removed if \code{replaceChar} is \code{""}.  Note that if \code{replaceChar} is \code{NA} (the default), it will result in an error when an unexpected character is found.  Quality information is interpreted as \code{PredQuality} scores.
+If \code{type} is \code{"DNAStringSet"} then all U's are converted to T's before creating the \code{DNAStringSet}, and vice versa if \code{type} is \code{"RNAStringSet"}.  All remaining characters not in the \code{XStringSet}'s alphabet are converted to \code{replaceChar} or removed if \code{replaceChar} is \code{""}.  Note that if \code{replaceChar} is \code{NA} (the default), it will result in an error when an unexpected character is found.  Quality information is interpreted as \code{PredQuality} scores.
 }
 \value{
 An \code{XStringSet} or \code{QualityScaledXStringSet} with the sequences that meet the specified criteria.  The \code{names} of the object correspond to the value in the \code{nameBy} column of the database.

@@ -481,7 +481,7 @@ int revcompDiff(const char curr, const char last)
 // 0yy1 1100 = ., (length - 1) stored in next two bytes
 // 0yy1 1101 = N, (length - 1) stored in next two bytes
 // 0yy1 1110 = -, (length - 1) stored in next two bytes
-// 0yy1 1111 = switch case (upper to lower, or vise-versa)
+// 0yy1 1111 = switch case (upper to lower, or vice versa)
 //
 // And the yy bits decide which position to start from:
 // yy = 00 for the current position

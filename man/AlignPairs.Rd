@@ -23,16 +23,16 @@ AlignPairs(pattern,
 }
 \arguments{
   \item{pattern}{
-An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object of (unaligned) sequences.
+An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object of (unaligned) sequences, or a \code{QualityScaledXStringSet} object with quality scores for each sequence.
 }
   \item{subject}{
-A \code{XStringSet} object of (unaligned) sequences matching the type of the \code{pattern}.
+A \code{XStringSet} or \code{QualityScaledXStringSet} object of (unaligned) sequences matching the type of the \code{pattern}.
 }
   \item{pairs}{
 Either \code{NULL} or a \code{data.frame} with \code{Pattern} and \code{Subject} indices to align and, optionally, a \code{Position} column containing matrices of anchor ranges.  If \code{Position} is provided then local alignment is performed around the anchors, unless virtual anchors are provided to force global alignment with terminal gap penalties.  If \code{pairs} is \code{NULL} (the default) then global alignment of respective \code{pattern} and \code{subject} sequences is performed without terminal gap penalties.  (See examples section below.)
 }
   \item{type}{
-Character string indicating the type of output desired.  This should be (an abbreviation of) one of \code{"values"}, \code{"sequences"}, or \code{"both"}.  (See value section below.)
+Character string indicating the type of output desired.  This should be one of \code{"values"}, \code{"sequences"}, or \code{"both"}.  (See value section below.)
 }
   \item{perfectMatch}{
 Numeric giving the reward for aligning matching nucleotides, which is used in the absence of a \code{substitutionMatrix} when the \code{pattern} is a \code{DNAStringSet} or \code{RNAStringSet}.
@@ -67,20 +67,20 @@ Performs pairwise alignment of \code{pattern} and \code{subject} sequences, eith
 
 \code{AlignPairs} is designed to maximize speed, and provides slightly less accuracy than using \code{AlignProfiles} for pairwise alignment.  Adaptive banding is applied with a fixed \code{bandWidth} to reduce memory consumption, rather than the dynamic band width used by \code{AlignProfiles}.  There are a few other differences: \code{AlignPairs} applies affine rather than Zipfian gap penalties, there is no option to incorporate secondary structures, scores are not standardized by length, gap penalties are not modulated around specific residues, and any anchors must be supplied in \code{pairs} rather than determined automatically.  For very dissimilar sequences, it is preferable to use \code{AlignTranslation} (best for coding sequences), \code{AlignSeqs} (best for nucleotide/protein sequences), or \code{AlignProfiles}.
 
-\code{AlignPairs} does not output the pairwise alignments by default.  Instead, it outputs statistics about the alignment and the position(s) of gaps in each sequence.  This makes alignment more efficient because no sequences are copied.  For many applications only the percent identity or number of gaps is needed, which can be calculated directly from the returned \code{data.frame}. However, the aligned sequences can also easily be obtained by setting \code{type} to \code{"sequences"}.
+\code{AlignPairs} does not output the pairwise alignments by default.  Instead, it outputs statistics about the alignment and the position(s) of gaps in each sequence.  This makes alignment more efficient because no sequences are copied.  For many applications only the percent identity or number of gaps is needed, which can be calculated directly from the returned \code{data.frame}. However, the aligned sequences can also easily be obtained by setting \code{type} to \code{"sequences"}.  Doing so will also output a consensus sequence for each pairwise alignment, which takes into account quality scores when \code{myXStringSet} is a \code{QualityScaledXStringSet}.  Note that letters take precedence over gaps in the consensus sequence, resulting in a gapless consensus unless the provided quality scores imply an internal gap is higher quality.  This allows the merger of overlapping (e.g., paired-end) sequence reads based on their associated quality scores.
 }
 \value{
-If \code{type} is \code{"values"} (the default), a \code{data.frame} is returned with one alignment per input \code{pattern} or row of \code{pairs} if not \code{NULL}.  Columns are defined as the sequences' index in \code{pattern} (\code{Pattern}), start position in the \code{pattern} sequence (\code{PatternStart}), end position in the \code{pattern} sequence (\code{PatternEnd}), index in the \code{subject} sequence (\code{Subject}), start position in the \code{subject} sequence (\code{SubjectStart}), end position in the \code{subject} sequence (\code{SubjectEnd}), number of matching positions in the alignment (\code{Matches}), number of mismatched positions in the alignment (\code{Mismatches}), total number of positions in the alignment (\code{AlignmentLength}), alignment score (\code{Score}), and the position/length of gaps in the \code{pattern} and \code{subject} (i.e., \code{PatternGapPosition}, \code{PatternGapLength}, \code{SubjectGapPosition}, & \code{SubjectGapLength}).
+If \code{type} is \code{"values"} (the default), a \code{data.frame} is returned with one row of results per input \code{pattern} or row of \code{pairs} if not \code{NULL}.  Columns are defined as the sequences' index in \code{pattern} (\code{Pattern}), start position in the \code{pattern} sequence (\code{PatternStart}), end position in the \code{pattern} sequence (\code{PatternEnd}), index in the \code{subject} sequence (\code{Subject}), start position in the \code{subject} sequence (\code{SubjectStart}), end position in the \code{subject} sequence (\code{SubjectEnd}), number of matching positions in the alignment (\code{Matches}), number of mismatched positions in the alignment (\code{Mismatches}), total number of positions in the alignment (\code{AlignmentLength}), alignment score (\code{Score}), and the position/length of gaps in the \code{pattern} and \code{subject} (i.e., \code{PatternGapPosition}, \code{PatternGapLength}, \code{SubjectGapPosition}, & \code{SubjectGapLength}).
 
-If \code{type} is \code{"sequences"}, a \code{list} containing two components: the aligned \code{pattern} and \code{subject}.
+If \code{type} is \code{"sequences"}, a \code{list} containing three components: the aligned \code{pattern}, \code{subject}, and their consensus.
 
-If \code{type} is \code{"both"}, a \code{list} with three components: the values, aligned \code{pattern}, and aligned \code{subject}.
+If \code{type} is \code{"both"}, a \code{list} with four components: the result values, aligned \code{pattern}, aligned \code{subject}, and their consensus.
 }
 \author{
 Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
-\code{\link{AlignProfiles}}, \code{\link{IndexSeqs}}, \code{\link{SearchIndex}}
+\code{\link{AlignProfiles}}, \code{\link{ConsensusSequence}}, \code{\link{IndexSeqs}}, \code{\link{SearchIndex}}
 }
 \examples{
 # import target sequences and build an inverted index

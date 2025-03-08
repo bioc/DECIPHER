@@ -27,16 +27,16 @@ An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} of unaligned 
 An object of class \code{Taxa} and subclass \code{Train} compatible with the class of \code{test}.
 }
   \item{type}{
-Character string indicating the type of output desired.  This should be (an abbreviation of) one of \code{"extended"} or \code{"collapsed"}.  (See value section below.)
+Character string indicating the type of output desired.  This should be one of \code{"extended"} or \code{"collapsed"}.  (See value section below.)
 }
   \item{strand}{
-Character string indicating the orientation of the \code{test} sequences relative to the \code{trainingSet}.  This should be (an abbreviation of) one of \code{"both"}, \code{"top"}, or \code{"bottom"}.  The top strand is defined as the input \code{test} sequences being in the same orientation as the \code{trainingSet}, and the bottom strand is its reverse complement orientation.  The default of \code{"both"} will classify using both orientations and choose the result with highest confidence.  Choosing the correct \code{strand} will make classification over 2-fold faster, assuming that all of the reads are in the same orientation. Note that \code{strand} is ignored when \code{test} is an \code{AAStringSet}.
+Character string indicating the orientation of the \code{test} sequences relative to the \code{trainingSet}.  This should be one of \code{"both"}, \code{"top"}, or \code{"bottom"}.  The top strand is defined as the input \code{test} sequences being in the same orientation as the \code{trainingSet}, and the bottom strand is its reverse complement orientation.  The default of \code{"both"} will classify using both orientations and choose the result with highest confidence.  Choosing the correct \code{strand} will make classification over 2-fold faster, assuming that all of the reads are in the same orientation. Note that \code{strand} is ignored when \code{test} is an \code{AAStringSet}.
 }
   \item{threshold}{
 Numeric specifying the confidence at which to truncate the output taxonomic classifications.  Lower values of \code{threshold} will classify deeper into the taxonomic tree at the expense of accuracy, and vice versa for higher values of \code{threshold}.
 }
   \item{bootstraps}{
-Integer giving the maximum number of bootstrap replicates to perform for each sequence.  The number of bootstrap replicates is set automatically such that (on average) 99\% of k-mers are sampled in each \code{test} sequence.
+Integer giving the maximum number of bootstrap replicates to perform for each sequence.  The number of bootstrap replicates is set automatically such that (on average) 99\% of k-mers are sampled in each \code{test} sequence, unless the maximum \code{bootstraps} is reached.
 }
   \item{samples}{
 A function or call written as a function of `L', which will evaluate to a numeric vector the same length as `L'.  Typically of the form ``\code{A + B*L^C}'', where `A', `B', and `C' are constants.

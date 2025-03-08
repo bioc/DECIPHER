@@ -25,14 +25,15 @@ Clusterize(myXStringSet,
            maskLCRs = FALSE,
            alphabet = AA_REDUCED[[186]],
            processors = 1,
-           verbose = TRUE)
+           verbose = TRUE,
+           \dots)
 }
 \arguments{
   \item{myXStringSet}{
 The (unaligned) \code{DNAStringSet}, \code{RNAStringSet}, or \code{AAStringSet} to cluster.
 }
   \item{cutoff}{
-A vector of maximum distances (approximately) separating sequences in the same cluster (i.e., 1 - similarities).  Multiple cutoffs may be provided in ascending or descending order.  (See details section below.)
+A vector of maximum distances (approximately) separating sequences in the same cluster.  Multiple cutoffs may be provided in ascending or descending order.  (See details section below.)
 }
   \item{method}{
 Character string determining the region in which distance is calculated.  This should be (an unambiguous abbreviation of) one of \code{"overlap"}, \code{"shortest"}, or \code{"longest"}.  The default \code{method} (\code{"overlap"}) calculates distance from the overlapping region between terminal gaps when \code{includeTerminalGaps} is \code{FALSE} and the entire alignment otherwise.  Setting \code{method} to \code{"shortest"} or \code{"longest"} will use the region between the start and end of the shortest or longest sequence, respectively, for each pairwise distance.  The \code{method} is only applicable when \code{includeTerminalGaps} is \code{TRUE}.
@@ -85,6 +86,9 @@ The number of processors to use, or \code{NULL} to automatically detect and use 
   \item{verbose}{
 Logical indicating whether to display progress.
 }
+  \item{\dots}{
+Additional arguments to be passed directly to \code{\link{DistanceMatrix}}, including \code{correction}, \code{substitutionMatrix}, and \code{frequencies}.
+}
 }
 \details{
 \code{Clusterize} groups the input sequences into approximate clusters using a heuristic algorithm with linear time and memory complexity.  In phase 1, the sequences are partitioned into groups of similarity.  In phase 2, the sequences are ordered by k-mer similarity by relatedness sorting.  In phase 3, the sequences are iteratively clustered in this order by their similarity to surrounding sequences in the sorting.  That is, the first sequence becomes the representative of cluster #1.  If the second sequence is within \code{cutoff} distance then it is added to the cluster, otherwise it becomes a new cluster representative.  The remaining sequences are matched to cluster representatives in a similar fashion until all sequences belong to a cluster.  In the majority of cases, this process results in clusters with members separated by less than \code{cutoff} distance, and all cluster members must be within \code{cutoff} distance of their cluster representative.
@@ -92,6 +96,8 @@ Logical indicating whether to display progress.
 The calculation of distance can be controlled in multiple ways, with each parameterization of distance having advantages and disadvantages.  By default, distance is the fraction of positions that are different, including gaps, within the overlapping region in a pairwise alignment.  The defaults will handle partial-length sequences well, but also cluster sequences with high similarity between their opposite ends.  For this reason, it is important to set \code{minimumCoverage} such that distances are based off of considerable overlap between sequences in the pairwise alignment.  The default (\code{0.5}) requires sequences to share at least 50\% of their positions with the cluster representative.  This distance parameterization works well, but there are reasonable alternatives.
 
 If \code{penalizeGapLetterMatches} is \code{FALSE}, the distance will exclude gap regions.  If \code{includeTerminalGaps} is \code{TRUE}, the calculation of distance will use the entire (global) alignment.  If \code{method} is \code{"shortest"} and \code{includeTerminalGaps} is set to \code{TRUE}, then the distance is calculated for the region encompassed by the shorter sequence in each pair, which is the common definition of distance used by other clustering programs.  This common definition of distance will sometimes separate partly overlapping sequences, which is why it is not the default.  Another option is to set \code{minCoverage} to a negative fraction.  This requires sequences to have substantial overlap with the cluster representative, which is the longest sequence in the cluster. For example, setting \code{minCoverage} to \code{-0.5} would require every clustered sequence to share at least 50\% of positions with the cluster representative.
+
+Distance can also be calculated under a model of evolution or based on the average (negative) substitution score, including any distance measure supported by \code{\link{DistanceMatrix}}.  This can be accomplished by specifying \code{correction}, \code{substitutionMatrix}, and/or \code{frequencies}.  Alternative distances can correct for unequal substitution rates and multiple substitutions per site, which provides greater resolution than the default (Hamming) distance, especially for high values of \code{cutoff}.  In these cases, \code{cutoff} is no longer a fraction, but becomes the distance in substitutions per site or units of the substitution matrix (depending on the parameterization).  See the help page for \code{\link{DistanceMatrix}} to learn more about alternative distances.
 
 The algorithm requires time proportional to the number of input sequences in \code{myXStringSet}.  The phase 1, up to \code{maxPhase1} sequences sharing a k-mer are tabulated while partitioning each sequence.  In phase 2, the sequences are compared with up to \code{maxPhase2} passes that each take linear time.  Ordering of the sequences is performed in linear time using radix sorting.  In phase 3, each sequence is compared with up to \code{maxPhase3} previous cluster representatives of sequences sharing \code{rareKmers} or nearby sequences in the relatedness ordering.  This is possible because the sequences are sorted by relatedness, such that more recent cluster representatives are more similar.  Hence, the complete algorithm scales in linear time asymptotically and returns clusters of sequences within \code{cutoff} distance of their center sequence.
 
@@ -107,6 +113,9 @@ Wright, E. S. (2024). Accurately clustering biological sequences in linear time 
 }
 \author{
 Erik Wright \email{eswright@pitt.edu}
+}
+\note{
+Clusterize does not follow the convention of providing a similarity \code{cutoff} when clustering.  This is because \code{cutoff} is defined as a distance, which might be greater than \code{1} when employing a model of evolution.  Under the default settings, distance is a fraction and \code{cutoff} should be less than \code{1} (i.e., similarity above zero).  However, \code{cutoff} is unbounded when providing argument(s) for \dots.
 }
 \seealso{
 \code{\link{AA_REDUCED}}, \code{\link{DistanceMatrix}}, \code{\link{Treeline}}
@@ -139,10 +148,20 @@ clusters <- Clusterize(aa, cutoff=0.5, invertCenters=TRUE)
 head(clusters)
 clusters[clusters$cluster < 0,, drop=FALSE]
 unique(aa[clusters$cluster < 0]) # unique cluster centers
-apply(clusters, 2, function(x) max(abs(x))) # number of clusters
+max(abs(clusters)) # number of clusters
 
 # cluster nucleotide sequences
 clusters <- Clusterize(dna, cutoff=0.2, invertCenters=TRUE)
 head(clusters)
-apply(clusters, 2, function(x) max(abs(x))) # number of clusters
+max(abs(clusters)) # number of clusters
+
+# cluster DNA using a model of evolution for distance
+clusters <- Clusterize(dna, cutoff=0.2, correction="TN93+F")
+head(clusters)
+max(clusters) # number of clusters
+
+# cluster amino acids using a model of evolution for distance
+clusters <- Clusterize(aa, cutoff=0.5, correction="WAG")
+head(clusters)
+max(clusters) # number of clusters
 }

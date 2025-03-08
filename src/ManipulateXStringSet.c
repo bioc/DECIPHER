@@ -84,6 +84,7 @@ SEXP insertGaps(SEXP x, SEXP positions, SEXP lengths, SEXP type, SEXP nThreads)
 	} else { // t == 3
 		strcpy(ans_classname, "AAStringSet");
 	}
+	
 	PROTECT(ans = alloc_XRawList(ans_classname, ans_element_type, ans_width));
 	ans_holder = hold_XVectorList(ans);
 	Chars_holder ans_elt_holder;
@@ -118,6 +119,7 @@ SEXP insertGaps(SEXP x, SEXP positions, SEXP lengths, SEXP type, SEXP nThreads)
 	}
 	
 	UNPROTECT(2);
+	
 	return ans;
 }
 
@@ -676,6 +678,7 @@ SEXP replaceGaps(SEXP x, SEXP y, SEXP start, SEXP type)
 	}
 	
 	UNPROTECT(2);
+	
 	return ans;
 }
 
@@ -805,6 +808,7 @@ SEXP removeCommonGaps(SEXP x, SEXP type, SEXP mask, SEXP nThreads)
 	}
 	
 	UNPROTECT(2);
+	
 	return ans;
 }
 
@@ -905,5 +909,290 @@ SEXP removeGaps(SEXP x, SEXP type, SEXP mask, SEXP nThreads)
 	}
 	
 	UNPROTECT(2);
+	
 	return ans;
+}
+
+// place gaps into each sequence in an XStringSet
+SEXP placeGaps(SEXP x, SEXP indices, SEXP starts, SEXP ends, SEXP locations, SEXP lengths, SEXP type, SEXP nThreads)
+{
+	int i, j, *loc, *len;
+	int n = length(indices);
+	int *index = INTEGER(indices);
+	int *start = INTEGER(starts);
+	int *end = INTEGER(ends);
+	int t = asInteger(type);
+	int nthreads = asInteger(nThreads);
+	
+	int **locs = R_Calloc(n, int *); // gap locations
+	int **lens = R_Calloc(n, int *); // gap lengths
+	int *l = R_Calloc(n, int); // lengths
+	
+	SEXP ans_width, ans;
+	PROTECT(ans_width = NEW_INTEGER(n));
+	int *width = INTEGER(ans_width);
+	for (i = 0; i < n; i++) {
+		width[i] = end[i] - start[i] + 1;
+		locs[i] = INTEGER(VECTOR_ELT(locations, i));
+		lens[i] = INTEGER(VECTOR_ELT(lengths, i));
+		l[i] = length(VECTOR_ELT(locations, i));
+		len = lens[i];
+		for (j = 0; j < l[i]; j++)
+			width[i] += len[j];
+	}
+	
+	// determine the element type of the XStringSet
+	const char *ans_element_type;
+	ans_element_type = get_List_elementType(x);
+	
+	// set the class of the XStringSet
+	char ans_classname[40];
+	if (t == 1) {
+		strcpy(ans_classname, "DNAStringSet");
+	} else if (t == 2) {
+		strcpy(ans_classname, "RNAStringSet");
+	} else { // t == 3
+		strcpy(ans_classname, "AAStringSet");
+	}
+	
+	// determine the length of the XStringSet
+	XStringSet_holder x_set, ans_holder;
+	x_set = hold_XStringSet(x);
+	
+	// initialize a new XStringSet
+	PROTECT(ans = alloc_XRawList(ans_classname, ans_element_type, ans_width));
+	ans_holder = hold_XVectorList(ans);
+	
+	#ifdef _OPENMP
+	#pragma omp parallel for private(i,j,loc,len) schedule(guided) num_threads(nthreads)
+	#endif
+	for (i = 0; i < n; i++) {
+		Chars_holder x_i = get_elt_from_XStringSet_holder(&x_set, index[i] - 1);
+		Chars_holder ans_elt_holder = get_elt_from_XStringSet_holder(&ans_holder, i);
+		
+		loc = locs[i];
+		len = lens[i];
+		
+		int p1 = 1; // position in x
+		int p2 = 1; // position in ans
+		
+		for (j = 0; j < l[i]; j++) {
+			// copy leading sequence
+			int delta = loc[j] - p1;
+			memcpy((char *) ans_elt_holder.ptr + p2 - 1, x_i.ptr + start[i] + p1 - 2, delta * sizeof(char));
+			p1 += delta;
+			p2 += delta;
+			
+			// insert gap
+			if (t == 3) { // AAStringSet
+				memset((char *) ans_elt_holder.ptr + p2 - 1, 45, len[j] * sizeof(char));
+			} else { // DNAStringSet or RNAStringSet
+				memset((char *) ans_elt_holder.ptr + p2 - 1, 16, len[j] * sizeof(char));
+			}
+			p2 += len[j];
+		}
+		
+		// finish sequence
+		memcpy((char *) ans_elt_holder.ptr + p2 - 1, x_i.ptr + start[i] + p1 - 2, (end[i] - start[i] - p1 + 2) * sizeof(char));
+	}
+	
+	Free(locs);
+	Free(lens);
+	Free(l);
+	
+	UNPROTECT(2);
+	
+	return ans;
+}
+
+// merge pairs in two XStringSets, possibly with qualities
+SEXP mergePairs(SEXP x1, SEXP x2, SEXP q1, SEXP q2, SEXP indices1, SEXP indices2, SEXP starts1, SEXP starts2, SEXP ends1, SEXP ends2, SEXP type, SEXP nThreads)
+{
+	int i, j;
+	int t = asInteger(type);
+	int *index1 = INTEGER(indices1);
+	int *index2 = INTEGER(indices2);
+	int *start1 = INTEGER(starts1);
+	int *start2 = INTEGER(starts2);
+	int *end1 = INTEGER(ends1);
+	int *end2 = INTEGER(ends2);
+	int nthreads = asInteger(nThreads);
+	
+	XStringSet_holder x1_set, x2_set, ans_holder;
+	Chars_holder x1_i, x2_i;
+	
+	x1_set = hold_XStringSet(x1);
+	x2_set = hold_XStringSet(x2);
+	int n = get_length_from_XStringSet_holder(&x1_set);
+	
+	const char *ans_element_type;
+	ans_element_type = get_List_elementType(x1);
+	
+	// set the class of the XStringSet
+	char ans_classname[40];
+	if (t == 1) {
+		strcpy(ans_classname, "DNAStringSet");
+	} else if (t == 2) {
+		strcpy(ans_classname, "RNAStringSet");
+	} else { // t == 3
+		strcpy(ans_classname, "AAStringSet");
+	}
+	
+	SEXP ans_width, ans, ret_list;
+	PROTECT(ans_width = NEW_INTEGER(n));
+	int *width = INTEGER(ans_width);
+	for (i = 0; i < n; i++) {
+		x1_i = get_elt_from_XStringSet_holder(&x1_set, i);
+		width[i] = x1_i.length;
+	}
+	
+	// initialize a new XStringSet
+	PROTECT(ans = alloc_XRawList(ans_classname, ans_element_type, ans_width));
+	ans_holder = hold_XVectorList(ans);
+	
+	if (q1 != R_NilValue) { // quality scores provided
+		XStringSet_holder q1_set, q2_set, qual_holder;
+		Chars_holder q1_i, q2_i;
+		
+		char qual_classname[40];
+		strcpy(qual_classname, "PhredQuality");
+		
+		const char *qual_element_type;
+		qual_element_type = get_List_elementType(q1);
+		
+		SEXP qual;
+		PROTECT(qual = alloc_XRawList(qual_classname, qual_element_type, ans_width));
+		qual_holder = hold_XVectorList(qual);
+		
+		q1_set = hold_XStringSet(q1);
+		q2_set = hold_XStringSet(q2);
+		
+		#ifdef _OPENMP
+		#pragma omp parallel for private(i,j,x1_i,x2_i,q1_i,q2_i) schedule(guided) num_threads(nthreads)
+		#endif
+		for (i = 0; i < n; i++) {
+			x1_i = get_elt_from_XStringSet_holder(&x1_set, i);
+			x2_i = get_elt_from_XStringSet_holder(&x2_set, i);
+			q1_i = get_elt_from_XStringSet_holder(&q1_set, index1[i] - 1);
+			q2_i = get_elt_from_XStringSet_holder(&q2_set, index2[i] - 1);
+			
+			int s1 = start1[i] - 1;
+			int s2 = start2[i] - 1;
+			int e1 = end1[i] - 1;
+			int e2 = end2[i] - 1;
+			int gap = (t == 3) ? 45 : 16;
+			double b0 = (t == 3) ? 20 : 4;
+			double b1 = b0 - 1;
+			double p1, p2, p3; // probability of error
+			double l1, l2; // last probability
+			int q; // Q-score
+			
+			Chars_holder ans_elt_holder = get_elt_from_XStringSet_holder(&ans_holder, i);
+			Chars_holder qual_elt_holder = get_elt_from_XStringSet_holder(&qual_holder, i);
+			
+			for (j = 0; j < x1_i.length; j++) {
+				if (x1_i.ptr[j] == gap) {
+					if (s1 >= start1[i] && s1 < e1) {
+						p1 = (l1 + pow(10, ((double)q1_i.ptr[s1 + 1] - 33)/-10))/2;
+					} else {
+						p1 = 1;
+					}
+				} else {
+					p1 = pow(10, ((double)q1_i.ptr[s1++] - 33)/-10);
+					l1 = p1;
+				}
+				if (x2_i.ptr[j] == gap) {
+					if (s2 >= start2[i] && s2 < e2) {
+						p2 = (l2 + pow(10, ((double)q2_i.ptr[s2 + 1] - 33)/-10))/2;
+					} else {
+						p2 = 1;
+					}
+				} else {
+					p2 = pow(10, ((double)q2_i.ptr[s2++] - 33)/-10);
+					l2 = p2;
+				}
+				
+				if (p1 == 1) {
+					*((char *)ans_elt_holder.ptr + j) = *((char *)x2_i.ptr + j);
+					p3 = p2;
+				} else if (p2 == 1) {
+					*((char *)ans_elt_holder.ptr + j) = *((char *)x1_i.ptr + j);
+					p3 = p1;
+				} else if (x1_i.ptr[j] == x2_i.ptr[j]) { // equal
+					*((char *)ans_elt_holder.ptr + j) = *((char *)x1_i.ptr + j);
+					p3 = p1*p2/b1/(1 - p1 - p2 + b0*p1*p2/b1);
+				} else if (p1 < p2) {
+					*((char *)ans_elt_holder.ptr + j) = *((char *)x1_i.ptr + j);
+					p3 = p1*(1 - p2/b1)/(p1 + p2 - b0*p1*p2/b1);
+				} else {
+					*((char *)ans_elt_holder.ptr + j) = *((char *)x2_i.ptr + j);
+					p3 = p2*(1 - p1/b1)/(p2 + p1 - b0*p2*p1/b1);
+				}
+				
+				// posterior error probability
+				q = (int)(-10*log10(p3)) + 33; // convert to Phred quality score
+				if (q > 126)
+					q = 126; // constrain to (easily) printable character
+				*((char *)qual_elt_holder.ptr + j) = (char)q;
+			}
+		}
+		
+		PROTECT(ret_list = allocVector(VECSXP, 2));
+		SET_VECTOR_ELT(ret_list, 0, ans);
+		SET_VECTOR_ELT(ret_list, 1, qual);
+		
+		UNPROTECT(4);
+	} else {
+		#ifdef _OPENMP
+		#pragma omp parallel for private(i,j,x1_i,x2_i) schedule(guided) num_threads(nthreads)
+		#endif
+		for (i = 0; i < n; i++) {
+			x1_i = get_elt_from_XStringSet_holder(&x1_set, i);
+			x2_i = get_elt_from_XStringSet_holder(&x2_set, i);
+			Chars_holder ans_elt_holder = get_elt_from_XStringSet_holder(&ans_holder, i);
+			
+			if (t == 3) {
+				for (j = 0; j < x1_i.length; j++) {
+					if (x1_i.ptr[j] == x2_i.ptr[j]) { // equal
+						*((char *)ans_elt_holder.ptr + j) = *((char *)x1_i.ptr + j);
+					} else if ((x1_i.ptr[j] == 68 && x2_i.ptr[j] == 78) || (x1_i.ptr[j] == 78 && x2_i.ptr[j] == 68)) { // B = N or D
+						*((char *)ans_elt_holder.ptr + j) = 66; // B
+					} else if ((x1_i.ptr[j] == 69 && x2_i.ptr[j] == 81) || (x1_i.ptr[j] == 81 && x2_i.ptr[j] == 69)) { // Z = Q or E
+						*((char *)ans_elt_holder.ptr + j) = 90; // Z
+					} else if ((x1_i.ptr[j] == 73 && x2_i.ptr[j] == 76) || (x1_i.ptr[j] == 76 && x2_i.ptr[j] == 73)) { // J = I or L
+						*((char *)ans_elt_holder.ptr + j) = 74; // J
+					} else if (x1_i.ptr[j] > 46 && x2_i.ptr[j] > 46) { // both residue
+						*((char *)ans_elt_holder.ptr + j) = 88; // X
+					} else if (x1_i.ptr[j] == 45 || x1_i.ptr[j] == 46) { // gap (- or .) and other
+						*((char *)ans_elt_holder.ptr + j) = *((char *)x2_i.ptr + j); // other
+					} else if (x2_i.ptr[j] == 45 || x2_i.ptr[j] == 46) { // other and gap (- or .)
+						*((char *)ans_elt_holder.ptr + j) = *((char *)x1_i.ptr + j); // other
+					} else {
+						*((char *)ans_elt_holder.ptr + j) = 43; // mask (+)
+					}
+				}
+			} else {
+				for (j = 0; j < x1_i.length; j++) {
+					if (x1_i.ptr[j] == x2_i.ptr[j]) { // equal
+						*((char *)ans_elt_holder.ptr + j) = *((char *)x1_i.ptr + j);
+					} else if (x1_i.ptr[j] < 16 && x2_i.ptr[j] < 16) { // both base
+						*((char *)ans_elt_holder.ptr + j) = *((char *)x1_i.ptr + j) | *((char *)x2_i.ptr + j); // consensus
+					} else if (x1_i.ptr[j] == 16 || x1_i.ptr[j] == 64) { // gap (- or .) and other
+						*((char *)ans_elt_holder.ptr + j) = *((char *)x2_i.ptr + j); // other
+					} else if (x2_i.ptr[j] == 16 || x2_i.ptr[j] == 64) { // other and gap (- or .)
+						*((char *)ans_elt_holder.ptr + j) = *((char *)x1_i.ptr + j); // other
+					} else {
+						*((char *)ans_elt_holder.ptr + j) = 32; // mask (+)
+					}
+				}
+			}
+		}
+		
+		PROTECT(ret_list = allocVector(VECSXP, 1));
+		SET_VECTOR_ELT(ret_list, 0, ans);
+		
+		UNPROTECT(3);
+	}
+	
+	return ret_list;
 }

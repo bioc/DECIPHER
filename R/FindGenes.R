@@ -868,17 +868,19 @@ FindGenes <- function(myDNAStringSet,
 				ylab=expression('log'[10]*'(Frequency)'),
 				xlim=c(minGeneLength, length(logt)),
 				pch=46,
-				log="x")
-			abline(a=y_intercept,
-				b=slope,
-				h=intercept,
-				v=x_intercept,
-				col=c(6, 5, 5),
-				lty=c(1, 2, 2),
-				untf=TRUE)
+				log="x",
+				panel.first={
+					abline(a=y_intercept,
+						b=slope,
+						h=intercept,
+						v=x_intercept,
+						col=c(2, 4, 4),
+						lty=c(1, 2, 2),
+						untf=TRUE)
+				})
 			legend("topright",
 				c("Background", "Intercepts", "ORF"),
-				col=c(6, 5, 1),
+				col=c(2, 4, 1),
 				lty=c(1, 2, NA),
 				pch=c(NA, NA, 15),
 				bg="white")
@@ -891,18 +893,18 @@ FindGenes <- function(myDNAStringSet,
 					max(1e4,
 						s[length(s)])),
 				pch=46,
-				col="darkgreen",
+				col=3,
 				log="x")
 			lines(s,
 				100*fg,
 				lwd=2,
-				col="darkgreen")
+				col=3)
 			lines(s,
 				100*bg,
-				col="magenta")
+				col=2)
 			legend("topright",
 				c("Background", "Estimated", "Gene"),
-				col=c("magenta", "darkgreen", "darkgreen"),
+				col=c(2, 3, 3),
 				lty=c(1, 1, NA),
 				lwd=c(1, 2, NA),
 				pch=c(NA, NA, 15),
@@ -1532,16 +1534,16 @@ FindGenes <- function(myDNAStringSet,
 				pch=46)
 			points(l[indices],
 				orf_scores[indices],
-				col="darkgreen",
+				col=3,
 				pch=46)
 			abline(h=cutoff[1],	
 				lty=2,
-				col="orange")
+				col=6)
 			legend("topleft",
 				c("ORF", "Gene", "Threshold"),
 				pch=c(15, 15, NA),
 				lty=c(NA, NA, 2),
-				col=c("black", "darkgreen", "orange"),
+				col=c(1, 3, 6),
 				bg="white")
 		}
 		

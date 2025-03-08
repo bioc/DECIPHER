@@ -22,7 +22,7 @@ MaskAlignment(myXStringSet,
 An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object of aligned sequences.
 }
   \item{type}{
-Character string indicating the type of result desired.  This should be (an abbreviation of) one of \code{"sequences"}, \code{"ranges"}, or \code{"values"}.  (See value section below.)
+Character string indicating the type of result desired.  This should be one of \code{"sequences"}, \code{"ranges"}, or \code{"values"}.  (See value section below.)
 }
   \item{windowSize}{
 Integer value specifying the size of the region to the left and right of the center-point to use in calculating the moving average.
@@ -40,7 +40,7 @@ Logical specifying whether or not to include terminal gaps ("." or "-" character
 Logical indicating whether to apply a small-sample size correction to columns with few letters (Yu et al., 2015).
 }
   \item{randomBackground}{
-Logical determining whether background letter frequencies are determined directly from \code{myXStringSet} (the default) or an uniform distribution of letters.
+Logical determining whether background letter frequencies are determined directly from \code{myXStringSet} (the default) or a uniform distribution of letters.
 }
   \item{showPlot}{
 Logical specifying whether or not to show a plot of the positions that were kept or masked.

@@ -20,7 +20,7 @@ WriteDendrogram(x,
 An object of class \code{dendrogram}.
 }
   \item{file}{
-A connection or a character string naming the file path where the tree should be exported.  If "" (the default), the tree is printed to the standard output connection, the console unless redirected by sink.
+A connection or a character string naming the file path where the tree should be exported.  If "" (the default), the tree is printed to the standard output connection, typically the console.
 }
   \item{quote}{
 A single character used to quote labels, or an empty character string (i.e., \code{""}) to avoid quoting labels.

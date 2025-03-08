@@ -30,13 +30,13 @@ Character string giving the location where the html file should be written.
 Logical indicating whether the \code{htmlFile} should be opened in a web browser.
 }
   \item{colorPatterns}{
-Logical specifying whether to color matched \code{patterns}, or an integer vector providing pairs of start and stop boundaries for coloring.
+Logical specifying whether to color the background of matching \code{patterns}, or an integer vector providing pairs of start and stop boundaries for coloring.
 }
   \item{highlight}{
 Numeric specifying which sequence in the set to use for comparison or \code{NA} to color all sequences (default).  If \code{highlight} is \code{0} then positions differing from the consensus sequence are highlighted.
 }
   \item{patterns}{
-Either an \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object, a character vector containing regular expressions, a list of numeric matrices, or \code{NULL}.  (See details section below.)
+An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object, a character vector containing regular expressions, a list of numeric matrices, or \code{NULL}.  (See details section below.)
 }
   \item{colors}{
 Character vector providing the color for each of the matched \code{patterns}.  Typically a character vector with elements of 7 characters:  ``#'' followed by the red, blue, green values in hexadecimal (after rescaling to 0 ... 255).  Ignored when \code{patterns} is a list of matrices.
@@ -65,6 +65,7 @@ Returns \code{htmlFile} if the html file was written successfully.
 }
 \references{
 ES Wright (2016) "Using DECIPHER v2.0 to Analyze Big Biological Sequence Data in R". The R Journal, \bold{8(1)}, 352-359.
+
 Kunzmann P., et al. (2020) "Substitution matrix based color schemes for sequence alignment visualization". BMC Bioinformatics, \bold{21(1):209}.
 }
 \author{

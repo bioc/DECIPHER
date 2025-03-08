@@ -51,7 +51,7 @@ Optional character string used to narrow the search results to those matching a 
 Optional character string specifying which of the \code{identifier}s will be used in the initial step of designing primers.  If \code{NA} (the default), then the \code{identifier} with the most sequence information is used as the \code{focusID}.
 }
   \item{type}{
-Character string indicating the type of signature being used to differentiate the PCR products from each group.  This should be (an abbreviation of) one of \code{"melt"}, \code{"length"}, or \code{"sequence"}.
+Character string indicating the type of signature being used to differentiate the PCR products from each group.  This should be one of \code{"melt"}, \code{"length"}, or \code{"sequence"}.
 }
   \item{resolution}{
 Numeric specifying the ``resolution'' of the experiment, or a vector giving the boundaries of bins.  (See details section below.)
@@ -114,7 +114,7 @@ Numeric giving the maximum number of primers to search for simultaneously in any
 Numeric giving the maximum amplification efficiency of potential primer-dimer products.
 }
   \item{pNorm}{
-Numeric specifying the power (p > 0) used in calculating the \eqn{L\textsuperscript{p}}-norm when scoring primer pairs.  By default (p = 1), the score is equivalent to the average difference between pairwise signatures.  When p < 1, many small differences will be preferred over fewer large differences, and vise-versa when p > 1.  This enables prioritizing primer pairs that will yield a greater number of unique signatures (p < 1), or fewer distinct, but more dissimilar, signatures (p > 1).
+Numeric specifying the power (p > 0) used in calculating the \eqn{L\textsuperscript{p}}-norm when scoring primer pairs.  By default (p = 1), the score is equivalent to the average difference between pairwise signatures.  When p < 1, many small differences will be preferred over fewer large differences, and vice versa when p > 1.  This enables prioritizing primer pairs that will yield a greater number of unique signatures (p < 1), or fewer distinct, but more dissimilar, signatures (p > 1).
 }
   \item{taqEfficiency}{
 Logical determining whether to make use of elongation efficiency to increase predictive accuracy for \emph{Taq} DNA Polymerase amplifying primers with mismatches near the 3' terminus.  Note that this should be set to FALSE if using a high-fidelity polymerase with 3' to 5' exonuclease activity.

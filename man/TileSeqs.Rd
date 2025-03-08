@@ -4,7 +4,7 @@
 Form a Set of Tiles for Each Group of Sequences.
 }
 \description{
-Creates a set of tiles that represent each group of sequences in the database for downstream applications.
+Creates a set of k-mer tiles that represent each group of sequences in the database for downstream applications.
 }
 \usage{
 TileSeqs(dbFile,

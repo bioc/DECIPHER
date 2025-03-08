@@ -1,7 +1,7 @@
 InferRecombination <- function(x,
 	readingFrame=NA,
 	position=1:3,
-	N=249,
+	N=150,
 	showPlot=FALSE,
 	verbose=TRUE) {
 	

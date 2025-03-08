@@ -23,10 +23,10 @@ A \code{DNAStringSet} or \code{RNAStringSet} of unaligned sequences.
 The index of reference sequences with the same (desired) orientation.  By default the first sequence with maximum width will be used.
 }
   \item{type}{
-Character string indicating the type of results desired.  This should be (an abbreviation of) either \code{"sequences"}, \code{"orientations"}, or \code{"both"}.
+Character string indicating the type of results desired.  This should be either \code{"sequences"}, \code{"orientations"}, or \code{"both"}.
 }
   \item{orientation}{
-Character string(s) indicating the allowed reorientation(s) of non-reference sequences.  This should be (an abbreviation of) either \code{"all"}, \code{"reverse"}, \code{"complement"}, and/or \code{"both"} (for reverse complement).
+Character string(s) indicating the allowed reorientation(s) of non-reference sequences.  This should be either \code{"all"}, \code{"reverse"}, \code{"complement"}, and/or \code{"both"} (for reverse complement).
 }
   \item{threshold}{
 Numeric giving the decrease in k-mer distance required to adopt the alternative orientation.

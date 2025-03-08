@@ -258,32 +258,71 @@ AlignPairs <- function(pattern,
 	}
 	
 	if (type > 1L) {
-		gaps <- tabulate(unlist(c(ans[[10L]], ans[[12L]])))
-		gaps <- lapply(seq_along(gaps)*(gaps > 0),
-			function(l)
-				if (l > 0) {
-					paste(rep("-", l), collapse="")
-				} else {
-					""
-				})
-		patterns <- replaceAt(subseq(pattern[pairs$Pattern],
-				ans[[1L]],
-				ans[[2L]]),
+		patterns <- .Call("placeGaps",
+			pattern,
+			pairs$Pattern,
+			ans[[1L]],
+			ans[[2L]],
 			ans[[9L]],
-			lapply(ans[[10L]],
-				function(x)
-					unlist(gaps[x])))
-		subjects <- replaceAt(subseq(subject[pairs$Subject],
-				ans[[3L]],
-				ans[[4L]]),
+			ans[[10L]],
+			xtype,
+			processors,
+			PACKAGE="DECIPHER")
+		subjects <- .Call("placeGaps",
+			subject,
+			pairs$Subject,
+			ans[[3L]],
+			ans[[4L]],
 			ans[[11L]],
-			lapply(ans[[12L]],
-				function(x)
-					unlist(gaps[x])))
+			ans[[12L]],
+			xtype,
+			processors,
+			PACKAGE="DECIPHER")
+		
+		if (is(pattern, "QualityScaledXStringSet") && is(subject, "QualityScaledXStringSet")) {
+			mergers <- .Call("mergePairs",
+				patterns,
+				subjects,
+				PhredQuality(quality(pattern)),
+				PhredQuality(quality(subject)),
+				pairs$Pattern,
+				pairs$Subject,
+				ans[[1L]],
+				ans[[3L]],
+				ans[[2L]],
+				ans[[4L]],
+				xtype,
+				processors,
+				PACKAGE="DECIPHER")
+			
+			if (xtype == 1L) {
+				mergers <- QualityScaledDNAStringSet(mergers[[1L]], mergers[[2L]])
+			} else if (xtype == 2L) {
+				mergers <- QualityScaledRNAStringSet(mergers[[1L]], mergers[[2L]])
+			} else {
+				mergers <- QualityScaledAAStringSet(mergers[[1L]], mergers[[2L]])
+			}
+		} else {
+			mergers <- .Call("mergePairs",
+				patterns,
+				subjects,
+				NULL,
+				NULL,
+				integer(),
+				integer(),
+				integer(),
+				integer(),
+				integer(),
+				integer(),
+				xtype,
+				processors,
+				PACKAGE="DECIPHER")[[1L]]
+		}
+		
 		if (type == 2L) {
-			results <- list(patterns, subjects)
+			results <- list(PatternAligned=patterns, SubjectAligned=subjects, Consensus=mergers)
 		} else if (type == 3L) {
-			results <- list(results, patterns, subjects)
+			results <- list(Result=results, PatternAligned=patterns, SubjectAligned=subjects, Consensus=mergers)
 		}
 	}
 	

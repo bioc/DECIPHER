@@ -25,10 +25,10 @@ ScoreAlignment(myXStringSet,
 An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object of aligned sequences.
 }
   \item{method}{
-Character string indicating the method of scoring.  This should be (an abbreviation of) one of \code{"pairs"} for sum-of-pairs or \code{"adjacent"} for sum-of-adjacent-pairs.  (See details section below.)
+Character string indicating the method of scoring.  This should be one of \code{"pairs"} for sum-of-pairs or \code{"adjacent"} for sum-of-adjacent-pairs.  (See details section below.)
 }
   \item{type}{
-Character string giving the type of result.  This should be (an abbreviation of) one of \code{"sum"} for the total score or \code{"scores"} for a vector with one score per site (column) in \code{myXStringSet}.
+Character string giving the type of result.  This should be one of \code{"sum"} for the total score or \code{"scores"} for a vector with one score per site (column) in \code{myXStringSet}.
 }
   \item{perfectMatch}{
 Numeric giving the reward for aligning two matching nucleotides in the alignment.  Only used for \code{DNAStringSet} or \code{RNAStringSet} inputs.

@@ -8,7 +8,7 @@ LearnTaxa <- function(train,
 	maxIterations=10,
 	multiplier=100,
 	maxChildren=200,
-	alphabet=AA_REDUCED[[139]],
+	alphabet=AA_REDUCED[[62]],
 	verbose=TRUE) {
 	
 	# error checking
@@ -74,7 +74,7 @@ LearnTaxa <- function(train,
 			stop("N must be a numeric.")
 		if (N <= 1)
 			stop("N must be greater than one.")
-		quant <- quantile(width(train), 0.99)
+		quant <- quantile(width(train), 0.99, names=FALSE)
 		if (is(train, "AAStringSet")) {
 			K <- floor(log(N*quant,
 				.Call("alphabetSizeReducedAA",

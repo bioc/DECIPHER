@@ -6,12 +6,12 @@ FindSynteny <- function(dbFile,
 	geneticCode=GENETIC_CODE,
 	sepCost=-2,
 	sepPower=0.5,
-	gapCost=-10,
+	gapCost=-16,
 	gapPower=0.5,
 	shiftCost=0,
 	codingCost=0,
-	maxSep=200,
-	maxGap=20,
+	maxSep=250,
+	maxGap=25,
 	minScore=100,
 	N=10,
 	dropScore=-5,
@@ -756,7 +756,6 @@ FindSynteny <- function(dbFile,
 				order(x.i, x.e) - 1L,
 				minScore,
 				maxW,
-				allowOverlap,
 				PACKAGE="DECIPHER")
 			
 			scores <- chains[[2]]
@@ -1159,7 +1158,6 @@ FindSynteny <- function(dbFile,
 				order(x.i, x.e) - 1L,
 				minScore,
 				maxW,
-				allowOverlap,
 				PACKAGE="DECIPHER")
 			
 			scores <- chains[[2]]

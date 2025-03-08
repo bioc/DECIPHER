@@ -20,14 +20,14 @@ A character vector of DNA recognition sequences and their enzymes' corresponding
 A \code{DNAStringSet} object or character vector with one or more sequences in 5' to 3' orientation.
 }
   \item{type}{
-Character string indicating the type of results desired.  This should be (an abbreviation of) either \code{"fragments"} or \code{"positions"}.
+Character string indicating the type of results desired.  This should be either \code{"fragments"} or \code{"positions"}.
 }
   \item{strand}{
-Character string indicating the strand(s) to cut.  This should be (an abbreviation of) one of \code{"both"}, \code{"top"}, or \code{"bottom"}.  The top strand is defined as the input DNAStringSet sequence, and the bottom strand is its reverse complement.
+Character string indicating the strand(s) to cut.  This should be one of \code{"both"}, \code{"top"}, or \code{"bottom"}.  The top strand is defined as the input DNAStringSet sequence, and the bottom strand is its reverse complement.
 }
 }
 \details{
-In the context of a restriction digest experiment with a known DNA sequence, it can be useful to predict the expected DNA fragments \emph{in-silico}.  Restriction enzymes make cuts in double-stranded DNA at specific positions near their recognition site.  The recognition site may be somewhat ambiguous, as represented by the \code{IUPAC_CODE_MAP}.  Cuts that occur at different positions on the top and bottom strands result in sticky-ends, whereas those that occur at the same position result in fragments with blunt-ends.  Multiple restriction \code{sites} can be supplied to simultaneously digest the DNA.  In this case, \code{sites} for the different restriction enzymes may be overlapping, which could result in multiple close-proximity cuts that would not occur experimentally.  Also, note that cut sites will not be matched to non-\code{DNA_BASES} in \code{myDNAStringSet}.
+In the context of a restriction digest experiment with a known (linear) DNA sequence, it can be useful to predict the expected DNA fragments \emph{in-silico}.  Restriction enzymes make cuts in double-stranded DNA at specific positions near their recognition site.  The recognition site may be somewhat ambiguous, as represented by the \code{IUPAC_CODE_MAP}.  Cuts that occur at different positions on the top and bottom strands result in sticky-ends, whereas those that occur at the same position result in fragments with blunt-ends.  Multiple restriction \code{sites} can be supplied to simultaneously digest the DNA.  In this case, \code{sites} for the different restriction enzymes may be overlapping, which could result in multiple close-proximity cuts that would not occur experimentally.  Also, note that cut sites will not be matched to non-\code{DNA_BASES} in \code{myDNAStringSet}.
 }
 \value{
 \code{DigestDNA} can return two \code{type}s of results:  cut \code{positions} or the resulting DNA \code{fragments} corresponding to the \code{top}, \code{bottom}, or \code{both} strands.  If \code{type} is \code{"positions"} then the output is a list with the cut location(s) in each sequence in \code{myDNAStringSet}.  The cut location is defined as the position after the cut relative to the 5'-end.  For example, a cut at \code{6} would occur between positions 5 and 6, where the respective strand's 5' nucleotide is defined as position 1.

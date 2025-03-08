@@ -427,7 +427,6 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 	// apply sigmoidal transformation
 	sh *= minVal; // shift
 	sl /= -1*(sh - minVal); // -slope
-	n = 0; // number of positions above threshold
 	for (i = 0; i < (tot - 1); i++) {
 		for (j = i + 1; j < tot; j++) {
 			MI[i*tot + j] = 1/(1 + exp(sl*log(MI[i*tot + j]/sh)));
@@ -436,8 +435,6 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 			} else if (o < 3 && MI[i*tot + j] < thresh) {
 				MI[i*tot + j] = 0;
 			}
-			if (o == 6 &&  MI[i*tot + j] >= thresh)
-				n++;
 			//Rprintf("\ni = %d j = %d MI = %1.2f", pos[i] + 1, pos[j] + 1, MI[i*tot + j]);
 		}
 	}
@@ -464,8 +461,7 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 						if (J[count] - 1 > pos[j]) {
 							j++;
 						} else if (J[count] - 1 == pos[j]) {
-							if (MI[i*tot + j] < W[count])
-								MI[i*tot + j] = W[count];
+							MI[j*tot + i] += W[count];
 							count++;
 							j++;
 							break;
@@ -475,6 +471,13 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 						}
 					}
 				}
+			}
+		}
+		
+		for (i = 0; i < (tot - 1); i++) {
+			for (j = i + 1; j < tot; j++) {
+				if (MI[i*tot + j] < MI[j*tot + i]/x_length)
+					MI[i*tot + j] = MI[j*tot + i]/x_length;
 			}
 		}
 	}
@@ -643,6 +646,14 @@ SEXP predictDBN(SEXP x, SEXP output, SEXP minOccupancy, SEXP impact, SEXP avgPro
 			}
 		}
 	} else if (o == 6) { // evidence
+		n = 0; // number of positions above threshold
+		for (i = 0; i < (tot - 1); i++) {
+			for (j = i + 1; j < tot; j++) {
+				if (MI[i*tot + j] >= thresh)
+					n++;
+			}
+		}
+		
 		PROTECT(ans = allocMatrix(REALSXP, n, 3));
 		rans = REAL(ans);
 		

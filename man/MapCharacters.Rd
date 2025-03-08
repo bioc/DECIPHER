@@ -25,7 +25,7 @@ Numeric vector of reference positions in the original sequence alignment.  Only 
 Logical determining whether to label edges with the number of changes along each edge.
 }
   \item{type}{
-Character string indicating the type of output desired.  This should be (an abbreviation of) one of \code{"dendrogram"}, \code{"table"}, or \code{"both"}.  (See value section below.)
+Character string indicating the type of output desired.  This should be one of \code{"dendrogram"}, \code{"table"}, or \code{"both"}.  (See value section below.)
 }
   \item{chars}{
 Character vector specifying the characters to consider in state changes at each site.  The default (\code{LETTERS}) is to consider any upper case letter. Alternatively, \code{chars} could be \code{AA_STANDARD}, \code{DNA_BASES}, or \code{RNA_BASES}.

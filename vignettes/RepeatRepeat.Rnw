@@ -182,7 +182,7 @@ reps[which.max(reps[, "Score"]),]
 
 The result is a \Rclass{data.frame} giving the beginning and ending positions of the tandem repeat, as well as every repeat within it. The top scoring repeat spans the Ig domains we found earlier (i.e., from \code{Begin} to \code{End}). The \code{Left} and \code{Right} boundaries of each repeat unit are listed, and well as the \code{Index} of the sequence containing the repeat.
 
-Note that \Rfunction{DetectRepeat} scores are calibrated such that repeats are expected to be found by chance every $e^{Score}$ positions. That is, approximately every 22,000 positions would be within a repeat meeting the default \Rfunarg{minScore} of \code{10} by chance. Since we asked for \Rfunarg{allScores}, the output contains all repeats with scores above \Rfunarg{minScore}, even if they are overlapping. This allows us to easily plot the different repeats that were identified in Obscurin:
+Note that \Rfunction{DetectRepeat} scores are calibrated such that repeats are expected to be found by chance every $e^{Score}$ positions. That is, approximately every ~3,000 positions would be within a repeat meeting the default \Rfunarg{minScore} of \code{8} by chance. Since we asked for \Rfunarg{allScores}, the output contains all repeats with scores above \Rfunarg{minScore}, even if they are overlapping. This allows us to easily plot the different repeats that were identified in Obscurin:
 
 \begin{centerfig}
 <<expr6,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=

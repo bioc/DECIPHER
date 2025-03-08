@@ -9,13 +9,13 @@ Detects approximate copies of sequence patterns that likely arose from duplicati
 \usage{
 DetectRepeats(myXStringSet,
               type = "tandem",
-              minScore = 10,
+              minScore = 8,
               allScores = FALSE,
               maxCopies = 1000,
               maxPeriod = 1000,
               maxFailures = 3,
               maxShifts = 5,
-              alphabet = AA_REDUCED[[47]],
+              alphabet = AA_REDUCED[[152]],
               useEmpirical = TRUE,
               correctBackground = TRUE,
               processors = 1,
@@ -27,7 +27,7 @@ DetectRepeats(myXStringSet,
 An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object of unaligned sequences.
 }
   \item{type}{
-Character string indicating the type of repeats to detect.  This should be (an abbreviation of) one of \code{"tandem"}, \code{"interspersed"}, or \code{"both"}.  Only \code{"tandem"} is possible when \code{myXStringSet} is an \code{AAStringSet}.  (See details section below.)
+Character string indicating the type of repeats to detect.  This should be one of \code{"tandem"}, \code{"interspersed"}, or \code{"both"}.  Only \code{"tandem"} is possible when \code{myXStringSet} is an \code{AAStringSet}.  (See details section below.)
 }
   \item{minScore}{
 Numeric giving the minimum score of repeats in \code{myXStringSet} to report.

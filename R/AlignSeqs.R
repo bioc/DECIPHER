@@ -218,7 +218,7 @@ AlignSeqs <- function(myXStringSet,
 					if (dim(structureMatrix)[1] != 3)
 						stop("structureMatrix must be 3 x 3 when structures is NULL.")
 				} else { # use the default structureMatrix
-					structureMatrix <- matrix(c(7, -3, -3, -3, 11, -8, -3, -8, 11),
+					structureMatrix <- matrix(c(6, -4, -4, -4, 10, -10, -4, -10, 10),
 						nrow=3) # order is ., (, )
 				}
 				replace <- FALSE
@@ -840,7 +840,7 @@ AlignSeqs <- function(myXStringSet,
 			verbose=verbose)
 		
 		if (replace) {
-			structureMatrix <<- matrix(c(7, -3, -3, -3, 11, -8, -3, -8, 11),
+			structureMatrix <<- matrix(c(6, -4, -4, -4, 10, -10, -4, -10, 10),
 				nrow=3) # order is ., (, )
 			replace <<- FALSE
 		} else {

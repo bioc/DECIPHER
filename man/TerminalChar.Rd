@@ -31,4 +31,5 @@ Erik Wright \email{eswright@pitt.edu}
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
 dna <- readDNAStringSet(fas)
 t <- TerminalChar(dna)
+head(t)
 }

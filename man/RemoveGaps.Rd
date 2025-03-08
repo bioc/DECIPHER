@@ -27,7 +27,7 @@ The number of processors to use, or \code{NULL} to automatically detect and use 
 }
 }
 \details{
-The \code{removeGaps} argument controls which gaps are removed in \code{myXStringSet}.  Setting \code{removeGaps} to \code{"all"} will remove all gaps in the input sequences, whereas setting \code{removeGaps} to \code{"common"} will remove only gaps that exist in the same position in every sequence.  Therefore, the latter method will leave gaps in place that are not shared by every sequence, requiring that the sequences in \code{myXStringSet} all be the same length (i.e., be aligned).  Setting \code{removeGaps} to \code{"none"} will simply return \code{myXStringSet} unaltered.
+The \code{removeGaps} argument controls which gaps are removed in \code{myXStringSet}.  Setting \code{removeGaps} to \code{"all"} will remove all gaps in the input sequences, whereas setting \code{removeGaps} to \code{"common"} will remove only gaps that exist in the same position in every sequence.  Therefore, the latter method will leave gaps in place that are not shared by every sequence, requiring that the sequences in \code{myXStringSet} all have the same width (i.e., be aligned).  Setting \code{removeGaps} to \code{"none"} will simply return \code{myXStringSet} unaltered.
 }
 \value{
 An \code{XStringSet} of the same type as \code{myXStringSet}.

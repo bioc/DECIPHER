@@ -61,9 +61,6 @@ ES Wright (2016) "Using DECIPHER v2.0 to Analyze Big Biological Sequence Data in
 \author{
 Erik Wright \email{eswright@pitt.edu}
 }
-\note{
-If viewing a table containing sequences, the sequences are purposefully not shown in the output.
-}
 \seealso{
 \code{\link{BrowseSeqs}}
 }

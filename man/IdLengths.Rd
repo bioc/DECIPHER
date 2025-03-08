@@ -23,7 +23,7 @@ A database connection object or a character string specifying the path to a SQLi
 Character string specifying the table where the sequences are located.
 }
   \item{type}{
-The type of \code{XStringSet} being processed.  This should be (an abbreviation of) one of \code{"AAStringSet"}, \code{"DNAStringSet"}, or \code{"RNAStringSet"}.
+The type of \code{XStringSet} being processed.  This should be one of \code{"AAStringSet"}, \code{"DNAStringSet"}, or \code{"RNAStringSet"}.
 }
   \item{add2tbl}{
 Logical or a character string specifying the table name in which to add the result.

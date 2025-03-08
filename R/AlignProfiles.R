@@ -249,7 +249,7 @@ AlignProfiles <- function(pattern,
 				structureMatrix <- matrix(c(3, 2, -1, 2, 12, -4, -1, -4, 1),
 					nrow=3) # order is H, E, C
 			} else {
-				structureMatrix <- matrix(c(7, -3, -3, -3, 11, -8, -3, -8, 11),
+				structureMatrix <- matrix(c(6, -4, -4, -4, 10, -10, -4, -10, 10),
 					nrow=3) # order is ., (, )
 			}
 		} else {

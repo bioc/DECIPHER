@@ -4,7 +4,7 @@
 Align Two Sets of Aligned Sequences
 }
 \description{
-Aligns two sets of one or more aligned sequences by first generating representative profiles, then aligning the profiles with dynamic programming, and finally merging the two aligned sequence sets.
+Aligns two sets aligned sequences by first generating representative profiles, then aligning the profiles with dynamic programming, and finally merging the two aligned sequence sets.
 }
 \usage{
 AlignProfiles(pattern,
@@ -35,16 +35,16 @@ An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object of ali
 A \code{XStringSet} object of aligned sequences to use as the subject.  Must match the type of the \code{pattern}.
 }
   \item{p.weight}{
-A numeric vector of weights for each sequence in the pattern to use in generating a profile, or a single number implying equal weights.
+A numeric vector of weights for each sequence in the \code{pattern} to use in generating a profile, or a single number implying equal weights.
 }
   \item{s.weight}{
-A numeric vector of weights for each sequence in the subject to use in generating a profile, or a single number implying equal weights.
+A numeric vector of weights for each sequence in the \code{subject} to use in generating a profile, or a single number implying equal weights.
 }
   \item{p.struct}{
-Either \code{NULL} (the default), a matrix, or a list of matrices with one list element per sequence in the pattern.  (See details section below.)
+Either \code{NULL} (the default), a matrix, or a list of matrices with one list element per sequence in the \code{pattern}.  (See details section below.)
 }
   \item{s.struct}{
-Either \code{NULL} (the default), a matrix, or a list of matrices with one list element per sequence in the subject.  (See details section below.)
+Either \code{NULL} (the default), a matrix, or a list of matrices with one list element per sequence in the \code{subject}.  (See details section below.)
 }
   \item{perfectMatch}{
 Numeric giving the reward for aligning two matching nucleotides in the alignment.  Only applicable for \code{DNAStringSet} or \code{RNAStringSet} inputs.

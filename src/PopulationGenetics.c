@@ -3,12 +3,6 @@
  *                           Author: Erik Wright                            *
  ****************************************************************************/
 
-// for OpenMP parallel processing
-#ifdef _OPENMP
-#include <omp.h>
-#undef match
-#endif
-
 /*
  * Rdefines.h is needed for the SEXP typedef, for the error(), INTEGER(),
  * GET_DIM(), LOGICAL(), NEW_INTEGER(), PROTECT() and UNPROTECT() macros,
@@ -40,7 +34,7 @@
 
 SEXP correlationProfile(SEXP x, SEXP readingFrame, SEXP maxN, SEXP verbose, SEXP pBar)
 {
-	int i, j, k, p, I, J, v, before, *rPercentComplete;
+	int i, j, k, p, I, J, minL, warn = NA_INTEGER, v, before, *rPercentComplete;
 	double weight, soFar, tot;
 	int *rF = INTEGER(readingFrame);
 	int N = asInteger(maxN);
@@ -97,7 +91,14 @@ SEXP correlationProfile(SEXP x, SEXP readingFrame, SEXP maxN, SEXP verbose, SEXP
 			while (J < x_length) {
 				x_j = get_elt_from_XStringSet_holder(&x_set, J);
 				
-				for (j = 0; j < x_i.length && j < x_j.length; j++) {
+				minL = x_i.length;
+				if (minL != x_j.length) {
+					warn = i;
+					if (minL > x_j.length)
+						minL = x_j.length;
+				}
+				
+				for (j = 0; j < minL; j++) {
 					if (x_i.ptr[j] < 16) { // base
 						subs[1] += weight;
 						
@@ -142,6 +143,14 @@ SEXP correlationProfile(SEXP x, SEXP readingFrame, SEXP maxN, SEXP verbose, SEXP
 			} else {
 				R_CheckUserInterrupt();
 			}
+		}
+	}
+	
+	if (warn != NA_INTEGER) {
+		if (warn == 0) {
+			warning("x contains unaligned sequences.");
+		} else {
+			warning("x[[%d]] contains unaligned sequences.", warn + 1);
 		}
 	}
 	

@@ -39,10 +39,10 @@ An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet}.  Required if
 A symmetric \eqn{N} x \eqn{N} distance matrix with the values of dissimilarity between \eqn{N} sequences or an object of class \code{'dist'}.  If \code{NULL} (the default), \code{myDistMatrix} will be automatically determined from \code{myXStringSet} based on the distance between sequences using the \code{DistanceMatrix} function and the \code{model} (if specified).  If not \code{NULL}, \code{myDistMatrix} is used to construct the initial tree, even when \code{method} is \code{"ML"} or \code{"MP"}.  If \code{method} is \code{"ME"}, \code{myDistMatrix} determines the branch lengths and, therefore, overall tree length that is optimized.  Missing values (i.e., \code{NA}) in \code{myDistMatrix} are imputed using the ultrametric method described by Makarenkov and Lapointe (2004).
 }
   \item{method}{
-The phylogenetic method to be used.  This should be (an abbreviation of) one of \code{"ME"} for (balanced) minimum evolution (the default), \code{"ML"} for maximum likelihood, \code{"MP"} for maximum parsimony, \code{"NJ"} for neighbor joining, \code{"complete"} for complete-linkage, \code{"single"} for single-linkage, \code{"UPGMA"} for ``unweighted pair group method with arithmetic mean'', or \code{"WPGMA"} for ``weighted pair group method with arithmetic mean''.  (See details section below.)
+The phylogenetic method to be used.  This should be one of \code{"ME"} for (balanced) minimum evolution (the default), \code{"ML"} for maximum likelihood, \code{"MP"} for maximum parsimony, \code{"NJ"} for neighbor joining, \code{"complete"} for complete-linkage, \code{"single"} for single-linkage, \code{"UPGMA"} for ``unweighted pair group method with arithmetic mean'', or \code{"WPGMA"} for ``weighted pair group method with arithmetic mean''.  (See details section below.)
 }
   \item{type}{
-Character string indicating the type of output desired.  This should be (an abbreviation of) one of \code{"dendrogram"} (the default), \code{"clusters"}, or \code{"both"}.  (See value section below.)
+Character string indicating the type of output desired.  This should be one of \code{"dendrogram"} (the default), \code{"clusters"}, or \code{"both"}.  (See value section below.)
 }
   \item{cutoff}{
 A vector with the maximum edge length separating the sequences in the same cluster.  A negative value (the default) will prevent clustering.  Multiple cutoffs may be provided in ascending or descending order.  (See details section below.)
@@ -87,7 +87,7 @@ Either \code{NULL} (the default) or a symmetric matrix setting the penalties use
 One or more of the available \code{MODELS} of evolution provided as a character vector or list with components `Protein' and/or `Nucleotide' if \code{method} is \code{"ML"}.  Automatic model selection based on the \code{informationCriterion} will be performed for \code{"ML"} if more than one \code{model} is provided.  For \code{"ME"}, if \code{myDistMatrix} is \code{NULL}, a single model of evolution can be specified for generating the distance matrix from \code{myXStringSet}.
 }
   \item{informationCriterion}{
-Character string specifying which information criterion to use in automatic model selection when \code{method} is \code{"ML"}.  Must be (an abbreviation of) either \code{"AICc"} or \code{"BIC"}.  The best \code{model} is automatically chosen based on the \code{informationCriterion} calculated from the likelihood and the sample size (defined as the average number of sites for sequences in \code{myXStringSet}).  Only applicable if \code{method} is \code{"ML"}.
+Character string specifying which information criterion to use in automatic model selection when \code{method} is \code{"ML"}.  Must be either \code{"AICc"} or \code{"BIC"}.  The best \code{model} is automatically chosen based on the \code{informationCriterion} calculated from the likelihood and the sample size (defined as the average number of sites for sequences in \code{myXStringSet}).  Only applicable if \code{method} is \code{"ML"}.
 }
   \item{quadrature}{
 Logical determining whether to use the Laguerre quadrature or equal-sized bins when discretizing the rate distribution across sites when \code{method} is \code{"ML"}.  The default (\code{FALSE}) is to use equal-sized bins for direct comparison among likelihoods computed by other programs, although the Laguerre quadrature offers a modest improvement in accuracy for the same number of rates (Felsenstein, 2001).
@@ -128,7 +128,7 @@ If \code{type} is \code{"clusters"}, then a \code{data.frame} is returned with d
 If \code{type} is \code{"both"} then a list is returned containing both the \code{"clusters"} and \code{"dendrogram"} outputs.
 }
 \note{
-Cophenetic distance between leaves of the \code{dendrogram} is often defined as the sum of branch lengths separating the leaves, also known as the patristic distance.  This is the typical phylogenetic interpretation but different than that for dendrograms produced by \code{hclust} where leaves are merged at a height equal to their cophenetic distance.  Hence, always use \code{Cophenetic} (rather than \code{cophenetic}) to compute cophenetic distances if the length between leaves is desired.
+Cophenetic distance between leaves of the \code{dendrogram} is often defined as the sum of branch lengths separating the leaves, also known as the patristic distance.  This is the typical phylogenetic interpretation but different than that for dendrograms produced by \code{hclust} where leaves are merged at a height equal to their cophenetic distance.  Hence, always use \code{Cophenetic} (rather than \code{cophenetic}) to compute patristic distances where the length between leaves is desired.
 }
 \references{
 Anisimova M., \emph{et al.} (2011) Survey of branch support methods demonstrates accuracy, power, and robustness of fast likelihood-based approximation schemes. \emph{Syst Biol.}, \bold{60(5)}, 685-99.

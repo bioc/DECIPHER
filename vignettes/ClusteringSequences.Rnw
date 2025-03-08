@@ -280,18 +280,31 @@ dna[clus == which.max(tabulate(clus))]
 @
 
 %------------------------------------------------------------
+\section{Alternative measures of distance}
+%------------------------------------------------------------
+
+Your pr\emph{ize} for reading this far is a hidden feature of \Rfunction{Clusterize} -- it only requires a small change to use more sophisticated measures of distance than percent identity. Not to glamor\emph{ize} these alternatives, but they enable you to correct for different rates of substitution and multiple substitutions per site. This will appear to energ\emph{ize} distances by making sequences more distant than their percent identity, so be sure to adjust your \Rfunarg{cutoff} to units of substitutions per site.
+
+<<expr12,eval=TRUE>>=
+c4 <- Clusterize(dna, cutoff=0.4, processors=1, correction="TN93+F")
+max(c4) # number of DNA clusters
+c5 <- Clusterize(aa, cutoff=0.4, processors=1, correction="WAG")
+max(c5) # number of AA clusters
+@
+
+%------------------------------------------------------------
 \section{Finalize your use of Clusterize}
 %------------------------------------------------------------
 
 Notably, \Rfunction{Clusterize} is a stochastic algorithm, meaning it will random\emph{ize} which sequences are selected during pre-sorting. Even though the clusters will typically stabil\emph{ize} with enough iterations, you can set the random number seed (before every run) to guarantee reproducibility of the clusters:
 
-<<expr12,eval=TRUE>>=
+<<expr13,eval=TRUE>>=
 set.seed(123) # initialize the random number generator
 clusters <- Clusterize(seqs, cutoff=0.1, processors=1)
 set.seed(NULL) # reset the seed
 @
 
-Now you know how to util\emph{ize} \Rfunction{Clusterize} to cluster sequences. To public\emph{ize} your results for others to reproduce, make sure to provide your random number seed and version number:
+Now you know how to util\emph{ize} \Rfunction{Clusterize} to cluster sequences. To public\emph{ize} your code for others to reproduce, make sure to include your random number seed and version number:
 
 <<sessinfo,echo=FALSE,results=tex>>=
 toLatex(sessionInfo(), locale=FALSE)

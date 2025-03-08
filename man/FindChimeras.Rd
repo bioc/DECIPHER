@@ -39,7 +39,7 @@ Character string specifying the table in which to check for chimeras.
 Optional character string used to narrow the search results to those matching a specific identifier.  If "" then all identifiers are selected.
 }
   \item{dbFileReference}{
-A database connection object or a character string specifying the path to a SQLite reference database file of (presumed to be) good quality sequences.  A 16S reference database is available from \url{http://DECIPHER.codes}.
+A database connection object or a character string specifying the path to a SQLite reference database file of (presumed to be) good quality sequences.
 }
   \item{tblNameReference}{
 Character string specifying the table with reference sequences.
@@ -51,7 +51,7 @@ Number sequences to tile with fragments at a time.
 Number of suspect fragments to accumulate before searching through other groups.
 }
   \item{tb.width}{
-A single integer [1..14] giving the number of nucleotides at the start of each fragment that are part of the trusted band.
+A single integer ([1..14]) giving the number of nucleotides at the start of each fragment that are part of the trusted band.
 }
   \item{multiplier}{
 A single integer specifying the multiple of fragments found out-of-group greater than fragments found in-group in order to consider a sequence a chimera.
@@ -91,7 +91,7 @@ Logical indicating whether to display progress.
 }
 }
 \details{
-\code{FindChimeras} works by finding suspect fragments that are uncommon in the group where the sequence belongs, but very common in another group where the sequence does not belong.  Each sequence in the \code{dbFile} is tiled into short sequence segments called fragments.  If the fragments are infrequent in their respective group in the \code{dbFileReference} then they are considered suspect.  If enough suspect fragments from a sequence meet the specified constraints then the sequence is flagged as a chimera.
+\code{FindChimeras} works by finding suspect k-mer fragments that are uncommon in the group where the sequence belongs, but very common in another group where the sequence does not belong.  Each sequence in the \code{dbFile} is tiled into short sequence segments called fragments.  If the fragments are infrequent in their respective group in the \code{dbFileReference} then they are considered suspect.  If enough suspect fragments from a sequence meet the specified constraints then the sequence is flagged as a chimera.
 
 The default parameters are optimized for full-length 16S sequences (> 1,000 nucleotides).  Shorter 16S sequences require two parameters that are different than the defaults:  \code{minCoverage = 0.2}, and \code{minSuspectFragments = 2}.
 

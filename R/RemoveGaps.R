@@ -34,24 +34,19 @@ RemoveGaps <- function(myXStringSet,
 	}
 	
 	if (removeGaps == 2L) { # all gaps
-		ns <- names(myXStringSet)
-		myXStringSet <- .Call("removeGaps",
-			myXStringSet,
-			type,
-			includeMask,
-			processors,
-			PACKAGE="DECIPHER")
-		names(myXStringSet) <- ns
+		functionCall <- "removeGaps"
 	} else if (removeGaps == 3L) { # common gaps
-		ns <- names(myXStringSet)
-		myXStringSet <- .Call("removeCommonGaps",
-			myXStringSet,
-			type,
-			includeMask,
-			processors,
-			PACKAGE="DECIPHER")
-		names(myXStringSet) <- ns
+		functionCall <- "removeCommonGaps"
 	}
+	
+	ns <- names(myXStringSet)
+	myXStringSet <- .Call(functionCall,
+		myXStringSet,
+		type,
+		includeMask,
+		processors,
+		PACKAGE="DECIPHER")
+	names(myXStringSet) <- ns
 	
 	return(myXStringSet)
 }

@@ -1,4 +1,4 @@
-DistanceMatrix <- function(myXStringSet,
+.DistanceMatrix <- function(myXStringSet,
 	method="overlap",
 	type="matrix",
 	includeTerminalGaps=FALSE,
@@ -197,18 +197,6 @@ DistanceMatrix <- function(myXStringSet,
 		processors <- as.integer(processors)
 	}
 	
-	maxW <- unique(width(myXStringSet))
-	if (length(maxW) != 1) {
-		warning("\n",
-			length(maxW),
-			" different sequence lengths.\n",
-			"Using shorter length in each comparison.\n")
-	}
-	numF <- length(myXStringSet)
-	if (numF < 2) {
-		stop("At least two sequences are required.")
-	}
-	
 	# calculate distance correction
 	if (correction == 3L) { # Poisson
 		E <- 1
@@ -271,6 +259,58 @@ DistanceMatrix <- function(myXStringSet,
 		E <- 0
 	}
 	
+	function(x, typeX, pBar)
+		.Call("distMatrix",
+			x,
+			typeX,
+			includeTerminalGaps,
+			penalizeGapLetterMatches,
+			TRUE, # full matrix
+			type,
+			E,
+			lkup,
+			minCoverage,
+			method,
+			verbose,
+			pBar,
+			processors,
+			PACKAGE="DECIPHER")
+}
+
+DistanceMatrix <- function(myXStringSet,
+	method="overlap",
+	type="matrix",
+	includeTerminalGaps=FALSE,
+	penalizeGapLetterMatches=FALSE,
+	minCoverage=0,
+	correction=NA,
+	substitutionMatrix=NULL,
+	frequencies=NULL,
+	processors=1,
+	verbose=TRUE) {
+	
+	.dist <- .DistanceMatrix(myXStringSet=myXStringSet,
+		method=method,
+		type=type,
+		includeTerminalGaps=includeTerminalGaps,
+		penalizeGapLetterMatches=penalizeGapLetterMatches,
+		minCoverage=minCoverage,
+		correction=correction,
+		substitutionMatrix=substitutionMatrix,
+		frequencies=frequencies,
+		processors=processors,
+		verbose=verbose)
+	
+	maxW <- unique(width(myXStringSet))
+	if (length(maxW) != 1L) {
+		warning("\n",
+			length(maxW),
+			" different sequence lengths.\n",
+			"Using shorter length in each comparison.\n")
+	}
+	if (length(myXStringSet) < 2L)
+		stop("At least two sequences are required.")
+	
 	# initialize a progress bar
 	if (verbose) {
 		pBar <- txtProgressBar(min=0, max=100, initial=0, style=ifelse(interactive(), 3, 1))
@@ -280,23 +320,11 @@ DistanceMatrix <- function(myXStringSet,
 	}
 	
 	# calculate the distance matrix
-	distMatrix <- .Call("distMatrix",
-		myXStringSet,
+	distMatrix <- .dist(myXStringSet,
 		ifelse(is(myXStringSet, "AAStringSet"), 3L, 1L),
-		includeTerminalGaps,
-		penalizeGapLetterMatches,
-		TRUE, # full matrix
-		type,
-		E,
-		lkup,
-		minCoverage,
-		method,
-		verbose,
-		pBar,
-		processors,
-		PACKAGE="DECIPHER")
+		pBar)
 	
-	if (type == 1) { # matrix
+	if (startsWith(type, "m")) { # matrix
 		dimnames(distMatrix) <- list(names(myXStringSet),
 			names(myXStringSet))
 	} else { # dist

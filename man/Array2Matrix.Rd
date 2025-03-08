@@ -4,7 +4,7 @@
 Create a Matrix Representation of a Microarray
 }
 \description{
-Converts the output of \code{DesignArray} into the sparse matrix format used by \code{NNLS}.
+Converts the output of \code{DesignArray} into the sparse matrix format.
 }
 \usage{
 Array2Matrix(probes,

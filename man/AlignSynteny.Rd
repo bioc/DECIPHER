@@ -39,7 +39,7 @@ Further arguments to be passed directly to \code{\link{AlignProfiles}}, includin
 }
 }
 \details{
-\code{AlignSynteny} will extract all sequence regions belonging to syntenic blocks in \code{synteny}, and perform pairwise alignment with \code{AlignProfiles}.  Hits are used to anchor the alignment such that only the regions between anchors are aligned.
+\code{AlignSynteny} will extract all sequence regions belonging to syntenic blocks in the input \code{synteny} object, and perform pairwise alignment with \code{AlignProfiles}.  Hits are used to anchor the alignment such that only the regions between anchors are aligned.
 }
 \value{
 A list with elements for each pair of \code{identifier}s in \code{synteny}.  Each list element contains a \code{DNAStringSetList} one pairwise alignment per syntenic block.

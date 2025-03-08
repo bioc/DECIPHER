@@ -17,7 +17,7 @@ LearnTaxa(train,
           maxIterations = 10,
           multiplier = 100,
           maxChildren = 200,
-          alphabet = AA_REDUCED[[139]],
+          alphabet = AA_REDUCED[[62]],
           verbose = TRUE)
 }
 \arguments{
@@ -25,7 +25,7 @@ LearnTaxa(train,
 An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} of unaligned sequences.
 }
   \item{taxonomy}{
-Character string providing the reference taxonomic assignment for each sequence in \code{train}.  Taxonomic ranks are separated by semicolons (``;'') beginning with ``Root''.
+Character vector providing the reference taxonomic assignment for each sequence in \code{train}.  Taxonomic ranks are separated by semicolons (``;'') beginning with ``Root''.
 }
   \item{rank}{
 Optionally, a \code{data.frame} with 5 named columns giving the ``Index'' (i.e., 0 to the number of unique taxa), ``Name'' (i.e., taxon name), ``Parent'' (i.e., ``Index'' of the parent taxon), ``Level'' (i.e., integer rank level), and ``Rank'' (e.g., ``genus'') of each taxonomic rank.  This information is often provided in a separate ``taxid'' file along with publicly available training sequence sets.
