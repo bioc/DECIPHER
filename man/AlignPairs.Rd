@@ -114,7 +114,7 @@ abline(a=0, b=1) # identity line (y = x)
 
 # extract the pairwise aligned regions
 alignments <- AlignPairs(query, target, hits, type="sequences")
-BrowseSeqs(c(alignments[[1]][1], alignments[[2]][1])) # view the first pair
+BrowseSeqs(c(alignments$Pattern[1], alignments$Subject[1])) # view the first pair
 
 # perform global pairwise alignment by creating virtual endpoint anchors
 # virtual anchors are immediately out-of-bounds (positions 0 and width + 1)
@@ -137,4 +137,14 @@ head(aligned1)
 pairs <- data.frame(Pattern=1L, Subject=seq_along(query))
 aligned2 <- AlignPairs(query, query, pairs) # no terminal gap penalties
 head(aligned2) # note the Pattern column is always 1 (first sequence)
+
+# merge paired-end reads
+faq1 <- system.file("extdata", "Simulated_Illumina_Read1.fq.gz", package="DECIPHER")
+faq2 <- system.file("extdata", "Simulated_Illumina_Read2.fq.gz", package="DECIPHER")
+read1 <- readQualityScaledDNAStringSet(faq1)
+read2 <- readQualityScaledDNAStringSet(faq2)
+merge <- AlignPairs(read1,
+	reverseComplement(read2),
+	type="sequences")
+merge$Consensus
 }

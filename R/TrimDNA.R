@@ -16,7 +16,10 @@ TrimDNA <- function(myDNAStringSet,
 	# error checking:
 	if (!is(myDNAStringSet, "DNAStringSet"))
 		stop("myDNAStringSet must be a DNAStringSet.")
-	if (!(is(quality, "NULL") ||
+	if (is.null(quality) &&
+		is(myDNAStringSet, "QualityScaledDNAStringSet"))
+		quality <- quality(myDNAStringSet)
+	if (!(is.null(quality) ||
 		is(quality, "PhredQuality") ||
 		is(quality, "SolexaQuality") ||
 		is(quality, "IlluminaQuality")))

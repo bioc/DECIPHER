@@ -996,9 +996,9 @@ SEXP placeGaps(SEXP x, SEXP indices, SEXP starts, SEXP ends, SEXP locations, SEX
 		memcpy((char *) ans_elt_holder.ptr + p2 - 1, x_i.ptr + start[i] + p1 - 2, (end[i] - start[i] - p1 + 2) * sizeof(char));
 	}
 	
-	Free(locs);
-	Free(lens);
-	Free(l);
+	R_Free(locs);
+	R_Free(lens);
+	R_Free(l);
 	
 	UNPROTECT(2);
 	

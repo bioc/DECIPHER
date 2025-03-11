@@ -24,7 +24,7 @@ TrimDNA(myDNAStringSet,
 }
 \arguments{
   \item{myDNAStringSet}{
-A \code{DNAStringSet} or \code{QualityScaledDNAStringSet} object containing the sequences to be trimmed.  If \code{"type"} is \code{"sequences"} then the output class will match the class of \code{myXStringSet}.  Note that the qualities of a \code{QualityScaledDNAStringSet} are ignored because the \code{quality} argument must be supplied separately.
+A \code{DNAStringSet} or \code{QualityScaledDNAStringSet} object containing the sequences to be trimmed.  If \code{"type"} is \code{"sequences"} then the output class will match the class of \code{myDNAStringSet}.
 }
   \item{leftPatterns}{
 A \code{DNAStringSet} or character vector of patterns to remove from the left side of \code{myDNAStringSet}, or \code{""} to prevent trimming patterns on the left.
@@ -36,7 +36,7 @@ A \code{DNAStringSet} or character vector of patterns to remove from the right s
 Character string indicating the type of results desired.  This should be either \code{"ranges"}, \code{"sequences"} or \code{"both"}.
 }
   \item{quality}{
-Either \code{NULL} (the default) to skip quality trimming, or a \code{PhredQuality}, \code{SolexaQuality}, or \code{IlluminaQuality} object containing the quality scores corresponding to \code{myDNAStringSet}.
+Either \code{NULL} or a \code{PhredQuality}, \code{SolexaQuality}, or \code{IlluminaQuality} object containing the quality scores corresponding to \code{myDNAStringSet}.  By default, \code{quality} is inherited from the input if \code{myDNAStringSet} is a \code{QualityScaledDNAStringSet}, otherwise quality trimming is skipped if \code{quality} is \code{NULL} (the default).
 }
   \item{maxDistance}{
 Numeric between zero and one giving the maximum distance of a match from the \code{leftPatterns} and \code{rightPatterns} to initiate trimming. For example, \code{0.1} (the default) would allow up to 10\% mismatches between a pattern and sequence.
@@ -69,7 +69,7 @@ Logical indicating whether to display progress.
 \details{
 After a sequencing run, it is often necessary to trim the resulting sequences to the high quality region located between a set of patterns.  \code{TrimDNA} works as follows:  first left and right patterns are identified within the sequences if \code{allowInternal} is \code{TRUE} (the default).  If the patterns are not found internally, then a search is conducted at the flanking ends for patterns that partially overlap the sequence.  The region between the \code{leftPatterns} and \code{rightPatterns} is then returned, unless quality information is provided.  Note that the patterns must be in the same orientation as the sequence, which may require using the \code{reverseComplement} of a PCR primer.
 
-If \code{quality} contains quality scores, these are converted to error probabilities and an exponential moving average is applied to smooth the signal.  The longest region between the \code{leftPatterns} and \code{rightPatterns} where the average error probability is below \code{threshold} is then returned, so long as it has an average error rate of at most \code{maxAverageError}.  Note that it is possible to only filter by \code{maxAverageError} by setting \code{threshold} to \code{1}, or vice versa by setting \code{maxAverageError} to the same value as \code{threshold}.
+If \code{quality} scores are provided, these are converted to error probabilities and an exponential moving average is applied to smooth the signal.  The longest region between the \code{leftPatterns} and \code{rightPatterns} where the average error probability is below \code{threshold} is then returned, so long as it has an average error rate of at most \code{maxAverageError}.  Note that it is possible to only filter by \code{maxAverageError} by setting \code{threshold} to \code{1}, or vice versa by setting \code{maxAverageError} to the same value as \code{threshold}.
 }
 \value{
 \code{TrimDNA} can return two \code{type}s of results: \code{IRanges} that can be used for trimming \code{myDNAStringSet}, or a trimmed \code{DNAStringSet} or \code{QualityScaledDNAStringSet} containing only those sequences over \code{minWidth} nucleotides after trimming.  Note that ambiguity codes (\code{IUPAC_CODE_MAP}) are supported in the \code{leftPatterns} and \code{rightPatterns}, but not in \code{myDNAStringSet} to prevent trivial matches (e.g., runs of N's).
@@ -114,8 +114,25 @@ reads <- readQualityScaledDNAStringSet(fpath)
 trimmed <- TrimDNA(reads,
 	leftPatterns="",
 	rightPatterns="",
-	type="sequences",
-	quality=quality(reads))
+	type="sequences")
 trimmed
 DNAStringSet(trimmed) # drop the qualities
+
+# merge and trim paired-end reads
+faq1 <- system.file("extdata", "Simulated_Illumina_Read1.fq.gz", package="DECIPHER")
+faq2 <- system.file("extdata", "Simulated_Illumina_Read2.fq.gz", package="DECIPHER")
+read1 <- readQualityScaledDNAStringSet(faq1)
+read2 <- readQualityScaledDNAStringSet(faq2)
+merge <- AlignPairs(read1,
+	reverseComplement(read2),
+	type="sequences",
+	bandWidth=200)
+merge <- TrimDNA(merge$Consensus,
+	DNAStringSet("GTGYCAGCMGCCGCGGTAA"), # forward primer
+	reverseComplement(DNAStringSet("GGACTACNVGGGTWTCTAAT")), # reverse primer
+	quality(merge$Consensus),
+	type="sequences")
+merge
+clus <- Clusterize(RemoveGaps(merge), cutoff=0.01, singleLinkage=TRUE)
+sort(table(clus)) # ideal result is 20 clusters of 100 sequences
 }
