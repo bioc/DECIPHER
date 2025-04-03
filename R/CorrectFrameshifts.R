@@ -201,9 +201,6 @@ CorrectFrameshifts <- function(myXStringSet,
 	
 	if (verbose) {
 		time.1 <- Sys.time()
-		cat("Assessing frameshifts in nucleotide sequences:\n",
-			sep="")
-		flush.console()
 		pBar <- txtProgressBar(max=100, style=ifelse(interactive(), 3, 1))
 	}
 	
@@ -299,6 +296,7 @@ CorrectFrameshifts <- function(myXStringSet,
 			time.1,
 			units='secs'),
 			digits=2))
+		cat("\n")
 	}
 	
 	return(X)

@@ -49,6 +49,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{FindSynteny}}, \code{\link{Synteny-class}}
+
+Run \code{vignette("ArtOfAlignmentInR", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 if (require("RSQLite", quietly=TRUE)) {

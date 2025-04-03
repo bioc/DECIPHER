@@ -144,6 +144,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{AmplifyDNA}}, \code{\link{CalculateEfficiencyPCR}}, \code{\link{DesignPrimers}}, \code{\link{DigestDNA}}, \code{\link{Disambiguate}}, \code{\link{MeltDNA}}, \code{\link{RESTRICTION_ENZYMES}}
+
+Run \code{vignette("DesignSignatures", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 if (require("RSQLite", quietly=TRUE)) {

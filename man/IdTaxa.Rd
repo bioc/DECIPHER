@@ -81,6 +81,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{LearnTaxa}}, \code{\link{Taxa-class}}
+
+Run \code{vignette("ClassifySequences", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 data("TrainingSet_16S")

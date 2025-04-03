@@ -92,6 +92,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{ScoreAlignment}}
+
+Run \code{vignette("RepeatRepeat", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 fas <- system.file("extdata", "Human_huntingtin_cds.fas.gz", package="DECIPHER")

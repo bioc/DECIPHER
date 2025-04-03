@@ -130,7 +130,6 @@ merge <- AlignPairs(read1,
 merge <- TrimDNA(merge$Consensus,
 	DNAStringSet("GTGYCAGCMGCCGCGGTAA"), # forward primer
 	reverseComplement(DNAStringSet("GGACTACNVGGGTWTCTAAT")), # reverse primer
-	quality(merge$Consensus),
 	type="sequences")
 merge
 clus <- Clusterize(RemoveGaps(merge), cutoff=0.01, singleLinkage=TRUE)

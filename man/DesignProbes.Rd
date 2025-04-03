@@ -109,6 +109,8 @@ The program OligoArrayAux (\url{http://www.unafold.org/Dinamelt/software/oligoar
 }
 \seealso{
 \code{\link{CalculateEfficiencyFISH}}, \code{\link{TileSeqs}}
+
+Run \code{vignette("DesignProbes", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 if (require("RSQLite", quietly=TRUE)) {

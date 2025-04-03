@@ -54,6 +54,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{AlignDB}}, \code{\link{AlignProfiles}}, \code{\link{AlignSeqs}}, \code{\link{AlignSynteny}}, \code{\link{CorrectFrameshifts}}
+
+Run \code{vignette("ArtOfAlignmentInR", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 # first three sequences translate to  MGFITP*

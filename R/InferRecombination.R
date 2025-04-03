@@ -59,10 +59,10 @@ InferRecombination <- function(x,
 		verbose,
 		pBar,
 		PACKAGE="DECIPHER")
-	P <- ans[[1L]]
-	C <- ans[[2L]]
-	d <- ans[[3L]][1L]
-	n <- ans[[3L]][2L]
+	P <- ans[[1L]] # mismatch counts (relative to initial mismatch)
+	C <- ans[[2L]] # total counts (relative to initial mismatch)
+	d <- ans[[3L]][1L] # total differences
+	n <- ans[[3L]][2L] # total positions
 	
 	SSE <- function(params, pos, showPlot=FALSE, stats=FALSE) {
 		Theta_s <- params[1L]
@@ -79,7 +79,7 @@ InferRecombination <- function(x,
 		w <- 2/3
 		a <- 4/3
 		
-		if (Theta_s < 0 || Theta_s > d_s)
+		if (!stats && (Theta_s < 0 || Theta_s > d_s))
 			return(Inf)
 		if (f < 2 || f > 262144)
 			return(Inf)
@@ -101,15 +101,12 @@ InferRecombination <- function(x,
 		if (showPlot)
 			lines(l, RHS/d_s, col=ifelse(is.na(pos), 1L, pos %% 3L + 5L))
 		
-		if (!stats && any(RHS <= 0))
-			return(Inf)
-		
 		if (stats) {
 			c(fragment=f,
-				Theta_sample=Theta_s,
-				Phi_sample=Phi_s,
-				Theta_pool=Theta_p,
-				Phi_pool=Phi_p,
+				theta_sample=Theta_s,
+				phi_sample=Phi_s,
+				theta_pool=Theta_p,
+				phi_pool=Phi_p,
 				ratio=Phi_p/Theta_p,
 				coverage=Phi_s*w*f/(1 + Theta_s*a + Phi_s*w*f),
 				d_pool=d_p,
@@ -119,6 +116,8 @@ InferRecombination <- function(x,
 				setNames(P[l]/C[l], paste("Profile", seq_along(l))),
 				setNames(RHS, paste("Fitted", seq_along(l))))
 		} else {
+			if (any(RHS <= 0))
+				return(Inf)
 			sum(P[l]*(RHS/d_s - P[l]/C[l])^2) # weighted SSE
 		}
 	}
@@ -154,15 +153,22 @@ InferRecombination <- function(x,
 			o <- numeric(nrow(e))
 			for (i in seq_along(o))
 				o[i] <- SSE(unname(unlist(e[i,])), pos=POS)
-			params <- unname(unlist(e[which.min(o),]))
-			o1 <- optim(params, SSE, control=list(maxit=1e4, reltol=1e-16), pos=POS)
-			o2 <- optim(c(0.00001, 0.00005, 1000), SSE, control=list(maxit=1e4, reltol=1e-16), pos=POS)
-			if (o1$value < o2$value) {
-				o <- o1
+			o <- try(optim(unname(unlist(e[which.min(o),])),
+					SSE,
+					control=list(maxit=1e4, reltol=1e-16),
+					pos=POS),
+				silent=TRUE)
+			if (is(o, "try-error")) {
+				SSE(c(0.00001, 0.00005, 1000),
+					showPlot=showPlot,
+					stats=TRUE,
+					pos=POS)
 			} else {
-				o <- o2
+				SSE(o$par,
+					showPlot=showPlot,
+					stats=TRUE,
+					pos=POS)
 			}
-			SSE(o$par, showPlot=showPlot, stats=TRUE, pos=POS)
 		})
 	results <- as.matrix(results)
 	colnames(results) <- paste("Position", position)

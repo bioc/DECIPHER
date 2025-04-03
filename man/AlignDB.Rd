@@ -100,6 +100,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{AlignProfiles}}, \code{\link{AlignSeqs}}, \code{\link{AlignTranslation}}, \code{\link{PFASUM}}
+
+Run \code{vignette("ArtOfAlignmentInR", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 if (require("RSQLite", quietly=TRUE)) {

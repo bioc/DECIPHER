@@ -133,6 +133,8 @@ If \code{K} is \code{NULL}, the automatically determined value of \code{K} might
 }
 \seealso{
 \code{\link{IdTaxa}}, \code{\link{Taxa-class}}
+
+Run \code{vignette("ClassifySequences", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 # import training sequences

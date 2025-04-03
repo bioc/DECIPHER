@@ -48,6 +48,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{LearnNonCoding}}, \code{\link{NonCoding-class}}, \code{\link{ExtractGenes}}, \code{\link{Genes-class}}, \code{\link{WriteGenes}}
+
+Run \code{vignette("FindingNonCodingRNAs", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 data(NonCodingRNA_Bacteria)

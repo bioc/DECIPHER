@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{Growing Phylogenetic Trees with Treeline}
+%\VignetteIndexEntry{Growing Phylogenetic Trees in R with Treeline}
 %\VignettePackage{DECIPHER}
 
 \documentclass[10pt]{article}
@@ -37,7 +37,7 @@
 \begin{document}
 %\setkeys{Gin}{width=0.55\textwidth}
 
-\title{Growing Phylogenetic Trees with Treeline}
+\title{Growing Phylogenetic Trees in R with Treeline}
 \author{Erik S. Wright}
 \date{\today}
 \maketitle

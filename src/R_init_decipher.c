@@ -173,6 +173,8 @@ static const R_CallMethodDef callMethods[] = { // method call, pointer, num args
 	{"correlationProfile", (DL_FUNC) &correlationProfile, 5},
 	{"placeGaps", (DL_FUNC) &placeGaps, 8},
 	{"mergePairs", (DL_FUNC) &mergePairs, 12},
+	{"conditionalProbs", (DL_FUNC) &conditionalProbs, 3},
+	{"applyFreqs", (DL_FUNC) &applyFreqs, 2},
 	{NULL, NULL, 0}
 };
 

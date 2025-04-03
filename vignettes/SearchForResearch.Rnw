@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{Searching biological sequences}
+%\VignetteIndexEntry{Searching Biological Sequences for Research}
 %\VignettePackage{DECIPHER}
 
 \documentclass[10pt]{article}
@@ -244,7 +244,7 @@ By default, \Rfunction{AlignPairs} gives us everything we need to align the sequ
 alignments <- AlignPairs(pattern=pattern,
 	subject=subject,
 	pairs=hits,
-        type="both",
+	type="both",
 	processors=1)
 patterns <- alignments[[2]]
 subjects <- alignments[[3]]
@@ -252,10 +252,14 @@ c(patterns[1], subjects[1]) # view the first pairwise alignment
 @
 
 %------------------------------------------------------------
-\section{Calibrating an expect value (E-value) from hit scores}
+\section{Controlling for false discoveries}
 %------------------------------------------------------------
 
 \Rfunction{SearchIndex} returns hits with scores above \Rfunarg{minScore}. However, it is often useful to compute an expect value (E-value) representing the number of times we expect to see a hit at least as high scoring in a database of the same size. A lesser known fact is that E-values are a function of the substitution matrix, \Rfunarg{gapOpening} penalty, \Rfunarg{gapExtension} penalty, and other search parameters, so E-values must be empirically determined.
+
+Parameters for determining E-values are typically pre-estimated on an independent database.  However, it is intuitive that the composition of the target database might have an effect on the E-values.  For this reason, reported E-values are often biased and miscalibrated across different programs \cite{Lu:2024}.  It is therefore preferable to develop an approach for calibrating E-values on the specific target database that is being searched.  Below are two alternative approaches to controlling for false discoveries in sequence search.
+
+\subsection{Option 1: Calibrating an expect value (E-value) from hit scores}
 
 There are two straightforward ways to calibrate E-values: (1) create an equivalent database of random sequences with matched composition to the input, or (2) search for the reverse of the sequences under the assumption that reverse hits are unexpected (i.e., false positives). The second approach is more conservative, because we will find more hits than expected if its underlying assumption is not true. Here, we will try the second approach:
 
@@ -312,13 +316,26 @@ hits <- hits[hits$Score > threshold,]
 dim(hits)
 @
 
+\subsection{Option 2: The knockoff approach for limiting false discoveries}
+
+An alternative and simpler approach to limiting false discoveries is to use the results on knockoffs to limit the false discovery rate.  To use the reverse hits for this purpose, we will rank the combined set of results and allow any hits above a pre-determined false discovery rate.
+
+<<expr14,eval=TRUE>>=
+FDR <- 0.001 # maximum allowed false discovery rate
+N <- nrow(hits)
+ranking <- order(c(hits$Score, revhits$Score), decreasing=TRUE)
+ranking <- ranking[cumsum(ranking > N) <= N*FDR]
+hits <- hits[sort(ranking[ranking <= N]),] # filtered hits
+nrow(hits) # fewer search hits after controlling FDR
+@
+
 %------------------------------------------------------------
 \section{Maximizing search sensitivity to find distant hits}
 %------------------------------------------------------------
 
 We've already employed some strategies to improve search sensitivity: choosing a small value for k-mer length and step size, searching amino acids rather than nucleotides, and masking low complexity regions and repeats. Although k-mer search is very fast, sometimes k-mers alone are insufficient to find distant homologs. In these cases, search sensitivity can be improved by providing the \code{subject} (target) sequences, which causes \Rfunction{SearchIndex} to extend k-mer matches to their left and right. This is as simple as adding a single argument:
 
-<<expr14,eval=TRUE>>=
+<<expr15,eval=TRUE>>=
 # include the target sequences to increase search sensitivity
 hits <- SearchIndex(pattern,
 	index,
@@ -337,7 +354,7 @@ We can see that search took longer when providing \code{subject} sequences, but 
 
 Read alignment is one of the most common bioinformatics tasks. The higher error rates of long read sequences inspired new mapping approaches with greater error tolerance than traditional short read mapping algorithms. \Rpackage{DECIPHER}'s search functions are well suited to locating the position of significant matches in a genome. As an example, we will try mapping error-prone long reads to a genome. There are two ways to search both strands with nucleotide sequences: (1) search the forward and reverse complement of the query (pattern) sequences with \Rfunarg{SearchIndex}, or (2) build an inverted index from the forward and reverse complement of the target (subject) sequences with \Rfunarg{IndexSeqs}. The first approach will usually have a lower memory footprint, but the second approach only requires a single call to \Rfunction{SearchIndex}. Long reads could overlap with repeat-rich or low-complexity regions of the genome, so we will disable masking of those regions.
 
-<<expr15,eval=TRUE>>=
+<<expr16,eval=TRUE>>=
 index <- IndexSeqs(genome,
 	K=11,
 	maskRepeats=FALSE,
@@ -348,7 +365,7 @@ index
 
 Here, we will use a set of simulated long reads with known mapping positions on the genome. We can see that the header for each sequence contains the strand and starting location of the read on the genome.
 
-<<expr16,eval=TRUE>>=
+<<expr17,eval=TRUE>>=
 fas3 <- system.file("extdata",
 	"Simulated_ONT_Long_Reads.fas.gz",
 	package="DECIPHER")
@@ -358,7 +375,7 @@ head(names(reads))
 
 In this case, we are only interested in unambiguous mappings, so we will compare the top two hits for each sequence to discard multi-mapped reads. We can subtract the score for the second best hit from the score for the top hit to approximate how well a read mapped to a single location on the genome. Also, we will disable masking of the reads in the same manner as we did for the genome above.
 
-<<expr17,eval=TRUE>>=
+<<expr18,eval=TRUE>>=
 maps <- SearchIndex(reads,
 	index,
 	perPatternLimit=2, # two hits per read
@@ -379,7 +396,7 @@ nrow(maps) == length(reads)
 
 It is possible to see that all the simulated reads mapped to the first subject sequence, which was expected because only reads on the forward strand were simulated. Now, it is possible to compare the predicted mapping locations with the expected mapping locations. The ``Position'' column contains matrices with four rows giving the start and end positions of anchors in the pattern and subject, respectively. The start of the predicted mapping location can be calculated from the first column of the matrix and compared to the actual mapping location in the sequences header. Since the genome is over a million nucleotides long, any read that maps near the expected position is a positive result.
 
-<<expr18,eval=TRUE>>=
+<<expr19,eval=TRUE>>=
 pos <- sapply(maps$Position, function(x) x[3] - x[1] + 1)
 offset <- abs(pos - as.integer(names(reads)))
 table(offset)
@@ -427,5 +444,14 @@ All of the output in this vignette was produced under the following conditions:
 <<sessinfo,echo=FALSE,results=tex>>=
 toLatex(sessionInfo(), locale=FALSE)
 @
+
+\begin{thebibliography}{}
+
+\bibitem{Lu:2024}
+{Lu, Y. Y.}, {Noble, W. S.}, \& {Keich, U.}
+\newblock A BLAST from the past: revisiting blastp's \textit{E}-value.
+\newblock {Bioinformatics}, 40(12), btae729. doi:10.1093/bioinformatics/btae729, 2024.
+
+\end{thebibliography}
 
 \end{document}

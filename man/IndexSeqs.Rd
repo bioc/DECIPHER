@@ -101,6 +101,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{SearchIndex}}, \code{\link{AlignPairs}}
+
+Run \code{vignette("SearchForResearch", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 # import target sequences

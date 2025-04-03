@@ -86,6 +86,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{MODELS}}, \code{\link{Treeline}}
+
+Run \code{vignette("GrowingTrees", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 # example of using the defaults

@@ -47,6 +47,8 @@ Franc, V., et al. (2005). Sequential coordinate-wise algorithm for the non-negat
 }
 \seealso{
 \code{\link{Array2Matrix}}, \code{\link{DesignArray}}
+
+Run \code{vignette("DesignMicroarray", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 # unconstrained least squares:

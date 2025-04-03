@@ -4,17 +4,17 @@ FindSynteny <- function(dbFile,
 	useFrames=TRUE,
 	alphabet=AA_REDUCED[[172]],
 	geneticCode=GENETIC_CODE,
-	sepCost=-2,
+	sepCost=-1,
 	sepPower=0.5,
-	gapCost=-16,
+	gapCost=-9,
 	gapPower=0.5,
 	shiftCost=0,
 	codingCost=0,
-	maxSep=250,
-	maxGap=25,
+	maxSep=600,
+	maxGap=400,
 	minScore=100,
 	N=10,
-	dropScore=-5,
+	dropScore=-6,
 	maskRepeats=TRUE,
 	maskLCRs=TRUE,
 	allowOverlap=FALSE,
@@ -206,7 +206,7 @@ FindSynteny <- function(dbFile,
 	alphabet <- alphabet - 1L
 	
 	# initialize parameters
-	buffer <- -500L # distance to higher scoring hit to pull back overlap (< 0)
+	buffer <- max(maxSep, maxGap) # distance to higher scoring hit to pull back overlap (< 0)
 	# subMatrixDNA gets multiplied by log(size) to calibrate for DNA distribution
 	# -3 allows 25% transition rate and -4 allows 20% transversion rate
 	subMatrixDNA <- matrix(c(1, -4, -3, -4, -4, 1, -4, -3, -3, -4, 1, -4, -4, -3, -4, 1),
@@ -712,7 +712,7 @@ FindSynteny <- function(dbFile,
 				weights,
 				buffer,
 				PACKAGE="DECIPHER")
-			w <- which(subScore[[3L]] - subScore[[2L]] > 0L & subScore[[1L]] > 0)
+			w <- which(subScore[[3L]] != subScore[[2L]] & subScore[[1L]] > 0)
 			weights <- subScore[[1L]][w]
 			x.s <- subScore[[2L]][w]
 			x.e <- subScore[[3L]][w]
@@ -1108,7 +1108,7 @@ FindSynteny <- function(dbFile,
 				weights,
 				buffer,
 				PACKAGE="DECIPHER")
-			w <- which(subScore[[3L]] - subScore[[2L]] > 0L & subScore[[1L]] > 0)
+			w <- which(subScore[[3L]] != subScore[[2L]] & subScore[[1L]] > 0)
 			weights <- subScore[[1L]][w]
 			x.s <- subScore[[2L]][w]
 			x.e <- subScore[[3L]][w]

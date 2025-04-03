@@ -382,3 +382,7 @@ SEXP patristic(SEXP x, SEXP y, SEXP z);
 // PopulationGenetics.c
 
 SEXP correlationProfile(SEXP x, SEXP readingFrame, SEXP maxN, SEXP verbose, SEXP pBar);
+
+SEXP conditionalProbs(SEXP V, SEXP D, SEXP S);
+
+SEXP applyFreqs(SEXP T, SEXP S);

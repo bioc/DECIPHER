@@ -112,6 +112,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{CreateChimeras}}, \code{\link{Add2DB}}
+
+Run \code{vignette("FindChimeras", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 if (require("RSQLite", quietly=TRUE)) {

@@ -1,0 +1,260 @@
+%\VignetteIndexEntry{Population Genetics Inference in R}
+%\VignettePackage{DECIPHER}
+
+\documentclass[10pt]{article}
+
+\usepackage{times}
+\usepackage{hyperref}
+\usepackage{underscore}
+\usepackage{enumerate}
+\usepackage{graphics}
+\usepackage{wrapfig}
+\usepackage{cite}
+
+\textwidth=6.5in
+\textheight=8.5in
+%\parskip=.3cm
+\oddsidemargin=-.1in
+\evensidemargin=-.1in
+\headheight=-.3in
+\setlength{\parindent}{1cm}
+
+\newcommand{\scscst}{\scriptscriptstyle}
+\newcommand{\scst}{\scriptstyle}
+
+\newcommand{\R}{{\textsf{R}}}
+\newcommand{\code}[1]{{\texttt{#1}}}
+\newcommand{\term}[1]{{\emph{#1}}}
+\newcommand{\Rpackage}[1]{\textsf{#1}}
+\newcommand{\Rfunction}[1]{\texttt{#1}}
+\newcommand{\Robject}[1]{\texttt{#1}}
+\newcommand{\Rclass}[1]{{\textit{#1}}}
+\newcommand{\Rmethod}[1]{{\textit{#1}}}
+\newcommand{\Rfunarg}[1]{{\textit{#1}}}
+
+\bibliographystyle{plainnat}
+
+\begin{document}
+%\setkeys{Gin}{width=0.55\textwidth}
+
+\title{Population Genetics Inference in R}
+\author{Erik S. Wright}
+\date{\today}
+\maketitle
+
+\newenvironment{centerfig}
+{\begin{figure}[htp]\centering}
+{\end{figure}}
+\renewcommand{\indent}{\hspace*{\tindent}}
+\DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em} \DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=2em} \DefineVerbatimEnvironment{Scode}{Verbatim}{xleftmargin=2em} \fvset{listparameters={\setlength{\topsep}{0pt}}} \renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
+\SweaveOpts{keep.source=TRUE}
+<<echo=false>>=
+options(continue=" ")
+options(width=80)
+@
+
+\tableofcontents
+
+%------------------------------------------------------------
+\section{Introduction}
+%------------------------------------------------------------
+
+\begin{wrapfigure}{r}{0.4\textwidth}
+\includegraphics[width=0.4\textwidth]{EvolutionaryRates}
+\caption{\label{f1} A comparison of estimated evolutionary rates for different classes of nucleotide sites based on the divergence of $\beta$-globin gene (HBB) sequences between humans and other primates.  The $\beta$-globin pseudogene (HBBP1) is included as a reference of neutral evolution.  Although there is considerable variation across organisms on this example from a single gene, third codon positions tend to evolve at high rates comparable to the neutral reference and much faster than the other codon positions.}
+\end{wrapfigure}
+
+Population genetics provides the theoretical foundation for the study of evolutionary processes.  At the core of modern population genetics is the neutral mutation hypothesis, which challenged prior notions that most molecular variation was the result of classical Darwinian selection \cite{Kimura:1968}.  Neutral theory now provides a null model for many evolutionary investigations.  By the late 20th century, there was sufficient data to make it clear that evolution was a balance between the processes of drift and selection that depended on the effective population size.  This balance manifests in stark patterns of rate variation across different subsets of nucleotide sites in the genome (Fig. \ref{f1}).
+
+There are many different population genetics methods available, and it is often unclear which to use for a given purpose or dataset.  This vignette showcases a select subset of methods that extract particularly useful information from sequence alignments.  The purpose of this vignette is to illustrate how to apply and interpret these powerful population genetics functions.  All of the \Rpackage{DECIPHER} functions for population genetics are named starting with ``\textit{Infer}'' followed by the objective of their inference, because each function uses the first principles of population genetics to infer estimates of fundamental variables about a population.
+
+\begin{wrapfigure}{r}{0.6\textwidth}
+\includegraphics[width=0.6\textwidth]{PopGenRegimes}
+\caption{\label{f2} Population genetics functions are intended to be applied to sequences sampled from a population.  In this regime, nucleotide differences have accumulated but the number of changes per site is far less than saturation (red).  The \Rfunction{InferDemography} and \Rfunction{InferRecombination} functions require little nucleotide diversity within the population, but the \Rfunction{InferSelection} function requires sufficient variation for there to also possibly be changes to the corresponding protein sequence.}
+\end{wrapfigure}
+
+Many assumptions underly population genetics functions, and those assumptions are thoroughly advertised on the help page for each function used here.  An assumption made by all methods is that some sites evolve neutrally, including the third position of codons.  This assumption is almost certainly violated in some cases \cite{Shen:2024}.  However, using pseudogenes as a likely-neutral reference \cite{Douglas:2024}, it is apparent the third position in codons is generally under far less selection pressure than the other two codon positions (Fig. \ref{f1}).  Therefore, we will treat the third codon position as neutral throughout the examples below.  This approximation has been exploited by population genetics approaches for many decades.
+
+As the name implies, population genetics is applied to samples from populations.  It is crucial to apply the functions in their applicable regime (Fig. \ref{f2}).  All of \Rpackage{DECIPHER}'s population genetics functions are designed to be used on samples of sequences taken from within a species, not between different species.  The \Rfunction{InferDemography} function infers population size changes from a large amount of sequence data with relatively few polymorphisms.  The \Rfunction{InferRecombination} function needs slightly more polymorphisms, such that some are located nearby each other on the sequence.  In contrast, the \Rfunction{InferSelection} function can handle amino acid changes, which requires an even greater degree of polymorphism.
+
+All three population genetics functions in \Rpackage{DECIPHER} take multiple sequence alignments as input and return a vector of numbers.  They differ in the patterns of polymorphism used for inference.  The intended use of each function is summarized in the table below.  Although these functions are new implementations, please cite the method's original publication when reporting results.  A typical use case would be to run the function(s) on a set of different gene alignments and then aggregate or compare the results.  Statistical significance for a single input can be obtained by bootstrapping the input sequences.  For simplicity, this vignette provides an example analysis of a single alignment, which could be modified to loop through multiple different alignments.
+
+\begin{center}
+\begin{tabular}{||c|c|c|c||}
+ \hline
+ Function & Input(s) & Output(s) & Reference \\ [0.5ex]
+ \hline\hline
+ \Rfunction{InferDemography} & DNA alignments of 2+ sequences & Recombination parameters & \cite{Lynch:2020} \\
+ \hline
+ \Rfunction{InferRecombination} & DNA alignment or site frequencies & Timeline of population size changes & \cite{Lin:2019} \\
+ \hline
+ \Rfunction{InferSelection} & DNA alignment of coding sequences & \textit{dN/dS} per codon or region & \cite{Wilson:2020} \\
+ \hline
+\end{tabular}
+\end{center}
+
+%------------------------------------------------------------
+\section{Getting Started}
+%------------------------------------------------------------
+
+To get started we need to load the \Rpackage{DECIPHER} package, which automatically loads a few other required packages.
+
+<<startup,results=hide>>=
+library(DECIPHER)
+@
+
+Help for a function can be accessed through:
+
+\begin{Schunk}
+\begin{Sinput}
+> ? InferDemography
+\end{Sinput}
+\end{Schunk}
+
+Once \Rpackage{DECIPHER} is installed, the code in this tutorial can be obtained via:
+
+\begin{Schunk}
+\begin{Sinput}
+> browseVignettes("DECIPHER")
+\end{Sinput}
+\end{Schunk}
+
+\setlength{\parindent}{1cm}
+
+For simplicity, all of the examples below will use the same sequences.  Protein coding sequences are required for inferring selection, but demographic and recombination inference can use any aligned nucleotide sequences.  In this vignette, we will load a set of 50S ribosomal protein L2 gene sequences.
+
+<<expr1,eval=TRUE>>=
+# specify the path to your file of sequences:
+fas1 <- "<<path to FASTA file>>"
+# OR use the example protein coding sequences:
+fas <- system.file("extdata",
+	"50S_ribosomal_protein_L2.fas",
+	package="DECIPHER")
+# read the sequences into memory
+dna <- readDNAStringSet(fas)
+dna
+@
+
+It is important to carefully consider what population to analyze.  All of the functions described here assume the input sequences were randomly sampled from an unstructured population of closely related individuals that may (or may not) be exchanging genetic material.  For this vignette, we will limit the analysis to only sequences sampled from the species \textit{Helicobacter pylori}.  This can be accomplished by selecting a subset of sequences by their names.
+
+<<expr2,eval=TRUE>>=
+dna <- dna[startsWith(names(dna), "Helicobacter pylori")]
+dna
+@
+
+Next, it is necessary to align the input sequences.  Since they are protein coding in this example, it is best to use the \code{AlignTranslation} function to preserve the reading frame by aligning the sequences via their amino acid translations.  If the sequences were noncoding, \Rfunction{AlignSeqs} could be used instead.
+
+<<expr3,eval=TRUE>>=
+dna <- AlignTranslation(dna, verbose=FALSE)
+dna # all sequences have the same width
+@
+
+All three population genetics functions allow the specification of a \Rfunarg{readingFrame} for protein coding inputs, which is denoted by the \textit{first} position of the \textit{first} codon in the alignment (i.e., \code{1}, \code{2}, or \code{3}).  Analyzing individual codon positions requires that the reading frame be maintained throughout the alignment.  Therefore, any frameshifts must be corrected beforehand by using \Rfunction{CorrectFrameshifts} on the (unaligned) coding sequences.
+
+%------------------------------------------------------------
+\section{Inferring Demography}
+%------------------------------------------------------------
+
+The \Rfunction{InferDemography} function fits a population genetics model \cite{Lynch:2020} to the distribution of minor allele frequencies per alignment column, also known as the folded site frequency spectrum.  This distribution will largely be affected by past changes in population size if we can assume the sites are evolving neutrally.  Therefore, we will only use the third position of codons in our analysis by specifying that the \Rfunarg{readingFrame} starts from the first position in the alignment (i.e., the ``\textit{A}'' in the ``\textit{ATG}'' start codon).
+
+The function returns the estimated effective population sizes over different time intervals since the last common ancestor.  This analysis requires the mutation rate and ploidy to calibrate the quantitative output, although these will have no effect on the qualitative picture of relative population size changes.  The \Rfunction{InferDemography} function can also produce a plot showing the inferred step function of effective population sizes (Fig. \ref{f3}).
+
+\begin{centerfig}
+<<expr4,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=
+x <- InferDemography(dna, readingFrame=1, mu=1e-9, ploidy=1, show=TRUE)
+head(x, 20)
+@
+\caption{\label{f3} Fitted distribution of allele frequencies (top) and inferred past demographic changes (bottom).}
+\end{centerfig}
+
+The output shows the most likely step function only contained a single change in population size, resulting in two intervals.  We see that the effective population size increased approximately ten million generations in the past, which would result in a higher abundance of singleton alleles than for a constant size population evolving under neutrality.  The numeric output gives the three times (in units of generations) specifying the bounds of each of the two effective population size intervals.  It then provides the observed and estimated folded site frequency spectra.
+
+\Rfunction{InferDemography} would typically be used on an alignment with far more sites to increase accuracy.  For this reason, it is possible to apply the function to many different gene alignments from the same set of organisms, then add the observed site frequencies together for use as input to the function.  It is important to always confirm that the observed and spectra closely match, implying a satisfactory fit (as shown here).
+
+\clearpage
+
+%------------------------------------------------------------
+\section{Inferring Recombination}
+%------------------------------------------------------------
+
+The \Rfunction{InferRecombination} fits a population genetics model to a ``correlation profile'' \cite{Lin:2019} derived from the decaying linkage between sites that are further apart.  This method can be applied to pairs of aligned genomes (e.g., from \Rfunction{AlignSynteny}) or a multiple sequence alignment.  As in the previous example above, we will assume neutrality by specifying \Rfunarg{readingFrame} and only assessing the third position of codons.
+
+The function fits a three parameter model and then uses these to infer multiple other derived parameters describing recombination.  Since we specified a \code{readingFrame}, the analysis is applied to all three codon positions by default.  The third codon position displays a curved (``L'' shaped) correlation profile that is characteristic of recombination between the sampled genes and an external genetic pool (Fig. \ref{f4}).  The other two codon positions display much lower substitution rates and can be disregarded since we cannot assume neutrality.
+
+\begin{centerfig}
+<<expr5,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=
+y <- InferRecombination(dna, readingFrame=1, showPlot=TRUE)
+head(y, 10)
+@
+\caption{\label{f4} Fitted correlation profile at each codon position.}
+\end{centerfig}
+
+The function's outputs are described on its help page.  Possibly the most interesting parameter is the \code{ratio} of recombination to mutation, which was estimated here as approximately \code{2} using the third codon position.  The fitted data shows a fair amount of noise, implying we could obtain better estimates by sampling more sequences from this population.
+
+\clearpage
+
+%------------------------------------------------------------
+\section{Inferring Selection}
+%------------------------------------------------------------
+
+The \Rfunction{InferSelection} function estimates $\omega$ (also known as the Ka/Ks ratio or dN/dS ratio) by fitting a population genetics model \cite{Wilson:2020}.  Values of $\omega$ above \code{1} provide evidence of positive (Darwinian) selection, whereas $\omega$ values below \code{1} are indicative of negative (purifying) selection.  This method can be applied to multiple sequence alignments of many sequences sampled from the same population and, unlike the other two methods, \textit{requires} specification of a \code{readingFrame}.
+
+The function provides maximum likelihood estimates of the transition/transversion ratio (kappa), expected substitution rate (theta), and $\omega$ in non-overlapping regions across the alignment.  The default behavior is to only calculate a single $\omega$ value for the whole alignment, but this will rarely be greater than \code{1} as negative selection typically overwhelms any signal of positive selection.  This is shown in the example below (Fig. \ref{f5}).
+
+\begin{centerfig}
+<<expr6,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=
+z <- InferSelection(dna, windowSize=NA, showPlot=TRUE)
+z
+@
+\caption{\label{f5} Estimate of $\omega$ across the entire alignment.}
+\end{centerfig}
+
+Changing the \code{windowSize} to \code{1} will cause \Rfunction{InferSelection} to estimate $\omega$ at every codon.  This makes the analysis take longer but provides more useful information.  Statistically significant sites (or regions) with large values of $\omega$ (> 1) are possibly of biological interest, as these represent where the protein is evolving under positive selection.  It is particularly informative to apply this analysis to many different genes from the same population and rank the genes by the fraction (or number) of positively selected codons.
+
+\clearpage
+
+%------------------------------------------------------------
+\section{Session Information}
+%------------------------------------------------------------
+
+All of the output in this vignette was produced under the following conditions:
+
+<<sessinfo,echo=FALSE,results=tex>>=
+toLatex(sessionInfo(), locale=FALSE)
+@
+
+\begin{thebibliography}{}
+
+\bibitem{Kimura:1968}
+{Kimura, M.}
+\newblock Evolutionary rate at the molecular level.
+\newblock {\em Nature}, 217(5129), 624-626. doi:10.1038/217624a0, 1968.
+
+\bibitem{Shen:2024}
+{Shen, X.}, {Song, S.}, {Li, C.}, \& {Zhang, J.}
+\newblock Further Evidence for Strong Nonneutrality of Yeast Synonymous Mutations.
+\newblock {\em Molecular Biology and Evolution}, 41(11), msae224. doi:10.1093/molbev/msae224, 2024.
+
+\bibitem{Douglas:2024}
+{Douglas, G. M.} \& {Shapiro, B. J.}
+\newblock Pseudogenes act as a neutral reference for detecting selection in prokaryotic pangenomes.
+\newblock {\em Nature Ecology and Evolution}, 8(2), 304-314. doi:10.1038/s41559-023-02268-6, 2024.
+
+\bibitem{Lynch:2020}
+{Lynch, M.}, {Haubold, B.}, {Pfaffelhuber, P.}, \& {Maruki, T.}
+\newblock Inference of Historical Population-Size Changes with Allele-Frequency Data.
+\newblock {\em G3}, 10(1), 211-223. doi:10.1534/g3.119.400854, 2020.
+
+\bibitem{Lin:2019}
+{Lin, M.} \& {Kussell, E.}
+\newblock Inferring bacterial recombination rates from large-scale sequencing datasets.
+\newblock {\em Nature Methods}, 16(2), 199-204. doi:10.1038/s41592-018-0293-7, 2019.
+
+\bibitem{Wilson:2020}
+{Wilson, D.} \& {CRyPTIC Consortium}
+\newblock GenomegaMap: within-species genome-wide dN/dS estimation from over 10,000 genomes.
+\newblock {\em Molecular Biology and Evolution}, 37(8), 2450-2460. doi:10.1093/molbev/msaa069, 2020.
+
+\end{thebibliography}
+
+\end{document}

@@ -119,6 +119,8 @@ Clusterize does not follow the convention of providing a similarity \code{cutoff
 }
 \seealso{
 \code{\link{AA_REDUCED}}, \code{\link{DistanceMatrix}}, \code{\link{Treeline}}
+
+Run \code{vignette("ClusteringSequences", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 fas <- system.file("extdata", "50S_ribosomal_protein_L2.fas", package="DECIPHER")

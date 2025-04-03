@@ -122,6 +122,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{AlignDB}}, \code{\link{AlignSeqs}}, \code{\link{AlignSynteny}}, \code{\link{AlignTranslation}}, \code{\link{PFASUM}}, \code{\link{MIQS}}
+
+Run \code{vignette("ArtOfAlignmentInR", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 # align two sets of sequences

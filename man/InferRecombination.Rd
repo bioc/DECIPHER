@@ -1,7 +1,7 @@
 \name{InferRecombination}
 \alias{InferRecombination}
 \title{
-Fit Recombination Parameters to Correlation Profiles
+Infer Recombination Parameters from Correlation Profiles
 }
 \description{
 Derives a correlation profile from aligned sequences and fits a population genetics model of recombination.  Returns recombination parameters along with the fitted correlation profile.
@@ -35,27 +35,27 @@ Logical indicating whether to display progress.
 }
 }
 \details{
-Recombination accelerates the adaptive evolution of many organisms.  The transfer of genetic fragments leaves behind a signature in the form of decaying autocorrelation among substitutions.  This signal can be visualized with a correlation profile that shows the probability of a genetic difference at increasing distances away from another genetic difference.  Flat correlation profiles are evidence for an absence of recombination since the last common ancestor.  In contrast, more ``L'' shaped correlation profiles result from greater degrees of recombination (Steinberg, 2023).
+Recombination accelerates the adaptive evolution of many organisms.  The transfer of genetic fragments leaves behind a signature in the form of decaying autocorrelation among substitutions.  This signal can be visualized with a correlation profile that shows the probability of a genetic difference at increasing distances away from another genetic difference.  Flat correlation profiles are evidence for an absence of recombination since the last common ancestor.  In contrast, more ``L'' shaped correlation profiles result from greater degrees of recombination (Steinberg, et al., 2023).
 
-\code{InferRecombination} fits a coalescent-based model to a correlation profile derived from one or more sets of aligned sequences (\code{x}).  The model assumes the sequences correspond to a population whose genealogical structure is characterized by a single average coalescence rate.  This assumption is automatically true for a pair of sequences and may hold true within (e.g., intra-species) or between clusters of sequences (Steinberg, 2022).  The model can be applied to any organisms belonging to a focal population recombining with genetic fragments from an external pool.
+\code{InferRecombination} fits a coalescent-based model to a correlation profile derived from one or more sets of aligned sequences (\code{x}).  The model assumes the sequences correspond to a population whose genealogical structure is characterized by a single average coalescence rate.  This assumption is automatically true for a pair of sequences and may hold true within (e.g., intra-species) or between clusters of sequences (Steinberg, et al., 2022).  The model can be applied to any organisms belonging to a focal population recombining with genetic fragments from an external pool.
 
 The parametric model consist of three free variables that are fitted to the measured correlation profile (Lin & Kussell, 2019).  These variables can be used to infer six other parameters of interest corresponding to the sample (\code{x}) or (external) pool in which they recombine.  (See value section below.)  This approach is fast, accurate, and does not rely on phylogenetic reconstruction.  Variability can be quantified by comparing results across alignments and confidence intervals can be determined by bootstrapping sequences in the input alignments (\code{x}).
 
 It is possible to indicate the \code{readingFrame} and codon \code{position}(s) that should be assessed.  Typically, the analysis is performed on the third \code{position} of synonymous codons to mitigate the influence of adaptive substitutions.  If the \code{readingFrame} is \code{NA}, positions are analyze with respect to the (initial) substitutions, and a positional pattern may emerge due to variability in substitution rates at each codon position.  It is also possible to include all positions (\code{readingFrame=NA}), such as when analyzing non-coding sequences.
 
-The output consists of a matrix of measured values and inferred parameters.  Of particular note are the \code{coverage}, \code{ratio}, and \code{Theta_pool}.  The recombined \code{coverage} is 0\% when the sequences have evolved independently since their last common ancestor and 100\% when the (input) sample has recombined all of its nucleotides with the (external) pool.  The \code{ratio} of recombination rate to mutation rate can be interpreted as the \code{ratio} of substitutions due to recombination relative to point mutation.  This \code{ratio} is greater than \code{1} when recombination contributes more to genetic diversity than point mutation, and vice versa when less than \code{1}.  \code{Theta_pool} measures the diversity of the external genetic pools accessible by the sampled sequences through recombination.  It can be used as a proxy for the pairwise separation between genomes (Lin & Kussell, 2019).
+The output consists of a matrix of measured values and inferred parameters.  Of particular note are the \code{coverage}, \code{ratio}, and \code{theta_pool}.  The recombined \code{coverage} is 0\% when the sequences have evolved independently since their last common ancestor and 100\% when the (input) sample has recombined all of its nucleotides with the (external) pool.  The \code{ratio} of recombination rate to mutation rate can be interpreted as the \code{ratio} of substitutions due to recombination relative to point mutation.  This \code{ratio} is greater than \code{1} when recombination contributes more to genetic diversity than point mutation, and vice versa when less than \code{1}.  \code{theta_pool} measures the diversity of the external genetic pools accessible by the sampled sequences through recombination.  It can be used as a proxy for the pairwise separation between genomes (Lin & Kussell, 2019).
 }
 \value{
 A \code{matrix} with named rows for each value and a column for each position.  The meaning of each parameter is described in Lin & Kussell (2019).
 
 The first three rows are the fitted parameters:\cr
 (1) \code{fragment} - mean recombined genetic fragment size (in base pairs)\cr
-(2) \code{Theta_sample} - mutational divergence within the (input) sample\cr
-(3) \code{Phi_sample} - recombinational divergence within the (input) sample
+(2) \code{theta_sample} - mutational divergence within the (input) sample\cr
+(3) \code{phi_sample} - recombinational divergence within the (input) sample
 
 The next six rows are derived from the fitted parameters:\cr
-(4) \code{Theta_pool} - mutational divergence within the (external) pool\cr
-(5)\code{Phi_pool} - recombinational divergence within the (external) pool\cr
+(4) \code{theta_pool} - mutational divergence within the (external) pool\cr
+(5)\code{phi_pool} - recombinational divergence within the (external) pool\cr
 (6) \code{ratio} - the relative rate of recombination to mutation (also known as r/m)\cr
 (7) \code{coverage} - proportion of sites in the (input) sample whose diversity originated from the (external) pool\cr
 (8) \code{d_pool} - pairwise diversity of the (external) pool (i.e., probability that any two sequences in the pool differ at a site)\cr
@@ -76,6 +76,11 @@ Steinberg, A., et al. (2023). Correlated substitutions reveal SARS-like coronavi
 }
 \author{
 Erik Wright \email{eswright@pitt.edu}
+}
+\seealso{
+\code{\link{InferDemography}}, \code{\link{InferSelection}}
+
+Run \code{vignette("PopulationGenetics", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 # example for an alignment of coding sequences

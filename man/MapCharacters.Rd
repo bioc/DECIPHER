@@ -98,8 +98,14 @@ changes <- gsub(".*?([0-9]+).*", "\\\\1", names(parallel))
 changes <- tapply(parallel, changes, sum)
 plot(as.numeric(names(changes)),
      changes,
-     xlab="Position",
+     xlab="Alignment position",
      ylab="Total independent changes")
+# functionally important regions tend to accept fewer changes
+o <- order(as.numeric(names(changes)))
+lines(as.numeric(names(changes))[o],
+	filter(changes, rep(1/10, 10))[o],
+	lwd=2, col="red")
+legend("topleft", "Moving average", lwd=2, col="red")
 
 # count cases of potential compensatory mutations
 compensatory <- dendrapply(tree,

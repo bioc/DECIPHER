@@ -156,6 +156,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{Clusterize}}, \code{\link{Cophenetic}}, \code{\link{DistanceMatrix}}, \code{\link{MapCharacters}}, \code{\link{MODELS}}, \code{\link{ReadDendrogram}}, \code{\link{WriteDendrogram}}
+
+Run \code{vignette("GrowingTrees", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 # using the matrix from the original paper by Saitou and Nei (1987)

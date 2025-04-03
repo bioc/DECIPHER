@@ -16,6 +16,9 @@
  */
 #include <R_ext/Rdynload.h>
 
+// for math functions
+#include <math.h>
+
 /* for R_CheckUserInterrupt */
 #include <R_ext/Utils.h>
 
@@ -167,4 +170,81 @@ SEXP correlationProfile(SEXP x, SEXP readingFrame, SEXP maxN, SEXP verbose, SEXP
 	}
 	
 	return ret_list;
+}
+
+SEXP conditionalProbs(SEXP V, SEXP D, SEXP S)
+{
+	int i, j, k;
+	double *v = REAL(V); // eigenvectors of scaled rate matrix
+	double *d = REAL(D); // transformed eigenvalues of scaled rate matrix
+	double *s = REAL(S); // square root of equilibrium frequencies
+	const int n = length(S);
+	
+	SEXP ans;
+	PROTECT(ans = allocMatrix(REALSXP, n, n));
+	double *rans = REAL(ans);
+	
+	for (i = 0; i < n*n; i++)
+		rans[i] = 0;
+	
+	for (i = 0; i < n; i++)
+		for (j = 0; j < n; j++)
+			for (k = 0; k < n; k++)
+				rans[i + j*n] += v[i + k*n]*v[j + k*n]*d[k];
+	
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			rans[i + j*n] /= s[i];
+			rans[j + i*n] *= s[i];
+		}
+	}
+	
+	for (i = 0; i < n*n; i++)
+		if (rans[i] < 1e-6)
+			rans[i] = 1e-6;
+	
+	for (i = 0; i < n; i++)
+		for (j = 0; j < n; j++)
+			if (i != j)
+				rans[i + j*n] /= rans[i + i*n];
+	
+	for (i = 0; i < n; i++)
+		rans[i + i*n] = 1;
+	
+	UNPROTECT(1);
+	
+	return ans;
+}
+
+SEXP applyFreqs(SEXP T, SEXP S)
+{
+	int i, j;
+	double *s = REAL(S); // square root of equilibrium frequencies
+	const int n = length(S);
+	
+	SEXP ans;
+	PROTECT(ans = duplicate(T)); // symmetric substitution rate matrix (zero diagonal)
+	double *rans = REAL(ans);
+	
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			rans[i + j*n] *= s[i];
+			rans[j + i*n] *= s[i];
+		}
+	}
+	
+	double *ss = R_Calloc(n, double); // initialized to zero
+	for (i = 0; i < n; i++)
+		ss[i] = sqrt(s[i]);
+	
+	for (i = 0; i < n; i++)
+		for (j = 0; j < n; j++)
+			if (i != j)
+				rans[i + i*n] -= rans[i + j*n]*s[j]/s[i];
+	
+	R_Free(ss);
+	
+	UNPROTECT(1);
+	
+	return ans;
 }

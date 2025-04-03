@@ -86,6 +86,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{Array2Matrix}}, \code{\link{NNLS}}
+
+Run \code{vignette("DesignMicroarray", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")

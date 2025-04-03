@@ -63,6 +63,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{FindChimeras}}, \code{\link{Seqs2DB}}
+
+Run \code{vignette("FindChimeras", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")

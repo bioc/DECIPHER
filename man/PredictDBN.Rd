@@ -120,6 +120,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{PredictHEC}}
+
+Run \code{vignette("FindingNonCodingRNAs", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 # load the example non-coding RNA sequences

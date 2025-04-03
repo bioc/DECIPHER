@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{Finding Chimeric Sequences}
+%\VignetteIndexEntry{Finding Chimeric Sequences in R}
 %\VignettePackage{DECIPHER}
 
 \documentclass[10pt]{article}
@@ -32,7 +32,7 @@
 \begin{document}
 %\setkeys{Gin}{width=0.55\textwidth}
 
-\title{Finding Chimeric Sequences}
+\title{Finding Chimeric Sequences in R}
 \author{Erik S. Wright}
 \date{\today}
 \maketitle

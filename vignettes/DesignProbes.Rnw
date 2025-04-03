@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{Design Group-Specific FISH Probes}
+%\VignetteIndexEntry{Design Group-Specific FISH Probes in R}
 %\VignettePackage{DECIPHER}
 
 \documentclass[10pt]{article}
@@ -32,7 +32,7 @@
 \begin{document}
 %\setkeys{Gin}{width=0.55\textwidth}
 
-\title{Design Group-Specific FISH Probes}
+\title{Design Group-Specific FISH Probes in R}
 \author{Erik S. Wright}
 \date{\today}
 \maketitle

@@ -88,6 +88,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{AdjustAlignment}}, \code{\link{AlignDB}}, \code{\link{AlignProfiles}}, \code{\link{AlignSynteny}}, \code{\link{AlignTranslation}}, \code{\link{ReadDendrogram}}, \code{\link{Treeline}}, \code{\link{StaggerAlignment}}
+
+Run \code{vignette("ArtOfAlignmentInR", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")

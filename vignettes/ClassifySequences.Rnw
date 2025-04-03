@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{Classify Sequences}
+%\VignetteIndexEntry{Classify Sequences in R}
 %\VignettePackage{DECIPHER}
 
 \documentclass[10pt]{article}
@@ -33,7 +33,7 @@
 \begin{document}
 %\setkeys{Gin}{width=0.55\textwidth}
 
-\title{Classify Sequences}
+\title{Classify Sequences in R}
 \author{Erik S. Wright}
 \date{\today}
 \maketitle

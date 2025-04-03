@@ -56,6 +56,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{FindNonCoding}}, \code{\link{NonCoding-class}}
+
+Run \code{vignette("FindingNonCodingRNAs", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 # import a family of non-coding RNAs

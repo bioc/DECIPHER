@@ -49,6 +49,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{Treeline}}, \code{\link{ReadDendrogram}}
+
+Run \code{vignette("GrowingTrees", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 dists <- matrix(c(0, 10, 20, 10, 0, 5, 20, 5, 0),

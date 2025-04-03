@@ -57,6 +57,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{IdentifyByRank}}
+
+Run \code{vignette("FindChimeras", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 if (require("RSQLite", quietly=TRUE)) {

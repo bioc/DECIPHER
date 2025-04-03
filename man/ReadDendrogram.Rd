@@ -41,6 +41,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{Treeline}}, \code{\link{WriteDendrogram}}
+
+Run \code{vignette("GrowingTrees", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 tf <- tempfile()

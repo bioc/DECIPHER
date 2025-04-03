@@ -70,6 +70,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{AlignSeqs}}, \code{\link{AlignTranslation}}, \code{\link{PFASUM}}, \code{\link{StaggerAlignment}}
+
+Run \code{vignette("ArtOfAlignmentInR", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 # a trivial example

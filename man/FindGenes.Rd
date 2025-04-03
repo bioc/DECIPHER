@@ -61,6 +61,8 @@ Erik Wright \email{eswright@pitt.edu}
 }
 \seealso{
 \code{\link{ExtractGenes}}, \code{\link{FindNonCoding}}, \code{\link{Genes-class}}, \code{\link{WriteGenes}}
+
+Run \code{vignette("FindingGenes", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
 # import a test genome

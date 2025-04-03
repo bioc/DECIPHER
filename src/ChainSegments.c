@@ -203,11 +203,11 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 					continue;
 				
 				dy = ys[i] - ye[xok] - 1;
-				if (dy <= 0)
+				if (dy < 0)
 					continue;
 				
 				dx = xs[i] - xe[xok] - 1;
-				if (dx <= 0)
+				if (dx < 0)
 					continue;
 				
 				if (dx > dy) {
@@ -468,7 +468,7 @@ SEXP chainSegments(SEXP x_s, SEXP x_e, SEXP x_i, SEXP x_f, SEXP y_s, SEXP y_e, S
 					}
 				}
 			}
-			if (minDx < 0 && minDy < 0) // completely within rectangle
+			if (minDx < 0 && minDy < 0 && minX == minY) // completely within rectangle
 				continue;
 			
 			sep = 1e9;
@@ -761,9 +761,12 @@ SEXP extendMatches(SEXP X1, SEXP X2, SEXP starts1, SEXP ends1, SEXP index1, SEXP
 	return ret_list;
 }
 
+// pull back overlap (within buffer) until start equals end
+// assign a score proportional to number of positions kept
+// give duplicates zero score (and positions uninitialized)
 SEXP withdrawMatches(SEXP order, SEXP starts1, SEXP ends1, SEXP index1, SEXP starts2, SEXP ends2, SEXP index2, SEXP width1, SEXP width2, SEXP score, SEXP bufferSize)
 {
-	int i, j, p1, p2, boundL1, boundL2, temp1, temp2;
+	int i, j, k, p1, p2, o1, o2, len, maxLen, boundL1, boundL2, temp1, temp2;
 	
 	int *o = INTEGER(order);
 	int l = length(starts1);
@@ -779,6 +782,7 @@ SEXP withdrawMatches(SEXP order, SEXP starts1, SEXP ends1, SEXP index1, SEXP sta
 	int l2 = w2[length(width2) - 1];
 	double *s = REAL(score);
 	int buffer = asInteger(bufferSize);
+	int negBuffer = -buffer;
 	
 	SEXP ans0, ans1, ans2, ans3, ans4;
 	PROTECT(ans0 = allocVector(REALSXP, l));
@@ -796,63 +800,91 @@ SEXP withdrawMatches(SEXP order, SEXP starts1, SEXP ends1, SEXP index1, SEXP sta
 	int *pos2 = (int *) malloc(l2*sizeof(int)); // thread-safe on Windows
 	
 	for (i = 0; i < l1; i++)
-		pos1[i] = buffer;
+		pos1[i] = negBuffer;
 	for (i = 0; i < l2; i++)
-		pos2[i] = buffer;
+		pos2[i] = negBuffer;
 	
-	for (j = l - 1; j >= 0; j--) {
-		i = o[j] - 1; // index
-		if (i1[i] == 1) {
-			boundL1 = 0;
-		} else {
-			boundL1 = w1[i1[i] - 2];
-		}
-		if (i2[i] == 1) {
-			boundL2 = 0;
-		} else {
-			boundL2 = w2[i2[i] - 2];
-		}
-		
-		// pull back overlapping start
-		p1 = s1[i] + boundL1 - 1;
-		p2 = s2[i] + boundL2 - 1;
-		while (p1 < e1[i] + boundL1 - 1 &&
-			((p2 + 1 >= pos1[p1] + buffer && p2 + 1 <= pos1[p1] - buffer) ||
-			(p1 + 1 >= pos2[p2] + buffer && p1 + 1 <= pos2[p2] - buffer))) {
-			p1++;
-			p2++;
-		}
-		rans1[i] = p1 + 1 - boundL1;
-		rans3[i] = p2 + 1 - boundL2;
-		
-		// pull back overlapping end
-		p1 = e1[i] + boundL1 - 1;
-		p2 = e2[i] + boundL2 - 1;
-		while (p1 >= rans1[i] + boundL1 &&
-			((p2 + 1 >= pos1[p1] + buffer && p2 + 1 <= pos1[p1] - buffer) ||
-			(p1 + 1 >= pos2[p2] + buffer && p1 + 1 <= pos2[p2] - buffer))) {
-			p1--;
-			p2--;
-		}
-		rans2[i] = p1 + 1 - boundL1;
-		rans4[i] = p2 + 1 - boundL2;
-		
-		// mark positions as occupied
-		p1 = rans2[i] + boundL1;
-		p2 = rans4[i] + boundL2;
-		while (p1 >= rans1[i] + boundL1) {
-			temp1 = p1;
-			temp2 = p2;
-			p1--;
-			p2--;
-			if (pos1[p1] == buffer)
-				pos1[p1] = temp2;
-			if (pos2[p2] == buffer)
-				pos2[p2] = temp1;
+	j = l - 1; // iterator
+	if (j >= 0) {
+		k = o[j] - 1;
+		rans0[k] = s[k];
+	}
+	while (j >= 0) {
+		i = k; // current index
+		j--;
+		if (j >= 0) {
+			k = o[j] - 1; // next index
+			if (s1[i] == s1[k] && s2[i] == s2[k] &&
+				e1[i] == e1[k] && e2[i] == e2[k] &&
+				i1[i] == i1[k] && i2[i] == i2[k]) { // duplicated
+				rans0[k] = 0; // next score is zero (leave bounds uninitialized)
+			} else {
+				rans0[k] = s[k];
+			}
 		}
 		
-		// lower score proportionally
-		rans0[i] = s[i]*((double)(rans2[i] - rans1[i] + 1)/(double)(e1[i] - s1[i] + 1));
+		// itialize
+		rans1[i] = s1[i];
+		rans2[i] = e1[i];
+		rans3[i] = s2[i];
+		rans4[i] = e2[i];
+		
+		if (rans0[i] > 0) { // not a duplicate
+			if (i1[i] == 1) {
+				boundL1 = 0;
+			} else {
+				boundL1 = w1[i1[i] - 2];
+			}
+			if (i2[i] == 1) {
+				boundL2 = 0;
+			} else {
+				boundL2 = w2[i2[i] - 2];
+			}
+			
+			// pull back overlap
+			p1 = s1[i] + boundL1 - 1;
+			p2 = s2[i] + boundL2 - 1;
+			o1 = p1;
+			o2 = p2;
+			len = 0;
+			maxLen = 0;
+			while (p1 < e1[i] + boundL1 - 1) {
+				if ((p2 + 1 >= pos1[p1] - buffer && p2 + 1 <= pos1[p1] + buffer) ||
+					(p1 + 1 >= pos2[p2] - buffer && p1 + 1 <= pos2[p2] + buffer)) {
+					o1 = ++p1;
+					o2 = ++p2;
+					len = 0;
+				} else { // no overlap
+					len++;
+					p1++;
+					p2++;
+					if (len > maxLen) {
+						maxLen = len;
+						rans1[i] = o1 + 1 - boundL1;
+						rans2[i] = p1 - boundL1;
+						rans3[i] = o2 + 1 - boundL2;
+						rans4[i] = p2 - boundL2;
+					}
+				}
+			}
+			
+			// mark positions as occupied
+			p1 = rans2[i] + boundL1;
+			p2 = rans4[i] + boundL2;
+			while (p1 >= rans1[i] + boundL1) {
+				temp1 = p1;
+				temp2 = p2;
+				p1--;
+				p2--;
+				if (pos1[p1] == negBuffer)
+					pos1[p1] = temp2;
+				if (pos2[p2] == negBuffer)
+					pos2[p2] = temp1;
+			}
+			
+			// lower score proportionally
+			rans0[i] = s[i]*((double)(rans2[i] - rans1[i] + 1)/(double)(e1[i] - s1[i] + 1));
+		}
 	}
 	free(pos1);
 	free(pos2);

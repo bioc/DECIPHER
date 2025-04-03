@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{Design Microarray Probes}
+%\VignetteIndexEntry{Design Microarray Probes in R}
 %\VignettePackage{DECIPHER}
 
 \documentclass[10pt]{article}
@@ -32,7 +32,7 @@
 \begin{document}
 %\setkeys{Gin}{width=0.55\textwidth}
 
-\title{Design Microarray Probes}
+\title{Design Microarray Probes in R}
 \author{Erik S. Wright}
 \date{\today}
 \maketitle
@@ -184,7 +184,7 @@ bad_hybs <- sample(length(b), floor(0.05*length(b)))
 b[bad_hybs] <- abs(rnorm(length(bad_hybs), sd=max(b)/3))
 @
 
-Finally, we can solve for the amount of each OTU present on the microarray by solving \textbf{A}x = b for x using non-negative (x $\ge$ 0) least squares.  Plotting the expected amount versus the predicted amount shows that this probe set may result in a small number of false positives and false negatives (Fig. 1).  False negatives are the expected observations below the dashed threshold line, which represents the minimum amount required to be considered present.  If this threshold is lowered then false negatives will appear where no amount was expected.
+Finally, we can solve for the amount of each OTU present on the microarray by solving \textbf{A}x = b for x using non-negative (x $\ge$ 0) least squares (\Rfunction{NNLS}).  Plotting the expected amount versus the predicted amount shows that this probe set may result in a small number of false positives and false negatives (Fig. 1).  False negatives are the expected observations below the dashed threshold line, which represents the minimum amount required to be considered present.  If this threshold is lowered then false negatives will appear where no amount was expected.
 
 <<expr10,eval=TRUE>>=
 # solve for the predicted amount of each OTU present on the array

@@ -1053,7 +1053,7 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 				double mS; // minimum score
 				for (j = 0; j < c; j++) {
 					mS = log((tot - (double)pos[set[res[j]] - 1])/(double)step);
-					if (score[res[j]] >= mS)
+					if (score[res[j]] >= mS && score[res[j]] >= 0)
 						res[k++] = res[j];
 				}
 			} else { // apply minimum score threshold
