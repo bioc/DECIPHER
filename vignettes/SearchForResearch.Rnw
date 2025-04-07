@@ -324,9 +324,9 @@ An alternative and simpler approach to limiting false discoveries is to use the 
 FDR <- 0.001 # maximum allowed false discovery rate
 N <- nrow(hits)
 ranking <- order(c(hits$Score, revhits$Score), decreasing=TRUE)
-ranking <- ranking[cumsum(ranking > N) <= N*FDR]
+ranking <- ranking[cumprod(cumsum(ranking > N) <= seq_along(ranking)*FDR) == 1L]
 hits <- hits[sort(ranking[ranking <= N]),] # filtered hits
-nrow(hits) # fewer search hits after controlling FDR
+nrow(hits) # number of search hits after controlling FDR
 @
 
 %------------------------------------------------------------
