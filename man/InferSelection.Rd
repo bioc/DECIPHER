@@ -32,7 +32,7 @@ Numeric determining the relative convergence tolerance.  Optimization will cease
 A character vector giving the genetic code in the same format as \code{GENETIC_CODE} (the default).
 }
   \item{showPlot}{
-Logical specifying whether to show the estimated Ka/Ks ratio(s) (omega) along the alignment.
+Logical specifying whether to show the estimated Ka/Ks ratio(s) (omega) along the alignment.  More significant p-values are displayed in a brighter green color when \code{showPlot} is \code{TRUE}.
 }
   \item{verbose}{
 Logical indicating whether to display progress.
@@ -47,7 +47,7 @@ The method used by \code{InferSelection} requires a low mutation rate approximat
 
 The population genetics model employed here also assumes independence between sites.  Nevertheless, simulations show the method is robust to model violations when there is a lack of recombination (Wilson, D & CRyPTIC Consortium, 2020).  The independence assumption confers the advantages of scalability, simple handling of missing data (e.g., gaps), and no requirement for haplotype information.  Sequences are assumed to be randomly sampled from an unstructured population with constant population size over time.  The population sample is very important, as biased sampling could result in correspondingly biased inferences about selection.
 
-Statistical significance is obtained from the likelihood ratio test based on the chi-squared distribution with \code{1} degree of freedom, comparing the fitted value of omega to \code{1} when \code{windowSize} is \code{NA} (the default) or each omega to the average omega when there are multiple windows.  The likelihood ratio test is conservative but powerful when testing for selection (Anisimova, et al., 2001).  Alternative estimates of statistical significance can be obtained by bootstrapping the input sequences when the number of sequences is sufficiently large.  More significant p-values are displayed in a brighter green color when \code{showPlot} is \code{TRUE}.
+Statistical significance is obtained from a likelihood ratio test based on the chi-squared distribution with \code{1} degree of freedom (Anisimova, et al., 2001), comparing each fitted value of omega to \code{1} (i.e., neutrality).  Simulations of the coalescent process suggest that the number of sequences in \code{myXStringSet} should be at least \code{200/windowSize} for reasonable power to detect positive selection.  That is, about 200 sequences are required to identify a considerable fraction of codon-level selection (i.e., when \code{windowSize} is \code{1}), but only a couple of sequences are required to observe overall selection on typical length coding sequences (>= 100 codons when \code{windowSize} is \code{NA}).  Alternative estimates of statistical significance can be obtained by bootstrapping the input sequences when their number is sufficiently large.
 }
 \value{
 A named numeric vector with the following elements:
@@ -55,7 +55,7 @@ A named numeric vector with the following elements:
 (2) \code{theta} - expected substitution rate in units of 2*ploidy*Ne generations\cr
 (3) \code{kappa} - estimated transition to transversion ratio\cr
 (4) \code{omega} - estimated Ka/Ks (dN/dS) ratio(s) per window\cr
-(5) \code{pvalue} - approximate p-value per window\cr
+(5) \code{pvalue} - corresponding p-value with null hypothesis omega = \code{1}\cr
 }
 \references{
 Anisimova, M., et al. (2001). Accuracy and power of the likelihood ratio test in detecting adaptive molecular evolution. Molecular Biology and Evolution, \bold{18(8)}, 1585-1592.

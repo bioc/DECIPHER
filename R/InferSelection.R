@@ -9,6 +9,8 @@ InferSelection <- function(myDNAStringSet,
 	# error checking
 	if (!is(myDNAStringSet, "DNAStringSet"))
 		stop("myDNAStringSet must be a DNAStringSet.")
+	if (length(myDNAStringSet) < 2L)
+		stop("At least two sequences are required in myDNAStringSet.")
 	uw <- unique(width(myDNAStringSet))
 	if (length(uw) != 1L)
 		stop("Sequences in myDNAStringSet must be the same width (aligned).")
@@ -19,6 +21,8 @@ InferSelection <- function(myDNAStringSet,
 	if (!readingFrame %in% 1L:3L)
 		stop("readingFrame must be 1, 2, or 3.")
 	readingFrame <- as.integer(readingFrame)
+	if (uw - readingFrame < 2)
+		stop("myDNAStringSet must contain at least one codon.")
 	if (length(windowSize) != 1L)
 		stop("windowSize must be length one.")
 	windows <- seq_len((uw - readingFrame + 1L) %/% 3L)
@@ -65,6 +69,7 @@ InferSelection <- function(myDNAStringSet,
 	U <- 0.1 # initial theta (> 0)
 	K <- 2 # initial kappa (> 0)
 	omegas <- rep(-1, l) # initial log(omega) (> 0)
+	minVal <- sqrt(.Machine$double.eps) # machine precision (> 0)
 	.print <- function(val)
 		formatC(val, digits=3, format="f")
 	
@@ -140,7 +145,7 @@ InferSelection <- function(myDNAStringSet,
 			
 			# compute conditional probabilities
 			D <- 1/(1 + U/sum(freqs*diag(theta))*D)
-			alpha <- .Call("conditionalProbs", V, D, sF, PACKAGE="DECIPHER")
+			alpha <- .Call("conditionalProbs", V, D, sF, minVal, PACKAGE="DECIPHER")
 			talpha <- t(alpha)
 			
 			tmu <- rowSums(alpha) - 1
@@ -213,17 +218,10 @@ InferSelection <- function(myDNAStringSet,
 			}
 			
 			likelihood <- .lik(O, w)
-			if (getPvals) {
-				if (l == 1L) {
-					O <- 1 # compare to omega = 1
-				} else {
-					O <- mean(omegas[-w]) # compare to average omega
-				}
-				
-				pvals[w] <<- pchisq(-2*(.lik(O, w) - likelihood),
+			if (getPvals) # compare to omega = 1
+				pvals[w] <<- pchisq(2*(likelihood - .lik(1, w)),
 					df=1L,
 					lower.tail=FALSE)
-			}
 			
 			total <- total + likelihood
 		}

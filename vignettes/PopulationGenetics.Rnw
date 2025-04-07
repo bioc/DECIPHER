@@ -77,7 +77,7 @@ Many assumptions underly population genetics functions, and those assumptions ar
 
 As the name implies, population genetics is applied to samples from populations.  It is crucial to apply the functions in their applicable regime (Fig. \ref{f2}).  All of \Rpackage{DECIPHER}'s population genetics functions are designed to be used on samples of sequences taken from within a species, not between different species.  The \Rfunction{InferDemography} function infers population size changes from a large amount of sequence data with relatively few polymorphisms.  The \Rfunction{InferRecombination} function needs slightly more polymorphisms, such that some are located nearby each other on the sequence.  In contrast, the \Rfunction{InferSelection} function can handle amino acid changes, which requires an even greater degree of polymorphism.
 
-All three population genetics functions in \Rpackage{DECIPHER} take multiple sequence alignments as input and return a vector of numbers.  They differ in the patterns of polymorphism used for inference.  The intended use of each function is summarized in the table below.  Although these functions are new implementations, please cite the method's original publication when reporting results.  A typical use case would be to run the function(s) on a set of different gene alignments and then aggregate or compare the results.  Statistical significance for a single input can be obtained by bootstrapping the input sequences.  For simplicity, this vignette provides an example analysis of a single alignment, which could be modified to loop through multiple different alignments.
+All three population genetics functions in \Rpackage{DECIPHER} take multiple sequence alignments as input and return a vector of numbers.  They differ in the patterns of polymorphism used for inference.  The intended use of each function is summarized in the table below.  Although these functions are new implementations, please cite the relevant method's original publication when reporting results.  A typical use case would be to run the function(s) on a set of different gene alignments and then aggregate or compare the results.  Statistical significance for a single input can be obtained by bootstrapping the input sequences.  For simplicity, this vignette provides an example analysis of a single alignment, which could be modified to loop through multiple different alignments.
 
 \begin{center}
 \begin{tabular}{||c|c|c|c||}
@@ -199,17 +199,31 @@ The function's outputs are described on its help page.  Possibly the most intere
 
 The \Rfunction{InferSelection} function estimates $\omega$ (also known as the Ka/Ks ratio or dN/dS ratio) by fitting a population genetics model \cite{Wilson:2020}.  Values of $\omega$ above \code{1} provide evidence of positive (Darwinian) selection, whereas $\omega$ values below \code{1} are indicative of negative (purifying) selection.  This method can be applied to multiple sequence alignments of many sequences sampled from the same population and, unlike the other two methods, \textit{requires} specification of a \code{readingFrame}.
 
-The function provides maximum likelihood estimates of the transition/transversion ratio (kappa), expected substitution rate (theta), and $\omega$ in non-overlapping regions across the alignment.  The default behavior is to only calculate a single $\omega$ value for the whole alignment, but this will rarely be greater than \code{1} as negative selection typically overwhelms any signal of positive selection.  This is shown in the example below (Fig. \ref{f5}).
+The function provides maximum likelihood estimates of the transition/transversion ratio ($\kappa$), expected substitution rate ($\theta$), and $\omega$ in non-overlapping regions across the alignment.  The default behavior is to only calculate a single $\omega$ value for the whole alignment, but this will rarely be greater than \code{1} as negative selection generally overwhelms any signal of positive selection.  With sufficient data, it is possible to specify a \Rfunarg{windowSize} to estimate $\omega$ for adjacent groups of codons.  The question is how much data is sufficient for inferring selection?
+
+\begin{wrapfigure}{r}{0.5\textwidth}
+\includegraphics[width=0.5\textwidth]{SelectionPower}
+\caption{\label{f5} Statistical power of \code{InferSelection} for detecting different degrees of selection based on the total number of codons per window (i.e., number of codon sites times the number of sequences).  Detecting positive selection (red) requires more codons than detecting negative selection (blue).  Each point represents the average result of 1000 codon simulations under a coalescent process.}
+\end{wrapfigure}
+
+Simulations of codon evolution under the coalescent process with different values of $\omega$ provide a means of answering this question.  Figure \ref{f5} shows the statistical power of detecting selection ($\omega \neq 1$) for increasingly larger numbers of codons per window at a significance level of \code{0.05}.  It is apparent that detecting negative selection ($\omega < 1$) takes fewer codons than detecting positive selection ($\omega > 1$), and more extreme values of $\omega$ improve detection power.  Detecting positive selection requires about \code{200} or more sampled codons per window.  Therefore, for the \code{75} example sequences used here, it would make sense to specify a \Rfunarg{windowSize} of at least \code{3} (i.e., $\left \lceil{200/75}\right \rceil$), as shown in the example below (Fig. \ref{f6}).
 
 \begin{centerfig}
 <<expr6,eval=TRUE,echo=TRUE,fig=TRUE,include=TRUE,height=6,width=6>>=
-z <- InferSelection(dna, windowSize=NA, showPlot=TRUE)
-z
+z <- InferSelection(dna, windowSize=3, showPlot=TRUE)
+head(z, 5)
+
+# fraction of windows under significant positive selection (> 2)
+mean(z[startsWith(names(z), "omega")] > 2 &
+	z[startsWith(names(z), "pvalue")] < 0.05)
+# fraction of windows under significant negative selection (< 1/2)
+mean(z[startsWith(names(z), "omega")] < 1/2 &
+	z[startsWith(names(z), "pvalue")] < 0.05)
 @
-\caption{\label{f5} Estimate of $\omega$ across the entire alignment.}
+\caption{\label{f6} Estimates of $\omega$ across the alignment.}
 \end{centerfig}
 
-Changing the \code{windowSize} to \code{1} will cause \Rfunction{InferSelection} to estimate $\omega$ at every codon.  This makes the analysis take longer but provides more useful information.  Statistically significant sites (or regions) with large values of $\omega$ (> 1) are possibly of biological interest, as these represent where the protein is evolving under positive selection.  It is particularly informative to apply this analysis to many different genes from the same population and rank the genes by the fraction (or number) of positively selected codons.
+Changing the \code{windowSize} to \code{1} would cause \Rfunction{InferSelection} to estimate $\omega$ for every codon site in the alignment.  Statistically significant sites (or regions) with values of $\omega$ significantly above \code{1} are possibly of biological interest, as these represent where the protein is evolving under positive selection.  It is particularly informative to apply this analysis to many different genes from the same population and rank the genes by the fraction (or number) of significantly positively selected codons.
 
 \clearpage
 

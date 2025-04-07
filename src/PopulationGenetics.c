@@ -172,12 +172,13 @@ SEXP correlationProfile(SEXP x, SEXP readingFrame, SEXP maxN, SEXP verbose, SEXP
 	return ret_list;
 }
 
-SEXP conditionalProbs(SEXP V, SEXP D, SEXP S)
+SEXP conditionalProbs(SEXP V, SEXP D, SEXP S, SEXP M)
 {
 	int i, j, k;
 	double *v = REAL(V); // eigenvectors of scaled rate matrix
 	double *d = REAL(D); // transformed eigenvalues of scaled rate matrix
 	double *s = REAL(S); // square root of equilibrium frequencies
+	double m = asReal(M); // minimum value (machine precision)
 	const int n = length(S);
 	
 	SEXP ans;
@@ -200,8 +201,8 @@ SEXP conditionalProbs(SEXP V, SEXP D, SEXP S)
 	}
 	
 	for (i = 0; i < n*n; i++)
-		if (rans[i] < 1e-6)
-			rans[i] = 1e-6;
+		if (rans[i] < m)
+			rans[i] = m;
 	
 	for (i = 0; i < n; i++)
 		for (j = 0; j < n; j++)
@@ -226,16 +227,14 @@ SEXP applyFreqs(SEXP T, SEXP S)
 	PROTECT(ans = duplicate(T)); // symmetric substitution rate matrix (zero diagonal)
 	double *rans = REAL(ans);
 	
+	double *ss = R_Calloc(n, double); // initialized to zero
 	for (i = 0; i < n; i++) {
+		ss[i] = sqrt(s[i]);
 		for (j = 0; j < n; j++) {
 			rans[i + j*n] *= s[i];
 			rans[j + i*n] *= s[i];
 		}
 	}
-	
-	double *ss = R_Calloc(n, double); // initialized to zero
-	for (i = 0; i < n; i++)
-		ss[i] = sqrt(s[i]);
 	
 	for (i = 0; i < n; i++)
 		for (j = 0; j < n; j++)
