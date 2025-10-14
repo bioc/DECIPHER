@@ -92,7 +92,7 @@ DB2Seqs <- function(file,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- .detectCores()
+		processors <- .Call("detectCores", PACKAGE="DECIPHER")
 	} else {
 		processors <- as.integer(processors)
 	}
@@ -117,9 +117,8 @@ DB2Seqs <- function(file,
 		searchExpression <- paste(searchExpression,
 			' where ',
 			dbQuoteIdentifier(dbConn, "identifier"),
-			' = "',
-			identifier,
-			'"',
+			' = ',
+			dbQuoteString(dbConn, identifier),
 			sep="")
 	if (clause != "")
 		searchExpression <- paste(searchExpression,

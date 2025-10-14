@@ -272,6 +272,7 @@ The \Rpackage{DECIPHER} package contains many different functions.  Figure \ref{
 \ytl{2022}{\Rfunction{FindNonCoding} published \cite{Wright:2022} (\Rfunction{FindNonCoding}, \Rfunction{LearnNonCoding})}
 \ytl{2024}{\Rfunction{Clusterize} published \cite{Wright:2024a} (\Rfunction{Clusterize})}
 \ytl{2024}{Search and mapping functions published \cite{Wright:2024b} (\Rfunction{IndexSeqs}, \Rfunction{SearchIndex}, \Rfunction{AlignPairs})}
+\ytl{2025}{\Rfunction{DetectRepeats} published \cite{Cho:2025} (\Rfunction{DetectRepeats})}
 \bigskip
 \rule{\linewidth}{1pt}%
 \end{minipage}%
@@ -280,6 +281,11 @@ The \Rpackage{DECIPHER} package contains many different functions.  Figure \ref{
 \clearpage
 
 \begin{thebibliography}{}
+
+\bibitem{Cho:2025}
+{S-T Cho \& ES Wright}
+\newblock Accurate detection of tandem repeats exposes ubiquitous reuse of biological sequences
+\newblock {\em Nucleic Acids Research}, 53(17), gkaf866, 2025.
 
 \bibitem{Cooley:2021}
 {NP Cooley \& ES Wright}
@@ -349,7 +355,7 @@ The \Rpackage{DECIPHER} package contains many different functions.  Figure \ref{
 \bibitem{Wright:2024b}
 {ES Wright}
 \newblock Fast and Flexible Search for Homologous Biological Sequences with DECIPHER v3
-\newblock {\em The R Journal}, \textit{in Press}.
+\newblock {\em The R Journal}, 16, 191-200, 2024.
 
 \bibitem{Yilmaz:2012}
 {LS Yilmaz, A Loy, ES Wright, M Wagner, \& DR Noguera}

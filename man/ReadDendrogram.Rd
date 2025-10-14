@@ -15,7 +15,7 @@ ReadDendrogram(file,
 }
 \arguments{
   \item{file}{
-a connection object or a character string.
+A connection object, a file path, or a character string providing the contents of a Newick formatted file.
 }
   \item{convertBlanks}{
 Logical specifying whether to convert underscores in unquoted leaf labels to spaces.

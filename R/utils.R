@@ -78,6 +78,3 @@
 	ans@ranges@width <- x@ranges@width
 	ans
 }
-
-.detectCores <- function()
-	.Call("detectCores", PACKAGE="DECIPHER")

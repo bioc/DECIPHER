@@ -22,6 +22,9 @@ Other optional parameters.
 \details{
 Objects of class \code{InvertedIndex} are stored as a list.  The function \code{IndexSeqs} returns an object of class \code{InvertedIndex}. The information stored in an \code{InvertedIndex} can be displayed with \code{print}.
 }
+\references{
+ES Wright (2024) "Fast and Flexible Search for Homologous Biological Sequences with DECIPHER v3". The R Journal, \bold{16(2)}, 191-200.
+}
 \author{
 Erik Wright \email{eswright@pitt.edu}
 }

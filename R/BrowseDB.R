@@ -63,9 +63,8 @@ BrowseDB <- function(dbFile,
 		searchExpression <- paste(searchExpression,
 			' where ',
 			dbQuoteIdentifier(dbConn, "identifier"),
-			' = "',
-			identifier,
-			'"',
+			' = ',
+			dbQuoteString(dbConn, identifier),
 			sep="")
 	if (clause != "")
 		searchExpression <- paste(searchExpression,
@@ -121,9 +120,8 @@ BrowseDB <- function(dbFile,
 			searchExpression <- paste(searchExpression,
 				' where ',
 				dbQuoteIdentifier(dbConn, "identifier"),
-				' = "',
-				identifier,
-				'"',
+				' = ',
+				dbQuoteString(dbConn, identifier),
 				sep="")
 		if (clause != "")
 			searchExpression <- paste(searchExpression,

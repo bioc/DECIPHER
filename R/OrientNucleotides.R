@@ -51,7 +51,7 @@ OrientNucleotides <- function(myXStringSet,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- .detectCores()
+		processors <- .Call("detectCores", PACKAGE="DECIPHER")
 	} else {
 		processors <- as.integer(processors)
 	}

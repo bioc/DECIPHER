@@ -95,7 +95,7 @@ FindSynteny <- function(dbFile,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- .detectCores()
+		processors <- .Call("detectCores", PACKAGE="DECIPHER")
 	} else {
 		processors <- as.integer(processors)
 	}
@@ -1440,9 +1440,8 @@ FindSynteny <- function(dbFile,
 				dbQuoteIdentifier(dbConn, tblName),
 				' where ',
 				dbQuoteIdentifier(dbConn, 'identifier'),
-				' = "',
-				identifier[i],
-				'"',
+				' = ',
+				dbQuoteString(dbConn, identifier[i]),
 				sep=''))$description
 	}
 	

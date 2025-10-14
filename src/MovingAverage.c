@@ -76,21 +76,21 @@ SEXP movAvg(SEXP x, SEXP type, SEXP alpha, SEXP thresh, SEXP maxAvg, SEXP start,
 				p[j] = pow(10, ((double)x_i.ptr[j] - 33)/-10);
 		} else if (k == 2) { // Solexa
 			for (j = 0; j < m; j++)
-				p[j] = 1 - 1/(1 + pow(10, ((double)x_i.ptr[j] - 64)/-10));
+				p[j] = 1/(1 + pow(10, ((double)x_i.ptr[j] - 64)/10));
 		} else { // Illumina
 			for (j = 0; j < m; j++)
 				p[j] = pow(10, ((double)x_i.ptr[j] - 64)/-10);
 		}
 		
-		// trailing moving average
+		// trailing moving average (in log-space)
 		s1[0] = p[0];
 		for (j = 1; j < m; j++)
-			s1[j] = a*p[j] + b*s1[j - 1];
+			s1[j] = pow(10, a*log10(p[j]) + b*log10(s1[j - 1]));
 		
-		// leading moving average
+		// leading moving average (in log-space)
 		s2[m - 1] = p[m - 1];
 		for (j = m - 2; j >= 0; j--)
-			s2[j] = a*p[j] + b*s2[j + 1];
+			s2[j] = pow(10, a*log10(p[j]) + b*log10(s2[j + 1]));
 		
 		// combined moving average
 		for (j = 0; j < m; j++)

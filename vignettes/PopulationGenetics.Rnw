@@ -135,7 +135,7 @@ dna <- readDNAStringSet(fas)
 dna
 @
 
-It is important to carefully consider what population to analyze.  All of the functions described here assume the input sequences were randomly sampled from an unstructured population of closely related individuals that may (or may not) be exchanging genetic material.  For this vignette, we will limit the analysis to only sequences sampled from the species \textit{Helicobacter pylori}.  This can be accomplished by selecting a subset of sequences by their names.
+It is important to carefully consider what population to analyze.  All of the functions described here assume the input sequences were randomly sampled from an unstructured population of closely related individuals that may (or may not) be exchanging genetic material.  It is crucial to randomly sample sequences from the same population, as bias in the input sequences will lead to bias in the results.  For this vignette, we will limit the analysis to only sequences sampled from the species \textit{Helicobacter pylori}.  This can be accomplished by selecting a subset of sequences by their names.
 
 <<expr2,eval=TRUE>>=
 dna <- dna[startsWith(names(dna), "Helicobacter pylori")]

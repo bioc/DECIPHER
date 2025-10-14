@@ -240,9 +240,7 @@ InferSelection <- function(myDNAStringSet,
 			control=list(fnscale=-1))
 		
 		if (verbose && interactive())
-			cat("\rLnL = ",
-				.print(o$value),
-				sep="")
+			cat("\rLnL =", .print(o$value), "")
 		
 		U <- o$par[1L]
 		K <- o$par[2L]
@@ -250,9 +248,7 @@ InferSelection <- function(myDNAStringSet,
 		
 		if (lastLnL - bestLnL < bestLnL*tolerance) {
 			if (verbose && interactive())
-				cat("\rLnL = ",
-					.print(bestLnL),
-					sep="")
+				cat("\rLnL =", .print(bestLnL), "")
 			lastLnL <- bestLnL
 		} else {
 			break
@@ -294,9 +290,7 @@ InferSelection <- function(myDNAStringSet,
 		setNames(pvals, paste("pvalue", rngs)))
 	
 	if (verbose) {
-		cat("\rLnL = ",
-			.print(bestLnL),
-			sep="")
+		cat("\rLnL =", .print(bestLnL), "")
 		time.2 <- Sys.time()
 		cat("\n\n")
 		print(round(difftime(time.2,

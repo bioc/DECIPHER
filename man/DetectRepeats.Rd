@@ -85,7 +85,9 @@ If \code{type} is \code{"interspersed"}, a \code{data.frame} similar to the matr
 If \code{type} is \code{"both"}, a \code{list} with the above two elements.
 }
 \references{
-Schaper, E., et al. (2012). Repeat or not repeat?-Statistical validation of tandem repeat prediction in genomic sequences. Nucleic Acids Research, \bold{40(20)}, 10005-17.
+Cho, S.-T. & Wright E.S. (2025). "Accurate detection of tandem repeats exposes ubiquitous reuse of biological sequences." Nucleic Acids Research, \bold{53(17)}, doi:10.1093/nar/gkaf866.
+
+Schaper, E., et al. (2012). "Repeat or not repeat?-Statistical validation of tandem repeat prediction in genomic sequences." Nucleic Acids Research, \bold{40(20)}, 10005-17.
 }
 \author{
 Erik Wright \email{eswright@pitt.edu}

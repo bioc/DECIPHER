@@ -15,10 +15,10 @@ TrimDNA(myDNAStringSet,
         maxDistance = 0.1,
         minOverlap = 5,
         allowInternal = TRUE,
-        alpha = 0.1,
+        alpha = 0.2,
         threshold = 0.01,
-        maxAverageError = threshold,
-        maxAmbiguities = 0.1,
+        maxAverageError = 0.02,
+        maxAmbiguities = 0,
         minWidth = 36,
         verbose = TRUE)
 }
@@ -69,7 +69,7 @@ Logical indicating whether to display progress.
 \details{
 After a sequencing run, it is often necessary to trim the resulting sequences to the high quality region located between a set of patterns.  \code{TrimDNA} works as follows:  first left and right patterns are identified within the sequences if \code{allowInternal} is \code{TRUE} (the default).  If the patterns are not found internally, then a search is conducted at the flanking ends for patterns that partially overlap the sequence.  The region between the \code{leftPatterns} and \code{rightPatterns} is then returned, unless quality information is provided.  Note that the patterns must be in the same orientation as the sequence, which may require using the \code{reverseComplement} of a PCR primer.
 
-If \code{quality} scores are provided, these are converted to error probabilities and an exponential moving average is applied to smooth the signal.  The longest region between the \code{leftPatterns} and \code{rightPatterns} where the average error probability is below \code{threshold} is then returned, so long as it has an average error rate of at most \code{maxAverageError}.  Note that it is possible to only filter by \code{maxAverageError} by setting \code{threshold} to \code{1}, or vice versa by setting \code{maxAverageError} to the same value as \code{threshold}.
+If \code{quality} scores are provided, these are converted to error probabilities and an exponential moving average is applied to smooth the signal in log-space.  The longest region between the \code{leftPatterns} and \code{rightPatterns} where the average error probability is below \code{threshold} is then returned, so long as it has an average error rate of at most \code{maxAverageError}.  Default error cutoffs were set to maximize sensitivity and specificity across diverse read types and genomes, but it is advisable to tune input parameters to the intended application.
 }
 \value{
 \code{TrimDNA} can return two \code{type}s of results: \code{IRanges} that can be used for trimming \code{myDNAStringSet}, or a trimmed \code{DNAStringSet} or \code{QualityScaledDNAStringSet} containing only those sequences over \code{minWidth} nucleotides after trimming.  Note that ambiguity codes (\code{IUPAC_CODE_MAP}) are supported in the \code{leftPatterns} and \code{rightPatterns}, but not in \code{myDNAStringSet} to prevent trivial matches (e.g., runs of N's).
@@ -123,10 +123,13 @@ faq1 <- system.file("extdata", "Simulated_Illumina_Read1.fq.gz", package="DECIPH
 faq2 <- system.file("extdata", "Simulated_Illumina_Read2.fq.gz", package="DECIPHER")
 read1 <- readQualityScaledDNAStringSet(faq1)
 read2 <- readQualityScaledDNAStringSet(faq2)
+read1
+read2
 merge <- AlignPairs(read1,
 	reverseComplement(read2),
 	type="sequences",
 	bandWidth=200)
+merge
 merge <- TrimDNA(merge$Consensus,
 	DNAStringSet("GTGYCAGCMGCCGCGGTAA"), # forward primer
 	reverseComplement(DNAStringSet("GGACTACNVGGGTWTCTAAT")), # reverse primer

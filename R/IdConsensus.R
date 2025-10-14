@@ -33,7 +33,7 @@ IdConsensus <- function(dbFile,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- .detectCores()
+		processors <- .Call("detectCores", PACKAGE="DECIPHER")
 	} else {
 		processors <- as.integer(processors)
 	}
@@ -62,11 +62,10 @@ IdConsensus <- function(dbFile,
 		sep="")
 	if (identifier != "")
 		searchExpression <- paste(searchExpression,
-			" where",
+			" where ",
 			dbQuoteIdentifier(dbConn, "identifier"),
-			"= '",
-			identifier,
-			"'",
+			" = ",
+			dbQuoteString(dbConn, identifier),
 			sep="")
 	rs <- dbSendQuery(dbConn, searchExpression)
 	groups <- dbFetch(rs, n=-1, row.names=FALSE)[,eval(colName)]

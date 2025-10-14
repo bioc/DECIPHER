@@ -15,7 +15,14 @@ ReadDendrogram <- function(file,
 	if (is.na(quote))
 		stop("Invalid quote.")
 	
-	r <- readLines(file, warn=FALSE)
+	if (is(file, "file") || file.exists(file)) {
+		r <- readLines(file, warn=FALSE)
+	} else if (is.character(file)) {
+		r <- file
+	} else {
+		stop("file must be a file connection, file path, or the contents of a Newick formatted file.")
+	}
+	
 	w <- which(nchar(r) > 0)
 	if (length(w) > 1) {
 		r <- paste(r[w], collapse="")
@@ -87,7 +94,7 @@ ReadDendrogram <- function(file,
 				} else if (i < length(r) && r[i + 1L] == ";") {
 					i <<- i + 1L
 				} else if (i <= length(r) && r[i] != ";") {
-					stop("Unsupported file formatting.")
+					stop("Unsupported formatting.")
 				}
 				break
 			} else if (r[i] == "(") {
@@ -119,7 +126,7 @@ ReadDendrogram <- function(file,
 			} else if (r[i] == " ") {
 				i <<- i + 1L
 			} else {
-				stop("Unsupported file formatting.")
+				stop("Unsupported formatting.")
 			}
 		}
 		

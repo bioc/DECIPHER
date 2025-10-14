@@ -96,6 +96,9 @@ The location of each k-mer within every sequence in \code{subject}, ordered by k
 The index of each k-mer within every sequence in \code{subject}, ordered by k-mer.
 }
 }
+\references{
+ES Wright (2024) "Fast and Flexible Search for Homologous Biological Sequences with DECIPHER v3". The R Journal, \bold{16(2)}, 191-200.
+}
 \author{
 Erik Wright \email{eswright@pitt.edu}
 }

@@ -1797,7 +1797,7 @@ Treeline <- function(myXStringSet=NULL,
 	if (!is.null(processors) && processors < 1)
 		stop("processors must be at least 1.")
 	if (is.null(processors)) {
-		processors <- .detectCores()
+		processors <- .Call("detectCores", PACKAGE="DECIPHER")
 	} else {
 		processors <- as.integer(processors)
 	}
@@ -3004,7 +3004,7 @@ Treeline <- function(myXStringSet=NULL,
 				it <- it + 1L
 				.Grafts <- NA
 				
-				if (it > maxIterations) {
+				if (it > maxIterations || .overall <= 0) {
 					final <- TRUE
 				} else {
 					w <- which(Scores < .overall*(1 + tolerance))
@@ -3804,8 +3804,4 @@ Treeline <- function(myXStringSet=NULL,
 	} else {
 		return(list(myClusters, d))
 	}
-}
-
-TreeLine <- function(...) {
-	Treeline(...)
 }

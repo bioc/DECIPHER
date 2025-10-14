@@ -86,6 +86,9 @@ If the set of \code{subject} sequences is provided (i.e., not \code{NULL}), then
 \value{
 A \code{data.frame} is returned with dimensions with columns \code{Pattern}, \code{Subject}, \code{Score}, and (optionally) \code{Position}.  The \code{Pattern} is the index of the sequence in \code{pattern} and the \code{Subject} is the index of the sequence in the set used to build the \code{invertedIndex}.  Each row contains a hit with \code{Score} meeting the \code{minScore}.  If \code{scoreOnly} is \code{FALSE} (the default), the \code{Position} column contains a list of matrices with four rows: start/end positions of k-mer hits in the \code{Pattern} and start/end positions of k-mer hits in the \code{Subject}.  The \code{data.frame} will always be order by ascending \code{Pattern} index.
 }
+\references{
+ES Wright (2024) "Fast and Flexible Search for Homologous Biological Sequences with DECIPHER v3". The R Journal, \bold{16(2)}, 191-200.
+}
 \author{
 Erik Wright \email{eswright@pitt.edu}
 }

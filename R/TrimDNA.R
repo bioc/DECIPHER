@@ -6,10 +6,10 @@ TrimDNA <- function(myDNAStringSet,
 	maxDistance=0.1,
 	minOverlap=5,
 	allowInternal=TRUE,
-	alpha=0.1,
+	alpha=0.2,
 	threshold=0.01,
-	maxAverageError=threshold,
-	maxAmbiguities=0.1,
+	maxAverageError=0.02,
+	maxAmbiguities=0,
 	minWidth=36,
 	verbose=TRUE) {
 	
@@ -71,8 +71,8 @@ TrimDNA <- function(myDNAStringSet,
 		stop("threshold must be between zero and one.")
 	if (!is.numeric(maxAverageError))
 		stop("maxAverageError must be a numeric.")
-	if (maxAverageError > threshold || maxAverageError <= 0)
-		stop("maxAverageError must be between zero and threshold.")
+	if (maxAverageError <= 0)
+		stop("maxAverageError must be greater than zero.")
 	if (!is.numeric(maxAmbiguities))
 		stop("maxAmbiguities must be a numeric.")
 	if (maxAmbiguities > 1 || maxAmbiguities < 0)

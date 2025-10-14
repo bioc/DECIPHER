@@ -289,8 +289,13 @@ plot.Synteny <- function(x,
 		stop("labels does not match the dimensions of x.")
 	if (!is.logical(horizontal) && length(horizontal)==1)
 		stop("horizontal must be a single logical.")
-	if (!is.logical(barSides) && length(barSides)==1)
-		stop("barSides must be a single logical.")
+	if (!is.logical(barSides))
+		stop("barSides must be logical.")
+	if (length(barSides) == 1L) {
+		barSides <- rep(barSides, 2L)
+	} else if (length(barSides) != 2L) {
+		stop("barSides must be length 1 or 2.")
+	}
 	if (!is.numeric(width) || length(width) != 1)
 		stop("width must be a single number.")
 	if (width <= 0 || width >= 1)
@@ -640,7 +645,7 @@ plot.Synteny <- function(x,
 			}
 		}
 		
-		if (barSides) {
+		if (barSides[1L]) {
 			if (horizontal) {
 				x0 <- 1
 				x1 <- c1[length(c1)]
@@ -671,26 +676,28 @@ plot.Synteny <- function(x,
 			}
 		}
 		
-		# delineate sequence ends
-		if (horizontal) {
-			x0 <- c1
-			x1 <- c1 + 1L
-			y0 <- i - half_width
-			y1 <- i + half_width
-		} else {
-			x0 <- i - half_width
-			x1 <- i + half_width
-			y0 <- c1
-			y1 <- c1 + 1L
-		}
-		if (i==1) {
-			x02 <- x0
-			x12 <- x1
-			y02 <- y0
-			y12 <- y1
-			on.exit(rect(x02, y02, x12, y12, col="black"), add=TRUE)
-		} else {
-			rect(x0, y0, x1, y1, col="black")
+		if (barSides[2L]) {
+			# delineate sequence ends
+			if (horizontal) {
+				x0 <- c1
+				x1 <- c1 + 1L
+				y0 <- i - half_width
+				y1 <- i + half_width
+			} else {
+				x0 <- i - half_width
+				x1 <- i + half_width
+				y0 <- c1
+				y1 <- c1 + 1L
+			}
+			if (i==1) {
+				x02 <- x0
+				x12 <- x1
+				y02 <- y0
+				y12 <- y1
+				on.exit(rect(x02, y02, x12, y12, col="black"), add=TRUE)
+			} else {
+				rect(x0, y0, x1, y1, col="black")
+			}
 		}
 	}
 	

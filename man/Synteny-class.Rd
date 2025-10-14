@@ -65,7 +65,7 @@ A function that will return \code{n} colors when given a number \code{n}.  Examp
 Character string giving the background color of each bar.
 }
   \item{barSides}{
-Logical indicating whether to draw black lines along the long-sides of each bar.
+Either a single logical determining whether to draw separators between bars, or two logicals indicating whether to draw inter-bar and intra-bar line separators, respectively.
 }
   \item{horizontal}{
 Logical indicating whether to plot the sequences horizontally (\code{TRUE}) or vertically (\code{FALSE}).
