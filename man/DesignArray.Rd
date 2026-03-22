@@ -82,7 +82,7 @@ ES Wright et al. (2013) Identification of Bacterial and Archaeal Communities Fro
 DR Noguera, et al. (2014). Mathematical tools to optimize the design of oligonucleotide probes and primers. Applied Microbiology and Biotechnology. doi:10.1007/s00253-014-6165-x.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{Array2Matrix}}, \code{\link{NNLS}}

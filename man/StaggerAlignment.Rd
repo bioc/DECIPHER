@@ -43,7 +43,7 @@ The single parameter \code{threshold} controls the degree of staggering.  Its va
 An \code{XStringSet} of aligned sequences.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{AdjustAlignment}}, \code{\link{AlignSeqs}}, \code{\link{Treeline}}

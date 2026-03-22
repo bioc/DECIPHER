@@ -67,7 +67,7 @@ Both scores are linearly related to the number of sequences in the alignment and
 A single \code{numeric} score.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{AlignSeqs}}, \code{\link{PFASUM}}

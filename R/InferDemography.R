@@ -90,7 +90,7 @@ InferDemography <- function(x,
 		for (i in w) {
 			t <- c[, i]
 			t <- t[t > 0L]
-			if (length(t) <= 2L) {
+			if (length(t) <= 2L) { # one derived allele
 				L <- L + 1L
 				if (length(t) == 2L) { # dimorphic sites
 					t <- min(t)
@@ -110,14 +110,17 @@ InferDemography <- function(x,
 		penalty <- -Inf
 	}
 	
+	.chooseRatio <- function(a, b, r) # choose(a, r)/choose(b, r)
+		exp(lgamma(a + 1L) + lgamma(b - r + 1L) - lgamma(b + 1L) - lgamma(a - r + 1L))
+	
 	.Est <- function(N, k) {
 		E <- numeric(length(SFS))
 		for (r in seq_len(n - 1L)) {
 			s <- seq_along(N)
 			a <- n - k[s] + 1L
 			b <- n - k[s + 1L] + 1L
-			e <- sum(N*(choose(a, r) - choose(b, r)))
-			e <- e*2*ploidy*mu*L/r/choose(n - 1L, r)
+			e <- sum(N*(.chooseRatio(a, n - 1L, r) - .chooseRatio(b, n - 1L, r)))
+			e <- e*2*ploidy*mu*L/r
 			if (r > length(SFS))
 				r <- n - r # fold spectrum
 			E[r] <- E[r] + e

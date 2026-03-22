@@ -51,7 +51,7 @@ If \code{includeNonLetters = TRUE} (the default) then gap ("-"), mask ("+"), and
 An \code{XStringSet} with a single consensus sequence matching the input type.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{Disambiguate}}, \code{\link{IdConsensus}}

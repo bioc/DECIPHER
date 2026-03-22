@@ -109,7 +109,7 @@ Long nucleotide sequences, such as genomes, are often not collinear or may be co
 An object of class ``Synteny''.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \note{
 \code{FindSynteny} is intended to be used on sets of sequences with up to ~200 million nucleotides total per identifier.  For this reason, better performance can sometimes be achieved by assigning a unique identifier to each chromosome belonging to a large genome.

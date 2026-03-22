@@ -52,7 +52,7 @@ An object of class \code{NonCoding}.
 Wright, E. S. (2021). FindNonCoding: rapid and simple detection of non-coding RNAs in genomes. Bioinformatics. https://doi.org/10.1093/bioinformatics/btab708
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{FindNonCoding}}, \code{\link{NonCoding-class}}

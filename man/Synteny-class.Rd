@@ -120,7 +120,7 @@ The \code{plot} method displays a bar view of the sequences in the same order as
 The \code{as.dist} method returns an object of class \code{dist} containing distances between each pair of sequences in a \code{Synteny} object. Distance is defined as one minus the hit coverage for the shorter of the two sequences in the pair.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{AlignSynteny}}, \code{\link{FindSynteny}}

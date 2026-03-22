@@ -33,7 +33,7 @@ Extracts a set of gene predictions as either DNA, mRNA, or proteins.
 An \code{"AAStringSet"}, \code{"DNAStringSet"}, or \code{"RNAStringSet"} determined by \code{type}.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{FindGenes}}, \code{\link{Genes-class}}, \code{\link{WriteGenes}}

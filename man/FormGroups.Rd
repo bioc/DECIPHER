@@ -53,7 +53,7 @@ The algorithm ascends the taxonomic tree, agglomerating taxa into groups until t
 A \code{data.frame} with the \code{organism} and corresponding group name as \code{identifier}.  Note that quotes are stripped from group names to prevent problems that they may cause.  The \code{origin} gives the \code{organism} preceding the \code{identifier}.  The \code{count} denotes number of sequences corresponding to each \code{organism}.  If \code{add2tbl} is not \code{FALSE} then the ``identifier'' and ``origin'' columns are updated in \code{dbFile}.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{IdentifyByRank}}

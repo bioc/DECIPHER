@@ -33,7 +33,7 @@ The \code{removeGaps} argument controls which gaps are removed in \code{myXStrin
 An \code{XStringSet} of the same type as \code{myXStringSet}.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{AlignSeqs}}

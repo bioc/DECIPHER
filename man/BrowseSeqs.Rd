@@ -69,7 +69,7 @@ ES Wright (2016) "Using DECIPHER v2.0 to Analyze Big Biological Sequence Data in
 Kunzmann P., et al. (2020) "Substitution matrix based color schemes for sequence alignment visualization". BMC Bioinformatics, \bold{21(1):209}.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \note{
 Some web browsers do not display colored characters with equal widths.  If positions do not align across sequences then try opening the \code{htmlFile} with a different web browser.

@@ -15,9 +15,9 @@ Treeline(myXStringSet = NULL,
          cutoff = -Inf,
          showPlot = FALSE,
          standardDeviation = 0.2,
-         fracRandomNNIs = 0.4,
+         fracRandomNNIs = 0.8,
          goalPercent = NA,
-         tolerance = 5e-5,
+         tolerance = 1e-5,
          minIterations = 40,
          maxIterations = 400,
          maxTime = Inf,
@@ -45,31 +45,31 @@ The phylogenetic method to be used.  This should be one of \code{"ME"} for (bala
 Character string indicating the type of output desired.  This should be one of \code{"dendrogram"} (the default), \code{"clusters"}, or \code{"both"}.  (See value section below.)
 }
   \item{cutoff}{
-A vector with the maximum edge length separating the sequences in the same cluster.  A negative value (the default) will prevent clustering.  Multiple cutoffs may be provided in ascending or descending order.  (See details section below.)
+A vector with the maximum edge length separating members of the same cluster.  A negative value (the default) will prevent clustering.  Multiple cutoffs may be provided in ascending or descending order.  (See details section below.)
 }
   \item{showPlot}{
 Logical specifying whether or not to plot the resulting dendrogram.
 }
   \item{standardDeviation}{
-Numeric determining the extent to which cophenetic distances are perturbed prior to constructing the initial candidate tree in each iteration.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.
+Numeric determining the extent to which cophenetic distances are perturbed prior to constructing the starting candidate tree in each iteration.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.
 }
   \item{fracRandomNNIs}{
-Numeric giving the fraction of stochastic nearest neighbor interchanges to perform when perturbing the tree to develop a new candidate tree in each iteration after the first.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.
+Numeric giving the fraction of stochastic nearest neighbor interchanges (NNIs) to perform when perturbing the starting candidate tree in each iteration after the first.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.
 }
   \item{goalPercent}{
-Numeric providing the target percent difference in score relative to the best observed tree after optimizing the candidate tree through nearest neighbor interchanges (NNIs).  If \code{goalPercent} is not \code{NA} (the default), \code{fracRandomNNIs} is iteratively adjusted to reach \code{goalPercent} relative score.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.
+Numeric providing the target percent change in score relative to the best observed tree after perturbing the starting tree in each iteration.  If \code{goalPercent} is not \code{NA} (the default), \code{standardDeviation} and \code{fracRandomNNIs} are iteratively adjusted to reach \code{goalPercent} relative change in score.  Reasonable non-default values are around \code{3} to \code{7}, as smaller values (e.g. \code{1}) will minimally explore tree space and larger values (e.g., \code{9}) may result in too much perturbation.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.
 }
   \item{tolerance}{
-Numeric determining the relative convergence tolerance.  Iterating will cease when the relative score has changed by less than \code{tolerance} for \code{minIterations} and is expected to change by less than \code{tolerance} per iteration.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.
+Numeric determining the relative convergence tolerance.  Iterating will cease when the relative score has changed by less than \code{tolerance} for \code{minIterations} and has changed by less than \code{tolerance} per iteration on average.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.
 }
   \item{minIterations}{
 Integer indicating the minimum number of iterations of optimization to perform.  Lower values will result in faster convergence but may insufficiently explore tree space.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.
 }
   \item{maxIterations}{
-Integer indicating the maximum number iterations of optimization to perform.  More iterations will potentially better search tree space at the expense of added runtime.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.
+Integer indicating the maximum number iterations of optimization to perform.  More iterations will more thoroughly search tree space at the expense of added runtime.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.
 }
   \item{maxTime}{
-Numeric giving the maximum number of hours the algorithm is allowed to run before returning a result.  Once \code{maxTime} is reached, the algorithm will proceed at the next available opportunity, even if \code{minIterations} is unmet.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.  Note that setting a time limit may prevent reproducibility when using a random number seed.
+Numeric giving the maximum number of hours the algorithm is allowed to run before returning a result.  Once \code{maxTime} is reached, the algorithm will proceed at the next available opportunity, even if \code{minIterations} is unmet.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.  Note that setting a time limit may prevent reproducibility, even when setting a random number seed.
 }
   \item{root}{
 Integer specifying the index of the outgroup sequence or \code{0} (the default) to midpoint root the dendrogram.
@@ -78,10 +78,10 @@ Integer specifying the index of the outgroup sequence or \code{0} (the default) 
 Numeric controlling which internal edges of the tree are removed by collapsing their nodes.  If \code{collapse} is zero then nodes at the same height will be collapsed to a single node, resulting in a multifurcating tree.  When \code{collapse} is greater than zero, nodes that are within \code{collapse} difference in height are made into a single node.  A value of \code{collapse} less than zero (the default) will ensure that the \code{dendrogram} is purely bifurcating.  Note that \code{collapse} has no effect on cluster numbers or \code{cutoff}.
 }
   \item{reconstruct}{
-Logical or numeric determining whether to perform ancestral state reconstruction when \code{myXStringSet} is specified.  If \code{TRUE}, ancestral character states are determined at internal nodes of the \code{dendrogram} and provided as a \code{"state"} attribute.  Ancestral states are determined as the most parsimonious state according to the \code{"costMatrix"}, unless \code{method} is \code{"ML"}, in which case ancestral states are determined as those with the highest (marginal) likelihood.  A numeric value between zero and one (exclusive) can be provided when \code{method} is \code{"ML"} to require that fraction of the state's likelihood to be greater than that of all alternative states, otherwise a more ambiguous degeneracy code is used.  Only applicable if \code{type} is \code{"dendrogram"} (the default) or \code{"both"}.
+Logical or numeric determining whether to perform ancestral state reconstruction when \code{myXStringSet} is specified.  If \code{TRUE}, ancestral character states are determined at internal nodes of the \code{dendrogram} and provided as a \code{"state"} attribute.  Ancestral states are determined as the most parsimonious state according to the \code{"costMatrix"}, unless \code{method} is \code{"ML"}, in which case ancestral states are determined as those with the highest (marginal) likelihood.  A numeric value between zero and one (exclusive) can be provided when \code{method} is \code{"ML"} to require a specific fraction of the state's likelihood to be greater than that of all alternative states, otherwise a more ambiguous degeneracy code is used.  Only applicable if \code{type} is \code{"dendrogram"} (the default) or \code{"both"}.
 }
   \item{costMatrix}{
-Either \code{NULL} (the default) or a symmetric matrix setting the penalties used in Sankoff parsimony.  The default (\code{NULL}) will apply a cost of \code{1} for standard character state changes and \code{0} otherwise (i.e., equivalent to Fitch parsimony).  If a \code{matrix} then the states are taken from its row or column names.  Only applicable if \code{method} is \code{"MP"}, or \code{reconstruct} is \code{TRUE} and \code{method} is not \code{"ML"}.
+Either \code{NULL} (the default) or a symmetric matrix setting the penalties used in Sankoff parsimony.  The default (\code{NULL}) will apply a uniform cost of \code{1} for standard character state changes and \code{0} otherwise (i.e., equivalent to Fitch parsimony).  If a \code{matrix} then the states are taken from its row or column names.  Only applicable if \code{method} is \code{"MP"}, or \code{reconstruct} is \code{TRUE} and \code{method} is not \code{"ML"}.
 }
   \item{model}{
 One or more of the available \code{MODELS} of evolution provided as a character vector or list with components `Protein' and/or `Nucleotide' if \code{method} is \code{"ML"}.  Automatic model selection based on the \code{informationCriterion} will be performed for \code{"ML"} if more than one \code{model} is provided.  For \code{"ME"}, if \code{myDistMatrix} is \code{NULL}, a single model of evolution can be specified for generating the distance matrix from \code{myXStringSet}.
@@ -93,7 +93,7 @@ Character string specifying which information criterion to use in automatic mode
 Logical determining whether to use the Laguerre quadrature or equal-sized bins when discretizing the rate distribution across sites when \code{method} is \code{"ML"}.  The default (\code{FALSE}) is to use equal-sized bins for direct comparison among likelihoods computed by other programs, although the Laguerre quadrature offers a modest improvement in accuracy for the same number of rates (Felsenstein, 2001).
 }
   \item{processors}{
-The number of processors to use, or \code{NULL} to automatically detect and use all available processors.  Note, the number of processors in some steps is automatically selected between \code{1} and \code{processors} to optimize performance.
+The number of processors to use, or \code{NULL} to automatically detect and use all available processors.  Note, the number of processors in some steps is automatically selected between \code{1} and \code{processors} to optimize performance, and specifying a number for \code{processors} does not guarantee that number will be used throughout.
 }
   \item{verbose}{
 Logical indicating whether to display progress.
@@ -104,23 +104,23 @@ Logical indicating whether to display progress.
 
 Multiple \code{method}s of tree building are supported:
 
-(1) Minimum evolution: \code{ME} iteratively minimizes the (balanced) tree length according to a distance matrix, as described by Pauplin (2000).  According to Gonnet (2012) and Spirin \emph{et al.} (2024), the \code{ME} criterion performs best overall on benchmarks constructed from real genes and is therefore the default \code{method}.  \code{ME} is also the fastest of the optimized \code{method}s.  Branch lengths are determined from \code{myDistMatrix} or, if missing (\code{NULL}), calculated from the hamming distances between sequences in \code{myXStringSet} unless a \code{model} is specified.
+(1) Minimum evolution: \code{ME} iteratively minimizes the (balanced) tree length according to a distance matrix, as described by Pauplin (2000).  According to Gonnet (2012) and Spirin \emph{et al.} (2024), the \code{ME} criterion performs best overall on benchmarks constructed from real genes and is therefore the default \code{method}.  \code{ME} is also the fastest of the optimized \code{method}s.  Branch lengths are determined from \code{myDistMatrix} or, if missing (\code{NULL}), calculated from the length-normalized Hamming distances between sequences in \code{myXStringSet} unless a \code{model} is specified.
 
-(2) Maximum likelihood: \code{ML} iteratively maximizes the likelihood of the tree and any free \code{model} parameters given aligned sequences (\code{myXStringSet}).  One or more \code{MODELS} of sequence evolution must be specified, of which the best \code{model} is automatically selected based on the \code{informationCriterion}.  The \code{ML} criterion performs well on benchmarks constructed from real genes when given sufficiently long and variable alignments.  Branch lengths are in units of substitution per site.
+(2) Maximum likelihood: \code{ML} iteratively maximizes the likelihood of the tree and any free \code{model} parameters with respect to the aligned sequences (\code{myXStringSet}).  One or more \code{MODELS} of sequence evolution must be specified, of which the best \code{model} is automatically selected based on the \code{informationCriterion}.  The \code{ML} criterion performs well on benchmarks constructed from real genes when given sufficiently long and variable alignments.  Branch lengths are in units of substitution per site.
 
-(3) Maximum parsimony: \code{MP} iteratively maximizes the parsimony of a tree given aligned sequences (\code{myXStringSet}) and a \code{costMatrix}.  The default cost matrix is binary, corresponding to Fitch (1971) parsimony.  The \code{costMatrix} often has a large influence over the result, and more biologically reasonable cost matrices will likely improve the resulting tree.  See the examples below for non-uniform cost matrices.  Here, branch lengths are in units of the average cost per site.
+(3) Maximum parsimony: \code{MP} iteratively maximizes the parsimony of a tree given aligned sequences (\code{myXStringSet}) and a \code{costMatrix}.  The default cost matrix is binary, corresponding to Fitch (1971) parsimony.  The \code{costMatrix} often has a large influence over the result, and more biologically reasonable cost matrices will likely improve the resulting tree.  See the examples below for non-uniform cost matrices.  Here, branch lengths are in units of the average cost per site, which is equivalent to averages changes per site for a binary cost matrix.
 
 (4) Neighbor-joining: \code{NJ} uses the Neighbor-Joining method proposed by Saitou and Nei (1987), which creates an approximate minimum evolution tree from a distance matrix (\code{myDistMatrix}).  The \code{NJ} criterion is a greedy heuristic approach to minimum evolution, and can be considered a less accurate alternative to \code{ME}.  Notably, \code{NJ} is faster than \code{ME} for moderate numbers of sequences, since it only computes a single tree, but is slower than \code{ME} for large numbers of sequences due to its cubic time complexity.
 
-(5) Ultrametric: The method \code{complete} assigns clusters using complete-linkage so that sequences in the same cluster are no more than \code{cutoff} distance apart.  The method \code{single} assigns clusters using single-linkage so that sequences in the same cluster are within \code{cutoff} of at least one other sequence in the same cluster.  \code{UPGMA} and \code{WPGMA} assign clusters using average-linkage which is a compromise between the sensitivity of complete-linkage clustering to outliers and the tendency of single-linkage clustering to connect distant relatives that are not closely related.  \code{UPGMA} produces an unweighted tree, where each leaf contributes equally to the average edge lengths, whereas \code{WPGMA} produces a weighted result.
+(5) Ultrametric: The method \code{complete} assigns clusters using complete-linkage so that members of the same cluster are no more than \code{cutoff} distance apart.  The method \code{single} assigns clusters using single-linkage so that members of the same cluster are within \code{cutoff} of at least one other member.  \code{UPGMA} and \code{WPGMA} assign clusters using average-linkage which is a compromise between the sensitivity of complete-linkage clustering to outliers and the tendency of single-linkage clustering to connect distant members.  \code{UPGMA} produces an unweighted tree, where each leaf contributes equally to the average edge lengths, whereas \code{WPGMA} produces a weighted result.
 
-For \code{method}s \code{"ME"}, \code{"ML"}, and \code{"MP"}, candidate trees are iteratively optimized through rounds of nearest neighbor interchanges (``climbs'') followed by fusion of remaining differences to the best observed tree (``grafts'').  Candidate trees are generated with a heuristic variant of neighbor joining after perturbing the best observed tree's cophenetic distance matrix, followed by stochastic NNIs if \code{fracRandomNNIs} is greater than \code{0}.  The value of \code{fracRandomNNIs} is adaptively varied to reach \code{goalPercent} relative score on average after optimization via climbs, unless \code{goalPercent} is \code{NA} (the default).  This process results in gradual improvement until reaching a best tree, which is returned if insufficient score improvement is made for \code{minIterations}, unless \code{maxIterations} or \code{maxTime} is reached.
+For \code{method}s \code{"ME"}, \code{"ML"}, and \code{"MP"}, candidate trees are iteratively optimized through rounds of nearest neighbor interchanges (``climbs'') followed by testing replacement of any remaining subtree differences on the best observed tree (``grafts'').  Candidate trees are generated with a heuristic variant of neighbor joining after perturbing the best observed tree's cophenetic distance matrix, followed by stochastic NNIs if \code{fracRandomNNIs} is greater than \code{0}.  The value of \code{fracRandomNNIs} is adaptively varied to reach \code{goalPercent} relative score for each iteration's initial (perturbed) tree, unless \code{goalPercent} is \code{NA} (the default).  This process results in gradual improvement until reaching a best tree, which is returned if insufficient score improvement is made for \code{minIterations}, unless \code{maxIterations} or \code{maxTime} is reached.
 
-The objective of optimization is to find the global optimum, but it is necessary to set a random seed for exact reproducibility since optimization is stochastic and may only find a local optimum.  Setting \code{maxTime} may prevent reproducibility if iteration terminates prior to reaching convergence or \code{maxIterations}.  Also, not all math operations (e.g., logarithm) have standard implementations across platforms, so reproducibility is not guaranteed on different machines.  The results are not necessarily significant even if they are reproducible, and it possible to use bootstrapping to gauge support for different partitions.  When \code{method} is \code{"ML"}, aBayes support values are provided that are a reasonable representation of support.
+The objective of optimization is to find the global optimum, but it is necessary to set a random seed for exact reproducibility since optimization is stochastic and may only find a local optimum.  Setting \code{maxTime} may prevent reproducibility if iteration terminates prior to reaching convergence or \code{maxIterations}.  Also, not all math operations (e.g., logarithm) have standardized implementations across platforms, so reproducibility is not guaranteed on different machines.  The results are not necessarily significant even if they are reproducible, and it possible to use bootstrapping to gauge support for different partitions.  When \code{method} is \code{"ML"}, aBayes support values are provided that are a reasonable representation of branch support.
 
-The returned dendrogram has information stored in its attributes, which can be accessed with the \code{attributes} or \code{attr} functions.  For maximum likelihood trees, the edges have a \code{"probability"} attribute representing the aBayes support probability (Anisimova, 2011).  If \code{reconstruct} is not \code{FALSE}, each edge of the tree will have a \code{"state"} attribute representing the node's predicted ancestral state.  Also, when \code{reconstruct} is not \code{FALSE}, maximum likelihood trees will provide the likelihoods at each site and other \code{method}s will provide a state transition matrix.
+The returned dendrogram has information stored in its attributes, which can be accessed with the \code{attributes} or \code{attr} functions.  For maximum likelihood trees, the edges have a \code{"probability"} attribute representing the aBayes support probability (Anisimova, 2011).  If \code{reconstruct} is not \code{FALSE}, each edge of the tree will have a \code{"state"} attribute representing the node's predicted ancestral state.  Also, when \code{reconstruct} is not \code{FALSE}, maximum likelihood trees will provide the likelihoods at each site and other \code{method}s will provide a state transition matrix based on parsimony.
 
-When non-negative \code{cutoff}(s) are supplied, \code{Treeline} will assign clusters based on edge lengths in the tree.  Multiple cutoffs may be provided in sorted order.  If the \code{cutoff}s are provided in \emph{descending} order then clustering at each new value of \code{cutoff} is continued within the prior \code{cutoff}'s clusters.  In this way clusters at lower values of \code{cutoff} are completely contained within their umbrella clusters at higher values of \code{cutoff}.  This is useful for defining taxonomy, where groups need to be hierarchically nested.  If multiple cutoffs are provided in \emph{ascending} order then clustering at each level of \code{cutoff} is independent of the prior level.
+When non-negative \code{cutoff}(s) are supplied, \code{Treeline} will assign clusters based on edge lengths in the tree.  Multiple cutoffs can be provided in sorted order.  If the \code{cutoff}s are provided in \emph{descending} order then clustering at each new value of \code{cutoff} is continued within the prior \code{cutoff}'s clusters.  In this way clusters at lower values of \code{cutoff} are completely contained within their umbrella clusters at higher values of \code{cutoff}.  This is useful for defining taxonomy, where groups need to be hierarchically nested.  If multiple cutoffs are provided in \emph{ascending} order then clustering at each level of \code{cutoff} is independent of the prior level.
 }
 \value{
 If \code{type} is \code{"dendrogram"} (the default), then a tree of class \code{dendrogram} is returned with attributes including pertinent information.
@@ -128,7 +128,7 @@ If \code{type} is \code{"clusters"}, then a \code{data.frame} is returned with d
 If \code{type} is \code{"both"} then a list is returned containing both the \code{"clusters"} and \code{"dendrogram"} outputs.
 }
 \note{
-Cophenetic distance between leaves of the \code{dendrogram} is often defined as the sum of branch lengths separating the leaves, also known as the patristic distance.  This is the typical phylogenetic interpretation but different than that for dendrograms produced by \code{hclust} where leaves are merged at a height equal to their cophenetic distance.  Hence, always use \code{Cophenetic} (rather than \code{cophenetic}) to compute patristic distances where the length between leaves is desired.
+Cophenetic distance between leaves of the \code{dendrogram} is often defined as the sum of branch lengths separating the leaves, also known as the patristic distance.  This is the typical phylogenetic interpretation but different than that for dendrograms produced by \code{hclust} where leaves are merged at a height defined by \code{hclust} as their cophenetic distance.  Hence, always use \code{Cophenetic} (rather than \code{cophenetic}) to compute patristic distances where the length between leaves is desired.
 }
 \references{
 Anisimova M., \emph{et al.} (2011) Survey of branch support methods demonstrates accuracy, power, and robustness of fast likelihood-based approximation schemes. \emph{Syst Biol.}, \bold{60(5)}, 685-99.
@@ -152,7 +152,7 @@ Sankoff, D. (1975) Minimal mutation trees of sequences. \emph{SIAM Journal of Ap
 Spirin, S., \emph{et al.} (2024) PhyloBench: A Benchmark for Evaluating Phylogenetic Programs. \emph{Molecular Biology and Evolution}, \bold{41(6)}, 1-11.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{Clusterize}}, \code{\link{Cophenetic}}, \code{\link{DistanceMatrix}}, \code{\link{MapCharacters}}, \code{\link{MODELS}}, \code{\link{ReadDendrogram}}, \code{\link{WriteDendrogram}}
@@ -194,6 +194,14 @@ plot(treeME)
 # compare the distance matrix to the cophenetic (patristic) distance matrix
 plot(d, Cophenetic(treeME),
 	xlab="Pairwise distance", ylab="Patristic distance",
+	asp=1, pch=46, col="#00000033")
+abline(a=0, b=1)
+
+# example of minimum evolution (ME) with a model of evolution
+treeME_DNA <- Treeline(dna, model="TN93+F", processors=1L) # for DNA
+treeME_AA <- Treeline(aa, model="WAG+F", processors=1L) # for AA
+plot(Cophenetic(treeME_DNA), Cophenetic(treeME_AA),
+	xlab="DNA patristic distance", ylab="AA patristic distance",
 	asp=1, pch=46, col="#00000033")
 abline(a=0, b=1)
 

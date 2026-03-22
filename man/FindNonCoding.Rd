@@ -44,7 +44,7 @@ An object of class \code{Genes}.
 Wright, E. S. (2021). FindNonCoding: rapid and simple detection of non-coding RNAs in genomes. Bioinformatics. https://doi.org/10.1093/bioinformatics/btab708
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{LearnNonCoding}}, \code{\link{NonCoding-class}}, \code{\link{ExtractGenes}}, \code{\link{Genes-class}}, \code{\link{WriteGenes}}

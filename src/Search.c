@@ -349,14 +349,10 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 				// calculate substitution scores
 				subScores = (double *) malloc(l_i.length*p_i.length*sizeof(double)); // thread-safe on Windows
 				for (j = 0; j < p_i.length; j++) {
-					if (j < l[i] && w[j] == NA_INTEGER) {
-						lkup = NA_INTEGER; // masked position
-					} else {
-						lkup = lkup_col[(unsigned char)p_i.ptr[j]];
-					}
+					lkup = lkup_col[(unsigned char)p_i.ptr[j]];
 					if (lkup == NA_INTEGER) {
 						for (k = 0; k < l_i.length; k++)
-							subScores[j*l_i.length + k] = NA_REAL;
+							subScores[j*l_i.length + k] = R_NegInf;
 					} else {
 						for (k = 0; k < l_i.length; k++)
 							subScores[j*l_i.length + k] = sMcorr[lkup + k];
@@ -575,7 +571,7 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 							p1--;
 							p2--;
 							lkup = lkup_row[(unsigned char)s_j.ptr[p2]];
-							if (lkup != NA_INTEGER && subScores[p1*l_i.length + lkup] != NA_REAL)
+							if (lkup != NA_INTEGER && subScores[p1*l_i.length + lkup] != R_NegInf)
 								score[j] += subScores[p1*l_i.length + lkup];
 						}
 						
@@ -607,7 +603,7 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 							p1--;
 							p2--;
 							lkup = lkup_row[(unsigned char)s_j.ptr[p2]];
-							if (lkup != NA_INTEGER && subScores[p1*l_i.length + lkup] != NA_REAL) {
+							if (lkup != NA_INTEGER && subScores[p1*l_i.length + lkup] != R_NegInf) {
 								tempScore += subScores[p1*l_i.length + lkup];
 							} else { // encountered missing character
 								break;
@@ -649,7 +645,7 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 						p2 = posTarget[j] + len[j] - 1;
 						while (p1 < p_i.length && p2 <= bound && tempScore > dS) {
 							lkup = lkup_row[(unsigned char)s_j.ptr[p2]];
-							if (lkup != NA_INTEGER && subScores[p1*l_i.length + lkup] != NA_REAL) {
+							if (lkup != NA_INTEGER && subScores[p1*l_i.length + lkup] != R_NegInf) {
 								tempScore += subScores[p1*l_i.length + lkup];
 							} else { // encountered missing character
 								break;
@@ -1052,6 +1048,7 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 			if (ISNA(minS)) { // determine the minimum score per target
 				double mS; // minimum score
 				for (j = 0; j < c; j++) {
+					// already corrected score for size of target sequence
 					mS = log((tot - (double)pos[set[res[j]] - 1])/(double)step);
 					if (score[res[j]] >= mS && score[res[j]] >= 0)
 						res[k++] = res[j];

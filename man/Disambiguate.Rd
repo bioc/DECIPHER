@@ -21,7 +21,7 @@ Ambiguity codes in the \code{IUPAC_CODE_MAP} can be used to represent multiple n
 A \code{DNAStringSetList} or \code{RNAStringSetList} with one element for each sequence in \code{myXStringSet}.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{ConsensusSequence}}

@@ -41,7 +41,7 @@ Ancestral state reconstruction affords the ability to identify character changes
 If \code{type} is \code{"dendrogram"} (the default) then the original \code{dendrogram} \code{x} is returned with the addition of \code{"change"} attributes on every edge except the root.  If \code{type} is \code{"table"} then a sorted \code{table} of character changes is returned with the most frequent parallel changes at the beginning.  If \code{type} is \code{"both"} then a \code{list} of length 2 is provided containing both the \code{dendrogram} and \code{table}.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{Treeline}}

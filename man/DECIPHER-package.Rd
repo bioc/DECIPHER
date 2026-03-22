@@ -135,6 +135,6 @@ WriteGenes               Write Genes to a File
 \author{
 Erik Wright
 
-Maintainer: Erik Wright <eswright@pitt.edu>
+Maintainer: Erik Wright <Erik.Wright@bcm.edu>
 }
 \keyword{ package }

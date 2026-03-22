@@ -90,7 +90,7 @@ A \code{data.frame} is returned with dimensions with columns \code{Pattern}, \co
 ES Wright (2024) "Fast and Flexible Search for Homologous Biological Sequences with DECIPHER v3". The R Journal, \bold{16(2)}, 191-200.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{IndexSeqs}}, \code{\link{AlignPairs}}

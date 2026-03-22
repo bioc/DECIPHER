@@ -61,11 +61,11 @@ options(width=80)
 
 This document describes how to grow phylogenetic trees using the \Rfunction{Treeline} function in the \Rpackage{DECIPHER} package.  \Rfunction{Treeline} takes as input a set of aligned nucleotide or amino acid sequences and returns a phylogenetic tree (i.e., \Rclass{dendrogram} object) as output.  This vignette focuses on optimizing balanced minimum evolution (ME), maximum likelihood (ML), and maximum parsimony (MP) phylogenetic trees starting from sequences.
 
-Why is the function called \Rfunction{Treeline}?  The goal of \Rfunction{Treeline} is to find the best tree according to an optimality criterion.  There are often many trees near the optimum.  Therefore, \Rfunction{Treeline} seeks to find a tree as close as possible to the treeline, analogous to how trees cannot grow above the treeline on a mountain.
+Why is the function called \Rfunction{Treeline}?  The goal of \Rfunction{Treeline} is to find the best tree according to an optimality criterion.  There are often many trees near the optimum.  Therefore, \Rfunction{Treeline} searches along the metaphorical treeline of high scoring trees to find the best one.
 
 Why use \Rfunction{Treeline} versus other programs?  The \Rfunction{Treeline} function is designed to return an excellent phylogenetic tree with minimal user intervention.  Many tree building programs have a large set of complex options for niche applications.  In contrast, \Rfunction{Treeline} simply builds a great tree by default.  \Rfunction{Treeline}'s unified optimization strategy also makes it easy to compare trees optimized under different optimality criteria.  This vignette is intended to get you started and introduce additional options/functions that might be useful.
 
-Treeline uses multi-start optimization followed by hill-climbing to find the highest trees on the optimality landscape.  Since Treeline is a stochastic optimizer, it optimizes many trees to prevent chance from influencing the final result.  With any luck it'll find the treeline!
+Treeline uses a strategy of multi-start optimization followed by hill-climbing and grafting.  Since Treeline is a stochastic optimizer, it optimizes many trees to prevent chance from influencing the final result.  With some luck it'll find the highest scoring tree!
 
 %------------------------------------------------------------
 \section{Performance Considerations}
@@ -75,14 +75,16 @@ Finding an optimal tree is no easy feat.  \Rfunction{Treeline} systematically op
 
 \begin{itemize}
 \item Only use the sequences you need:  \Rfunction{Treeline}'s optimization runtime scales approximately quadratically with the number of sequences.  Hence, limiting the number of sequences is a worthwhile consideration.  In particular, always eliminate redundant sequences, as shown in the example below.
-\item Compile with OpenMP support:  Significant speed-ups can be achieved with multi-threading using OpenMP, particularly for ML and MP \Rfunarg{method}s.  See the ``Getting Started DECIPHERing'' vignette for how to enable OpenMP on your computer.  Then you will only need to set the argument \code{processors=NULL} and \Rfunction{Treeline} will use all available processors.
-\item Compile for SIMD support:  \Rfunction{Treeline} is configured to make use of SIMD operations, which are available on most processors.  The easiest way to enable SIMD is to add a line with ``CFLAGS += -O3 -march=native'' to your $\sim$/.R/Makevars text file.  Then, after recompiling, there should be a speed-up on systems with SIMD support.  Note that enabling SIMD makes the compiled code non-portable, so the code always needs to be compiled on the hardware being used.
+\item Compile with OpenMP support:  Significant speed-ups can be achieved with multi-threading using OpenMP, particularly for ML and MP \Rfunarg{method}s.  See the ``Getting Started DECIPHERing'' vignette for how to enable OpenMP on your computer.  Then you can set the argument \code{processors=NULL} and \Rfunction{Treeline} will use all available processors.
+\item Compile for SIMD support:  \Rfunction{Treeline} is configured to make use of SIMD operations, which are available on most processors.  The easiest way to enable SIMD is to add a line with ``CFLAGS += -O3 -march=native'' to your $\sim$/.R/Makevars text file.  Then, after recompiling, there should be a modest speed-up on systems with SIMD support.  Note that enabling SIMD makes the compiled code non-portable, so the code always needs to be compiled on the hardware being used.
 \item Set a timeout:  The \Rfunarg{maxTime} argument specifies the (approximate) maximum number of hours you are willing to let \Rfunction{Treeline} run.  If you are concerned about the code running for too long then simply set this argument.
-\item Limit iterations:  \Rfunction{Treeline} will converge after \Rfunarg{minIterations} when the score is expected to change less than \Rfunarg{tolerance} per iteration, unless \Rfunarg{maxIterations} is met before convergence.  A reasonable way to converge early is to set \Rfunarg{minIterations} to a lower value (e.g., \code{20}).  There is evidence supporting the notion that exhaustive searching is unlikely to result in a significantly more correct tree \cite{Kumar:2023}, even as the score continues to improve.
-\item For ML, choose a model:  Automatic model selection is a useful feature, but frequently this time-consuming step can be skipped.  For many nucleotide sequences the \code{"GTR+G4"} model will be automatically selected.  Typical amino acid sequences will tend to pick the \code{"LG+G4"} or \code{"WAG+G4"} models, unless the sequences are from a particular origin (e.g., mitochondria).  Pre-selecting a subset of the available \Robject{MODELS} and supplying this as the \Rfunarg{model} argument can save time.
+\item Limit iterations:  \Rfunction{Treeline} will converge after \Rfunarg{minIterations} when the score is expected to change less than \Rfunarg{tolerance} per iteration, unless \Rfunarg{maxIterations} is met before convergence.  A reasonable way to converge early is to set \Rfunarg{minIterations} and \Rfunarg{maxIterations} to lower values.  There is evidence supporting the notion that exhaustive searching is unlikely to result in a significantly more correct tree \cite{Kumar:2023}, even as the score continues to improve.
+\item For ML, choose a model:  Automatic model selection is a useful feature, but frequently this time-consuming step can be skipped.  For many nucleotide sequences the \code{"GTR+G4"} model will be automatically selected.  Typical amino acid sequences will pick the \code{"LG+G4"} or \code{"WAG+G4"} models, unless the sequences are from a particular origin (e.g., mitochondria).  Pre-selecting a subset of the available \Robject{MODELS} and supplying this as the \Rfunarg{model} argument can save time.
 \end{itemize}
 
-Accuracy is another performance consideration.  \Rfunction{Treeline} is a stochastic optimizer, so it will continue searching the space of possible trees until convergence.  It is possible to find the best tree on the first iteration, but most of the time additional iterations will yield a better scoring tree.  If you are feeling unlucky, you can simply increase the number of iterations to ensure a good (scoring) tree is found.  Increasing \Rfunarg{minIterations} (e.g., to \code{100}) will largely remove luck from the equation.  There is a decreasing marginal return to more iterations, and it's probably not worth searching (almost) endlessly for a slightly better tree.  \Rfunction{Treeline}'s default settings are designed to balance runtime versus the reward of better scoring trees.
+Accuracy is another performance consideration.  \Rfunction{Treeline} is a stochastic optimizer, so it will continue searching the space of possible trees until convergence.  It is possible to find the best tree on the first iteration, but most of the time additional iterations will yield a better scoring tree.  If you are feeling unlucky, you can simply increase the number of iterations (i.e., \Rfunarg{minIterations} and \Rfunarg{maxIterations}) to ensure a good tree is found.  There is a decreasing marginal return to more iterations, and it's probably not worth searching (almost) endlessly for a slightly better tree.  \Rfunction{Treeline}'s default settings are designed to balance runtime versus the reward of better scoring trees.
+
+To largely remove luck from the equation, it is best to use an input alignment with many more sites than sequences.  A good rule of thumb is that the input alignment should have a \Rfunarg{width} at least four times its \Rfunarg{length} for nucleotides and two times for amino acids.  Otherwise the optimization space may have a rugged topology with many similarly scoring peaks, and it might be impossible to find the treeline of highest scoring trees.  More importantly than the difficulty of optimization is the lack of robustness, which indicates weak confidence in the resulting tree.  A good way to verify robustness is comparing the score across multiple runs starting from different random seeds or using bootstrapping.
 
 %------------------------------------------------------------
 \section{Preparing the Input Data}
@@ -90,7 +92,7 @@ Accuracy is another performance consideration.  \Rfunction{Treeline} is a stocha
 
 \Rfunction{Treeline} takes as input a multiple sequence alignment and/or a distance matrix.  All distance-based methods (including ME) only require specification of \code{myDistMatrix} but will generate a distance matrix using \Rfunction{DistanceMatrix} if \code{myXStringSet} is provided instead.  The character-based methods (i.e., ML and MP) require a multiple sequence alignment and will generate a distance matrix to construct the first candidate tree unless one is provided.
 
-Multiple sequence alignments can be constructed from a set of (unaligned) sequences using \Rfunction{AlignSeqs} or related functions.  \Rfunction{Treeline} will optimize trees for amino acid (i.e., \code{AAStringSet}) or nucleotide (i.e., \code{DNAStringSet} or \code{RNAStringSet}) sequences.  For coding sequences, it is intuitive to assume that nucleotide data would better resolve close taxa, whereas amino acid data would be preferable to determine the branching order of deep taxa.  However, recent work challenges this assumption by showing nucleotide data is adequate for determining distant relationships \cite{Kapli:2023}.  A good bet is to use nucleotide sequences with the \code{"ME"} \Rfunarg{method}, possibly specifying a model (e.g., \code{"F81+F"} that corrects for multiple substitutions per site.
+Multiple sequence alignments can be constructed from a set of (unaligned) sequences using \Rfunction{AlignSeqs} or related functions.  \Rfunction{Treeline} will optimize trees for amino acid (i.e., \code{AAStringSet}) or nucleotide (i.e., \code{DNAStringSet} or \code{RNAStringSet}) sequences.  For coding sequences, it is intuitive to assume that nucleotide data would better resolve close taxa, whereas amino acid data would be preferable to determine the branching order of deep taxa.  However, studies have shown that nucleotide data is adequate for determining distant relationships \cite{Kapli:2023}.  A good bet is to use nucleotide sequences with the \code{"ME"} \Rfunarg{method}, possibly specifying a model (e.g., \code{"F81+F"} that corrects for multiple substitutions per site.
 
 Here, we are going to use a set of sequences that is included with \Rpackage{DECIPHER}.  These sequences are from the internal transcribed spacer (ITS) between the 16S and 23S ribosomal RNA genes in several \textit{Streptomyces} species.  To avoid letting the result come down to good old-fashioned luck, it is always best to compare multiple trees optimized for different objectives (ME, ML, and MP) and alternative models of evolution.  \Rfunction{Treeline} is designed to facilitate this type of comparison, ideally across multiple loci.
 
@@ -142,7 +144,7 @@ The nucleotide models each have different numbers of free parameters (Fig. \ref{
 
 \subsection{Minimum Evolution}
 
-Empirical benchmarks suggest ME with Hamming distance results in the most accurate trees, at least for alignments of single protein domains.  Therefore, this is the default configuration when \Rfunarg{myXStringSet} is supplied without \code{myDistMatrix}, which returns branch lengths in units of differences per site.  If you would prefer to have branch lengths in units of substitutions per site, it is possible correct for multiple substitutions (e.g., \textit{A} to \textit{G} back to \textit{A}) by setting \Rfunarg{model} to any of the \Robject{MODELS} of evolution supported by \Rfunction{DistanceMatrix} (e.g., \code{"JC"} or \code{"F81+F"} for nucleotides, and \code{"WAG"} or \code{"WAG+F"} for amino acids).  See Figure \ref{f1} for a list of models supported by \Rfunction{DistanceMatrix}.  When \Rfunarg{method} is \code{"ME"}, maximum control is gained by supplying \Rfunarg{myDistMatrix}, which can be calculated with \Rfunction{DistanceMatrix} beforehand.
+Empirical benchmarks suggest ME with p-distance (i.e., length-normalized Hamming distance) results in impressively accurate trees.  Therefore, this is the default configuration when \Rfunarg{myXStringSet} is supplied without \code{myDistMatrix}, which returns branch lengths in units of differences per site.  If you would prefer to have branch lengths in units of substitutions per site, it is possible correct for multiple substitutions (e.g., \textit{A} to \textit{G} back to \textit{A}) by setting \Rfunarg{model} to any of the \Robject{MODELS} of evolution supported by \Rfunction{DistanceMatrix} (e.g., \code{"JC"} or \code{"F81+F"} for nucleotides, and \code{"WAG"} or \code{"WAG+F"} for amino acids).  See Figure \ref{f1} for a list of models supported by \Rfunction{DistanceMatrix}.  When \Rfunarg{method} is \code{"ME"}, maximum control is gained by supplying \Rfunarg{myDistMatrix}, which can be calculated with \Rfunction{DistanceMatrix} beforehand.
 
 For example, a standard \Rfunarg{model} to select for nucleotide sequences would be \code{"TN93+F"} and for amino acid sequences would be \code{"WAG"}.  These models return trees with branch lengths in units of substitutions per site.
 
@@ -154,23 +156,23 @@ For example, a standard \Rfunarg{model} to select for nucleotide sequences would
 
 \subsection{Maximum Parsimony}
 
-For MP trees, the best results are typically obtained by providing a \Rfunarg{costMatrix} rather than relying on the default binary costs.  The choice of \Rfunarg{costMatrix} is up to you, and several rational options are provided in the examples section of the \Rfunction{Treeline} manual page (see \code{?Treeline}).  A more systematic approach to deriving a substitution matrix is provided as an example below.
+For MP trees, the best results are typically obtained by providing a \Rfunarg{costMatrix} rather than relying on the default of binary costs.  The choice of \Rfunarg{costMatrix} is up to you, and several rational options are provided in the examples section of the \Rfunction{Treeline} manual page (see \code{?Treeline}).  A systematic approach to deriving a substitution matrix is also provided as an example below.
 
 \subsection{Treatment of gaps}
 
-The standard models of evolution described above all ignore gap (``-'' and ``.'') characters representing insertions or deletions (indels).  But you're in luck --- \Rfunction{Treeline} has the ability to incorporate gaps into all \Rfunarg{method}s.  For ME trees, \Rfunction{DistanceMatrix} allows gaps to be penalized in Hamming distance or added to any distance corrected from multiple substitutions per site.  You can either specify a model with \code{"+Indels"} in \Rfunction{Treeline}, or supply \Rfunarg{myDistMatrix} after setting \Rfunarg{penalizeGapLetterMatches} to \code{TRUE} or \code{NA} (see \code{?DistanceMatrix}).  For ML trees, gaps can be added to any model of evolution as an additional state by specifying a model \code{"+Indels"}, which adds two free parameters (Fig. \ref{f1}).  Incorporating gaps results in branch lengths in units of \textit{changes} per site, since both substitutions and indels contribute to distance.  For MP trees, gaps can be added as a character to the \Rfunarg{costMatrix}.  As luck would have it, incorporating gaps tends to result in \textit{slightly} better trees on empirical datasets, although the average improvement is typically very small.
+The standard models of evolution described above all ignore gap (``-'' and ``.'') characters representing insertions or deletions (indels).  But you're in luck --- \Rfunction{Treeline} has the ability to incorporate gaps into all \Rfunarg{method}s.  For ME trees, \Rfunction{DistanceMatrix} allows gaps to be penalized in p-distance or added to any distance corrected for multiple substitutions per site.  You can either specify a model with \code{"+Indels"} in \Rfunction{Treeline}, or supply \Rfunarg{myDistMatrix} after setting \Rfunarg{penalizeGapLetterMatches} to \code{TRUE} or \code{NA} (see \code{?DistanceMatrix}).  For ML trees, gaps can be added into any model of evolution as an additional state by specifying a model \code{"+Indels"}, which adds two free parameters (Fig. \ref{f1}).  Incorporating gaps results in branch lengths in units of \textit{changes} per site, since both substitutions and indels contribute to distance.  For MP trees, gaps can be added as a character to the \Rfunarg{costMatrix}.  As luck would have it, incorporating gaps tends to result in \textit{slightly} better trees on empirical datasets, although the average improvement is typically very small.
 
 \subsection{Missing models}
 
-There exists a plethora of published models representing sequence evolution, not all of which are supported.  Two notably absent \Robject{MODELS} are invariant and codon models.  Models with a fraction of invariant sites, often represented as \code{+I}, are biologically unrealistic and already captured by gamma rate variation across sites (e.g., \code{+G4}).  Including both \code{+I} and \code{+G} creates unnecessary over-parameterization.  Similarly, empirical codon models are not offered because they contain too many (2080) free parameters.  It is hard to believe a single codon substitution matrix can adequately capture variation in codon usage across organisms, when it is known generic amino acid matrices (210 parameters) insufficiently represent many proteins.  Nucleotide models have the advantage that their relatively low number of parameters can be estimated from the data, and there is evidence nucleotide models can even be used for distant relationships where amino acid models were traditionally thought to have an advantage \cite{Kapli:2023}.
+There exists a plethora of published models representing sequence evolution, not all of which are supported.  Two notably absent \Robject{MODELS} are invariant and codon models.  Models with a fraction of invariant sites, often represented as \code{+I}, are biologically unrealistic and effectively captured by gamma rate variation across sites (e.g., \code{+G4}).  Including both \code{+I} and \code{+G} creates unnecessary over-parameterization.  Similarly, empirical codon models are not offered because they contain too many (2080) free parameters.  It is hard to believe a single codon substitution matrix can adequately capture variation in codon usage across organisms, when it is known generic amino acid matrices (210 parameters) insufficiently represent many proteins.  Nucleotide models have the advantage that their relatively low number of parameters can be estimated from the data, and there is evidence nucleotide models can even be used for distant relationships where amino acid models were traditionally thought to have an advantage \cite{Kapli:2023}.
 
 %------------------------------------------------------------
 \section{Minimum Evolution Phylogenetic Trees}
 %------------------------------------------------------------
 
-Now, it's time to try our luck at finding the most likely tree.  We will use the default settings, which returns a minimum evolution tree based on a Hamming distance matrix.  Simply specify a \Rfunarg{model} to correct for multiple substitutions (e.g., \code{"TN93+F"} or \code{"WAG"}).
+Now, it's time to try our luck at finding the most likely tree.  We will use the default settings, which returns a minimum evolution tree based on a p-distance matrix.  Simply specify a \Rfunarg{model} to correct for multiple substitutions (e.g., \code{"TN93+F"} or \code{"WAG"}).
 
-Since \Rfunction{Treeline} is a stochastic optimizer, it is critical to always set the random number seed for reproducibility.  This will result in the same sequence of random numbers every time and, therefore, reproductibility.  You can pick any lucky number, and if you ever wonder how much you pushed your luck, you can try running again from a different random number seed to see how much the result came down to luck of the draw.  Note that setting a time limit, as done below with \Rfunarg{maxTime}, negates the purpose of setting a seed -- never set a time limit if reproducibility is desired or you'll have no such luck.
+Since \Rfunction{Treeline} is a stochastic optimizer, it is critical to always set the random number seed for reproducibility.  This will result in the same sequence of random numbers every time and, therefore, reproducibility.  You can pick any lucky number, and if you ever wonder how much you pushed your luck, you can try running again from a different random number seed to see how much the result came down to luck of the draw.  Note that setting a time limit, as done below with \Rfunarg{maxTime}, negates the purpose of setting a seed -- never set a time limit if reproducibility is desired or you'll have no such luck.
 
 <<expr4,eval=TRUE,echo=TRUE>>=
 set.seed(123) # set the random number seed
@@ -194,7 +196,7 @@ str(treeME, max.level=4)
 \section{Maximum Likelihood Phylogenetic Trees}
 %------------------------------------------------------------
 
-For the next example, we will grow a maximum likelihood phylogenetic tree, which is the most computationally demanding optimization objective that is supported. We will set a stringent time limit (0.01 hours) to make this example faster, although longer time limits (e.g., 24 hours) are advised because setting very short time limits leaves the result partly up to luck.
+For the next example, we will grow a maximum likelihood phylogenetic tree, which is the most computationally demanding optimization objective that is supported.  We will set a stringent time limit (0.01 hours) to make this example faster, although longer time limits (e.g., 24 hours) are advised because setting very short time limits leaves the result partly up to luck.  Again, note that setting a time limit negates the purpose of setting a seed, so omitting a time limit is required for reproducibility.
 
 \begin{centerfig}
 <<expr6,eval=TRUE,echo=TRUE,fig=TRUE,height=3.5,width=6>>=
@@ -218,7 +220,7 @@ plot(tree)
 
 \subsection{Plotting Branch Support Values}
 
-Maybe it was just beginner's luck, but we already have a reasonable looking starting tree!  \Rfunction{Treeline} automatically returns a variety of information about the tree that can be accessed with the \Rfunction{attributes} and \Rfunction{attr} functions:
+Maybe it was just beginner's luck, but we already have a good looking tree!  \Rfunction{Treeline} automatically returns a variety of information about the tree that can be accessed with the \Rfunction{attributes} and \Rfunction{attr} functions:
 
 <<expr7,eval=TRUE,echo=TRUE>>=
 attr(tree, "members") # number of leaves below this (root) node
@@ -229,7 +231,7 @@ attr(tree, "parameters") # the free model parameters (or NA if unoptimized)
 attr(tree, "midpoint") # center of the edge (for plotting)
 @
 
-The tree is (virtually) rooted at its midpoint by default.  For maximum likelihood trees, all internal nodes include aBayes branch support values \cite{Anisimova:2011}.  These are given as probabilities that can be used in plotting on top of each edge.  We can also italicize the leaf labels (species names) and add a scale bar.
+The tree is rooted at its midpoint by default.  For maximum likelihood trees, all internal nodes include aBayes branch support values \cite{Anisimova:2011}.  These are given as probabilities that can be used in plotting on top of each edge.  We can also italicize the leaf labels (species names) and add a scale bar.
 
 \begin{centerfig}
 <<expr8,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
@@ -348,9 +350,9 @@ attr(new_tree[[1]], "change") # state changes on first branch left of (virtual) 
 \section{Calculating Bootstrap Support Values}
 %------------------------------------------------------------
 
-Phylogenetic trees output by \Rfunction{Treeline} contain information in both their topology and branch lengths.  The goal of phylogenetics is often to determine the branching order of a set of taxa, but this requires a test for statistical significance.  It is usually best to compare trees across different genes, such as how often trees constructed from different genes support the same hypothesis.  In the absence of multiple genes, another option is to quantify the amount of support for each branch separating two sets of taxa.
+Phylogenetic trees output by \Rfunction{Treeline} contain information in both their topology and branch lengths.  The goal of phylogenetics is often to determine the branching order of a set of taxa, but this requires a test for statistical significance.  It is usually best to compare trees across different genes, such as how often trees constructed from different genes support the same hypothesis.  In the absence of multiple genes, another option is to quantify the amount of statistical support for each branch separating two sets of taxa.
 
-The aBayes probabilities are a good proxy for whether a partition in the tree is correct \cite{Ecker:2024}, but they are only available for maximum likelihood trees.  For the other trees we need to make our own luck by bootstrapping the alignment.  The idea behind bootstrapping is to resample columns (sites) of the alignment with replacement and determine whether each partition was found in the original tree.  Repeating this process allows us to measure the level of support for each branch.
+The aBayes probabilities are a good proxy for whether a partition in the tree is correct \cite{Ecker:2024}, but they are only available for maximum likelihood trees.  For the other trees we need to bootstrap the alignment.  The idea behind bootstrapping is to resample columns (sites) of the alignment with replacement and determine whether each partition was found in the original tree.  Repeating this process allows us to measure the level of statistical support for each branch.
 
 <<expr13,eval=TRUE,echo=TRUE>>=
 reps <- 100 # number of bootstrap replicates
@@ -488,7 +490,7 @@ If you are feeling down on your luck, you might want to double-check the inputs 
 freqs <- alphabetFrequency(seqs, baseOnly=TRUE)
 head(freqs)
 # summarize the number of non-base characters (gaps/ambiguities)
-summary(freqs) # "other" is non-base characters
+summary(freqs) # "other" represents non-base characters
 
 # index of sequence with the most non-base characters
 which.max(freqs[, "other"])
@@ -542,13 +544,15 @@ We've had a run of good luck with this tree, so we'd better save it before our l
 WriteDendrogram(tree, file="")
 @
 
-To keep up our lucky streak, we should probably include any model parameters in the output along with the tree.  Luckily, Newick format supports square brackets (i.e., ``[]'') for comments, which we can append to the end of the file for good luck:
+To keep up our lucky streak, we should probably include any model parameters in the output along with the tree.  Luckily, Newick format supports square brackets (i.e., ``[]'') for comments, which we can append to the end of the file:
 
 <<expr21,eval=TRUE,echo=TRUE>>=
 params <- attr(tree, "parameters")
 cat("[", paste(names(params), params, sep="=", collapse=","), "]",
 	sep="", append=TRUE, file="")
 @
+
+May you have the best of luck with growing your own trees!
 
 %------------------------------------------------------------
 \section{Session Information}

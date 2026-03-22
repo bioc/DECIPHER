@@ -842,8 +842,8 @@ DetectRepeats <- function(myXStringSet,
 				syn[[2, 1]][w, "first_hit"],
 				syn[[2, 1]][w, "last_hit"],
 				SIMPLIFY=FALSE)
-			syn[[2, 1]] <- syn[[2, 1]][w,]
-			syn[[1, 2]] <- syn[[1, 2]][unlist(hits),]
+			syn[[2, 1]] <- syn[[2, 1]][w,, drop=FALSE]
+			syn[[1, 2]] <- syn[[1, 2]][unlist(hits),, drop=FALSE]
 			hits <- cumsum(lengths(hits))
 			syn[[2, 1]][, "first_hit"] <- c(1L, hits[-length(hits)] + 1L)
 			syn[[2, 1]][, "last_hit"] <- hits
@@ -854,7 +854,7 @@ DetectRepeats <- function(myXStringSet,
 				verbose=verbose)
 			
 			ali <- ali[[1L]]
-			res2 <- data.frame(syn[[2, 1]][, 1:8])
+			res2 <- data.frame(syn[[2, 1]][, 1:8, drop=FALSE])
 			if (length(ali) > 0) {
 				if (correctBackground) {
 					bg <- oligonucleotideFrequency(myXStringSet,

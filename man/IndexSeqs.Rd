@@ -100,7 +100,7 @@ The index of each k-mer within every sequence in \code{subject}, ordered by k-me
 ES Wright (2024) "Fast and Flexible Search for Homologous Biological Sequences with DECIPHER v3". The R Journal, \bold{16(2)}, 191-200.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{SearchIndex}}, \code{\link{AlignPairs}}

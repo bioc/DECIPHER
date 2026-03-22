@@ -48,7 +48,7 @@ Setting \code{level} to \code{0} would result in an \code{identifier} of ``Sacch
 A \code{data.frame} with the \code{organism} and corresponding identifier as \code{identifier}.  Note that quotes are stripped from identifiers to prevent problems that they may cause.  The \code{origin} gives the \code{organism} preceding the \code{identifier}.  If \code{add2tbl} is not \code{FALSE} then the ``identifier'' column is updated in \code{dbFile}.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{FormGroups}}

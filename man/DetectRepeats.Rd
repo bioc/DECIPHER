@@ -90,7 +90,7 @@ Cho, S.-T. & Wright E.S. (2025). "Accurate detection of tandem repeats exposes u
 Schaper, E., et al. (2012). "Repeat or not repeat?-Statistical validation of tandem repeat prediction in genomic sequences." Nucleic Acids Research, \bold{40(20)}, 10005-17.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{ScoreAlignment}}

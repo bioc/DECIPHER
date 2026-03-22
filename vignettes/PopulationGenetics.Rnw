@@ -84,11 +84,11 @@ All three population genetics functions in \Rpackage{DECIPHER} take multiple seq
  \hline
  Function & Input(s) & Output(s) & Reference \\ [0.5ex]
  \hline\hline
- \Rfunction{InferDemography} & DNA alignments of 2+ sequences & Recombination parameters & \cite{Lynch:2020} \\
+ \Rfunction{InferDemography} & DNA alignment or site frequencies & Timeline of population size changes & \cite{Lynch:2020} \\
  \hline
- \Rfunction{InferRecombination} & DNA alignment or site frequencies & Timeline of population size changes & \cite{Lin:2019} \\
+ \Rfunction{InferRecombination} & DNA alignments of 2+ sequences & Recombination parameters & \cite{Lin:2019} \\
  \hline
- \Rfunction{InferSelection} & DNA alignment of coding sequences & \textit{dN/dS} per codon or region & \cite{Wilson:2020} \\
+ \Rfunction{InferSelection} & DNA alignment of coding sequences & $\omega$ per codon or region & \cite{Wilson:2020} \\
  \hline
 \end{tabular}
 \end{center}
@@ -197,7 +197,7 @@ The function's outputs are described on its help page.  Possibly the most intere
 \section{Inferring Selection}
 %------------------------------------------------------------
 
-The \Rfunction{InferSelection} function estimates $\omega$ (also known as the Ka/Ks ratio or dN/dS ratio) by fitting a population genetics model \cite{Wilson:2020}.  Values of $\omega$ above \code{1} provide evidence of positive (Darwinian) selection, whereas $\omega$ values below \code{1} are indicative of negative (purifying) selection.  This method can be applied to multiple sequence alignments of many sequences sampled from the same population and, unlike the other two methods, \textit{requires} specification of a \code{readingFrame}.
+The \Rfunction{InferSelection} function estimates $\omega$ (also known as the $K_a/K_s$ ratio or $d_N/d_S$ ratio) by fitting a population genetics model \cite{Wilson:2020}.  Values of $\omega$ above \code{1} provide evidence of positive (Darwinian) selection, whereas $\omega$ values below \code{1} are indicative of negative (purifying) selection.  This method can be applied to multiple sequence alignments of many sequences sampled from the same population and, unlike the other two methods, \textit{requires} specification of a \code{readingFrame}.
 
 The function provides maximum likelihood estimates of the transition/transversion ratio ($\kappa$), expected substitution rate ($\theta$), and $\omega$ in non-overlapping regions across the alignment.  The default behavior is to only calculate a single $\omega$ value for the whole alignment, but this will rarely be greater than \code{1} as negative selection generally overwhelms any signal of positive selection.  With sufficient data, it is possible to specify a \Rfunarg{windowSize} to estimate $\omega$ for adjacent groups of codons.  The question is how much data is sufficient for inferring selection?
 

@@ -37,7 +37,7 @@ Either a single or double quotation mark determining the character used quote la
 An object of class \code{dendrogram}.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{Treeline}}, \code{\link{WriteDendrogram}}

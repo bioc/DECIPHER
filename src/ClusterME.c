@@ -42,41 +42,6 @@ static R_len_t index2D(const int r, const int c, const int N)
 	return (R_len_t)r + (R_len_t)c*(R_len_t)N;
 }
 
-// row sums of a matrix or 'dist' object
-SEXP rowSums(SEXP dist, SEXP n)
-{
-	int i, j;
-	double *D = REAL(dist);
-	int N = asInteger(n);
-	
-	R_len_t (*ind)(const int, const int, const int);
-	if (N < 0) {
-		ind = &index1D;
-		N *= -1;
-	} else {
-		ind = &index2D;
-	}
-	
-	SEXP ans;
-	PROTECT(ans = allocVector(REALSXP, N));
-	double *rans = REAL(ans);
-	for (i = 0; i < N; i++)
-		rans[i] = 0;
-	
-	double d;
-	for (i = 1; i < N; i++) {
-		for (j = 0; j < i; j++) {
-			d = D[ind(i, j, N)];
-			rans[i] += d;
-			rans[j] += d;
-		}
-	}
-	
-	UNPROTECT(1);
-	
-	return ans;
-}
-
 // patristic distances from clusters
 // multiplies distance between partitions by elements of z
 SEXP patristic(SEXP x, SEXP y, SEXP z)
@@ -215,6 +180,16 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 	}
 	depth[n - 1] = -1; // root
 	
+	// pre-compute powers up to maximum possible
+	j = 0;
+	for (i = 0; i < N; i++)
+		if (leaf_depth[i] > j)
+			j = leaf_depth[i];
+	j *= 2;
+	double *powers = (double *) malloc(j*sizeof(double)); // thread-safe on Windows
+	for (i = 0; i < j; i++)
+		powers[i] = pow(2, -i);
+	
 	// record subtrees
 	int *sides; // active side
 	sides = (int *) calloc(n, sizeof(int)); // initialized to zero (thread-safe on Windows)
@@ -237,7 +212,7 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 			if (flag == 0) { // total length
 				for (k = posL[i]; k < posR[i]; k++)
 					for (j = posR[i]; j < posE[i]; j++)
-						rans[0] += D[ind(index[j], index[k], N)]/pow(2, leaf_depth[index[j]] + leaf_depth[index[k]] + depth[i]);
+						rans[0] += D[ind(index[j], index[k], N)]*powers[leaf_depth[index[j]] + leaf_depth[index[k]] + depth[i]];
 			} else {
 				for (k = posL[i]; k < posR[i]; k++)
 					for (j = posR[i]; j < posE[i]; j++)
@@ -273,11 +248,25 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 		// calculate row sums
 		double d;
 		double *sumDist = (double *) calloc(N, sizeof(double)); // initialized to zero (thread-safe on Windows)
-		for (i = 1; i < N; i++) {
-			for (j = 0; j < i; j++) {
-				d = D[ind(i, j, N)]/pow(2, B[index1D(i, j, N)]);
-				sumDist[i] += d;
-				sumDist[j] += d;
+		if (ind == &index1D) {
+			R_len_t K = 0;
+			for (j = 0; j < N - 1; j++) {
+				for (i = j + 1; i < N; i++) {
+					d = D[K]*powers[B[K]];
+					sumDist[i] += d;
+					sumDist[j] += d;
+					K++;
+				}
+			}
+		} else {
+			R_len_t K = 0;
+			for (j = 0; j < N - 1; j++) {
+				for (i = j + 1; i < N; i++) {
+					d = D[ind(i, j, N)]*powers[B[K]];
+					sumDist[i] += d;
+					sumDist[j] += d;
+					K++;
+				}
 			}
 		}
 		
@@ -289,19 +278,19 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 				LLRL = 0; // left-left right-left
 				for (r = posL[C[i] - 1]; r < posR[C[i] - 1]; r++)
 					for (c = posL[C[i + n] - 1]; c < posR[C[i + n] - 1]; c++)
-						LLRL += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+						LLRL += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 				LRRL = 0; // left-right right-left
 				for (r = posR[C[i] - 1]; r < posE[C[i] - 1]; r++)
 					for (c = posL[C[i + n] - 1]; c < posR[C[i + n] - 1]; c++)
-						LRRL += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+						LRRL += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 				LLRR = 0; // left-left right-right
 				for (r = posL[C[i] - 1]; r < posR[C[i] - 1]; r++)
 					for (c = posR[C[i + n] - 1]; c < posE[C[i + n] - 1]; c++)
-						LLRR += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+						LLRR += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 				LRRR = 0; // left-right right-right
 				for (r = posR[C[i] - 1]; r < posE[C[i] - 1]; r++)
 					for (c = posR[C[i + n] - 1]; c < posE[C[i + n] - 1]; c++)
-						LRRR += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+						LRRR += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 			}
 			for (j = 0; j < 2; j++) {
 				if (C[i + j*n] > 0) { // branch
@@ -310,7 +299,7 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 					if (ab == 0) {
 						for (r = posL[C[i + j*n] - 1]; r < posR[C[i + j*n] - 1]; r++)
 							for (c = posR[C[i + j*n] - 1]; c < posE[C[i + j*n] - 1]; c++)
-								ab += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+								ab += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 					}
 					subDists[i + j*(n - 1)] -= 2*ab;
 					subDists[C[i + j*n] + 2*(n - 1) - 1] = ab; // ab
@@ -326,17 +315,17 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 						if (j == 0) { // c is right
 							for (r = posL[C[i + j*n] - 1]; r < posR[C[i + j*n] - 1]; r++)
 								for (c = posR[i]; c < posE[i]; c++)
-									subDists[C[i + j*n] + 3*(n - 1) - 1] += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]); // ac
+									subDists[C[i + j*n] + 3*(n - 1) - 1] += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]]; // ac
 							for (r = posR[C[i + j*n] - 1]; r < posE[C[i + j*n] - 1]; r++)
 								for (c = posR[i]; c < posE[i]; c++)
-									subDists[C[i + j*n] + 4*(n - 1) - 1] += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]); // bc
+									subDists[C[i + j*n] + 4*(n - 1) - 1] += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]]; // bc
 						} else { // c is left
 							for (r = posL[C[i + j*n] - 1]; r < posR[C[i + j*n] - 1]; r++)
 								for (c = posL[i]; c < posR[i]; c++)
-									subDists[C[i + j*n] + 3*(n - 1) - 1] += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]); // ac
+									subDists[C[i + j*n] + 3*(n - 1) - 1] += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]]; // ac
 							for (r = posR[C[i + j*n] - 1]; r < posE[C[i + j*n] - 1]; r++)
 								for (c = posL[i]; c < posR[i]; c++)
-									subDists[C[i + j*n] + 4*(n - 1) - 1] += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]); // bc
+									subDists[C[i + j*n] + 4*(n - 1) - 1] += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]]; // bc
 						}
 					}
 					subDists[i + 5*(n - 1)] = subDists[C[i + j*n] + 3*(n - 1) - 1] + subDists[C[i + j*n] + 4*(n - 1) - 1]; // ac + bc (equal in both directions)
@@ -394,30 +383,30 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 			if (ab == 0) {
 				for (r = posL[C[n - 1] - 1]; r < posR[C[n - 1] - 1]; r++)
 					for (c = posR[C[n - 1] - 1]; c < posE[C[n - 1] - 1]; c++)
-						ab += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+						ab += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 			}
 			double cd = subDists[C[n + n - 1] + 5*(n - 1) - 1];
 			if (cd == 0) {
 				for (r = posL[C[n + n - 1] - 1]; r < posR[C[n + n - 1] - 1]; r++)
 					for (c = posR[C[n + n - 1] - 1]; c < posE[C[n + n - 1] - 1]; c++)
-						cd += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+						cd += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 			}
 			double ac = 0; // left-left right-left
 			for (r = posL[C[n - 1] - 1]; r < posR[C[n - 1] - 1]; r++)
 				for (c = posL[C[n + n - 1] - 1]; c < posR[C[n + n - 1] - 1]; c++)
-					ac += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+					ac += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 			double ad = 0; // left-left right-right
 			for (r = posL[C[n - 1] - 1]; r < posR[C[n - 1] - 1]; r++)
 				for (c = posR[C[n + n - 1] - 1]; c < posE[C[n + n - 1] - 1]; c++)
-					ad += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+					ad += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 			double bd = 0; // left-right right-right
 			for (r = posR[C[n - 1] - 1]; r < posE[C[n - 1] - 1]; r++)
 				for (c = posR[C[n + n - 1] - 1]; c < posE[C[n + n - 1] - 1]; c++)
-					bd += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+					bd += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 			double bc = 0; // left-right right-left
 			for (r = posR[C[n - 1] - 1]; r < posE[C[n - 1] - 1]; r++)
 				for (c = posL[C[n + n - 1] - 1]; c < posR[C[n + n - 1] - 1]; c++)
-					bc += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+					bc += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 			
 			if (flag == 1) { // branch lengths
 				subDists[C[n - 1] + 2*(n - 1) - 1] = ab;
@@ -448,15 +437,15 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 				
 				double ab = 0; // right left-left
 				for (c = posL[C[n - 1] - 1]; c < posR[C[n - 1] - 1]; c++)
-					ab += D[ind(r, index[c], N)]/pow(2, B[index1D(r, index[c], N)]);
+					ab += D[ind(r, index[c], N)]*powers[B[index1D(r, index[c], N)]];
 				double ac = 0; // right left-right
 				for (c = posR[C[n - 1] - 1]; c < posE[C[n - 1] - 1]; c++)
-					ac += D[ind(r, index[c], N)]/pow(2, B[index1D(r, index[c], N)]);
+					ac += D[ind(r, index[c], N)]*powers[B[index1D(r, index[c], N)]];
 				double bc = subDists[C[n - 1] + 5*(n - 1) - 1];
 				if (bc == 0) {
 					for (r = posL[C[n - 1] - 1]; r < posR[C[n - 1] - 1]; r++)
 						for (c = posR[C[n - 1] - 1]; c < posE[C[n - 1] - 1]; c++)
-							bc += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+							bc += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 				}
 				subDists[C[n - 1] + 2*(n - 1) - 1] = bc;
 				
@@ -466,15 +455,15 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 				
 				double ab = 0; // right left-left
 				for (c = posL[C[n + n - 1] - 1]; c < posR[C[n + n - 1] - 1]; c++)
-					ab += D[ind(r, index[c], N)]/pow(2, B[index1D(r, index[c], N)]);
+					ab += D[ind(r, index[c], N)]*powers[B[index1D(r, index[c], N)]];
 				double ac = 0; // right left-right
 				for (c = posR[C[n + n - 1] - 1]; c < posE[C[n + n - 1] - 1]; c++)
-					ac += D[ind(r, index[c], N)]/pow(2, B[index1D(r, index[c], N)]);
+					ac += D[ind(r, index[c], N)]*powers[B[index1D(r, index[c], N)]];
 				double bc = subDists[C[n + n - 1] + 5*(n - 1) - 1];
 				if (bc == 0) {
 					for (r = posL[C[n + n - 1] - 1]; r < posR[C[n + n - 1] - 1]; r++)
 						for (c = posR[C[n + n - 1] - 1]; c < posE[C[n + n - 1] - 1]; c++)
-							bc += D[ind(index[r], index[c], N)]/pow(2, B[index1D(index[r], index[c], N)]);
+							bc += D[ind(index[r], index[c], N)]*powers[B[index1D(index[r], index[c], N)]];
 				}
 				subDists[C[n + n - 1] + 2*(n - 1) - 1] = bc;
 				
@@ -482,7 +471,7 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 			} else { // neither is a branch (therefore left and right are leaves)
 				r = -C[n - 1] - 1;
 				c = -C[n + n - 1] - 1;
-				rans[n - 1] = D[ind(r, c, N)]/pow(2, B[index1D(r, c, N)])/2;
+				rans[n - 1] = D[ind(r, c, N)]*powers[B[index1D(r, c, N)]]/2;
 			}
 			
 			if (rans[n - 1] < 0)
@@ -512,6 +501,7 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 		free(B);
 	}
 	
+	free(powers);
 	free(index);
 	free(posL);
 	free(posR);

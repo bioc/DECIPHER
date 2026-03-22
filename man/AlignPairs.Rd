@@ -82,7 +82,7 @@ If \code{type} is \code{"both"}, a \code{list} with four components: the result 
 ES Wright (2024) "Fast and Flexible Search for Homologous Biological Sequences with DECIPHER v3". The R Journal, \bold{16(2)}, 191-200.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{AlignProfiles}}, \code{\link{ConsensusSequence}}, \code{\link{IndexSeqs}}, \code{\link{SearchIndex}}

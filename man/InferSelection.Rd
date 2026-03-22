@@ -69,7 +69,7 @@ Nielsen, R. & Yang, Z. (1998). Likelihood models for detecting positively select
 Wilson, D. & CRyPTIC Consortium. (2020) GenomegaMap: Within-Species Genome-Wide dN/dS Estimation from over 10,000 Genomes. Molecular Biology and Evolution, \bold{37(8)}, 2450-2460.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{InferDemography}}, \code{\link{InferRecombination}}

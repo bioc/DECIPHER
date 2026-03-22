@@ -126,7 +126,7 @@ The \code{alphabet} when \code{train} is an ``AAStringSet'', otherwise \code{NUL
 Murali, A., et al. (2018). IDTAXA: a novel approach for accurate taxonomic classification of microbiome sequences. Microbiome, 6, 140. https://doi.org/10.1186/s40168-018-0521-5
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \note{
 If \code{K} is \code{NULL}, the automatically determined value of \code{K} might be too large for some computers, resulting in an error.  In such cases it is recommended that \code{K} be manually set to a smaller value.

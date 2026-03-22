@@ -42,7 +42,7 @@ SantaLucia, J. (1998). A unified view of polymer, dumbbell, and oligonucleotide 
 Tostesen, E., et al. (2003). Speed-up of DNA melting algorithm with complete nearest neighbor properties. Biopolymers, 70(3), 364-376. doi:10.1002/bip.10495.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \note{
 \code{MeltDNA} uses nearest neighbor parameters from SantaLucia (1998).

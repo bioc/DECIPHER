@@ -57,7 +57,7 @@ If \code{verbose} is \code{TRUE}, information is shown about the predictions at 
 An object of class \code{Genes}.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{ExtractGenes}}, \code{\link{FindNonCoding}}, \code{\link{Genes-class}}, \code{\link{WriteGenes}}

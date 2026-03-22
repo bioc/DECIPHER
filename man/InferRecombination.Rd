@@ -75,7 +75,7 @@ Steinberg, A., et al. (2022). Core genes can have higher recombination rates tha
 Steinberg, A., et al. (2023). Correlated substitutions reveal SARS-like coronaviruses recombine frequently with a diverse set of structured gene pools. PNAS, \bold{120(5)}, e2206945119.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{InferDemography}}, \code{\link{InferSelection}}

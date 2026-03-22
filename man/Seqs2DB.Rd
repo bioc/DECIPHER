@@ -64,7 +64,7 @@ The total number of sequences in the database table is returned after import.
 ES Wright (2016) "Using DECIPHER v2.0 to Analyze Big Biological Sequence Data in R". The R Journal, \bold{8(1)}, 352-359.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \section{Warning}{
 If \code{replaceTbl} is \code{TRUE} then any sequences already in the table are overwritten, which is equivalent to dropping the entire table.

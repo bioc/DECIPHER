@@ -45,7 +45,7 @@ Further arguments to be passed directly to \code{\link{AlignProfiles}}, includin
 A list with elements for each pair of \code{identifier}s in \code{synteny}.  Each list element contains a \code{DNAStringSetList} one pairwise alignment per syntenic block.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{FindSynteny}}, \code{\link{Synteny-class}}

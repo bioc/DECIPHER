@@ -33,7 +33,7 @@ Logical indicating whether to append to an existing \code{file}.  Only applicabl
 \code{NULL}.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{ExtractGenes}}, \code{\link{FindGenes}}, \code{\link{Genes-class}}

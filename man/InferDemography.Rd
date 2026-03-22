@@ -69,7 +69,7 @@ Johri, P., et al. (2022). Recommendations for improving statistical inference in
 Lynch, M., et al. (2020). Inference of Historical Population-Size Changes with Allele-Frequency Data. G3, \bold{10(1)}, 211-223.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{InferRecombination}}, \code{\link{InferSelection}}

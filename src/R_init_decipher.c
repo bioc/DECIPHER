@@ -165,7 +165,6 @@ static const R_CallMethodDef callMethods[] = { // method call, pointer, num args
 	{"computeOverlap", (DL_FUNC) &computeOverlap, 18},
 	{"withdrawMatches", (DL_FUNC) &withdrawMatches, 11},
 	{"clusterME", (DL_FUNC) &clusterME, 4},
-	{"rowSums", (DL_FUNC) &rowSums, 2},
 	{"patristic", (DL_FUNC) &patristic, 3},
 	{"matchColumns", (DL_FUNC) &matchColumns, 2},
 	{"hashList", (DL_FUNC) &hashList, 1},

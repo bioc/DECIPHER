@@ -21,7 +21,7 @@ The cophenetic distance between two observations is defined here as the branch l
 An object of class 'dist'.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{Treeline}}

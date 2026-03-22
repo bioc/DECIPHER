@@ -116,7 +116,7 @@ Venkatachalam, B., et al. (2014). Faster algorithms for RNA-folding using the Fo
 Wright, E. S. (2020). RNAconTest: comparing tools for noncoding RNA multiple sequence alignment based on structural consistency. RNA 2020, 26, 531-540.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{PredictHEC}}

@@ -50,7 +50,7 @@ An \code{XStringSet} of the class specified by \code{type}, or a list of two com
 Wright, E. S. (2015). DECIPHER: harnessing local sequence context to improve protein multiple sequence alignment. BMC Bioinformatics, 16, 322. http://doi.org/10.1186/s12859-015-0749-z
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{AlignDB}}, \code{\link{AlignProfiles}}, \code{\link{AlignSeqs}}, \code{\link{AlignSynteny}}, \code{\link{CorrectFrameshifts}}

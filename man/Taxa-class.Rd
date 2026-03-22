@@ -58,7 +58,7 @@ Objects of class \code{Taxa} are stored as lists, and can have either subclass \
 The information stored in \code{Taxa} can be visualized with the \code{plot} function or displayed with \code{print}.  Only objects of subclass \code{Train} can be subsetted without losing their class.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{LearnTaxa}}, \code{\link{IdTaxa}}

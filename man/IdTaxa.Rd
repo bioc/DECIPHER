@@ -77,7 +77,7 @@ Murali, A., et al. (2018). IDTAXA: a novel approach for accurate taxonomic class
 Cooley, N. and Wright, E. (2021). Accurate annotation of protein coding sequences with IDTAXA. NAR Genomics and Bioinformatics, \bold{3(3)}. https://doi.org/10.1093/nargab/lqab080
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{LearnTaxa}}, \code{\link{Taxa-class}}

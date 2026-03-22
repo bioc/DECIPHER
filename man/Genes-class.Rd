@@ -61,7 +61,7 @@ Objects of class \code{Genes} are stored as numeric matrices containing informat
 The \code{plot} method will show the total score of each prediction along the genome.  This is most useful when displaying the result of setting \code{allScores} to \code{TRUE} in \code{FindGenes}.  Here, possible genes on either strand will be shown (by default), with the predicted genes highlighted.  The beginning (solid) and ending (dashed) positions are denoted by vertical lines.  Note that the x-axis is cumulative genome position, and changes between genome sequences indices are demarcated by dashed vertical lines.
 }
 \author{
-Erik Wright \email{eswright@pitt.edu}
+Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
 \code{\link{ExtractGenes}}, \code{\link{FindGenes}}, \code{\link{WriteGenes}}
