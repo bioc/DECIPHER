@@ -530,17 +530,11 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 					rans[3*(length - 1) + k] = dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]] - rans[4*(length - 1) + k]; // row
 				}
 				
-				// transfer negative branch lengths to positive branch lengths
-				if (rans[3*(length - 1) + k] < 0 && rans[4*(length - 1) + k] < 0) {
-					rans[3*(length - 1) + k] = -1*rans[3*(length - 1) + k];
-					rans[4*(length - 1) + k] = -1*rans[4*(length - 1) + k];
-				} else if (rans[4*(length - 1) + k] < 0) {
-					rans[3*(length - 1) + k] += -1*rans[4*(length - 1) + k]; // add difference to other branch
-					rans[4*(length - 1) + k] = 0;
-				} else if (rans[3*(length - 1) + k] < 0) {
-					rans[4*(length - 1) + k] += -1*rans[3*(length - 1) + k]; // add difference to other branch
+				// enforce strictly non-negative branch lengths
+				if (rans[3*(length - 1) + k] < 0)
 					rans[3*(length - 1) + k] = 0;
-				}
+				if (rans[4*(length - 1) + k] < 0)
+					rans[4*(length - 1) + k] = 0;
 			} else if (met == 8) { // UPGMH
 				rans[4*(length - 1) + k] = exp(dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]])/2; // col
 				rans[3*(length - 1) + k] = rans[4*(length - 1) + k]; // row

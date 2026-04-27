@@ -31,10 +31,10 @@ Either a single or double quotation mark determining the character used quote la
 }
 }
 \details{
-\code{ReadDendrogram} will create a dendrogram object from a Newick formatted tree.  Note that all edge lengths must be specified, but labels are optional.  Leaves will be numbered by their labels in alphabetical order.
+\code{ReadDendrogram} will create a dendrogram object from a Newick formatted tree.  Note that all edge lengths must be specified, but labels are optional.  Leaves will be numbered by their labels in alphabetical order.  Multiple dendrograms can be read if separated by semicolons (i.e., ";"), in which case the output is a list containing \code{dendrogram}s.
 }
 \value{
-An object of class \code{dendrogram}.
+An object of class \code{dendrogram} or a list of \code{dendrogram}s.
 }
 \author{
 Erik Wright \email{Erik.Wright@bcm.edu}
@@ -52,10 +52,14 @@ dists <- matrix(c(0, 10, 20, 10, 0, 5, 20, 5, 0),
 dend1 <- Treeline(myDistMatrix=dists, method="NJ", type="dendrogram")
 WriteDendrogram(dend1, file=tf)
 
-dend2 <- ReadDendrogram(tf)
+dend2 <- ReadDendrogram(tf) # returns a dendrogram
 layout(matrix(1:2))
 plot(dend1, main="Dendrogram Written")
 plot(dend2, main="Dendrogram Read")
+
+# read a multi-dendrogram Newick file
+WriteDendrogram(dend1, file=tf, append=TRUE) # add another dendrogram
+ReadDendrogram(tf) # now a list of dendrograms
 
 unlink(tf)
 }

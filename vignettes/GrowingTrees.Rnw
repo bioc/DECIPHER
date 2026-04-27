@@ -59,13 +59,13 @@ options(width=80)
 \section{Introduction}
 %------------------------------------------------------------
 
-This document describes how to grow phylogenetic trees using the \Rfunction{Treeline} function in the \Rpackage{DECIPHER} package.  \Rfunction{Treeline} takes as input a set of aligned nucleotide or amino acid sequences and returns a phylogenetic tree (i.e., \Rclass{dendrogram} object) as output.  This vignette focuses on optimizing balanced minimum evolution (ME), maximum likelihood (ML), and maximum parsimony (MP) phylogenetic trees starting from sequences.
+This document describes how to grow phylogenetic trees using the \Rfunction{Treeline} and \Rfunction{Zipline} functions in the \Rpackage{DECIPHER} package.  \Rfunction{Treeline} takes as input a set of aligned nucleotide or amino acid sequences and returns a phylogenetic tree (i.e., \Rclass{dendrogram} object) as output.  \Rfunction{Zipline} takes a list of trees and produces a single summary tree.  The overarching idea is to run \Rfunction{Treeline} on a set of multiple sequence alignments corresponding to genes from the same organisms and then give the output gene trees to \Rfunction{Zipline} for summarization into a species tree.
 
-Why is the function called \Rfunction{Treeline}?  The goal of \Rfunction{Treeline} is to find the best tree according to an optimality criterion.  There are often many trees near the optimum.  Therefore, \Rfunction{Treeline} searches along the metaphorical treeline of high scoring trees to find the best one.
+Why are the functions called \Rfunction{Treeline} and \code{Zipline}?  The goal of \Rfunction{Treeline} is to find the best tree according to an optimality criterion.  There are often many trees near the optimum.  Therefore, \Rfunction{Treeline} searches along the metaphorical treeline of high scoring trees to find the best one.  \Rfunction{Zipline} is named for its goal of zippy (fast) and accurate summary trees by using linear regression to connect trees on different treelines.
 
-Why use \Rfunction{Treeline} versus other programs?  The \Rfunction{Treeline} function is designed to return an excellent phylogenetic tree with minimal user intervention.  Many tree building programs have a large set of complex options for niche applications.  In contrast, \Rfunction{Treeline} simply builds a great tree by default.  \Rfunction{Treeline}'s unified optimization strategy also makes it easy to compare trees optimized under different optimality criteria.  This vignette is intended to get you started and introduce additional options/functions that might be useful.
+Why use \Rfunction{Treeline} and \Rfunction{Zipline} versus other programs?  Both functions are designed to return excellent phylogenetic trees with minimal user intervention.  Many tree building programs have a large set of complex options for niche applications.  In contrast, \Rfunction{Treeline} and \Rfunction{Zipline} simply build great trees by default.  \Rfunction{Treeline}'s unified optimization strategy also makes it easy to compare trees optimized under different optimality criteria.  This vignette is intended to get you started and introduce additional options/functions that might be useful.
 
-Treeline uses a strategy of multi-start optimization followed by hill-climbing and grafting.  Since Treeline is a stochastic optimizer, it optimizes many trees to prevent chance from influencing the final result.  With some luck it'll find the highest scoring tree!
+This vignette focuses on optimizing balanced minimum evolution (ME), maximum likelihood (ML), and maximum parsimony (MP) phylogenetic trees starting from sequences.  Treeline uses a strategy of multi-start optimization followed by hill-climbing and grafting.  Since Treeline is a stochastic optimizer, it optimizes many trees to prevent chance from influencing the final result.  With some luck it'll find the highest scoring tree!
 
 %------------------------------------------------------------
 \section{Performance Considerations}
@@ -362,7 +362,7 @@ tree1 <- Treeline(seqs, verbose=FALSE, processors=1)
 partitions <- function(x) {
 	if (is.leaf(x))
 		return(NULL)
-	x0 <- paste(sort(unlist(x)), collapse=" ")
+	x0 <- paste(sort(labels(x)), collapse=" ")
 	x1 <- partitions(x[[1]])
 	x2 <- partitions(x[[2]])
 	return(list(x0, x1, x2))
@@ -399,7 +399,7 @@ hits <- round(hits/reps*100)
 
 labelEdges <- function(x) {
 	if (is.null(attributes(x)$leaf)) {
-		part <- paste(sort(unlist(x)), collapse=" ")
+		part <- paste(sort(labels(x)), collapse=" ")
 		attr(x, "edgetext") <- as.character(hits[part])
 	}
 	return(x)
@@ -552,7 +552,75 @@ cat("[", paste(names(params), params, sep="=", collapse=","), "]",
 	sep="", append=TRUE, file="")
 @
 
-May you have the best of luck with growing your own trees!
+%------------------------------------------------------------
+\section{Generating a Summary Tree}
+%------------------------------------------------------------
+
+So far, we've seen how variability can arise from different methodological decisions, but the choice of gene (or protein) also has a substantial influence on the tree.  In particular, genes within a genome can have discordant genealogies due to biological processes such as incomplete lineage sorting, gene duplication/loss, and horizontal gene transfer \cite{Steenwyk:2023}.  Accounting for the inconsistencies among gene trees is important for inferring correct species phylogenies.
+
+Lucky for us, \Rpackage{DECIPHER} has a function, named \Rfunction{Zipline}, for summarizing trees.  \Rfunction{Zipline} takes a list of \Rclass{dendrogram}s as input and returns a single summary tree as output.  The \Rfunction{Zipline} algorithm uses linear regression to generate a distance matrix representing relationships among the complete set of leaf labels.  Similarly to regression, the \Rfunction{Zipline} function seamlessly handles missing data so that trees don't all need the same set of leaf labels.
+
+Since we've lucked out so far, let's try building a species tree from a set of single copy gene families previously collated from plant genomes \cite{Morel:2023}.  These gene trees were built under the maximum likelihood ``LG+G4'' model with 100 bootstrap replicates.  To begin, we can compute some summary statistics about the plant dataset, which is provided along with the \Rpackage{DECIPHER} package.
+
+<<expr22,eval=TRUE,echo=TRUE>>=
+newick <- system.file("extdata", "Plant_gene_trees.newick.gz", package="DECIPHER")
+trees <- ReadDendrogram(newick)
+length(trees)
+head(trees)
+tabulate(sapply(trees, attr, which="members"))
+summary(sapply(trees, attr, which="height"))
+table(unlist(lapply(trees, labels)))
+@
+
+Note how \Rfunction{ReadDendrogram} imported 1,547 \Rclass{dendrogram}s from the same Newick file as a \Rclass{list} object.  These trees have between 4 and 21 leaves and vary a lot in their height, which may indicate a problem with orthology inference in some cases.  Several of the species are only found in a few trees, while others are present in hundreds of trees.  The bootstrap values of the trees are imported as ``edgetext'' attributes and range between \code{0} and \code{100}.  We can add a new ``bootstrap'' attribute to normalize the values between \code{0} and \code{1}.
+
+<<expr23,eval=TRUE,echo=TRUE>>=
+trees <- lapply(trees,
+	dendrapply,
+	function(x) {
+		b <- as.numeric(attr(x, "edgetext"))
+		if (length(b) == 0L) {
+			attr(x, "bootstrap") <- 0 # leaf
+		} else {
+			attr(x, "bootstrap") <- b/100
+		}
+		x
+	})
+@
+
+Bootstrap values are positively correlated with branch length, and normalizing them allows us to easily construct a hybrid distance measure to use in summarizing the gene trees.  \Rfunction{Zipline} supports \Rfunarg{distance}s of \code{"length"} (path length between leaves), \code{"edges"} (also known as ``internode'' distance), and custom attributes or their combinations.  Here we will try our chances at using the sum of edge length multiplied by our normalized bootstrap score as the measure of leaf-to-leaf distance.
+
+\begin{centerfig}
+<<expr24,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
+species_tree <- Zipline(trees,
+	bootstraps=10, # typically 100 or more
+	method="NJ", # typically "ME" (the default)
+	distance=c("length", "bootstrap"))
+plot(species_tree)
+@
+\caption{\label{f9} Summary tree of plant species with bootstrap confidences on each internal edge.}
+\end{centerfig}
+
+\Rfunction{Zipline} constructs a distance matrix with linear regression and then calls \Rfunction{Treeline} to build a tree.  Here we asked \Rfunction{Zipline} to perform a very small number \Rfunarg{bootstrap} replicates with the neighbor joining (\code{"NJ"}) method to speed up the example.  Bootstrap values are supplied as ``edgetext'' attributes in percentages on the output \Rclass{dendrogram}.  Our preliminary species tree has relatively low support (Fig. \ref{f9}), suggesting more data are needed to resolve the true species tree.  Hopefully we'll have better luck next time!
+
+Different ways of parameterizing \Rfunarg{distance} may return alternative trees, especially in the absence of sufficient data.  This raises the question:  which measure of \Rfunarg{distance} is best?  Averaging output bootstrap values offers a means of comparing trees for their overall level of support.  Luckily, \Rfunction{Zipline} is fast enough to compare different \Rfunarg{distance} measures by generating alternative species trees and calculating their average support.
+
+<<expr25,eval=TRUE,echo=TRUE>>=
+support <- 0
+count <- 0
+dendrapply(species_tree,
+	function(x) {
+		s <- attr(x, "edgetext")
+		if (!is.null(s)) {
+			support <<- support + as.numeric(s)
+			count <<- count + 1
+		}
+		x
+	})
+support/count # average bootstrap support
+@
+
+Using \Rfunction{Treeline} in combination with \Rfunction{Zipline} facilitates the exploration of alternative methods, models, and \Rfunarg{distance} measures.  Generating summary trees with \Rfunction{Zipline} can be a lot of fun, especially when they represent familiar species as in the example above.  May you have the best of luck with growing your own trees!
 
 %------------------------------------------------------------
 \section{Session Information}
@@ -607,6 +675,11 @@ toLatex(sessionInfo(), locale=FALSE)
 \newblock Computational Reproducibility of Molecular Phylogenies.
 \newblock {\em Mol. Biol. Evol.}, 40(7).
 
+\bibitem{Morel:2023}
+{Morel, B.}, {Williams, T.}, \& {Stamatakis, A.}
+\newblock Asteroid: a new algorithm to infer species trees from gene trees under high proportions of missing data.
+\newblock {\em Bioinformatics}, 39(1).
+
 \bibitem{Ripplinger:2008}
 {Ripplinger, J.} \& {Sullivan, J.}
 \newblock Does Choice in Model Selection Affect Maximum Likelihood Analysis?
@@ -616,6 +689,11 @@ toLatex(sessionInfo(), locale=FALSE)
 {Ripplinger, S.}, {Sigorskikh, A.}, {Efremov, A.}, {Penzar, D.}, \& {Karyagina, A.}
 \newblock PhyloBench: A Benchmark for Evaluating Phylogenetic Programs.
 \newblock {\em Mol. Biol. Evol.}, 41(6).
+
+\bibitem{Steenwyk:2023}
+{Steenwyk, J.}, {Li, Y.}, {Zhou, X.}, {Shen, X.}, \& {Rokas, A.}
+\newblock Incongruence in the phylogenomics era.
+\newblock {\em Nat. Rev. Gen.}, 24(12), 834-850.
 
 \bibitem{Wright:2018}
 {Wright, E.} \& {Baum, D.}

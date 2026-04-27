@@ -13,11 +13,12 @@ WriteDendrogram(x,
                 space = " ",
                 internalLabels = TRUE,
                 digits = 10,
-                append = FALSE)
+                append = FALSE,
+                unroot = FALSE)
 }
 \arguments{
   \item{x}{
-An object of class \code{dendrogram}.
+An object of class \code{dendrogram} or a list object containing \code{dendrogram}s.
 }
   \item{file}{
 A connection or a character string naming the file path where the tree should be exported.  If "" (the default), the tree is printed to the standard output connection, typically the console.
@@ -32,10 +33,13 @@ A single character (e.g., \code{"_"}) used to replace spaces in labels, or a spa
 Logical indicating whether to write any ``edgetext'' preceding a node as an internal node label.
 }
   \item{digits}{
-The maximum number of digits to print for edge lengths.
+The maximum number of significant digits to print for edge lengths.
 }
   \item{append}{
 Logical indicating whether to append to an existing \code{file}.  Only applicable if \code{file} is a character string.  If \code{FALSE} (the default), then the file is overwritten.
+}
+  \item{unroot}{
+Logical determining whether to unroot \code{x} if possible.
 }
 }
 \details{
@@ -57,5 +61,12 @@ dists <- matrix(c(0, 10, 20, 10, 0, 5, 20, 5, 0),
     nrow=3,
     dimnames=list(c("dog", "elephant", "horse")))
 dend <- Treeline(myDistMatrix=dists, method="NJ")
+# write one dendrogram
 WriteDendrogram(dend)
+# write multiple dendrograms
+WriteDendrogram(list(dend, dend))
+# write an unrooted dendrogram
+WriteDendrogram(dend, unroot=TRUE)
+# unquote leaf labels
+WriteDendrogram(dend, quote="")
 }

@@ -40,7 +40,8 @@ to.dendrogram <- function(object, states=NULL, p=NULL) {
 		}
 		attr(zk, "height") <- oHgt[k]
 		attr(zk, "state") <- states[k]
-		attr(zk, "probability") <- p[k]
+		if (k <= length(p) && !is.na(p[k]))
+			attr(zk, "probability") <- p[k]
 		k <- as.character(k)
 		z[[k]] <- zk
 	}
@@ -1834,8 +1835,17 @@ Treeline <- function(myXStringSet=NULL,
 		dNames <- names(myXStringSet)
 	}
 	if (is.null(dNames) || all(dNames == "")) {
-		dNames <- seq_len(dim)
+		dNames <- as.character(seq_len(dim))
 	} else {
+		w <- which(is.na(dNames))
+		if (length(w) > 0L) {
+			if (is.null(names(myXStringSet))) {
+				warning("NA labels in myDistMatrix replaced with index.")
+			} else {
+				warning("NA labels in myXStringSet replaced with index.")
+			}
+			dNames[w] <- as.character(w)
+		}
 		w <- which(duplicated(dNames))
 		if (length(w) > 0L) {
 			if (is.null(names(myXStringSet))) {

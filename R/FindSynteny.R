@@ -14,7 +14,7 @@ FindSynteny <- function(dbFile,
 	maxGap=400,
 	minScore=100,
 	N=10,
-	dropScore=-6,
+	dropScore=-5,
 	maskRepeats=TRUE,
 	maskLCRs=TRUE,
 	allowOverlap=FALSE,
@@ -206,7 +206,7 @@ FindSynteny <- function(dbFile,
 	alphabet <- alphabet - 1L
 	
 	# initialize parameters
-	buffer <- max(maxSep, maxGap) # distance to higher scoring hit to pull back overlap (< 0)
+	buffer <- 2000L # distance to higher scoring hit to retract overlap (longest expected repeat period >> 0)
 	# subMatrixDNA gets multiplied by log(size) to calibrate for DNA distribution
 	# -3 allows 25% transition rate and -4 allows 20% transversion rate
 	subMatrixDNA <- matrix(c(1, -4, -3, -4, -4, 1, -4, -3, -3, -4, 1, -4, -4, -3, -4, 1),

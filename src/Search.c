@@ -367,7 +367,7 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 			int *res; // indices of results
 			c = l[i]; // current number of batches
 			for (int it = 0; it <= maxIt; it++) { // each search iteration
-				// merge sort on set then posTarget
+				// c-way merge sort on set then posTarget
 				int *o1 = (int *) malloc(s*sizeof(int)); // thread-safe on Windows
 				for (j = 0; j < s; j++)
 					o1[j] = j; // initial order
@@ -386,13 +386,11 @@ SEXP searchIndex(SEXP query, SEXP wordSize, SEXP stepSize, SEXP logFreqs, SEXP c
 					while (group2 < c) {
 						k = counts[group1]; // position in group 2
 						while (j < counts[group1] && k < counts[group2]) {
-							if (set[o2[j]] == set[o2[k]]) { // apply tiebreaker
-								if (posTarget[o2[j]] <= posTarget[o2[k]]) {
-									o1[p++] = o2[j++];
-								} else {
-									o1[p++] = o2[k++];
-								}
-							} else if (set[o2[j]] < set[o2[k]]) {
+							if (set[o2[j]] < set[o2[k]]) {
+								o1[p++] = o2[j++];
+							} else if (set[o2[k]] < set[o2[j]]) {
+								o1[p++] = o2[k++];
+							} else if (posTarget[o2[j]] <= posTarget[o2[k]]) {
 								o1[p++] = o2[j++];
 							} else {
 								o1[p++] = o2[k++];

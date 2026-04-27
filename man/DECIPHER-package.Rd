@@ -130,6 +130,7 @@ TrimDNA                  Trims DNA Sequences to the High Quality Region
                          Between Patterns
 WriteDendrogram          Write a Dendrogram to Newick Format
 WriteGenes               Write Genes to a File
+Zipline                  Summarize Multiple Phylogenetic Trees
 }
 }
 \author{

@@ -3,7 +3,7 @@ DetectRepeats <- function(myXStringSet,
 	minScore=8,
 	allScores=FALSE,
 	maxCopies=1000,
-	maxPeriod=1000,
+	maxPeriod=2000,
 	maxFailures=3,
 	maxShifts=5,
 	alphabet=AA_REDUCED[[152]],
@@ -84,7 +84,7 @@ DetectRepeats <- function(myXStringSet,
 		stop("maxPeriod must be a numeric.")
 	if (maxPeriod < 1)
 		stop("maxPeriod must be at least one.")
-	maxPeriod <- min(maxPeriod, max(2000, width(myXStringSet))/2)
+	maxPeriod <- min(maxPeriod, max(2*maxPeriod, width(myXStringSet))/2)
 	if (!is.numeric(maxFailures))
 		stop("maxFailures must be a numeric.")
 	if (maxFailures != floor(maxFailures))
@@ -97,8 +97,8 @@ DetectRepeats <- function(myXStringSet,
 		stop("maxShifts must be a whole number.")
 	if (maxShifts < 0)
 		stop("maxShifts must be at least zero.")
-	if (maxPeriod < 1)
-		stop("maxPeriod must be at least one.")
+	if (maxShifts < 1)
+		stop("maxShifts must be at least one.")
 	if (!is.logical(useEmpirical))
 		stop("useEmpirical must be a logical.")
 	if (!is.logical(correctBackground))
@@ -127,7 +127,7 @@ DetectRepeats <- function(myXStringSet,
 		time.1 <- Sys.time()
 	
 	# default parameters
-	N <- 10 # find k-mers on average N times per maxPeriod
+	N <- 20 # find k-mers on average N times per maxPeriod
 	mult <- 2L # multiplier on K for lookahead length
 	maxVisits <- 2L # maximum attempts to detect repeats in each position
 	if (useEmpirical) {
@@ -280,6 +280,8 @@ DetectRepeats <- function(myXStringSet,
 			size <- exp(-sum(freqs*log(freqs)))
 		}
 		K <- as.integer(ceiling(log(maxPeriod/N, size)))
+		if (K < 1L)
+			K <- 1L
 		if (xtype == 3L) {
 			if (K > n)
 				K <- n
@@ -319,10 +321,12 @@ DetectRepeats <- function(myXStringSet,
 		r <- mapply(function(x, y) {
 				start <- NA # start of current repeat
 				off <- mult*K # lookahead length
-				values <- numeric(length(x)) # periodicity
-				lengths <- numeric(length(x)) # total evidence
+				lx <- length(x)
+				ly <- length(y)
+				values <- numeric(lx) # periodicity
+				lengths <- numeric(lx) # total evidence
 				i <- i2 <- 1L # current and next index
-				while (i < length(x)) {
+				while (i < lx) {
 					if (!is.na(x[i]) &&
 						!is.na(y[i]) &&
 						x[i] > 0) {
@@ -333,20 +337,21 @@ DetectRepeats <- function(myXStringSet,
 							quotient <- divisor/x[i]
 							if (quotient == 1 || quotient == 2 || quotient == 3) {
 								divisor <- x[i]
-								if (i + 2*divisor <= length(y) &&
+								if (i + 2*divisor <= ly &&
 									!is.na(y[i + 2*divisor]) &&
 									y[i + 2*divisor] == y[i]) {
 									i2 <- i + divisor
-								} else if (i + off <= length(x) &&
+								} else if (i + off <= lx &&
 									!is.na(x[i + off]) &&
 									x[i + off] == x[i]) {
 									i2 <- i + off
 								}
-							} else {
-								if (i2 > i && i2 < i + off) {
-									i <- i2
-									next
-								}
+							} else if (i2 > i && i2 < i + off) {
+								i <- i2
+								next
+							} else if (i + divisor <= ly &&
+								!is.na(y[i + divisor]) &&
+								y[i] != y[i + divisor]) {
 								values[start] <- divisor
 								lengths[start] <- i - start
 								start <- i
@@ -355,31 +360,32 @@ DetectRepeats <- function(myXStringSet,
 						} else if (x[i] > divisor) {
 							quotient <- x[i]/divisor
 							if (quotient == 1 || quotient == 2 || quotient == 3) {
-								if (i + 2*divisor <= length(y) &&
+								if (i + 2*divisor <= ly &&
 									!is.na(y[i + 2*divisor]) &&
 									y[i + 2*divisor] == y[i]) {
 									i2 <- i + divisor
-								} else if (i + off <= length(x) &&
+								} else if (i + off <= lx &&
 									!is.na(x[i + off]) &&
 									x[i + off] == x[i]) {
 									i2 <- i + off
 								}
-							} else {
-								if (i2 > i && i2 < i + off) {
-									i <- i2
-									next
-								}
+							} else if (i2 > i && i2 < i + off) {
+								i <- i2
+								next
+							} else if (i + divisor <= ly &&
+								!is.na(y[i + divisor]) &&
+								y[i] != y[i + divisor]) {
 								values[start] <- divisor
 								lengths[start] <- i - start
 								start <- i
 								divisor <- x[i]
 							}
 						} else { # x[i] == divisor
-							if (i + 2*divisor <= length(y) &&
+							if (i + 2*divisor <= ly &&
 								!is.na(y[i + 2*divisor]) &&
 								y[i + 2*divisor] == y[i]) {
 								i2 <- i + divisor
-							} else if (i + off <= length(x) &&
+							} else if (i + off <= lx &&
 								!is.na(x[i + off]) &&
 								x[i + off] == x[i]) {
 								i2 <- i + off
@@ -514,12 +520,12 @@ DetectRepeats <- function(myXStringSet,
 			
 			# only repeats occurring more frequently than expected
 			w <- which(values/lengths <= maxPeriod/N &
-				lengths <= maxPeriod)
+				values <= maxPeriod)
 			
 			# reduce to the set of top ranked k-mer repeats
 			visited <- integer(l)
 			keep <- logical(length(w))
-			o <- order(-lengths[w], values[w])
+			o <- order(lengths[w], values[w], decreasing=c(TRUE, FALSE))
 			for (i in seq_along(o)) {
 				posL <- w[o[i]]
 				posR <- posL + values[w[o[i]]] - 1L

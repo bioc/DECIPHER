@@ -823,11 +823,11 @@ SEXP withdrawMatches(SEXP order, SEXP starts1, SEXP ends1, SEXP index1, SEXP sta
 			}
 		}
 		
-		// itialize
-		rans1[i] = s1[i];
-		rans2[i] = e1[i];
-		rans3[i] = s2[i];
-		rans4[i] = e2[i];
+		// itialize to zero (leave uninitialized)
+		rans1[i] = 0;
+		rans2[i] = 0;
+		rans3[i] = 0;
+		rans4[i] = 0;
 		
 		if (rans0[i] > 0) { // not a duplicate
 			if (i1[i] == 1) {

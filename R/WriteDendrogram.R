@@ -4,11 +4,33 @@ WriteDendrogram <- function(x,
 	space=" ",
 	internalLabels=TRUE,
 	digits=10,
-	append=FALSE) {
+	append=FALSE,
+	unroot=FALSE) {
 	
 	# error checking
-	if (!is(x, "dendrogram"))
-		stop("x is not a dendrogram.")
+	if (!isTRUEorFALSE(unroot))
+		stop("unroot must be a logical.")
+	if (!is(x, "dendrogram")) {
+		if (is.list(x)) {
+			if (length(x) == 0L)
+				stop("x cannot be empty.")
+			for (i in seq_along(x))
+				if (!is(x[[i]], "dendrogram"))
+					stop("x[[", i, "]] must be a dendrogram.")
+			for (i in seq_along(x))
+				WriteDendrogram(x[[i]],
+					file=file,
+					quote=quote,
+					space=space,
+					internalLabels=internalLabels,
+					digits=digits,
+					unroot=unroot,
+					append=ifelse(i == 1L, append, TRUE))
+			return(invisible(NULL))
+		} else {
+			stop("x must be a dendrogram.")
+		}
+	}
 	if (!is.character(quote))
 		stop("quote must be a character.")
 	if (nchar(quote) > 1L)
@@ -23,19 +45,49 @@ WriteDendrogram <- function(x,
 		stop("digits must be a whole number.")
 	if (digits < 1)
 		stop("digits must be at least 1.")
-	if (!is.logical(append))
+	if (!isTRUEorFALSE(append))
 		stop("append must be a logical.")
-	if (!is.logical(internalLabels))
+	if (!isTRUEorFALSE(internalLabels))
 		stop("internalLabels must be a logical.")
+	
+	if (unroot) {
+		if (attr(x, "members") < 3L) {
+			warning("x contains too few members to unroot.")
+		} else {
+			if (length(x) == 2L && # rooted
+				(length(x[[1L]]) != 1L || length(x[[2L]]) != 1L)) {
+				if (length(x[[1L]]) == 1L) {
+					poly <- 2L
+				} else {
+					poly <- 1L
+				}
+				deltaH <- attr(x, "height") - attr(x[[poly]], "height")
+				attr(x, "height") <- attr(x[[poly]], "height")
+				# add height to other side
+				x[[3L - poly]] <- dendrapply(x[[3L - poly]],
+					function(x) {
+						attr(x, "height") <- attr(x, "height") - deltaH
+						x
+					})
+				while (length(x[[poly]]) > 1L) {
+					x[[length(x) + 1L]] <- x[[poly]][[length(x[[poly]])]]
+					length(x[[poly]]) <- length(x[[poly]]) - 1L
+				}
+				x[[poly]] <- x[[poly]][[1L]]
+			} else if (length(x) <= 2) {
+				warning("x could not be unrooted.")
+			}
+		}
+	}
 	
 	if (is.character(file)) {
 		if (file == "") {
 			file <- stdout()
 		} else if (substring(file, 1L, 1L) == "|") {
-			file <- pipe(substring(file, 2L), "w")
+			file <- pipe(substring(file, 2L), ifelse(append, "a", "w"))
 			on.exit(close(file))
 		} else {
-			file <- file(file, "w")
+			file <- file(file, ifelse(append, "a", "w"))
 			on.exit(close(file))
 		}
 	}
@@ -56,8 +108,10 @@ WriteDendrogram <- function(x,
 		if (is.leaf(x)) {
 			cat(getLab(attr(x, "label")),
 				":",
-				round(height - attr(x, "height"),
-					digits=digits),
+				formatC(height - attr(x, "height"),
+					digits=digits,
+					width=1,
+					format="fg"),
 				sep="",
 				file=file,
 				append=TRUE)
@@ -79,13 +133,21 @@ WriteDendrogram <- function(x,
 					file=file,
 					append=TRUE)
 			} else {
+				if (internalLabels) {
+					edgetext <- attr(x, "edgetext")
+					if (!is.null(edgetext))
+						if (!is.numeric(edgetext))
+							edgetext <- getLab(edgetext)
+				} else {
+					edgetext <- NULL
+				}
 				cat(")",
-					ifelse(internalLabels,
-						getLab(attr(x, "edgetext")),
-						""),
+					edgetext,
 					":",
-					round(height - attr(x, "height"),
-						digits=digits),
+					formatC(height - attr(x, "height"),
+						digits=digits,
+						width=1,
+						format="fg"),
 					sep="",
 					file=file,
 					append=TRUE)
@@ -93,8 +155,6 @@ WriteDendrogram <- function(x,
 		}
 	}
 	
-	if (!append) # overwrite the file
-		cat("", file=file)
 	.dendrogram2newick(x)
 	invisible(NULL)
 }

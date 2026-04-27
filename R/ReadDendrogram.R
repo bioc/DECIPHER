@@ -15,7 +15,9 @@ ReadDendrogram <- function(file,
 	if (is.na(quote))
 		stop("Invalid quote.")
 	
-	if (is(file, "file") || file.exists(file)) {
+	if (is(file, "file") ||
+		(length(file) == 1L &&
+		suppressWarnings(file.exists(file)))) {
 		r <- readLines(file, warn=FALSE)
 	} else if (is.character(file)) {
 		r <- file
@@ -24,19 +26,56 @@ ReadDendrogram <- function(file,
 	}
 	
 	w <- which(nchar(r) > 0)
-	if (length(w) > 1) {
-		r <- paste(r[w], collapse="")
-	} else if (length(w) == 0) {
+	if (length(w) == 0) {
 		stop("file is empty.")
 	} else {
 		r <- r[w]
+		if (length(r) > 1) { # handle multi-line trees
+			w <- endsWith(r, ";")
+			w[length(w)] <- TRUE # permit absence of semi-colon
+			prev <- 1L
+			curr <- 0L
+			while (curr < length(w)) {
+				curr <- curr + 1L
+				if (w[curr]) {
+					if (prev < curr)
+						r[curr] <- paste(r[prev:curr], collapse="")
+					prev <- curr + 1L
+				}
+			}
+			r <- r[w]
+		}
 	}
 	
+	# handle multi-dendrogram files
 	r <- strsplit(r,
 		ifelse(quote == 1L,
-			"(?=[\\[\\](),:;])(?=([^']*'[^']*')*[^']*$)",
-			'(?=[\\[\\](),:;])(?=([^"]*"[^"]*")*[^"]*$)'),
-		perl=TRUE)[[1]]
+			"'(?:[^'\\\\\\\\]|\\\\\\\\.)*'(*SKIP)(*F)|;",
+			'"(?:[^"\\\\\\\\]|\\\\\\\\.)*"(*SKIP)(*F)|;'),
+		perl=TRUE)
+	r <- unlist(r)
+	if (length(r) > 1L) {
+		x <- vector("list", length(r))
+		for (i in seq_along(r))
+			x[[i]] <- ReadDendrogram(r[i],
+				convertBlanks=convertBlanks,
+				internalLabels=internalLabels,
+				keepRoot=keepRoot,
+				quote=c("'", '"')[quote])
+		return(x)
+	}
+	
+	if (grepl(ifelse(quote == 1L, "'", '"'), r)) {
+		r <- strsplit(r,
+			ifelse(quote == 1L,
+				"'(?:[^'\\\\]|\\\\.)*'(*SKIP)(*F)|(?=[\\[\\](),:;])",
+				'"(?:[^"\\\\]|\\\\.)*"(*SKIP)(*F)|(?=[\\[\\](),:;])'),
+			perl=TRUE)[[1]]
+	} else {
+		r <- strsplit(r,
+			"(?=[\\[\\](),:;])",
+			perl=TRUE)[[1]]
+	}
 	r <- gsub("^\\s+|\\s+$", "", r)
 	w <- which(r == "")
 	if (length(w) > 0)
@@ -94,7 +133,13 @@ ReadDendrogram <- function(file,
 				} else if (i < length(r) && r[i + 1L] == ";") {
 					i <<- i + 1L
 				} else if (i <= length(r) && r[i] != ";") {
-					stop("Unsupported formatting.")
+					if (i == length(r)) {
+						if (internalLabels)
+							attr(x, "edgetext") <- getLab(r[i])
+						i <<- i + 1L
+					} else {
+						stop("Unsupported formatting.")
+					}
 				}
 				break
 			} else if (r[i] == "(") {

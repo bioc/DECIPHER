@@ -20,7 +20,7 @@ Clusterize, FormGroups, IdentifyByRank,
 # lengths:
 IdLengths, TerminalChar,
 # phylogenetics:
-Cophenetic, DistanceMatrix, MapCharacters, MODELS, ReadDendrogram, Treeline, WriteDendrogram,
+Cophenetic, DistanceMatrix, MapCharacters, MODELS, ReadDendrogram, Treeline, WriteDendrogram, Zipline,
 # forming consensus:
 ConsensusSequence, Disambiguate, IdConsensus, TileSeqs,
 # chimeras:

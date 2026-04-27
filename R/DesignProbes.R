@@ -1225,11 +1225,11 @@ DesignProbes <- function(tiles,
 			searchSpace <- ifelse(numProbeSets > 100, numProbeSets, 100)
 			f <- which(is.finite(probes$score))
 			n <- unlist(lapply(strsplit(probes$mismatches, ") ", fixed=TRUE), length))
-			o <- order(-1*n[f],
+			o <- order(n[f],
 				probes$score[f],
-				-1*probes$permutations[f],
+				probes$permutations[f],
 				rowSums(as.matrix(probes$coverage[f,]), na.rm=TRUE),
-				decreasing=TRUE)
+				decreasing=c(FALSE, TRUE, FALSE, TRUE))
 			s <- ifelse(length(f) > searchSpace, searchSpace, length(f))
 			if (s < 2) { # need at least 2 probes to form a set
 				warning("Not enough probe sets meet the specified constaints:", id)

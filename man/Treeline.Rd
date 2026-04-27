@@ -110,7 +110,7 @@ Multiple \code{method}s of tree building are supported:
 
 (3) Maximum parsimony: \code{MP} iteratively maximizes the parsimony of a tree given aligned sequences (\code{myXStringSet}) and a \code{costMatrix}.  The default cost matrix is binary, corresponding to Fitch (1971) parsimony.  The \code{costMatrix} often has a large influence over the result, and more biologically reasonable cost matrices will likely improve the resulting tree.  See the examples below for non-uniform cost matrices.  Here, branch lengths are in units of the average cost per site, which is equivalent to averages changes per site for a binary cost matrix.
 
-(4) Neighbor-joining: \code{NJ} uses the Neighbor-Joining method proposed by Saitou and Nei (1987), which creates an approximate minimum evolution tree from a distance matrix (\code{myDistMatrix}).  The \code{NJ} criterion is a greedy heuristic approach to minimum evolution, and can be considered a less accurate alternative to \code{ME}.  Notably, \code{NJ} is faster than \code{ME} for moderate numbers of sequences, since it only computes a single tree, but is slower than \code{ME} for large numbers of sequences due to its cubic time complexity.
+(4) Neighbor-joining: \code{NJ} uses the Neighbor-Joining method proposed by Saitou and Nei (1987), which creates an approximate minimum evolution tree from a distance matrix (\code{myDistMatrix}).  The \code{NJ} criterion is a greedy heuristic approach to minimum evolution, and can be considered a less accurate alternative to \code{ME}.  Notably, \code{NJ} is faster than \code{ME} for moderate numbers of sequences, since it only computes a single tree, but is potentially slower than \code{ME} for large numbers of sequences due to its cubic time complexity.
 
 (5) Ultrametric: The method \code{complete} assigns clusters using complete-linkage so that members of the same cluster are no more than \code{cutoff} distance apart.  The method \code{single} assigns clusters using single-linkage so that members of the same cluster are within \code{cutoff} of at least one other member.  \code{UPGMA} and \code{WPGMA} assign clusters using average-linkage which is a compromise between the sensitivity of complete-linkage clustering to outliers and the tendency of single-linkage clustering to connect distant members.  \code{UPGMA} produces an unweighted tree, where each leaf contributes equally to the average edge lengths, whereas \code{WPGMA} produces a weighted result.
 
@@ -129,6 +129,10 @@ If \code{type} is \code{"both"} then a list is returned containing both the \cod
 }
 \note{
 Cophenetic distance between leaves of the \code{dendrogram} is often defined as the sum of branch lengths separating the leaves, also known as the patristic distance.  This is the typical phylogenetic interpretation but different than that for dendrograms produced by \code{hclust} where leaves are merged at a height defined by \code{hclust} as their cophenetic distance.  Hence, always use \code{Cophenetic} (rather than \code{cophenetic}) to compute patristic distances where the length between leaves is desired.
+
+Negative branch lengths are possible for \code{ME} or \code{NJ} trees when the data violates the triangle inequality.  Since negative branch lengths are artifactual, they are set to zero when encountered.  This can cause the sum of branch lengths to differ from the overall (balanced) tree length that represents the score optimized by the \code{ME} \code{method}.  However, the score will remain consistent with other \code{ME} programs' calculations for the same tree topology.  Similarly, branch lengths are set to a very small (non-zero) value for the \code{ML} \code{method} due to machine precision.
+
+Ambiguity codes (e.g., ``N'' or ``X'') are handled differently across \code{method}s.  The \code{MP} \code{method} will consider them if part of the \code{costMatrix}.  In contrast, the \code{ML} \code{method} splits the likelihood of ambiguities across the character states they represent.  All other \code{method}s depend on how the distance matrix is built for the treatment of ambiguities (see \code{\link{DistanceMatrix}}).  Relatedly, the treatment of gaps depends on the \code{model} of evolution that is used.
 }
 \references{
 Anisimova M., \emph{et al.} (2011) Survey of branch support methods demonstrates accuracy, power, and robustness of fast likelihood-based approximation schemes. \emph{Syst Biol.}, \bold{60(5)}, 685-99.
@@ -260,7 +264,7 @@ plot(tree2,
 	horiz=TRUE, leaflab="none",
 	xlim=c(0, attr(tree2, "height")))
 segments(par("usr")[1] - 1.05*diff(grconvertX(0:1, 'inches', 'user')),
-	match(unlist(tree2), unlist(tree1)),
+	match(labels(tree2), labels(tree1)),
 	-0.05*diff(grconvertX(0:1, 'inches', 'user')),
 	seq_len(attr(tree2, "members")),
 	xpd=NA)

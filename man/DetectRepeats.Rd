@@ -12,7 +12,7 @@ DetectRepeats(myXStringSet,
               minScore = 8,
               allScores = FALSE,
               maxCopies = 1000,
-              maxPeriod = 1000,
+              maxPeriod = 2000,
               maxFailures = 3,
               maxShifts = 5,
               alphabet = AA_REDUCED[[152]],
@@ -39,7 +39,7 @@ Logical specifying whether all repeats should be returned (\code{TRUE}) or only 
 Numeric defining the maximum copy number of tandem repeat.  Since alignment complexity is quadratic in the number of repeat copies, setting a limit on the repeat copy number prevents very long repeats from becoming rate limiting.
 }
   \item{maxPeriod}{
-Numeric indicating the maximum periodicity of tandem repeats to consider.  Interspersed repeats will only be detected that are at least \code{maxPeriod} nucleotides apart.
+Numeric indicating the maximum periodicity of tandem repeats to consider.  Interspersed repeats will only be detected that are at least \code{maxPeriod} nucleotides apart.  Lower values may increase the sensitivity of tandem repeat detection, and vice versa for higher values.
 }
   \item{maxFailures}{
 Numeric determining the maximum number of failing attempts to extend a repeat that are permitted.  Numbers greater than zero may increase accuracy at the expense of speed, with decreasing marginal returns as \code{maxFailures} gets higher.

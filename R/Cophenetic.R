@@ -1,8 +1,30 @@
-Cophenetic <- function(x) {
+Cophenetic <- function(x,
+	distance="length") {
 	
 	# error checking
 	if (!is(x, "dendrogram"))
 		stop("x must be an object of class 'dendrogram'.")
+	l <- length(distance)
+	if (l == 0L)
+		stop("distance must have at least one element.")
+	if (!is.character(distance))
+		stop("distance must be a character string.")
+	if (sum(is.na(distance)) > 0L)
+		stop("distance cannot contain NA values.")
+	
+	DIST <- c("length", "edges")
+	DIST <- match(distance, DIST)
+	w <- which(is.na(DIST))
+	if (l - length(w) > 1L) # more than one non-NA value
+		stop("distance may contain one of either 'length' or 'edges'.")
+	if (length(w) > 0L) {
+		DIST[w] <- 3L # other distance
+		if (l > 1L) {
+			if (length(w) == l)
+				stop("distance must contain either 'length' or 'edges'.")
+			DIST <- sort(DIST) # place edge attributes last
+		}
+	}
 	
 	n <- attr(x, "members")
 	if (n == 1L) {
@@ -16,16 +38,16 @@ Cophenetic <- function(x) {
 	u <- unlist(x)
 	o <- order(u)
 	u <- u[o]
-	labs <- rapply(x,
-		function(x)
-			attr(x, "label"))
+	labs <- labels(x)
 	labs <- labs[o]
-	x <- rapply(x,
-		function(y) {
-			y[] <- match(y[1L], u)
-			y
-		},
-		how="replace")
+	if (sum(seq_along(u) != u) != 0L) { # need to renumber
+		x <- rapply(x,
+			function(y) {
+				y[] <- match(y[1L], u)
+				y
+			},
+			how="replace")
+	}
 	
 	index <- n - 1L
 	C <- matrix(0L, index, 2L)
@@ -44,10 +66,21 @@ Cophenetic <- function(x) {
 		
 		h <- attr(y, "height")
 		while (length(y) == 1L)
-			y <- stack[[1L]] # descend
+			y <- y[[1L]] # descend
 		
-		h1 <- attr(y[[1L]], "height")
-		H[i, 1L] <- h - h1
+		if (DIST[1L] == 1L) { # length
+			H[i, 1L] <- abs(h - attr(y[[1L]], "height"))
+		} else {
+			H[i, 1L] <- 1
+		}
+		for (j in seq_along(w)) {
+			a <- attr(y[[1L]], distance[w[j]])
+			if (length(a) == 0L) {
+				H[i, 1L] <- 0
+			} else {
+				H[i, 1L] <- H[i, 1L]*sum(as.numeric(a), na.rm=TRUE)
+			}
+		}
 		
 		if (is.leaf(y[[1L]])) {
 			C[i, 1L] <- -y[[1L]][1L]
@@ -59,8 +92,19 @@ Cophenetic <- function(x) {
 			indices[pos] <- index
 		}
 		if (length(y) == 2L) {
-			h2 <- attr(y[[2L]], "height")
-			H[i, 2L] <- h - h2
+			if (DIST[1L] == 1L) { # length
+				H[i, 2L] <- abs(h - attr(y[[2L]], "height"))
+			} else {
+				H[i, 2L] <- 1
+			}
+			for (j in seq_along(w)) {
+				a <- attr(y[[2L]], distance[w[j]])
+				if (length(a) == 0L) {
+					H[i, 2L] <- 0
+				} else {
+					H[i, 2L] <- H[i, 2L]*sum(as.numeric(a), na.rm=TRUE)
+				}
+			}
 			if (is.leaf(y[[2L]])) {
 				C[i, 2L] <- -y[[2L]][1L]
 			} else {
@@ -80,6 +124,9 @@ Cophenetic <- function(x) {
 			indices[pos] <- index
 		}
 	}
+	if ((DIST[1L] == 2L) && # edges
+		length(x) == 2L) # root is one edge
+		H[nrow(H),] <- H[nrow(H),]/2
 	
 	d <- .Call("patristic", C, H, 1, PACKAGE="DECIPHER")
 	

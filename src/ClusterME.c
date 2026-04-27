@@ -414,7 +414,7 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 				
 				rans[n - 1] = ac + bd + ad + bc - ab - cd;
 				if (rans[n - 1] < 0)
-					rans[n - 1] = 0; // enforce strictly positive
+					rans[n - 1] = 0; // enforce strictly non-negative
 				rans[n + n - 1] = rans[n - 1];
 			} else { // nearest neighbor interchanges (NNIs)
 				double one = ab + cd;
@@ -475,7 +475,7 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 			}
 			
 			if (rans[n - 1] < 0)
-				rans[n - 1] = 0; // enforce strictly positive
+				rans[n - 1] = 0; // enforce strictly non-negative
 			rans[n + n - 1] = rans[n - 1];
 		}
 		
@@ -491,7 +491,7 @@ SEXP clusterME(SEXP x, SEXP y, SEXP l, SEXP f)
 						rans[i + j*n] = 2*(ab + ac - bc);
 					}
 					if (rans[i + j*n] < 0)
-						rans[i + j*n] = 0; // enforce strictly positive
+						rans[i + j*n] = 0; // enforce strictly non-negative
 				}
 			}
 		}
