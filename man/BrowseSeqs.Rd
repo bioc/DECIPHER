@@ -15,6 +15,7 @@ BrowseSeqs(myXStringSet,
            patterns = c("-", alphabet(myXStringSet, baseOnly=TRUE)),
            colors = substring(rainbow(length(patterns),
                               v=0.8, start=0.9, end=0.7), 1, 7),
+           fontColor="white",
            colWidth = Inf,
            title = "",
            \dots)
@@ -40,6 +41,9 @@ An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object, a cha
 }
   \item{colors}{
 Character vector providing the color for each of the matched \code{patterns}.  Typically a character vector with elements of 7 characters:  ``#'' followed by the red, blue, green values in hexadecimal (after rescaling to 0 ... 255).  Ignored when \code{patterns} is a list of matrices.
+}
+  \item{fontColor}{
+Character string denoting the font color for sequence text with a colored background, or a character vector with a color for each element of \code{colors}.
 }
   \item{colWidth}{
 Integer giving the maximum number of nucleotides wide the display can be before starting a new page.  Must be a multiple of \code{20} (e.g., \code{100}), or \code{Inf} (the default) to display all the sequences in one set of rows.

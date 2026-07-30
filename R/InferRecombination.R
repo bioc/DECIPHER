@@ -59,10 +59,14 @@ InferRecombination <- function(x,
 		verbose,
 		pBar,
 		PACKAGE="DECIPHER")
+	n <- ans[[3L]][2L] # total positions
+	if (n == 0)
+		stop("No positions in correlation profile.")
+	d <- ans[[3L]][1L] # total differences
+	if (d == 0)
+		stop("No differences in correlation profile.")
 	P <- ans[[1L]] # mismatch counts (relative to initial mismatch)
 	C <- ans[[2L]] # total counts (relative to initial mismatch)
-	d <- ans[[3L]][1L] # total differences
-	n <- ans[[3L]][2L] # total positions
 	
 	SSE <- function(params, pos, showPlot=FALSE, stats=FALSE) {
 		Theta_s <- params[1L]
@@ -97,10 +101,12 @@ InferRecombination <- function(x,
 		Q_p <- 2*((1 + Theta_p*a + Phi_p*w*l)/(1 + 2*Theta_p*a + 2*Phi_p*w*l))*d_p^2
 		
 		RHS <- c_s0*2*Theta_s/(1 + 2*Theta_s*a)*d_s + c_s1*d_s*d_p + c_s2*Q_p
+		RHS <- RHS/d_s
 		
 		if (showPlot)
-			lines(l, RHS/d_s, col=ifelse(is.na(pos), 1L, pos %% 3L + 5L))
+			lines(l, RHS, col=ifelse(is.na(pos), 1L, pos %% 3L + 5L))
 		
+		profile <- P[l]/C[l]
 		if (stats) {
 			c(fragment=f,
 				theta_sample=Theta_s,
@@ -113,27 +119,30 @@ InferRecombination <- function(x,
 				d_clonal=Theta_s/(1 + a*Theta_s),
 				d_sample=d_s,
 				setNames(l, paste("Position", seq_along(l))),
-				setNames(P[l]/C[l], paste("Profile", seq_along(l))),
-				setNames(RHS, paste("Fitted", seq_along(l))))
+				setNames(profile, paste("Profile", seq_along(l))),
+				setNames(RHS, paste("Fitted", seq_along(l))),
+				setNames(C[l], paste("Count", seq_along(l))))
 		} else {
-			if (any(RHS <= 0))
+			if (any(RHS <= 0) || any(RHS >= 1))
 				return(Inf)
-			sum(P[l]*(RHS/d_s - P[l]/C[l])^2) # weighted SSE
+			-sum(C[l]*(profile*log(RHS) + (1 - profile)*log(1 - RHS))) # negative log-likelihood
 		}
 	}
 	
 	if (showPlot) {
 		if (length(position) == 1L && is.na(position)) {
 			plot(P/C,
+				ylim=c(0, max(P/C)),
 				ylab="P(l)",
 				xlab="l (bp)")
 		} else {
 			l <- which(((seq_along(P) - 1L) %% 3L + 1L) %in% position)
 			plot(l,
 				P[l]/C[l],
-				col=l %% 3L + 5L,
+				ylim=c(0, max(P[l]/C[l])),
 				ylab="P(l)",
-				xlab="l (bp)")
+				xlab="l (bp)",
+				col=l %% 3L + 5L)
 			if (length(position) > 1L)
 				legend("topright",
 					paste("Position", position),

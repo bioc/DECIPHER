@@ -4,9 +4,7 @@ import(methods)
 import(S4Vectors)
 import(IRanges)
 import(XVector)
-# temporarily use 'except' until these symbols are removed from Biostrings:
-import(Biostrings, except=c(DNAMultipleAlignment, RNAMultipleAlignment, AAMultipleAlignment))
-importFrom(MultipleAlignment, DNAMultipleAlignment, RNAMultipleAlignment, AAMultipleAlignment)
+import(Biostrings)
 import(DBI)
 
 importFrom("grDevices", "colorRampPalette", "colors", "dev.flush", "dev.hold", "dev.size", "rainbow", "rgb", "as.graphicsAnnot", "col2rgb")

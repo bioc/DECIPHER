@@ -1679,7 +1679,7 @@ Treeline <- function(myXStringSet=NULL,
 	# error checking
 	if (length(method) != 1)
 		stop("Only one method can be specified.")
-	METHODS <- c("NJ", "UPGMA", "ML", "complete", "single", "WPGMA", "MP", "UPGMH", "ME")
+	METHODS <- c("NJ", "UPGMA", "ML", "complete", "single", "WPGMA", "MP", "ME")
 	method <- pmatch(method, METHODS)
 	if (is.na(method))
 		stop("Invalid method.")
@@ -1982,7 +1982,7 @@ Treeline <- function(myXStringSet=NULL,
 			stop("Mask characters ('+') are not allowed in costMatrix.")
 	}
 	
-	if (method == 3 || method == 7 || method == 9) {
+	if (method == 3 || method == 7 || method == 8) {
 		pBar <- NULL
 		time.1 <- Sys.time()
 	} else if (verbose) {
@@ -2035,7 +2035,7 @@ Treeline <- function(myXStringSet=NULL,
 				substitutionMatrix=S[m, m], # omit gaps
 				processors=processors,
 				verbose=FALSE)
-		} else if (method == 9 && length(model) == 1L) {
+		} else if (method == 8 && length(model) == 1L) {
 			myDistMatrix <- DistanceMatrix(myXStringSet,
 				type="dist",
 				correction=gsub("\\+Indels?", "", model, ignore.case=TRUE),
@@ -2087,16 +2087,16 @@ Treeline <- function(myXStringSet=NULL,
 	time.3 <- Sys.time()
 	myClusters <- .Call("cluster",
 		myDistMatrix,
-		ifelse(method == 3 || method == 7 || method == 9,
+		ifelse(method == 3 || method == 7 || method == 8,
 			-Inf,
 			cutoff[1]),
-		ifelse(method == 3 || method == 7 || method == 9,
+		ifelse(method == 3 || method == 7 || method == 8,
 			0L, # heuristic NJ
 			method),
 		ifelse(is(myDistMatrix, "matrix"),
 			dim,
 			-dim),
-		verbose && method != 3 && method != 7 && method != 9,
+		verbose && method != 3 && method != 7 && method != 8,
 		pBar,
 		optProcessors0,
 		PACKAGE="DECIPHER")
@@ -2107,14 +2107,14 @@ Treeline <- function(myXStringSet=NULL,
 		resTime0[optProcessors0] <- (resTime0[optProcessors0] + difftime(time.4, time.3, units='secs'))/2
 	}
 	
-	if (verbose && method != 3 && method != 7 && method != 9) {
+	if (verbose && method != 3 && method != 7 && method != 8) {
 		setTxtProgressBar(pBar, 100)
 		close(pBar)
 	}
 	
 	if (method == 3 ||
 		method == 7 ||
-		method == 9 ||
+		method == 8 ||
 		(reconstruct && type > 1)) {
 		myClusters <- .reorderClusters(myClusters,
 			all=method != 3)
@@ -2316,7 +2316,7 @@ Treeline <- function(myXStringSet=NULL,
 				if (verbose)
 					cat("\n\nThe selected model was:  ",
 						model,
-						ifelse(method == 3 || method == 7 || method == 9, "\n\n", "\n"),
+						ifelse(method == 3 || method == 7 || method == 8, "\n\n", "\n"),
 						sep="")
 			} else {
 				if (verbose)
@@ -2354,7 +2354,7 @@ Treeline <- function(myXStringSet=NULL,
 		}
 		
 		if (nrow(myClusters) > 2 && # at least four leaves
-			(method == 3 || method == 7 || method == 9)) { # optimize tree
+			(method == 3 || method == 7 || method == 8)) { # optimize tree
 			# initialize functions requiring the local environment
 			if (method == 3) { # ML
 				# initialize parameters
@@ -2783,7 +2783,7 @@ Treeline <- function(myXStringSet=NULL,
 						NNIs,
 						res2[[1L]])
 				}
-			} else { # ME (method == 9)
+			} else { # ME (method == 8)
 				.minimize <- function(myClusters) {
 					C <- myClusters[, 7L:8L]
 					mode(C) <- "integer"
@@ -2936,7 +2936,7 @@ Treeline <- function(myXStringSet=NULL,
 							""),
 						ifelse(method == 3,
 							"-ln(L) = ",
-							ifelse(method == 9,
+							ifelse(method == 8,
 								"length = ",
 								"score = ")),
 						formatC(value,
@@ -3083,7 +3083,7 @@ Treeline <- function(myXStringSet=NULL,
 							myClusters[, 4:5] <- params
 							optModel <- TRUE # may need to optimize model
 						}
-					} else { # method == 7 || method == 9
+					} else { # method == 7 || method == 8
 						.best <- .minimize(myClusters)
 					}
 				}
@@ -3314,7 +3314,7 @@ Treeline <- function(myXStringSet=NULL,
 									if (.best < best - epsilon) # perform global optimization
 										params <- .globalBranches(.minimize, params)
 									myClusters[, 4:5] <- params
-								} else { # method == 7 || method == 9
+								} else { # method == 7 || method == 8
 									.minimize(myClusters)
 								}
 								
@@ -3443,7 +3443,7 @@ Treeline <- function(myXStringSet=NULL,
 				if (verbose)
 					.printLine(.best, TRUE)
 				
-				if (method == 9)
+				if (method == 8)
 					myClusters <- .branchLengths(myClusters, myDistMatrix)
 				
 				Scores[it] <- .best
@@ -3500,7 +3500,7 @@ Treeline <- function(myXStringSet=NULL,
 			subs <- params[[4L]]
 			if (verbose)
 				cat("score =", .best, "(0.000%), 0 Grafts of 0, 0 Climbs\n")
-		} else if (method == 9) {
+		} else if (method == 8) {
 			myClusters <- .branchLengths(myClusters, myDistMatrix)
 			.best <- sum(myClusters[, 4:5])
 			if (verbose)
@@ -3626,7 +3626,7 @@ Treeline <- function(myXStringSet=NULL,
 	if (showPlot || type > 1) {
 		if (method != 3 &&
 			method != 7 &&
-			method != 9 &&
+			method != 8 &&
 			(method == 1 ||
 			root > 0))
 			myClusters <- .root(myClusters, root)
@@ -3756,6 +3756,7 @@ Treeline <- function(myXStringSet=NULL,
 				if (method == 1 ||
 					method == 3 ||
 					method == 7 ||
+					method == 8 ||
 					root > 0) {
 					myClusters <- .Call("reclusterNJ",
 						myClusters,
@@ -3771,6 +3772,7 @@ Treeline <- function(myXStringSet=NULL,
 				if ((method == 1 ||
 					method == 3 ||
 					method == 7 ||
+					method == 8 ||
 					root > 0) &&
 					!ASC) # ensure clusters are subsets
 					x[, 1] <- .splitClusters(x[, 1], c[, dim(c)[2]])

@@ -535,9 +535,6 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 					rans[3*(length - 1) + k] = 0;
 				if (rans[4*(length - 1) + k] < 0)
 					rans[4*(length - 1) + k] = 0;
-			} else if (met == 8) { // UPGMH
-				rans[4*(length - 1) + k] = exp(dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]])/2; // col
-				rans[3*(length - 1) + k] = rans[4*(length - 1) + k]; // row
 			} else {
 				rans[4*(length - 1) + k] = dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]]/2; // col
 				rans[3*(length - 1) + k] = rans[4*(length - 1) + k]; // row
@@ -602,9 +599,6 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 					rans[4*(length - 1) + k] += -1*rans[3*(length - 1) + k]; // add difference to other branch
 					rans[3*(length - 1) + k] = 0;
 				}
-			} else if (met == 8) { // UPGMH
-				rans[4*(length - 1) + k] = exp(dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]])/2; // col
-				rans[3*(length - 1) + k] = exp(dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]])/2 - cumHeight[(int)rans[0*(length - 1) + k] - 1]; // row
 			} else {
 				rans[4*(length - 1) + k] = dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]]/2; // col
 				rans[3*(length - 1) + k] = dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]]/2 - cumHeight[(int)rans[0*(length - 1) + k] - 1]; // row
@@ -645,9 +639,6 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 					rans[4*(length - 1) + k] += -1*rans[3*(length - 1) + k]; // add difference to other branch
 					rans[3*(length - 1) + k] = 0;
 				}
-			} else if (met == 8) { // UPGMH
-				rans[4*(length - 1) + k] = exp(dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]])/2 - cumHeight[(int)rans[1*(length - 1) + k] - 1]; // col
-				rans[3*(length - 1) + k] = exp(dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]])/2; // row
 			} else {
 				rans[4*(length - 1) + k] = dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]]/2 - cumHeight[(int)rans[1*(length - 1) + k] - 1]; // col
 				rans[3*(length - 1) + k] = dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[minRow] - colIndices[minCol]]/2; // row
@@ -760,36 +751,6 @@ SEXP cluster(SEXP x, SEXP cutoff, SEXP method, SEXP l, SEXP verbose, SEXP pBar, 
 						dTemp[index] += dMatrix2[length*colIndices[(i + 1)] - colIndices[(i + 1)]*(colIndices[(i + 1)] + 1)/2 + rowIndices[(minCol - 1)] - colIndices[(i + 1)]];
 					}
 					dTemp[index] /= 2; // average distance
-					index++;
-				}
-			}
-		} else if (met == 8) { // UPGMH
-			int weight1, weight2;
-			if (*(rowNums + rowIndices[minRow]) < 0) {
-				weight1 = 1;
-			} else {
-				weight1 = 2;
-			}
-			if (*(colNums + colIndices[minCol]) < 0) {
-				weight2 = 1;
-			} else {
-				weight2 = 2;
-			}
-			for (i = -1; i < (size - 1); i++) {
-				if (!(i == minRow) && !(i == minCol - 1)) {
-					dTemp[index] = 0;
-					// calculate distance from the new node
-					if (minRow >= i) {
-						dist1 = dMatrix2[length*colIndices[(i + 1)] - colIndices[(i + 1)]*(colIndices[(i + 1)] + 1)/2 + rowIndices[minRow] - colIndices[(i + 1)]];
-					} else {
-						dist1 = dMatrix2[length*colIndices[(minRow + 1)] - colIndices[(minRow + 1)]*(colIndices[(minRow + 1)] + 1)/2 + rowIndices[i] - colIndices[(minRow + 1)]];
-					}
-					if (i >= minCol) {
-						dist2 = dMatrix2[length*colIndices[minCol] - colIndices[minCol]*(colIndices[minCol] + 1)/2 + rowIndices[i] - colIndices[minCol]];
-					} else {
-						dist2 = dMatrix2[length*colIndices[(i + 1)] - colIndices[(i + 1)]*(colIndices[(i + 1)] + 1)/2 + rowIndices[(minCol - 1)] - colIndices[(i + 1)]];
-					}
-					dTemp[index] = LHM(weight1, dist1, weight2, dist2); // weighted harmonic mean of distance
 					index++;
 				}
 			}

@@ -273,6 +273,7 @@ The \Rpackage{DECIPHER} package contains many different functions.  Figure \ref{
 \ytl{2024}{\Rfunction{Clusterize} published \cite{Wright:2024a} (\Rfunction{Clusterize})}
 \ytl{2024}{Search and mapping functions published \cite{Wright:2024b} (\Rfunction{IndexSeqs}, \Rfunction{SearchIndex}, \Rfunction{AlignPairs})}
 \ytl{2025}{\Rfunction{DetectRepeats} published \cite{Cho:2025} (\Rfunction{DetectRepeats})}
+\ytl{2026}{\Rfunction{Treeline} method published \cite{Wright:2026} (\Rfunction{Treeline})}
 \bigskip
 \rule{\linewidth}{1pt}%
 \end{minipage}%
@@ -356,6 +357,11 @@ The \Rpackage{DECIPHER} package contains many different functions.  Figure \ref{
 {ES Wright}
 \newblock Fast and Flexible Search for Homologous Biological Sequences with DECIPHER v3
 \newblock {\em The R Journal}, 16, 191-200, 2024.
+
+\bibitem{Wright:2026}
+{ES Wright}
+\newblock Treeline Provides a Unified Strategy for Optimising Phylogenetic Trees Under Alternative Criteria
+\newblock {\em Molecular Ecology Resources}, 26(5), e70163, 2026.
 
 \bibitem{Yilmaz:2012}
 {LS Yilmaz, A Loy, ES Wright, M Wagner, \& DR Noguera}

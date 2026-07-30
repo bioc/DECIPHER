@@ -80,6 +80,8 @@ McGuire G., \emph{et al.} (1999) Improved error bounds for genetic distances fro
 Tajima, F. and Nei, M. (1984) Estimation of evolutionary distance between nucleotide sequences. \emph{Molecular Biology and Evolution}, \bold{1(3)}, 269-285.
 
 Tamura, K. and Nei, M. (1993) Estimation of the number of nucleotide substitutions in the control region of mitrochondrial DNA in humans and chimpanzees. \emph{Molecular Biology and Evolution}, \bold{10(3)}, 512-526.
+
+Wright, E. (2026) Treeline Provides a Unified Strategy for Optimising Phylogenetic Trees Under Alternative Criteria. \emph{Molecular Ecology Resources}, \bold{26(5)}, e70163.
 }
 \author{
 Erik Wright \email{Erik.Wright@bcm.edu}

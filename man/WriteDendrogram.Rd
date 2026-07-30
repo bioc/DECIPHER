@@ -48,6 +48,9 @@ Logical determining whether to unroot \code{x} if possible.
 \value{
 \code{NULL}.
 }
+\references{
+Wright, E. (2026) Treeline Provides a Unified Strategy for Optimising Phylogenetic Trees Under Alternative Criteria. \emph{Molecular Ecology Resources}, \bold{26(5)}, e70163.
+}
 \author{
 Erik Wright \email{Erik.Wright@bcm.edu}
 }

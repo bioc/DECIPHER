@@ -37,13 +37,15 @@ Logical indicating whether to display progress.
 \details{
 Recombination accelerates the adaptive evolution of many organisms.  The transfer of genetic fragments leaves behind a signature in the form of decaying autocorrelation among substitutions.  This signal can be visualized with a correlation profile that shows the probability of a genetic difference at increasing distances away from another genetic difference.  Flat correlation profiles are evidence for an absence of recombination since the last common ancestor.  In contrast, more ``L'' shaped correlation profiles result from greater degrees of recombination (Steinberg, et al., 2023).
 
-\code{InferRecombination} fits a coalescent-based model to a correlation profile derived from one or more sets of aligned sequences (\code{x}).  The model assumes the sequences correspond to a population whose genealogical structure is characterized by a single average coalescence rate.  This assumption is automatically true for a pair of sequences and may hold true within (e.g., intra-species) or between clusters of sequences (Steinberg, et al., 2022).  The model can be applied to any organisms belonging to a focal population recombining with genetic fragments from an external pool.
+\code{InferRecombination} uses maximum likelihood estimation to fit a coalescent-based model to a correlation profile derived from one or more sets of aligned sequences (\code{x}).  The model assumes the sequences correspond to a population whose genealogical structure is characterized by a single average coalescence rate.  This assumption is automatically true for a pair of sequences and may hold true within (e.g., intra-species) or between clusters of sequences (Steinberg, et al., 2022).  The model can be applied to any organisms belonging to a focal population recombining with genetic fragments from an external pool.
 
 The parametric model consist of three free variables that are fitted to the measured correlation profile (Lin & Kussell, 2019).  These variables can be used to infer six other parameters of interest corresponding to the sample (\code{x}) or (external) pool in which they recombine.  (See value section below.)  This approach is fast, accurate, and does not rely on phylogenetic reconstruction.  Variability can be quantified by comparing results across alignments and confidence intervals can be determined by bootstrapping sequences in the input alignments (\code{x}).
 
 It is possible to indicate the \code{readingFrame} and codon \code{position}(s) that should be assessed.  Typically, the analysis is performed on the third \code{position} of synonymous codons to mitigate the influence of adaptive substitutions.  If the \code{readingFrame} is \code{NA}, positions are analyze with respect to the (initial) substitutions, and a positional pattern may emerge due to variability in substitution rates at each codon position.  It is also possible to include all positions (\code{readingFrame=NA}), such as when analyzing non-coding sequences.
 
-The output consists of a matrix of measured values and inferred parameters.  Of particular note are the \code{coverage}, \code{ratio}, and \code{theta_pool}.  The recombined \code{coverage} is 0\% when the sequences have evolved independently since their last common ancestor and 100\% when the (input) sample has recombined all of its nucleotides with the (external) pool.  The \code{ratio} of recombination rate to mutation rate can be interpreted as the \code{ratio} of substitutions due to recombination relative to point mutation.  This \code{ratio} is greater than \code{1} when recombination contributes more to genetic diversity than point mutation, and vice versa when less than \code{1}.  \code{theta_pool} measures the diversity of the external genetic pools accessible by the sampled sequences through recombination.  It can be used as a proxy for the pairwise separation between genomes (Lin & Kussell, 2019).
+The output consists of a matrix of measured values and inferred parameters.  Of particular note are the \code{coverage}, \code{ratio}, and \code{theta_pool}.  The recombined \code{coverage} is 0\% when the sequences have evolved independently since their last common ancestor and 100\% when the (input) sample has recombined all of its nucleotides with the (external) pool.  The \code{ratio} of recombination rate to mutation rate can be interpreted as the \code{ratio} of substitutions due to recombination relative to point mutation.  This \code{ratio} is greater than \code{1} when recombination contributes more to genetic diversity than point mutation, and vice versa when less than \code{1}.  The value of \code{theta_pool} quantifies the diversity of the external genetic pools accessible by the sampled sequences through recombination.  It can be used as a proxy for the pairwise separation between genomes, since a low value of \code{theta_pool} indicates the genomes are intermixing with the same pool (Lin & Kussell, 2019).
+
+Note that a sufficient number of mutations is required for curve fitting, which can become problematic when \code{d_sample} is close to zero. A good rule of thumb is that the number of observed mutations per profile position, which can be approximated by \code{"Profile 1"} multiplied by \code{"Count 1"}, should be above about \code{1000} for dependable curve fitting.  (See examples section below.)
 }
 \value{
 A \code{matrix} with named rows for each value and a column for each position.  The meaning of each parameter is described in Lin & Kussell (2019).
@@ -65,7 +67,8 @@ The remaining rows contain fixed values:\cr
 (10) \code{d_sample} - measured pairwise diversity due to both recombination and mutation (i.e., probability two sequences differ at a site)\cr
 (11) Position - distance away from the initial substitution (in base pairs)\cr
 (12) Profile - measured probability of a difference at each position (i.e., the measured correlation profile)\cr
-(13) Fitted - estimated probability of a difference at each position (i.e., the fitted correlation profile)
+(13) Fitted - estimated probability of a difference at each position (i.e., the fitted correlation profile)\cr
+(14) Count - Total number of mutations analyzed at each position (i.e., the normalization factor of the correlation profile)
 }
 \references{
 Lin, M. & Kussell, E. (2019). Inferring bacterial recombination rates from large-scale sequencing datasets. Nature Methods, \bold{16(2)}, 199-204.
@@ -96,6 +99,7 @@ fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
 DNA <- readDNAStringSet(fas)
 ans <- InferRecombination(DNA, position=NA, showPlot=TRUE)
 head(ans, n=10)
+ans["Profile 1",]*ans["Count 1",] # ideally > 1,000 for stable fitting
 
 if (require("RSQLite", quietly=TRUE)) {
 	# example of inferring recombination among genomes

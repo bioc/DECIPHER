@@ -36,6 +36,9 @@ Either a single or double quotation mark determining the character used quote la
 \value{
 An object of class \code{dendrogram} or a list of \code{dendrogram}s.
 }
+\references{
+Wright, E. (2026) Treeline Provides a Unified Strategy for Optimising Phylogenetic Trees Under Alternative Criteria. \emph{Molecular Ecology Resources}, \bold{26(5)}, e70163.
+}
 \author{
 Erik Wright \email{Erik.Wright@bcm.edu}
 }

@@ -30,7 +30,7 @@ The type of distance measure(s) to use.  This should be \code{"length"} (the def
 Either a single number (the default) or a numeric vector with one weight corresponding to each \code{dendrogram} in \code{x}.  Specifying \code{weights} as proportional to trustworthiness (e.g., number of aligned sites originally used to construct each dendrogram) may modestly improve summary tree accuracy.
 }
   \item{bootstraps}{
-The number of bootstrap replicates desired or zero (the default) for no replicates.  Bootstrapping entails resampling (with replacement) the set of trees in \code{x} and recording the percentage of times an edge partitioning the same sets of leaves was observed across replicates.
+The number of bootstrap replicates desired or zero (the default) for no replicates.  Bootstrapping entails resampling (with replacement) the set of trees in \code{x} and recording the fraction of times an edge partitioning the same sets of leaves was observed across replicates.
 }
   \item{power}{
 A single number determining the transformed space in which regression is performed.  The default (\code{0.5}) will perform regression in square root space, while setting \code{power} to \code{1} would perform traditional regression.  Smaller values will diminish the influence of large outliers at the expense of losing some of their information.
@@ -47,13 +47,13 @@ The genealogies of gene trees are often discordant with each other and the speci
 
 \code{Zipline} works by first regressing gene tree distances onto the average inter-leaf distances to calculate the relative rate of evolution for each gene tree.  Next, the function regresses inter-leaf distances onto the per tree rate to derive the best estimate of distances between leaves.  By default, this distance matrix is used to construct a summary tree with \code{Treeline}.
 
-Regressions are performed in square root space (by default) to mitigate the effect of outliers on estimated slopes.  The use of regression makes the \code{Zipline} algorithm robust to error and effortlessly capable of handling duplicated labels in the same tree (e.g., multi-copy genes) or missing data (e.g., absent genes).  In this manner, all input trees do not need to have the same set of (leaf) labels.  Regression also permits the incorporation of \code{weights} to bias to the distance estimate to towards more trustworthy trees in \code{x}.
+Regressions are performed in square root space (by default) to mitigate the effect of outliers on estimated slopes.  The use of regression makes the \code{Zipline} algorithm robust to error and effortlessly capable of handling missing data (e.g., absent genes).  \code{Zipline} also handles duplicated labels in the same tree (e.g., multi-copy genes) by collapsing to the minimum distance.  In this manner, all input trees do not need to have the same set of (leaf) labels.  Regression also permits the incorporation of \code{weights} to bias to the distance estimate to towards more trustworthy trees in \code{x}.
 
 Multiple measures of distance are supported.  Historically the internode distance (\code{"edges"}) was commonly used for species tree inference, but recently path length (\code{"length"}) and other measures have been shown to perform better.  Dendrograms that include branch supports (e.g., \code{"edgetext"}) may offer higher accuracy and make hybrid distance measures possible.  (See examples section below.)
 
 Output distances (and edge lengths) are in the same units as the distance measure.  That is, if \code{"length"} is specified then output distances are in the units of branch length (e.g., substitutions per site).  Other distance measures, such as the sum of edge support values, are less easily interpretable although they remain in the expected units.  Note that all trees in \code{x} are expected to share the same units.
 
-Bootstrapping is incorporated at the level of sampling gene trees within \code{x}.  As with most bootstrap procedures, this requires a large enough sample set to adequately represent the data distribution.  Bootstrap supports (as percentages) are provided via ``edgetext'' attributes on internal branches of the tree.
+Bootstrapping is incorporated at the level of sampling gene trees within \code{x} (i.e., multi-locus bootstrapping).  As with most bootstrap procedures, this requires a large enough sample set (i.e., \code{x}) to adequately represent the data distribution.  Bootstrap supports (as fractions) are provided via ``edgetext'' attributes on internal branches of the tree.
 }
 \value{
 If \code{type} is \code{"dendrogram"} (the default), then a summary tree of class \code{dendrogram} is returned with ``edgetext'' attributes if \code{bootstraps} is positive.

@@ -100,7 +100,7 @@ Logical indicating whether to display progress.
 }
 }
 \details{
-\code{Treeline} builds a phylogenetic tree using either \code{myXStringSet} and/or \code{myDistMatrix}.  The output is either a \code{dendrogram} and/or \code{data.frame} containing cluster numbers.
+\code{Treeline} builds a phylogenetic tree using either \code{myXStringSet} and/or \code{myDistMatrix}.  The output is either a \code{dendrogram} and/or \code{data.frame} containing cluster numbers.  The \code{Treeline} algorithm is described in Wright (2026).
 
 Multiple \code{method}s of tree building are supported:
 
@@ -154,6 +154,8 @@ Saitou, N. and Nei, M. (1987) The neighbor-joining method: a new method for reco
 Sankoff, D. (1975) Minimal mutation trees of sequences. \emph{SIAM Journal of Applied Math}, \bold{28}.
 
 Spirin, S., \emph{et al.} (2024) PhyloBench: A Benchmark for Evaluating Phylogenetic Programs. \emph{Molecular Biology and Evolution}, \bold{41(6)}, 1-11.
+
+Wright, E. (2026) Treeline Provides a Unified Strategy for Optimising Phylogenetic Trees Under Alternative Criteria. \emph{Molecular Ecology Resources}, \bold{26(5)}, e70163.
 }
 \author{
 Erik Wright \email{Erik.Wright@bcm.edu}

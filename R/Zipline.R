@@ -11,6 +11,30 @@
 	n*I1 - (I*I1) %/% 2L + J - I
 }
 
+# collapse duplicate names based on minimum distance
+.dereplicate <- function(y) {
+	labs <- attr(y, "Labels")
+	labs <- sort(unique(labs))
+	m <- match(attr(y, "Labels"), labs)
+	n <- length(m)
+	N <- length(labs)
+	alt <- rep(Inf, (N*(N - 1L)) %/% 2L)
+	j <- 1L # column in y
+	k <- 0L # starting index in y
+	while (j < n) {
+		i1 <- (k + 1L):(k + n - j) # index in y
+		i2 <- .index(m[(j + 1L):n], m[j], N) # index in alt
+		w <- which(m[(j + 1L):n] != m[j])
+		for (p in w)
+			if (y[i1[p]] < alt[i2[p]])
+				alt[i2[p]] <- y[i1[p]]
+		j <- j + 1L
+		k <- k + n - j + 1L
+	}
+	attr(alt, "Labels") <- labs
+	alt
+}
+
 Zipline <- function(x,
 	type="dendrogram",
 	distance="length",
@@ -106,29 +130,20 @@ Zipline <- function(x,
 	
 	# compute mean patristic distances
 	sums <- numeric(L)
-	nums <- integer(L)
+	nums <- numeric(L)
 	for (i in seq_len(l)) {
 		y <- Cophenetic(x[[i]], distance=distance)
 		y[y < 0] <- 0 # nullify any negative distances
-		m <- match(attr(y, "Labels"), spp)
-		n <- length(m)
+		if (dupes[i])
+			y <- .dereplicate(y)
+		labs <- attr(y, "Labels")
+		n <- length(labs)
+		m <- match(labs, spp)
+		if (weights[i] != 1)
+			y <- weights[i]*y
 		if (n == N && sum(m != seq_along(m)) == 0L) {
 			sums <- sums + y[]
-			nums <- nums + 1L
-		} else if (dupes[i]) {
-			j <- 1L # column in y
-			k <- 0L # starting index in y
-			while (j < n) {
-				i1 <- (k + 1L):(k + n - j) # index in y
-				i2 <- .index(m[(j + 1L):n], m[j], N) # index in sums
-				w <- which(m[(j + 1L):n] != m[j])
-				for (p in w) {
-					sums[i2[p]] <- sums[i2[p]] + y[i1[p]]
-					nums[i2[p]] <- nums[i2[p]] + 1L
-				}
-				j <- j + 1L
-				k <- k + n - j + 1L
-			}
+			nums <- nums + weights[i]
 		} else {
 			j <- 1L # column in y
 			k <- 0L # starting index in y
@@ -136,7 +151,7 @@ Zipline <- function(x,
 				i1 <- (k + 1L):(k + n - j) # index in y
 				i2 <- .index(m[(j + 1L):n], m[j], N) # index in sums
 				sums[i2] <- sums[i2] + y[i1]
-				nums[i2] <- nums[i2] + 1L
+				nums[i2] <- nums[i2] + weights[i]
 				j <- j + 1L
 				k <- k + n - j + 1L
 			}
@@ -156,25 +171,16 @@ Zipline <- function(x,
 	for (i in seq_len(l)) {
 		y <- Cophenetic(x[[i]], distance=distance)
 		y[y < 0] <- 0 # nullify any negative distances
-		m <- match(attr(y, "Labels"), spp)
-		n <- length(m)
+		if (dupes[i])
+			y <- .dereplicate(y)
+		labs <- attr(y, "Labels")
+		n <- length(labs)
+		m <- match(labs, spp)
 		y <- y^power
+		if (weights[i] != 1)
+			y <- y*weights[i]
 		if (n == N && sum(m != seq_along(m)) == 0L) {
-			lS[i] <- sum(sM*y)/rS
-		} else if (dupes[i]) {
-			j <- 1L # column in y
-			k <- 0L # starting index in y
-			s <- 0 # sum of distances
-			while (j < n) {
-				i1 <- (k + 1L):(k + n - j) # index in y
-				i2 <- .index(m[(j + 1L):n], m[j], N) # index in sums
-				w <- which(m[(j + 1L):n] != m[j])
-				lS[i] <- lS[i] + sum(sM[i2[w]]*y[i1[w]])
-				s <- s + sum(rM[i2[w]])
-				j <- j + 1L
-				k <- k + n - j + 1L
-			}
-			lS[i] <- lS[i]/s
+			lS[i] <- sum(sM*y)/(weights[i]*rS)
 		} else {
 			j <- 1L # column in y
 			k <- 0L # starting index in y
@@ -183,7 +189,7 @@ Zipline <- function(x,
 				i1 <- (k + 1L):(k + n - j) # index in y
 				i2 <- .index(m[(j + 1L):n], m[j], N) # index in sums
 				lS[i] <- lS[i] + sum(sM[i2]*y[i1])
-				s <- s + sum(rM[i2])
+				s <- s + weights[i]*sum(rM[i2])
 				j <- j + 1L
 				k <- k + n - j + 1L
 			}
@@ -203,28 +209,22 @@ Zipline <- function(x,
 	for (i in seq_len(l)) {
 		y <- Cophenetic(x[[i]], distance=distance)
 		y[y < 0] <- 0 # nullify any negative distances
-		m <- match(attr(y, "Labels"), spp)
-		n <- length(m)
+		if (dupes[i])
+			y <- .dereplicate(y)
+		labs <- attr(y, "Labels")
+		n <- length(labs)
+		m <- match(labs, spp)
 		y <- y^power
-		y <- weights[i]*sS[i]*y
-		lW <- weights[i]*lS[i]
+		if (weights[i] != 1) {
+			y <- weights[i]*sS[i]*y
+			lW <- weights[i]*lS[i]
+		} else {
+			y <- sS[i]*y
+			lW <- lS[i]
+		}
 		if (n == N && sum(m != seq_along(m)) == 0L) {
 			nominator <- nominator + y[]
 			denominator <- denominator + lW
-		} else if (dupes[i]) {
-			j <- 1L # column in y
-			k <- 0L # starting index in y
-			while (j < n) {
-				i1 <- (k + 1L):(k + n - j) # index in y
-				i2 <- .index(m[(j + 1L):n], m[j], N) # index in sums
-				w <- which(m[(j + 1L):n] != m[j])
-				for (p in w) {
-					nominator[i2[p]] <- nominator[i2[p]] + y[i1[p]]
-					denominator[i2[p]] <- denominator[i2[p]] + lW
-				}
-				j <- j + 1L
-				k <- k + n - j + 1L
-			}
 		} else {
 			j <- 1L # column in y
 			k <- 0L # starting index in y
@@ -273,21 +273,25 @@ Zipline <- function(x,
 			.partitions <- function(x) {
 				if (is.leaf(x))
 					return(NULL)
-				x0 <- paste(sort(match(labels(x), spp)), collapse=" ")
+				part <- spp %in% labels(x)
+				s <- 2L*sum(part)
+				if (s == N) { # record one partition
+					if (part[1L])
+						part <- !part
+				} else if (s > N) { # record smaller partition
+					part <- !part
+				}
+				part <- which(part)
+				if (length(part) == 1L) {
+					part <- NULL
+				} else {
+					part <- paste(part, collapse=" ")
+				}
 				x1 <- .partitions(x[[1L]])
 				x2 <- .partitions(x[[2L]])
-				list(x0, x1, x2)
+				list(part, x1, x2)
 			}
-			
-			.labelEdges <- function(x) {
-				if (!is.leaf(x)) {
-					part <- paste(sort(match(labels(x), spp)), collapse=" ")
-					attr(x, "edgetext") <- as.character(counts[part])
-				}
-				x
-			}
-			
-			counts <- unlist(.partitions(tree))
+			counts <- unique(unlist(.partitions(tree)))
 			counts <- setNames(integer(length(counts)), counts)
 			for (i in seq_len(bootstraps)) {
 				if (verbose)
@@ -303,13 +307,34 @@ Zipline <- function(x,
 					bootstraps=0L,
 					verbose=FALSE,
 					...)
+				if (N != attr(temp, "members"))
+					next # different label sets
 				temp <- unlist(.partitions(temp))
 				m <- match(temp, names(counts))
 				m <- m[!is.na(m)]
 				counts[m] <- counts[m] + 1L
 			}
-			counts <- round(100*counts/bootstraps)
+			counts <- round(counts/bootstraps,
+				ceiling(log10(bootstraps)))
 			
+			.labelEdges <- function(x) {
+				if (!is.leaf(x)) {
+					part <- spp %in% labels(x)
+					s <- 2L*sum(part)
+					if (s == N) { # record one partition
+						if (part[1L])
+							part <- !part
+					} else if (s > N) { # record smaller partition
+						part <- !part
+					}
+					part <- which(part)
+					if (length(part) > 1L) {
+						part <- paste(part, collapse=" ")
+						attr(x, "edgetext") <- as.character(counts[part])
+					}
+				}
+				x
+			}
 			tree <- dendrapply(tree, .labelEdges)
 			attr(tree, "edgetext") <- NULL # remove text from (virtual) root branch
 			

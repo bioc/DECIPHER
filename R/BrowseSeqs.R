@@ -5,6 +5,7 @@ BrowseSeqs <- function(myXStringSet,
 	highlight=NA,
 	patterns=c("-", alphabet(myXStringSet, baseOnly=TRUE)),
 	colors=substring(rainbow(length(patterns), v=0.8, start=0.9, end=0.7), 1, 7),
+	fontColor="white",
 	colWidth=Inf,
 	title="",
 	...) {
@@ -153,15 +154,24 @@ BrowseSeqs <- function(myXStringSet,
 	}
 	if (any(patterns == ""))
 		stop("patterns cannot be empty (i.e., '').")
+	if (!is.character(fontColor))
+		stop("fontColor must be a character vector.")
 	if (type < 0) {
 		if (length(myXStringSet) != length(patterns))
 			stop("patterns is not the same length as myXStringSet.")
+		if (length(fontColor) != 1L)
+			stop("fontColor must be a single color.")
 	} else {
 		w <- which(patterns %in% c("?", "*", "+", "."))
 		if (length(w) > 0)
 			patterns[w] <- paste("\\", patterns[w], sep="")
 		if (length(colors) != length(patterns) || !is.character(colors))
 			stop("colors must be a character vector of the same length as patterns.")
+		if (length(fontColor) == 1L) {
+			fontColor <- rep(fontColor, length(colors))
+		} else if (length(fontColor) != length(colors)) {
+			stop("fontColor is a different length than colors.")
+		}
 	}
 	# check that the file exist
 	if (is.character(htmlFile)) {
@@ -356,7 +366,9 @@ BrowseSeqs <- function(myXStringSet,
 				for (j in seq_along(starts)) {
 					w <- which(v[[i]][starts[j]:stops[j]] != "")
 					if (length(w) > 0)
-						s[[i + count]][w] <- paste("<span style=\"color:#FFF;background:",
+						s[[i + count]][w] <- paste("<span style=\"color:",
+							fontColor,
+							";background:",
 							v[[i]][w + starts[j] - 1],
 							"\">",
 							s[[i + count]][w],
@@ -417,7 +429,8 @@ BrowseSeqs <- function(myXStringSet,
 			styles <- paste(styles,
 				"span._", i,
 				" {background:", colors[i],
-				"; color:#FFF;} ",
+				"; color:", fontColor[i],
+				";} ",
 				sep="")
 		}
 		styles <- paste("<style type=text/css> ",

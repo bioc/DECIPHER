@@ -54,7 +54,7 @@ Highly variable regions are detected by their signature of having a low informat
 A moving average of \code{windowSize} nucleotides to the left and right of the center-point is applied to smooth noise in the information content signal along the sequence.  Regions dropping below \code{threshold} bits or more than \code{maxFractionGaps} are masked.
 }
 \value{
-If \code{type} is \code{"sequences"} then a \code{MultipleAlignment} object of the input type with masked columns where the input criteria are met. Otherwise, if \code{type} is \code{"ranges"} then an \code{IRanges} object giving the start and end positions of the masked columns.  Else (\code{type} is \code{"values"}) a \code{data.frame} containing one row per site in the alignment and three columns of information:
+If \code{type} is \code{"sequences"} then an \code{XStringSet} object of remaining (unmasked) columns where the input criteria are met.  Otherwise, if \code{type} is \code{"ranges"} then an \code{IRanges} object giving the start and end positions of the masked columns.  Else (\code{type} is \code{"values"}) a \code{data.frame} containing one row per site in the alignment and three columns of information:
   \item{"entropy"}{
 The entropy score of each column, in units of bits.
 }
@@ -77,23 +77,9 @@ Erik Wright \email{Erik.Wright@bcm.edu}
 \examples{
 fas <- system.file("extdata", "Streptomyces_ITS_aligned.fas", package="DECIPHER")
 dna <- readDNAStringSet(fas)
+dna # before masking
 masked_dna <- MaskAlignment(dna, showPlot=TRUE)
-
-# display only unmasked nucleotides for use in downstream analyses
-not_masked <- as(masked_dna, "DNAStringSet")
-BrowseSeqs(not_masked)
-
-# display only masked nucleotides that are covered by the mask
-masked <- masked_dna
-colmask(masked, append="replace", invert=TRUE) <- colmask(masked)
-masked <- as(masked, "DNAStringSet")
-BrowseSeqs(masked)
-
-# display the complete DNA sequence set including the mask
-masks <- lapply(width(colmask(masked_dna)), rep, x="+")
-masks <- unlist(lapply(masks, paste, collapse=""))
-masked_dna <- replaceAt(dna, at=IRanges(colmask(masked_dna)), value=masks)
-BrowseSeqs(masked_dna)
+masked_dna # after masking
 
 # get the start and end ranges of masked columns
 ranges <- MaskAlignment(dna, type="ranges")

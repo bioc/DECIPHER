@@ -195,19 +195,7 @@ MaskAlignment <- function(myXStringSet,
 		}
 		
 		if (type == 1L) {
-			if (is(myXStringSet, "DNAStringSet")) {
-				result <- DNAMultipleAlignment(myXStringSet,
-					rowmask=as(IRanges(), "NormalIRanges"),
-					colmask=as(IRanges(starts, ends), "NormalIRanges"))
-			} else if (is(myXStringSet, "RNAStringSet")) {
-				result <- RNAMultipleAlignment(myXStringSet,
-					rowmask=as(IRanges(), "NormalIRanges"),
-					colmask=as(IRanges(starts, ends), "NormalIRanges"))
-			} else { # AAStringSet
-				result <- AAMultipleAlignment(myXStringSet,
-					rowmask=as(IRanges(), "NormalIRanges"),
-					colmask=as(IRanges(starts, ends), "NormalIRanges"))
-			}
+			result <- replaceAt(myXStringSet, IRanges(starts, ends))
 		} else if (type == 2L) {
 			result <- IRanges(starts, ends)
 		}
