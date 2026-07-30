@@ -869,17 +869,19 @@ SEXP withdrawMatches(SEXP order, SEXP starts1, SEXP ends1, SEXP index1, SEXP sta
 			}
 			
 			// mark positions as occupied
-			p1 = rans2[i] + boundL1;
-			p2 = rans4[i] + boundL2;
-			while (p1 >= rans1[i] + boundL1) {
-				temp1 = p1;
-				temp2 = p2;
-				p1--;
-				p2--;
-				if (pos1[p1] == negBuffer)
-					pos1[p1] = temp2;
-				if (pos2[p2] == negBuffer)
-					pos2[p2] = temp1;
+			if (rans1[i] > 0) {
+				p1 = rans2[i] + boundL1;
+				p2 = rans4[i] + boundL2;
+				while (p1 >= rans1[i] + boundL1) {
+					temp1 = p1;
+					temp2 = p2;
+					p1--;
+					p2--;
+					if (pos1[p1] == negBuffer)
+						pos1[p1] = temp2;
+					if (pos2[p2] == negBuffer)
+						pos2[p2] = temp1;
+				}
 			}
 			
 			// lower score proportionally
