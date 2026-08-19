@@ -2114,70 +2114,9 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 				row = l1 - 1;
 				(*L_unknown_)(Ls, row*3*width + 2*width, row*3*width + 0, row*3*width + width, P, T[0*l1 + row] - 1 + k*lu, T[1*l1 + row] - 1 + k*lu, s2, epsilon, inv_epsilon, 0);
 				
-				if (s > 0) { // final node
-					if (indels) {
-						for (j = 0; j < s1; j++)
-							node[row*maxWidth*s1 + i*s1 + j] += *(Ls + 2*width + j + row*3*width) * *(m + numRates + k + params);
-					} else {
-						if (t == 3) {
-							if (!((*(Ls + 0 + row*3*width) == 0 &&
-								*(Ls + 1 + row*3*width) == 0 &&
-								*(Ls + 2 + row*3*width) == 0 &&
-								*(Ls + 3 + row*3*width) == 0 &&
-								*(Ls + 4 + row*3*width) == 0 &&
-								*(Ls + 5 + row*3*width) == 0 &&
-								*(Ls + 6 + row*3*width) == 0 &&
-								*(Ls + 7 + row*3*width) == 0 &&
-								*(Ls + 8 + row*3*width) == 0 &&
-								*(Ls + 9 + row*3*width) == 0 &&
-								*(Ls + 10 + row*3*width) == 0 &&
-								*(Ls + 11 + row*3*width) == 0 &&
-								*(Ls + 12 + row*3*width) == 0 &&
-								*(Ls + 13 + row*3*width) == 0 &&
-								*(Ls + 14 + row*3*width) == 0 &&
-								*(Ls + 15 + row*3*width) == 0 &&
-								*(Ls + 16 + row*3*width) == 0 &&
-								*(Ls + 17 + row*3*width) == 0 &&
-								*(Ls + 18 + row*3*width) == 0 &&
-								*(Ls + 19 + row*3*width) == 0) ||
-								(*(Ls + width + 0 + row*3*width) == 0 &&
-								*(Ls + width + 1 + row*3*width) == 0 &&
-								*(Ls + width + 2 + row*3*width) == 0 &&
-								*(Ls + width + 3 + row*3*width) == 0 &&
-								*(Ls + width + 4 + row*3*width) == 0 &&
-								*(Ls + width + 5 + row*3*width) == 0 &&
-								*(Ls + width + 6 + row*3*width) == 0 &&
-								*(Ls + width + 7 + row*3*width) == 0 &&
-								*(Ls + width + 8 + row*3*width) == 0 &&
-								*(Ls + width + 9 + row*3*width) == 0 &&
-								*(Ls + width + 10 + row*3*width) == 0 &&
-								*(Ls + width + 11 + row*3*width) == 0 &&
-								*(Ls + width + 12 + row*3*width) == 0 &&
-								*(Ls + width + 13 + row*3*width) == 0 &&
-								*(Ls + width + 14 + row*3*width) == 0 &&
-								*(Ls + width + 15 + row*3*width) == 0 &&
-								*(Ls + width + 16 + row*3*width) == 0 &&
-								*(Ls + width + 17 + row*3*width) == 0 &&
-								*(Ls + width + 18 + row*3*width) == 0 &&
-								*(Ls + width + 19 + row*3*width) == 0))) { // neither branch is a gap
-								for (j = 0; j < s1; j++)
-									node[row*maxWidth*s1 + i*s1 + j] += *(Ls + 2*width + j + row*3*width) * *(m + numRates + k + params);
-							}
-						} else {
-							if (!((*(Ls + 0 + row*3*width) == 0 &&
-								*(Ls + 1 + row*3*width) == 0 &&
-								*(Ls + 2 + row*3*width) == 0 &&
-								*(Ls + 3 + row*3*width) == 0) ||
-								(*(Ls + width + 0 + row*3*width) == 0 &&
-								*(Ls + width + 1 + row*3*width) == 0 &&
-								*(Ls + width + 2 + row*3*width) == 0 &&
-								*(Ls + width + 3 + row*3*width) == 0))) { // neither branch is a gap
-								for (j = 0; j < s1; j++)
-									node[row*maxWidth*s1 + i*s1 + j] += *(Ls + 2*width + j + row*3*width) * *(m + numRates + k + params);
-							}
-						}
-					}
-				}
+				if (s > 0) // final node
+					for (j = 0; j < s1; j++)
+						node[row*maxWidth*s1 + i*s1 + j] += *(Ls + 2*width + j + row*3*width) * *(m + numRates + k + params);
 				
 				// calculate overall Likelihood
 				int count = 0;
@@ -2356,26 +2295,27 @@ SEXP clusterML(SEXP x, SEXP y, SEXP model, SEXP branches, SEXP lengths, SEXP sta
 				
 				if (s > 0) {
 					if (indels) {
-						for (j = l1 - 2; j >= 0; j--)
+						for (j = l1 - 2; j >= 0; j--) {
+							int side = (T[2*l1 + Up[j]] == j + 1) ? 0 : width; // edge of row
+							int off1 = (side == 0) ? 0 : l1;
+							(*L_unknown_)(Ls, row*3*width + 2*width, Up[j]*3*width + side, j*3*width + 2*width, P, numRates*lu, T[off1 + Up[j]] - 1 + k*lu, s2, epsilon, inv_epsilon, 1);
 							for (o = 0; o < s1; o++)
 								node[j*maxWidth*s1 + i*s1 + o] += *(Ls + 2*width + o + row*3*width) * *(m + numRates + k + params);
+						}
 					} else {
 						for (j = l1 - 2; j >= 0; j--) { // for each node below the root
-							// apply three-way parsimony to resolve gaps
+							// resolve gaps
 							int c1 = 0, c2 = 0;
 							for (o = 0; o < s1 - 1; o++) {
 								c1 |= *(Ls + o + j*3*width) != 0;
 								c2 |= *(Ls + width + o + j*3*width) != 0;
 							}
-							int c = c1 + c2;
-							if (c >= 1) { // at least one non-gap
+							if (c1 || c2) { // at least one branch is not a gap
 								int side = (T[2*l1 + Up[j]] == j + 1) ? 0 : width; // edge of row
-								if (c == 2 || c2) {
-									int off1 = (side == 0) ? 0 : l1;
-									(*L_unknown_)(Ls, row*3*width + 2*width, Up[j]*3*width + side, j*3*width + 2*width, P, numRates*lu, T[off1 + Up[j]] - 1 + k*lu, s2, epsilon, inv_epsilon, 1);
-									for (o = 0; o < s1; o++)
-										node[j*maxWidth*s1 + i*s1 + o] += *(Ls + 2*width + o + row*3*width) * *(m + numRates + k + params);
-								}
+								int off1 = (side == 0) ? 0 : l1;
+								(*L_unknown_)(Ls, row*3*width + 2*width, Up[j]*3*width + side, j*3*width + 2*width, P, numRates*lu, T[off1 + Up[j]] - 1 + k*lu, s2, epsilon, inv_epsilon, 1);
+								for (o = 0; o < s1; o++)
+									node[j*maxWidth*s1 + i*s1 + o] += *(Ls + 2*width + o + row*3*width) * *(m + numRates + k + params);
 							}
 						}
 					}

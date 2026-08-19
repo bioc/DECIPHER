@@ -72,7 +72,7 @@ Integer indicating the maximum number iterations of optimization to perform.  Mo
 Numeric giving the maximum number of hours the algorithm is allowed to run before returning a result.  Once \code{maxTime} is reached, the algorithm will proceed at the next available opportunity, even if \code{minIterations} is unmet.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.  Note that setting a time limit may prevent reproducibility, even when setting a random number seed.
 }
   \item{root}{
-Integer specifying the index of the outgroup sequence or \code{0} (the default) to midpoint root the dendrogram.
+One or more integers or character names specifying the indices of outgroup samples or \code{0} (the default) to midpoint root the dendrogram.  If more than one index or name is provided, the \code{root} will be determined such that all outgroup samples are below the \code{root}.  Partial name matching is supported so long as the matches are unambiguous.
 }
   \item{collapse}{
 Numeric controlling which internal edges of the tree are removed by collapsing their nodes.  If \code{collapse} is zero then nodes at the same height will be collapsed to a single node, resulting in a multifurcating tree.  When \code{collapse} is greater than zero, nodes that are within \code{collapse} difference in height are made into a single node.  A value of \code{collapse} less than zero (the default) will ensure that the \code{dendrogram} is purely bifurcating.  Note that \code{collapse} has no effect on cluster numbers or \code{cutoff}.

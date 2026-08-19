@@ -414,8 +414,7 @@ pairs(synteny, boxBlocks=TRUE) # scatterplot matrix
 \section{Session Information}
 %------------------------------------------------------------
 
-All of the output in this vignette was produced under the following
-conditions:
+All of the output in this vignette was produced under the following conditions:
 
 <<sessinfo,echo=FALSE,results=tex>>=
 toLatex(sessionInfo(), locale=FALSE)

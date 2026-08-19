@@ -9,9 +9,10 @@ Automatically masks poorly aligned regions of an alignment based on sequence con
 \usage{
 MaskAlignment(myXStringSet,
               type = "sequences",
-              windowSize = 5,
+              windowSize = 4,
               threshold = 1,
-              maxFractionGaps = 0.2,
+              minFractionGaps = 0.2,
+              maxFractionGaps = 1,
               includeTerminalGaps = FALSE,
               correction = FALSE,
               randomBackground = FALSE,
@@ -30,8 +31,11 @@ Integer value specifying the size of the region to the left and right of the cen
   \item{threshold}{
 Numeric giving the average entropy in bits below which a region is masked.
 }
+  \item{minFractionGaps}{
+Numeric specifying the minimum fraction of gaps in an alignment column to allow masking based on entropy.  Values greater than zero prevent columns without gaps from being masked.
+}
   \item{maxFractionGaps}{
-Numeric specifying the maximum faction of gaps in an alignment column to be masked.
+Numeric specifying the maximum fraction of gaps in an alignment column to be masked.
 }
   \item{includeTerminalGaps}{
 Logical specifying whether or not to include terminal gaps ("." or "-" characters on each end of the sequences) into the calculation of gap fraction.
@@ -54,7 +58,7 @@ Highly variable regions are detected by their signature of having a low informat
 A moving average of \code{windowSize} nucleotides to the left and right of the center-point is applied to smooth noise in the information content signal along the sequence.  Regions dropping below \code{threshold} bits or more than \code{maxFractionGaps} are masked.
 }
 \value{
-If \code{type} is \code{"sequences"} then an \code{XStringSet} object of remaining (unmasked) columns where the input criteria are met.  Otherwise, if \code{type} is \code{"ranges"} then an \code{IRanges} object giving the start and end positions of the masked columns.  Else (\code{type} is \code{"values"}) a \code{data.frame} containing one row per site in the alignment and three columns of information:
+If \code{type} is \code{"sequences"} then an \code{XStringSet} object with masked ("+") positions.  Otherwise, if \code{type} is \code{"ranges"} then an \code{IRanges} object giving the start and end positions of the masked columns.  Else (\code{type} is \code{"values"}) a \code{data.frame} containing one row per site in the alignment and three columns of information:
   \item{"entropy"}{
 The entropy score of each column, in units of bits.
 }
@@ -79,7 +83,7 @@ fas <- system.file("extdata", "Streptomyces_ITS_aligned.fas", package="DECIPHER"
 dna <- readDNAStringSet(fas)
 dna # before masking
 masked_dna <- MaskAlignment(dna, showPlot=TRUE)
-masked_dna # after masking
+masked_dna # after masking (adds "+" symbols)
 
 # get the start and end ranges of masked columns
 ranges <- MaskAlignment(dna, type="ranges")

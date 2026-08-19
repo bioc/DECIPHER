@@ -1,9 +1,10 @@
 StaggerAlignment <- function(myXStringSet,
 	tree=NULL,
-	threshold=3,
+	threshold=2,
 	fullLength=FALSE,
 	processors=1,
-	verbose=TRUE) {
+	verbose=TRUE,
+	...) {
 	
 	# error checking
 	if (is(myXStringSet, "DNAStringSet")) {
@@ -82,24 +83,14 @@ StaggerAlignment <- function(myXStringSet,
 	
 	if (is.null(tree)) {
 		if (verbose) {
-			cat("Calculating distance matrix:\n")
+			cat("Constructing tree:\n")
 			flush.console()
 		}
 		
-		d <- DistanceMatrix(myXStringSet,
-			correction="TN93+F",
+		suppressWarnings(tree <- Treeline(myXStringSet=myXStringSet,
 			processors=processors,
-			verbose=verbose)
-		
-		if (verbose) {
-			cat("Constructing neighbor-joining tree:\n")
-			flush.console()
-		}
-		
-		suppressWarnings(tree <- Treeline(myDistMatrix=d,
-			method="NJ",
-			processors=processors,
-			verbose=verbose))
+			verbose=verbose,
+			...))
 	} else {
 		if (!is(tree, "dendrogram"))
 			stop("tree must be a dendrogram.")

@@ -804,7 +804,7 @@ MODELS <- list(Nucleotide=c("JC69",
 	# (note: output columns 1:3 are uncorrected)
 	
 	n <- nrow(x1)
-	if (root == 0) { # midpoint root
+	if (length(root) == 1L && root == 0) { # midpoint root
 		# find the leaf at minimum height
 		r1 <- which(x1[, 7] < 0)
 		h1 <- x1[r1, 6] - x1[r1, 4]
@@ -819,16 +819,64 @@ MODELS <- list(Nucleotide=c("JC69",
 			decreasing=TRUE)
 		h <- h[o]
 		minH <- which.min(h) # index of lowest leaf
-	} else { # outgroup root
-		w <- which(x1[n, 7:8]==-root)
+	} else if (length(root) == 1L) { # single outgroup
+		w <- which(x1[n, 7:8] == -root)
 		if (length(w) > 0) { # already outgroup rooted
-			# extend the root node
-			x1[n, 6] <- x1[n, 6] + x1[n, 3 + w]
-			x1[n, 6 - w] <- x1[n, 6 - w] + x1[n, 3 + w]
-			x1[n, 3 + w] <- 0
+			# extend the root leaf
+			x1[n, 3 + w] <- x1[n, 3 + w] + x1[n, 6 - w]
+			x1[n, 6] <- x1[n, 6] - x1[n, 6 - w]
+			x1[n, 6 - w] <- 0
 			return(x1)
 		}
 		minH <- root # index of root
+		
+		w <- which(x1[, 7:8] == -root, arr.ind=TRUE)
+		midH <- x1[w[1], 6] - x1[w[1], 3 + w[2]]
+		m <- w[1]
+	} else { # choose node for root
+		# calculate densities ascending tree
+		num <- tot <- integer(n)
+		for (i in seq_len(n)) {
+			if (x1[i, 7L] > 0L) {
+				num[i] <- num[x1[i, 7L]]
+				tot[i] <- tot[x1[i, 7L]]
+			} else {
+				if (x1[i, 7L] %in% -root)
+					num[i] <- 1L
+				tot[i] <- 1L
+			}
+			if (x1[i, 8L] > 0L) {
+				num[i] <- num[i] + num[x1[i, 8L]]
+				tot[i] <- tot[i] + tot[x1[i, 8L]]
+			} else {
+				if (x1[i, 8L] %in% -root)
+					num[i] <- num[i] + 1L
+				tot[i] <- tot[i] + 1L
+			}
+		}
+		# choose root leaf below max density node
+		w <- which(num == max(num)) # densest clades
+		m <- w <- w[which.min(tot[w])] # smallest clade
+		h <- 0 # length of parent node
+		minH <- rep(Inf, length(root)) # length from node
+		while (length(w) > 0L) { # queue exists
+			if (x1[w[1L], 7L] > 0L) {
+				w <- c(w, x1[w[1L], 7L]) # add to queue
+				h <- c(h, h[1L] + x1[w[1L], 4L])
+			} else {
+				minH[match(x1[w[1L], 7L], -root, nomatch=0L)] <- h[1L] + x1[w[1L], 4L]
+			}
+			if (x1[w[1L], 8L] > 0L) {
+				w <- c(w, x1[w[1L], 8L]) # add to queue
+				h <- c(h, h[1L] + x1[w[1L], 5L])
+			} else {
+				minH[match(x1[w[1L], 8L], -root, nomatch=0L)] <- h[1L] + x1[w[1L], 5L]
+			}
+			w <- w[-1L]
+			h <- h[-1L]
+		}
+		minH <- root[which.min(minH)] # index of lowest outgroup leaf
+		midH <- x1[m, 6L]
 	}
 	
 	# find most distant leaf from minH
@@ -885,7 +933,8 @@ MODELS <- list(Nucleotide=c("JC69",
 		}
 	}
 	
-	if (root == 0) { # determine height of the midpoint
+	if (length(root) == 1L && root == 0) {
+		# determine height of the midpoint
 		w <- which(merged)
 		longest <- longest + x1[, 6] - h[minH]
 		m <- w[which.max(longest[w])]
@@ -899,10 +948,6 @@ MODELS <- list(Nucleotide=c("JC69",
 			m <- x1[m, 7 + index[m]]
 			lowH <- x1[m, 6] - x1[m, 4 + index[m]]
 		}
-	} else { # root at tip of outgroup
-		w <- which(x1[, 7:8]==-root, arr.ind=TRUE)
-		midH <- x1[w[1], 6] - x1[w[1], 3 + w[2]]
-		m <- w[1]
 	}
 	
 	# invert and lower nodes above rotation point
@@ -934,7 +979,7 @@ MODELS <- list(Nucleotide=c("JC69",
 	# make new root node
 	delta <- x1[m, 6] - midH
 	x2[count, 4:10] <- c(x1[m, 4 + index[m]] - delta,
-		ifelse(x1[m, 8 - index[m]] < 0, x1[m, 5 - index[m]] + delta, delta),
+		x1[m, 5 - index[m]] + delta,
 		midH,
 		x1[m, 7 + index[m]],
 		count - 1,
@@ -976,8 +1021,17 @@ MODELS <- list(Nucleotide=c("JC69",
 		x2[n:count, 7][w] <- match(x2[n:count, 7][w], keep)
 	}
 	
-	if (root > 0)
+	if (root[1L] != 0L) {
+		w <- which(x2[n, 7:8] < 0L) # leaf at root
+		if (length(w) == 1L) {
+			if (w == 1L)
+				x2[n, 5] <- x2[n, 6] - x2[x2[n, 8], 6]
+			x2[n, 3 + w] <- x2[n, 3 + w] + x2[n, 6 - w]
+			x2[n, 6] <- x2[n, 6] - x2[n, 6 - w]
+			x2[n, 6 - w] <- 0
+		}
 		x2[, 6] <- x2[, 6] - min(x2[, 6] - x2[, 4], x2[, 6] - x2[, 5])
+	}
 	
 	return(x2)
 }
@@ -1857,16 +1911,31 @@ Treeline <- function(myXStringSet=NULL,
 		}
 	}
 	if (type > 1) {
-		if (length(root) != 1)
-			stop("root must be a single numeric.")
-		if (!is.numeric(root))
-			stop("root must be a numeric.")
-		if (floor(root) != root)
-			stop("root must be an integer.")
-		if (root < 0)
-			stop("root must be at least 0.")
-		if (root > dim)
-			stop(paste("root cannot be greater than ", dim, ".", sep=""))
+		if (length(root) == 0L)
+			stop("root must contain at least one element.")
+		if (any(is.na(root)))
+			stop("root cannot be NA.")
+		if (is.numeric(root)) {
+			if (any(floor(root) != root))
+				stop("root must be an integer.")
+			if (any(root < 0))
+				stop("root must be at least 0.")
+			if (any(root > dim))
+				stop(paste("root cannot be greater than ", dim, ".", sep=""))
+			if (length(root) > 1L && 0L %in% root)
+				stop("root cannot contain zero mixed with other values.")
+			if (any(duplicated(root)))
+				stop("root contains duplicate values.")
+		} else if (is.character(root)) {
+			w <- pmatch(root, dNames, nomatch=0L)
+			if (sum(w == 0L) > 0L)
+				stop("Missing, duplicated, or ambiguous name(s) in root: ",
+					paste(root[w == 0L], collapse=", "),
+					".")
+			root <- w
+		} else {
+			stop("root must be character or numeric.")
+		}
 	}
 	if (method == 3 ||
 		method == 7 ||
@@ -3628,7 +3697,7 @@ Treeline <- function(myXStringSet=NULL,
 			method != 7 &&
 			method != 8 &&
 			(method == 1 ||
-			root > 0))
+			root[1L] > 0))
 			myClusters <- .root(myClusters, root)
 		
 		# create a dendrogram object
@@ -3757,7 +3826,7 @@ Treeline <- function(myXStringSet=NULL,
 					method == 3 ||
 					method == 7 ||
 					method == 8 ||
-					root > 0) {
+					root[1L] > 0) {
 					myClusters <- .Call("reclusterNJ",
 						myClusters,
 						cutoff[i],
@@ -3773,7 +3842,7 @@ Treeline <- function(myXStringSet=NULL,
 					method == 3 ||
 					method == 7 ||
 					method == 8 ||
-					root > 0) &&
+					root[1L] > 0) &&
 					!ASC) # ensure clusters are subsets
 					x[, 1] <- .splitClusters(x[, 1], c[, dim(c)[2]])
 				names(x) <- paste("cluster",

@@ -21,9 +21,10 @@
 
 MaskAlignment <- function(myXStringSet,
 	type="sequences",
-	windowSize=5,
-	threshold=1.0,
-	maxFractionGaps=0.2,
+	windowSize=4,
+	threshold=1,
+	minFractionGaps=0.2,
+	maxFractionGaps=1,
 	includeTerminalGaps=FALSE,
 	correction=FALSE,
 	randomBackground=FALSE,
@@ -51,10 +52,18 @@ MaskAlignment <- function(myXStringSet,
 	u <- unique(width(myXStringSet))
 	if (length(u) > 1)
 		stop("myXStringSet must be aligned.")
+	if (!is.numeric(minFractionGaps))
+		stop("minFractionGaps must be a numeric.")
+	if (length(minFractionGaps) != 1L)
+		stop("minFractionGaps must be a single number.")
+	if (minFractionGaps > 1 || minFractionGaps < 0)
+		stop("minFractionGaps must be between 0 and 1 (inclusive).")
 	if (!is.numeric(maxFractionGaps))
 		stop("maxFractionGaps must be a numeric.")
+	if (length(maxFractionGaps) != 1L)
+		stop("maxFractionGaps must be a single number.")
 	if (maxFractionGaps > 1 || maxFractionGaps < 0)
-		stop("maxFractionGaps must be between 0 and 1 inclusive.")
+		stop("maxFractionGaps must be between 0 and 1 (inclusive).")
 	if (!is.logical(includeTerminalGaps))
 		stop("includeTerminalGaps must be a logical.")
 	if (!is.logical(correction))
@@ -126,7 +135,11 @@ MaskAlignment <- function(myXStringSet,
 		}
 	}
 	
-	W <- which(c < threshold)
+	if (length(gaps) > 0) {
+		W <- which(c < threshold & cm[-gaps] >= minFractionGaps)
+	} else {
+		W <- which(c < threshold & cm >= minFractionGaps)
+	}
 	if (type == 3L) { # "values"
 		mask <- logical(length(a))
 		if (length(W) > 0) {
@@ -152,7 +165,11 @@ MaskAlignment <- function(myXStringSet,
 			index <- W[c(1, w + 1)]
 			
 			indicies <- list()
-			below_threshold <- as.integer(a2 < threshold)
+			if (length(gaps) > 0) {
+				below_threshold <- as.integer(a2 < threshold & cm[-gaps] >= minFractionGaps)
+			} else {
+				below_threshold <- as.integer(a2 < threshold & cm >= minFractionGaps)
+			}
 			rev_below_threshold <- rev(below_threshold)
 			for (i in 1:length(index)) {
 				rights <- .Call("multiMatch",
@@ -195,7 +212,16 @@ MaskAlignment <- function(myXStringSet,
 		}
 		
 		if (type == 1L) {
-			result <- replaceAt(myXStringSet, IRanges(starts, ends))
+			if (length(starts) == 0L) {
+				result <- myXStringSet
+			} else {
+				result <- IRanges(starts, ends)
+				result <- replaceAt(myXStringSet,
+					result,
+					list(sapply(width(result),
+						function(n)
+							paste(rep("+", n), collapse=""))))
+			}
 		} else if (type == 2L) {
 			result <- IRanges(starts, ends)
 		}

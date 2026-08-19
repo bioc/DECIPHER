@@ -9,20 +9,21 @@ Staggers overlapping characters in a multiple sequence alignment that are better
 \usage{
 StaggerAlignment(myXStringSet,
                  tree = NULL,
-                 threshold = 3,
+                 threshold = 2,
                  fullLength = FALSE,
                  processors = 1,
-                 verbose = TRUE)
+                 verbose = TRUE,
+                 \dots)
 }
 \arguments{
   \item{myXStringSet}{
 An \code{AAStringSet}, \code{DNAStringSet}, or \code{RNAStringSet} object of aligned sequences.
 }
   \item{tree}{
-A bifurcating \code{dendrogram} representing the evolutionary relationships between sequences, such as that created by \code{\link{Treeline}}.  The root should be the topmost node of the \code{tree}.  The default (\code{NULL}) will automatically infer a \code{tree} from \code{myXStringSet}.
+A bifurcating \code{dendrogram} representing the evolutionary relationships between sequences.  The root should be the topmost node of the \code{tree}.  The default (\code{NULL}) will automatically infer a \code{tree} from \code{myXStringSet} using \code{\link{Treeline}}.
 }
   \item{threshold}{
-Numeric giving the ratio of insertions to deletions that must be met to stagger a region of the alignment.  Specifically, the number of insertions divided by deletions must be less than \code{threshold} to stagger.
+Numeric giving the ratio of insertions to deletions that must be met to stagger a region of the alignment.  Specifically, the number of insertions divided by deletions must be less than \code{threshold} to stagger.  Lower values are less likely to stagger, and higher values are more likely to stagger.
 }
   \item{fullLength}{
 Logical specifying whether the sequences are full-length (\code{TRUE}), or terminal gaps should be treated as missing data (\code{FALSE}, the default).  Either a single logical, a vector with one logical per sequence, or a list with \code{right} and \code{left} components containing logicals for the right and left sides of the alignment.
@@ -32,6 +33,9 @@ The number of processors to use, or \code{NULL} to automatically detect and use 
 }
   \item{verbose}{
 Logical indicating whether to display progress.
+}
+  \item{\dots}{
+Additional arguments to be passed directly to \code{\link{Treeline}}.
 }
 }
 \details{
