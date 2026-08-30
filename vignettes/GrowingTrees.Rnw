@@ -59,7 +59,7 @@ options(width=80)
 \section{Introduction}
 %------------------------------------------------------------
 
-This document describes how to grow phylogenetic trees using the \Rfunction{Treeline} (\cite{Wright:2026}) and \Rfunction{Zipline} functions in the \Rpackage{DECIPHER} package.  \Rfunction{Treeline} takes as input a set of aligned nucleotide or amino acid sequences and returns a phylogenetic tree (i.e., \Rclass{dendrogram} object) as output.  \Rfunction{Zipline} takes a list of trees and produces a single summary tree.  The overarching idea is to run \Rfunction{Treeline} on a set of multiple sequence alignments corresponding to genes from the same organisms and then give the output gene trees to \Rfunction{Zipline} for summarization into a species tree.
+This document describes how to grow phylogenetic trees using the \Rfunction{Treeline} \cite{Wright:2026} and \Rfunction{Zipline} functions in the \Rpackage{DECIPHER} package.  \Rfunction{Treeline} takes as input a set of aligned nucleotide or amino acid sequences and returns a phylogenetic tree (i.e., \Rclass{dendrogram} object) as output.  \Rfunction{Zipline} takes a list of trees and produces a single summary tree.  The overarching idea is to run \Rfunction{Treeline} on a set of multiple sequence alignments corresponding to genes from the same organisms and then give the output gene trees to \Rfunction{Zipline} for summarization into a species tree.
 
 Why are the functions called \Rfunction{Treeline} and \code{Zipline}?  The goal of \Rfunction{Treeline} is to find the best tree according to an optimality criterion.  There are often many trees near the optimum.  Therefore, \Rfunction{Treeline} searches along the metaphorical treeline of high scoring trees to find the best one.  \Rfunction{Zipline} is named for its goal of zippy (fast) and accurate summary trees by using linear regression to connect trees on different treelines.
 
@@ -601,10 +601,10 @@ So far, we've seen how variability can arise from different methodological decis
 
 Lucky for us, \Rpackage{DECIPHER} has a function, named \Rfunction{Zipline}, for summarizing trees.  \Rfunction{Zipline} takes a list of \Rclass{dendrogram}s as input and returns a single summary tree as output.  The \Rfunction{Zipline} algorithm leverages linear regression to generate a distance matrix representing relationships among the complete set of leaf labels.  Similarly to regression, the \Rfunction{Zipline} function seamlessly handles missing data so that the input trees don't all need the same set of leaf labels.
 
-Since we've lucked out so far, let's try building a species tree from a set of single copy gene families previously collated from plant genomes \cite{Morel:2023}.  These gene trees were built under the maximum likelihood ``LG+G4'' model with 100 bootstrap replicates.  To begin, we can compute some summary statistics about the plant dataset, which is provided along with the \Rpackage{DECIPHER} package.
+Since we've lucked out so far, let's try building a species tree from a set of orthologous gene families previously collated from plant genomes \cite{Koenen:2020}.  These gene trees were built under the maximum likelihood ``WAG+G4'' model with 100 bootstrap replicates.  To begin, we can compute some summary statistics about the plant dataset, which is provided along with the \Rpackage{DECIPHER} package.
 
 <<expr22,eval=TRUE,echo=TRUE>>=
-newick <- system.file("extdata", "Plant_gene_trees.newick.gz", package="DECIPHER")
+newick <- system.file("extdata", "Plant_gene_trees.newick.xz", package="DECIPHER")
 trees <- ReadDendrogram(newick)
 length(trees)
 head(trees)
@@ -613,7 +613,7 @@ summary(sapply(trees, attr, which="height"))
 table(unlist(lapply(trees, labels)))
 @
 
-Note how \Rfunction{ReadDendrogram} imported 1,547 \Rclass{dendrogram}s from the same Newick file as a \Rclass{list} object.  These trees have between 4 and 21 leaves and vary a lot in their height, which may indicate a problem with orthology inference in some cases.  Several of the species are only found in a few trees, while others are present in hundreds of trees.  The bootstrap values of the trees are imported as ``edgetext'' attributes and range between \code{0} and \code{100}.  We can add a new ``bootstrap'' attribute to normalize the values between \code{0} and \code{1}.
+Note how \Rfunction{ReadDendrogram} imported 1,003 \Rclass{dendrogram}s from the same Newick file as a \Rclass{list} object.  These trees have between 50 and 75 leaves and vary about an order of magnitude in their height.  Most of the species are found in the majority of trees.  The bootstrap values of the trees are imported as ``edgetext'' attributes and range between \code{0} and \code{100}.  We can add a new ``bootstrap'' attribute to normalize the values between \code{0} and \code{1}.
 
 <<expr23,eval=TRUE,echo=TRUE>>=
 trees <- lapply(trees,
@@ -635,15 +635,16 @@ Bootstrap values are positively correlated with branch length, and normalizing t
 <<expr24,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
 species_tree <- Zipline(trees,
 	bootstraps=10, # typically 100 or more
-	distance=c("length", "bootstrap"))
+	distance=c("length", "bootstrap"),
+	concordanceVectors=TRUE)
 plot(species_tree)
 @
 \caption{\label{f9} Summary tree of plant species with bootstrap confidences on each internal edge.}
 \end{centerfig}
 
-\Rfunction{Zipline} constructs a distance matrix with linear regression and then calls \Rfunction{Treeline} to build a tree.  Here, we asked \Rfunction{Zipline} to perform a very small number \Rfunarg{bootstrap} replicates with the neighbor joining (\code{"NJ"}) method to speed up the example.  Bootstrap values (fractions) are supplied as ``edgetext'' attributes on the output \Rclass{dendrogram}.  Our preliminary species tree has relatively low support (Fig. \ref{f9}), suggesting more data are needed to resolve the true species tree.  Hopefully we'll have better luck next time!
+\Rfunction{Zipline} constructs a distance matrix with linear regression and then calls \Rfunction{Treeline} to build a tree.  Here, we asked \Rfunction{Zipline} to perform a very small number \Rfunarg{bootstrap} replicates with the neighbor joining (\code{"NJ"}) method to speed up the example.  Bootstrap values (fractions) are supplied as ``edgetext'' attributes on the output \Rclass{dendrogram}.  A few branches of the species tree have relatively low support (Fig. \ref{f9}), suggesting more data are needed to resolve these splits on the species tree.  Hopefully we'll have better luck in the future with more trees!
 
-Different ways of parameterizing \Rfunarg{distance} may return alternative trees, especially in the absence of sufficient data.  This raises the question:  which measure of \Rfunarg{distance} is best?  Averaging output bootstrap values offers a means of comparing trees for their overall level of support.  Luckily, \Rfunction{Zipline} is fast enough to compare different \Rfunarg{distance} measures by generating alternative species trees and calculating their average support.  Ideally all measures of \Rfunarg{distance} would yield the same species tree, implying strong support.
+Different ways of parameterizing \Rfunarg{distance} may return alternative trees, particularly in the absence of sufficient data.  This raises the question:  which measure of \Rfunarg{distance} is best?  Averaging output bootstrap values offers a means of comparing trees for their overall level of support.  Luckily, \Rfunction{Zipline} is fast enough to compare different \Rfunarg{distance} measures by generating alternative species trees and calculating their average support.  Ideally all measures of \Rfunarg{distance} would yield the same species tree, implying strong support.
 
 <<expr25,eval=TRUE,echo=TRUE>>=
 support <- 0
@@ -660,7 +661,115 @@ dendrapply(species_tree,
 support/count # average bootstrap support
 @
 
-Using \Rfunction{Treeline} in combination with \Rfunction{Zipline} facilitates the exploration of alternative methods, models, and \Rfunarg{distance} measures.  Generating summary trees with \Rfunction{Zipline} can be a lot of fun, especially when they represent familiar species as in the example above.  May you have the best of luck with growing your own trees!
+\clearpage
+
+\subsection{Concordance Vector Analysis}
+
+Multi-locus bootstrapping tells us about whether there is sufficient data for branches of the tree to be repeatable, but it doesn't give us insight into the signal strength underlying each branch.  By a stroke of good luck, \Rfunction{Zipline} can calculate concordance vectors that show how many input trees supported each branch (Fig. \ref{f10}).  Concordance vectors have three named values provided with respect to both quartets and splits (bipartitions) \cite{Lanfear:2024} and another value for the total number of decisive trees.  The first three values provide the number of trees supporting the observed split (\code{"CFsplit"}) versus two alternative splits (\code{"DF1split"} and \code{"DF2split"}).  The second three values give analogous values for quartets, where the arrangement of each surrounding clade is considered.  The final value provides the total number of decisive input trees, i.e., those containing at least one representative from each clade.
+
+\setlength{\intextsep}{0pt}
+\begin{wrapfigure}{r}{0.5\textwidth}
+\includegraphics[width=0.5\textwidth]{ConcordanceFactors1}
+\caption{\label{f10} The values of concordance vectors are defined with respect to either the split or quartet induced by an internal branch (dotted edge).  $CF$ represents the summary tree (concordant) topology and is expected to be at least as abundant as the two discordant topologies ($DF1$ and $DF2$), which should have equal frequencies when incomplete lineage sorting is the only process acting on gene trees.}
+\end{wrapfigure}
+
+If we consider a multispecies coalescent process wherein the only source of gene tree incongruence is incomplete lineage sorting, we would expect the concordant topology to be at least as frequent as the two alternative discordant topologies that should be equally frequent (i.e., $CF \ge DF1 = DF2$).  Violations of this `minor symmetry' property imply that other evolutionary processes might be at work \cite{Pollard:2006}.  We would also expect longer branches to be less affected by incomplete lineage sorting, meaning the concordant topology ($CF$) should be more dominant.  The number of paraphyletic (uninformative) trees is equal to the total number of decisive trees minus the counts of $CF$, $DF1$, and $DF2$.
+
+We can display the concordance vectors using pie charts at the base of each internal branch (Fig. \ref{f11}).  We will ignore the count of polyphyletic topologies, because these are comparatively uninformative.  Plotting concordance vectors provides insights into the signal strength underlying each branch, and these insights are complementary to the statistical significance provided by multi-locus bootstrap support values.  Also, it's straightforward to test for violations of minor symmetry using \Rfunction{pbinom}.  We will draw an orange circle around pie charts with p-values less than $\alpha = 0.01$.
+
+\begin{centerfig}
+<<expr26,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
+drawPie <- function(x, y, p, r=1, alpha=0.01) {
+	if (length(p) >= 3 && sum(p[1:3]) > 0) {
+		dim <- par("usr")
+		r_y <- r/((dim[2] - dim[1])/(dim[4] - dim[3]))
+		pval <- pbinom(min(p[2:3]),
+			as.integer(sum(p[2:3])),
+			prob=0.5,
+			lower=TRUE)
+		p <- p[1:3] # exclude DFp
+		p <- c(1, cumsum(1000*p/sum(p)) + 1)
+		angles <- seq(0, 2*pi, length.out=1000)
+		for (i in seq_len(length(p) - 1))
+			polygon(c(x, x + r*cos(angles[p[i]:p[i + 1]]), x),
+				c(y, y + r_y*sin(angles[p[i]:p[i + 1]]), y),
+				col=i, border=NA)
+		if (pval < alpha)
+			polygon(x + r*cos(angles),
+				y + r_y*sin(angles),
+				col=NA, border="orange")
+	}
+}
+plot(dendrapply(species_tree,
+	function(x) {
+		attr(x, "edgetext") <- NULL
+		x
+	}))
+labs <- labels(species_tree)
+labs <- setNames(seq_along(labs), labs)
+dendrapply(species_tree,
+	function(x) {
+		drawPie(min(labs[labels(x)]) + attr(x, "midpoint"),
+			attr(x, "height"),
+			attr(x, "vector"))
+		x
+	})
+legend("topright",
+	c("CF", "DF1", "DF2"),
+	fill=1:3,
+	border=NA,
+	ncol=1,
+	bty="n")
+@
+\caption{\label{f11} Summary tree with concordance vectors for splits displayed as pie charts at the base of each internal branch.}
+\end{centerfig}
+
+\clearpage
+
+With any luck we can further investigate the concordance vectors by extracting them from each internal branch of the summary tree and plotting observed quantities against each other (Fig. \ref{f12}).  In doing so, it's apparent that the two minor frequencies ($DF1$ and $DF2$) are correlated.  The concordant frequency ($CF$) is related to the branch length, although this trend is most apparent for splits because quartets have lower counts.  The number of decisive trees is high for most internal branches.
+
+\begin{centerfig}
+<<expr27,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=
+vectors <- matrix(NA_integer_,
+	nrow=attr(species_tree, "members") - 3, # internal branches
+	ncol=8)
+count <- 0
+recordValues <- function(x, h) {
+		if (!is.null(attr(x, "vector"))) {
+			count <<- count + 1
+			vectors[count,] <<- c(attr(x, "vector"),
+				h - attr(x, "height"))
+		}
+		if (length(x) > 1)
+			lapply(x, recordValues, h=attr(x, "height"))
+		NULL
+	}
+recordValues(species_tree, h=attr(species_tree, "height"))
+colnames(vectors) <- c(names(attr(species_tree, "vector")), "branch\nlength")
+suppressWarnings(pairs(vectors,
+	log="xy", # omits zeros
+	upper.panel=function(x, y, ...) {
+		points(x, y, ...)
+		abline(a=0, b=1)
+	},
+	lower.panel=function(x, y, ...) {
+		r <- cor(x, y, "pairwise.complete.obs")
+		usr <- par("usr")
+		text(10^mean(usr[1:2]),
+			10^mean(usr[3:4]),
+			paste("corr =", round(r, 3), sep="\n"))
+	}))
+@
+\caption{\label{f12} Scatterplot matrix show relationships among quantities in concordance vectors.}
+\end{centerfig}
+
+\clearpage
+
+%------------------------------------------------------------
+\section{Conclusion}
+%------------------------------------------------------------
+
+Using \Rfunction{Treeline} in combination with \Rfunction{Zipline} facilitates the exploration of alternative methods, models, and distance measures.  Generating trees with \Rfunction{Treeline} and \Rfunction{Zipline} can be a lot of fun, especially when they include familiar species.  May you have the best of luck with growing your own trees!
 
 %------------------------------------------------------------
 \section{Session Information}
@@ -709,15 +818,25 @@ toLatex(sessionInfo(), locale=FALSE)
 \newblock DNA Sequences Are as Useful as Protein Sequences for Inferring Deep Phylogenies.
 \newblock {\em Syst. Biol.}, 72(5), 1119-1135.
 
+\bibitem{Koenen:2020}
+{Koenen, E.}, {Ojeda, D.}, {Steeves, R.}, {Migliore, J.}, {Bakker, F.}, {Wieringa, J.}, {Kinder, C.}, {Hardy, O.}, {Pennington, R.}, {Bruneau, A.}, \& {Hughes, C.}
+\newblock Large-scale genomic sequence data resolve the deepest divergences in the legume phylogeny and support a near-simultaneous evolutionary origin of all six subfamilies.
+\newblock {\em New Phytol.}, 225(3), 1355-1369.
+
 \bibitem{Kumar:2023}
 {Kumar, S.}, {Tao, Q.}, {Lamarca, A.}, \& {Tamura, K.}
 \newblock Computational Reproducibility of Molecular Phylogenies.
 \newblock {\em Mol. Biol. Evol.}, 40(7).
 
-\bibitem{Morel:2023}
-{Morel, B.}, {Williams, T.}, \& {Stamatakis, A.}
-\newblock Asteroid: a new algorithm to infer species trees from gene trees under high proportions of missing data.
-\newblock {\em Bioinformatics}, 39(1).
+\bibitem{Lanfear:2024}
+{Lanfear, R.}, {Hahn, M.} \& {Tamura, K.}
+\newblock The Meaning and Measure of Concordance Factors in Phylogenomics.
+\newblock {\em Mol. Biol. Evol.}, 41(11), msae214.
+
+\bibitem{Pollard:2006}
+{Pollard, D.}, {Iyer, V.}, {Moses, A.}, \& {Eisen, M.}
+\newblock Widespread discordance of gene trees with species tree in Drosophila: evidence for incomplete lineage sorting.
+\newblock {\em PLoS Genet}, 2(10), e173.
 
 \bibitem{Ripplinger:2008}
 {Ripplinger, J.} \& {Sullivan, J.}

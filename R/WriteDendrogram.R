@@ -62,11 +62,11 @@ WriteDendrogram <- function(x,
 					poly <- 1L
 				}
 				deltaH <- attr(x, "height") - attr(x[[poly]], "height")
-				attr(x, "height") <- attr(x[[poly]], "height")
-				# add height to other side
-				x[[3L - poly]] <- dendrapply(x[[3L - poly]],
+				attr(x, "height") <- attr(x, "height") + deltaH
+				deltaH <- 2*deltaH
+				x[[poly]] <- dendrapply(x[[poly]],
 					function(x) {
-						attr(x, "height") <- attr(x, "height") - deltaH
+						attr(x, "height") <- attr(x, "height") + deltaH
 						x
 					})
 				while (length(x[[poly]]) > 1L) {

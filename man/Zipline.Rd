@@ -13,6 +13,7 @@ Zipline(x,
         weights = 1,
         bootstraps = 0,
         power = 0.5,
+        concordanceVectors = FALSE,
         verbose = TRUE,
         ...)
 }
@@ -35,6 +36,9 @@ The number of bootstrap replicates desired or zero (the default) for no replicat
   \item{power}{
 A single number determining the transformed space in which regression is performed.  The default (\code{0.5}) will perform regression in square root space, while setting \code{power} to \code{1} would perform traditional regression.  Smaller values will diminish the influence of large outliers at the expense of losing some of their information.
 }
+  \item{concordanceVectors}{
+A logical determining whether to calculate concordance vectors, a numeric vector with a weight for each \code{dendrogram} object (list element) in \code{x}, or a character string specifying an attribute name to use as the weight of each internal branch in \code{x}.  Only applicable when \code{type} is not \code{"dist"}.  (See details section below.)
+}
   \item{verbose}{
 Logical indicating whether to display progress.
 }
@@ -54,6 +58,10 @@ Multiple measures of distance are supported.  Historically the internode distanc
 Output distances (and edge lengths) are in the same units as the distance measure.  That is, if \code{"length"} is specified then output distances are in the units of branch length (e.g., substitutions per site).  Other distance measures, such as the sum of edge support values, are less easily interpretable although they remain in the expected units.  Note that all trees in \code{x} are expected to share the same units.
 
 Bootstrapping is incorporated at the level of sampling gene trees within \code{x} (i.e., multi-locus bootstrapping).  As with most bootstrap procedures, this requires a large enough sample set (i.e., \code{x}) to adequately represent the data distribution.  Bootstrap supports (as fractions) are provided via ``edgetext'' attributes on internal branches of the tree.
+
+If \code{concordanceVectors} is \code{TRUE}, then gene concordance vectors are provided as \code{"vector"} attributes on internal branches of the output \code{dendrogram}.  Concordance vectors have seven named integers:  the number of input \code{dendrogram}s with concordant (\code{"CF"}) versus discordant (\code{"DF1"} and \code{"DF2"}) topologies for both splits (bipartitions) and quartets, and the total number of \code{"decisive"} topologies.  The total counts of concordant plus discordant topologies will be less than or equal to the number of decisive topologies, defined as input trees with at least one taxa present from each of the four clades immediately surrounding a branch.
+
+It is also possible for \code{concordanceVectors} to be a vector with weights for each input tree.  This is useful to weigh the concordance vector by the overall confidence (e.g., average support) or information content (e.g., number of informative sites) underlying each tree.  Alternatively, \code{concordanceVectors} can be the name of an attribute to use as the weight of each branch in the input trees.  For example, it is feasible to specify a character string corresponding to branch support values (e.g., "edgetext"), which would result in concordance vector quantities representing the sum of support.  When specifying a character string, the number of decisive trees will remain unchanged, since this value does not require correspondence to a specific branch.
 }
 \value{
 If \code{type} is \code{"dendrogram"} (the default), then a summary tree of class \code{dendrogram} is returned with ``edgetext'' attributes if \code{bootstraps} is positive.
@@ -68,7 +76,7 @@ Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \examples{
 # import a set of single-copy gene trees from plant genomes
-newick <- system.file("extdata", "Plant_gene_trees.newick.gz", package="DECIPHER")
+newick <- system.file("extdata", "Plant_gene_trees.newick.xz", package="DECIPHER")
 trees <- ReadDendrogram(newick)
 length(trees) # number of dendrograms
 plot(trees[[1]], main="First gene tree")
@@ -101,4 +109,12 @@ trees <- lapply(trees,
 # using a hybrid of branch confidence times length
 species_tree <- Zipline(trees, distance=c("bootstrap", "length"))
 plot(species_tree, main="Species tree from branch length*support")
+
+# calculating concordance vectors based on counts
+species_tree <- Zipline(trees, concordanceVectors=TRUE)
+attr(species_tree, "vector") # concordance vector at the top branch
+
+# calculating concordance vectors based branch support
+species_tree <- Zipline(trees, concordanceVectors="bootstrap")
+attr(species_tree, "vector") # concordance vector at the top branch
 }
