@@ -53,7 +53,7 @@ The genealogies of gene trees are often discordant with each other and the speci
 
 Regressions are performed in square root space (by default) to mitigate the effect of outliers on estimated slopes.  The use of regression makes the \code{Zipline} algorithm robust to error and effortlessly capable of handling missing data (e.g., absent genes).  \code{Zipline} also handles duplicated labels in the same tree (e.g., multi-copy genes) by collapsing to the minimum distance.  In this manner, all input trees do not need to have the same set of (leaf) labels.  Regression also permits the incorporation of \code{weights} to bias to the distance estimate to towards more trustworthy trees in \code{x}.
 
-Multiple measures of distance are supported.  Historically the internode distance (\code{"edges"}) was commonly used for species tree inference, but recently path length (\code{"length"}) and other measures have been shown to perform better.  Dendrograms that include branch supports (e.g., \code{"edgetext"}) may offer higher accuracy and make hybrid distance measures possible.  (See examples section below.)
+Multiple measures of distance are supported.  Historically the interedge distance (\code{"edges"}) was commonly used for species tree inference, but recently path length (\code{"length"}) and other measures have been shown to rival interedge distance.  Dendrograms that include branch supports (e.g., \code{"edgetext"}) may offer higher accuracy and make hybrid distance measures possible.  (See examples section below.)
 
 Output distances (and edge lengths) are in the same units as the distance measure.  That is, if \code{"length"} is specified then output distances are in the units of branch length (e.g., substitutions per site).  Other distance measures, such as the sum of edge support values, are less easily interpretable although they remain in the expected units.  Note that all trees in \code{x} are expected to share the same units.
 
@@ -85,26 +85,26 @@ plot(trees[[1]], main="First gene tree")
 species_tree <- Zipline(trees)
 plot(species_tree, main="Species tree under default settings")
 
-# using the internode distance
+# using the interedge distance
 species_tree <- Zipline(trees, distance="edges")
-plot(species_tree, main="Species tree from internode distances")
+plot(species_tree, main="Species tree from interedge distances")
 
-# using branch supports as distance
-species_tree <- Zipline(trees, distance="edgetext")
-plot(species_tree, main="Species tree from bootstrap supports")
-
-# normalizing bootstrap supports to zero to one
+# normalizing bootstrap supports from 0% to 100%
 trees <- lapply(trees,
 	dendrapply,
 	function(x) {
 		b <- as.numeric(attr(x, "edgetext"))
-		if (length(b) == 0L) {
-			attr(x, "bootstrap") <- 0
+		if (length(b) == 0) { # leaf
+			attr(x, "bootstrap") <- 1
 		} else {
 			attr(x, "bootstrap") <- b/100
 		}
 		x
 	})
+
+# using branch supports as distance
+species_tree <- Zipline(trees, distance="bootstrap")
+plot(species_tree, main="Species tree from bootstrap supports")
 
 # using a hybrid of branch confidence times length
 species_tree <- Zipline(trees, distance=c("bootstrap", "length"))

@@ -76,7 +76,8 @@ Cophenetic <- function(x,
 		for (j in seq_along(w)) {
 			a <- attr(y[[1L]], distance[w[j]])
 			if (length(a) == 0L) {
-				H[i, 1L] <- 0
+				if (DIST[1L] == 3L) # missing only attribute
+					H[i, 1L] <- 0
 			} else {
 				H[i, 1L] <- H[i, 1L]*sum(as.numeric(a), na.rm=TRUE)
 			}
@@ -100,7 +101,8 @@ Cophenetic <- function(x,
 			for (j in seq_along(w)) {
 				a <- attr(y[[2L]], distance[w[j]])
 				if (length(a) == 0L) {
-					H[i, 2L] <- 0
+					if (DIST[1L] == 3L) # missing only attribute
+						H[i, 2L] <- 0
 				} else {
 					H[i, 2L] <- H[i, 2L]*sum(as.numeric(a), na.rm=TRUE)
 				}

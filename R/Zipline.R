@@ -396,6 +396,8 @@ Zipline <- function(x,
 		}
 		tree <- dendrapply(tree, .labelEdges)
 		attr(tree, "edgetext") <- NULL # remove text from (virtual) root branch
+		if (!is.leaf(tree[[2L]])) # remove duplicated text at first split
+			attr(tree[[1L]], "edgetext") <- NULL # leave text on second branch
 		
 		if (verbose) {
 			time.2 <- Sys.time()

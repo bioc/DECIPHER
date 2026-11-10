@@ -1,9 +1,9 @@
 Package: DECIPHER
 Type: Package
 Title: Tools for curating, analyzing, and manipulating biological sequences
-Version: 3.9.4
-Date: 2026-08-30
-Author: Erik Wright
+Version: 3.9.5
+Date: 2026-11-10
+Author: Erik Wright (ORCID: <https://orcid.org/0000-0002-1457-4019>)
 Maintainer: Erik Wright <Erik.Wright@bcm.edu>
 biocViews: Clustering, Genetics, Sequencing, DataImport, Visualization, Microarray, QualityControl, qPCR, Alignment, WholeGenome, Microbiome, ImmunoOncology, GenePrediction, Phylogenetics, ComparativeGenomics, SequenceMatching, Classification
 Description: A toolset for deciphering and managing biological sequences.

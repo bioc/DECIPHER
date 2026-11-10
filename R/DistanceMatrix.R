@@ -34,7 +34,7 @@
 		empirical <- endsWith(correction, "+F")
 		if (empirical)
 			correction <- substring(correction, 1L, nchar(correction) - 2L)
-		CORRECTIONS <- c("JC69", "F81", "Poisson", "K80", "HKY85", "T92", "TN93", colnames(.ProtModels))
+		CORRECTIONS <- c("JC69", "F81", "K80", "HKY85", "T92", "TN93", colnames(.ProtModels))
 		correction <- pmatch(correction, CORRECTIONS)
 		if (is.na(correction))
 			stop("Invalid distance correction method.")
@@ -44,24 +44,22 @@
 			if (correction == 1L)
 				stop("correction cannot be 'JC69+F'.")
 			if (correction == 3L)
-				stop("correction cannot be 'Poisson+F'.")
-			if (correction == 4L)
 				stop("correction cannot be 'K80+F'.")
 		} else {
 			if (correction == 2L)
 				stop("correction cannot be 'F81'.")
-			if (correction == 5L)
+			if (correction == 4L)
 				stop("correction cannot be 'HKY85'.")
-			if (correction == 6L)
+			if (correction == 5L)
 				stop("correction cannot be 'TN92'.")
-			if (correction == 7L)
+			if (correction == 6L)
 				stop("correction cannot be 'TN93'.")
 		}
 	}
 	if (correction != 0L && !is.null(substitutionMatrix)) {
 		stop("substitutionMatrix cannot be specified when correction is not NA.")
-	} else if (correction > 7L) {
-		correction <- correction - 7L
+	} else if (correction > 6L) {
+		correction <- correction - 6L
 		substitutionMatrix <- matrix(0, 20L, 20L)
 		substitutionMatrix[upper.tri(substitutionMatrix)] <- .ProtModels[1:190, correction]
 		substitutionMatrix <- substitutionMatrix + t(substitutionMatrix)
@@ -97,8 +95,6 @@
 		if (correction == 1L)
 			stop("frequencies cannot be specified when correction is 'JC69'.")
 		if (correction == 3L)
-			stop("frequencies cannot be specified when correction is 'Poisson'.")
-		if (correction == 4L)
 			stop("frequencies cannot be specified when correction is 'K80'.")
 		if (length(frequencies) <= 1L)
 			stop("frequencies must contain multiple values.")
@@ -198,22 +194,18 @@
 	}
 	
 	# calculate distance correction
-	if (correction == 3L) { # Poisson
-		E <- 1
-	} else if (correction != 0L) {
+	if (correction != 0L) {
 		if (is(myXStringSet, "DNAStringSet")) {
 			alphabet <- DNA_BASES
 		} else if (is(myXStringSet, "RNAStringSet")) {
 			alphabet <- RNA_BASES
 		} else if (is(myXStringSet, "AAStringSet")) {
-			if (correction > 3L)
-				stop("Inapplicable correction when myXStringSet is an AAStringSet.")
-			alphabet <- AA_STANDARD
+			stop("Inapplicable correction when myXStringSet is an AAStringSet.")
 		}
 		if (correction == 1L) { # JC69
 			E <- 1/length(alphabet) # assumes even frequencies
 			E <- 1 - length(alphabet)*sum(E^2)
-		} else if (correction == 4L) { # K80
+		} else if (correction == 3L) { # K80
 			E <- numeric()
 		} else {
 			if (is.null(frequencies)) {
@@ -233,13 +225,13 @@
 			}
 			if (correction == 2L) { # F81+F
 				E <- 1 - sum(E^2)
-			} else if (correction == 6L) { # T92+F
+			} else if (correction == 5L) { # T92+F
 				E <- E[2L] + E[3L]
 				E <- 2*E*(1 - E)
 				E <- c(E, 1 - E)
 			} else {
 				E <- c(E[1L]*E[3L], E[1L] + E[3L], E[2L]*E[4L], E[2L] + E[4L])
-				if (correction == 5L) { # HKY85+F
+				if (correction == 4L) { # HKY85+F
 					E <- c(E[1L]/E[2L] + E[3L]/E[4L], E[1L] + E[3L], E[2L]*E[4L])
 				} # else TN93+F
 			}

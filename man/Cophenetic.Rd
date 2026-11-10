@@ -1,7 +1,7 @@
 \name{Cophenetic}
 \alias{Cophenetic}
 \title{
-Compute cophenetic distances on dendrogram objects
+Compute Cophenetic Distances on Dendrogram Objects
 }
 \description{
 Calculates the matrix of cophenetic distances represented by a dendrogram object.
@@ -23,7 +23,7 @@ The cophenetic distance between two observations is defined by default as their 
 
 The default distance is the path \code{length} between leaves of the dendrogram.  Specifying \code{"edges"} will sum the number of edges separating leaves, while disregarding the root node of a bifurcating tree and any other edges without splits.
 
-Alternatively, it is possible to customize the measure of distance by specifying named edge attributes.  The values associated with each attribute are converted to numbers and summed without \code{NA} values if containing more than one number.  If the attribute is missing then it is considered to be zero.
+Alternatively, it is possible to customize the measure of distance by specifying a named edge attribute.  The values associated with each attribute are converted to numbers and summed without \code{NA} values if containing more than one number.  If an attribute is missing then it is ignored, with zero contribution to the distance.
 
 If multiple \code{distance} measures are given, these are multiplied together (where they exist) along each edge to define more complex distance measures, such as the \code{"length"} times support probability of an edge.  In this case, one \code{distance} must be \code{"length"} or \code{"edges"}, where the latter has no effect on distance (i.e., multiply by one).
 }
@@ -37,6 +37,15 @@ Erik Wright \email{Erik.Wright@bcm.edu}
 \code{\link{Treeline}}
 }
 \examples{
+# small example
+x <- ReadDendrogram("(dog:8.125,(elephant:0,horse:7.5)0.5:4.375);")
+plot(x) # star tree with "edgetext" on one branch
+Cophenetic(x) # default distance = "length"
+Cophenetic(x, distance="edges") # edge with root treated as one edge
+Cophenetic(x, distance="edgetext") # missing attributes treated as zero
+Cophenetic(x, distance=c("length", "edgetext")) # product of both per edge
+
+# larger example
 fas <- system.file("extdata", "Bacteria_175seqs.fas", package="DECIPHER")
 dna <- readDNAStringSet(fas)
 d1 <- DistanceMatrix(dna, type="dist", correction="JC69", verbose=FALSE)

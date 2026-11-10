@@ -9,7 +9,7 @@ import(DBI)
 
 importFrom("grDevices", "colorRampPalette", "colors", "dev.flush", "dev.hold", "dev.size", "rainbow", "rgb", "as.graphicsAnnot", "col2rgb")
 importFrom("graphics", "abline", "axis", "box", "legend", "mtext", "par", "plot", "points", "rect", "segments", "strheight", "strwidth", "text", "axTicks", "hist", "layout", "lines", "polygon", "locator")
-importFrom("stats", "dendrapply", "dist", "is.leaf", "nlminb", "optimize", "order.dendrogram", "pbinom", "reorder", "setNames", "step", "uniroot", "weighted.mean", "binomial", "glm", "glm.control", "optim", "predict", "smooth.spline", "dlnorm", "plnorm", "qlnorm", "chisq.test", "qbinom", "as.dist", "pgamma", "qgamma", "rlnorm", "pchisq")
+importFrom("stats", "dendrapply", "dist", "is.leaf", "nlminb", "optimize", "order.dendrogram", "pbinom", "reorder", "setNames", "step", "uniroot", "weighted.mean", "binomial", "glm", "glm.control", "optim", "predict", "smooth.spline", "dlnorm", "plnorm", "qlnorm", "chisq.test", "qbinom", "as.dist", "pgamma", "qgamma", "rlnorm", "pchisq", "approx", "density")
 importFrom("utils", "browseURL", "data", "flush.console", "object.size", "setTxtProgressBar", "txtProgressBar", "packageVersion", "write.table")
 
 export(
@@ -20,7 +20,7 @@ Clusterize, FormGroups, IdentifyByRank,
 # lengths:
 IdLengths, TerminalChar,
 # phylogenetics:
-Cophenetic, DistanceMatrix, MapCharacters, MODELS, ReadDendrogram, Treeline, WriteDendrogram, Zipline,
+Cophenetic, DateTree, DistanceMatrix, MapCharacters, MODELS, ReadDendrogram, Treeline, WriteDendrogram, Zipline,
 # forming consensus:
 ConsensusSequence, Disambiguate, IdConsensus, TileSeqs,
 # chimeras:

@@ -21,7 +21,7 @@ Treeline(myXStringSet = NULL,
          minIterations = 40,
          maxIterations = 400,
          maxTime = Inf,
-         root = 0,
+         root = -1,
          collapse = -1,
          reconstruct = FALSE,
          costMatrix = NULL,
@@ -72,7 +72,7 @@ Integer indicating the maximum number iterations of optimization to perform.  Mo
 Numeric giving the maximum number of hours the algorithm is allowed to run before returning a result.  Once \code{maxTime} is reached, the algorithm will proceed at the next available opportunity, even if \code{minIterations} is unmet.  Only applicable if \code{method} is \code{"ME"}, \code{"ML"}, or \code{"MP"}.  Note that setting a time limit may prevent reproducibility, even when setting a random number seed.
 }
   \item{root}{
-One or more integers or character names specifying the indices of outgroup samples or \code{0} (the default) to midpoint root the dendrogram.  If more than one index or name is provided, the \code{root} will be determined such that all outgroup samples are below the \code{root}.  Partial name matching is supported so long as the matches are unambiguous.
+One or more integers or character names specifying the indices of outgroup samples, \code{0} to midpoint root the dendrogram, or \code{-1} (the default) to perform minimum variance rooting (Mai \emph{et al.}, 2017).  If more than one outgroup index or name is provided, the \code{root} will be determined such that the entire outgroup is below the \code{root}.  Partial name matching is supported so long as the matches are unambiguous.
 }
   \item{collapse}{
 Numeric controlling which internal edges of the tree are removed by collapsing their nodes.  If \code{collapse} is zero then nodes at the same height will be collapsed to a single node, resulting in a multifurcating tree.  When \code{collapse} is greater than zero, nodes that are within \code{collapse} difference in height are made into a single node.  A value of \code{collapse} less than zero (the default) will ensure that the \code{dendrogram} is purely bifurcating.  Note that \code{collapse} has no effect on cluster numbers or \code{cutoff}.
@@ -145,6 +145,8 @@ Fitch, W. M. (1971) Toward defining the course of evolution: minimum change for 
 
 Gonnet, G. H. (2012) Surprising results on phylogenetic tree building methods based on molecular sequences. \emph{BMC Bioinformatics}, \bold{13}, 148.
 
+Mai, U., \emph{et al.} (2017) Minimum variance rooting of phylogenetic trees and implications for species tree reconstruction. \emph{PLoS ONE}, \bold{12(8)}, e0182238.
+
 Makarenkov V., and Lapointe, F. (2004) A weighted least-squares approach for inferring phylogenies from incomplete distance matrices. \emph{Bioinformatics}, \bold{20(13)}, 2113-2121.
 
 Pauplin, Y. (2000) Direct Calculation of a Tree Length Using a Distance Matrix. \emph{J Mol Evol}, \bold{51(1)}, 41-47.
@@ -161,20 +163,20 @@ Wright, E. (2026) Treeline Provides a Unified Strategy for Optimising Phylogenet
 Erik Wright \email{Erik.Wright@bcm.edu}
 }
 \seealso{
-\code{\link{Clusterize}}, \code{\link{Cophenetic}}, \code{\link{DistanceMatrix}}, \code{\link{MapCharacters}}, \code{\link{MODELS}}, \code{\link{ReadDendrogram}}, \code{\link{WriteDendrogram}}
+\code{\link{Clusterize}}, \code{\link{Cophenetic}}, \code{\link{DistanceMatrix}}, \code{\link{MapCharacters}}, \code{\link{MODELS}}, \code{\link{ReadDendrogram}}, \code{\link{WriteDendrogram}}, \code{\link{Zipline}}
 
 Run \code{vignette("GrowingTrees", package = "DECIPHER")} to see a related vignette.
 }
 \examples{
-# using the matrix from the original paper by Saitou and Nei (1987)
-m <- matrix(0,8,8) # only the lower triangle is used
-m[2:8,1] <- c(7, 8, 11, 13, 16, 13, 17)
-m[3:8,2] <- c(5, 8, 10, 13, 10, 14)
-m[4:8,3] <- c(5, 7, 10, 7, 11)
-m[5:8,4] <- c(8, 11, 8, 12)
-m[6:8,5] <- c(5, 6, 10)
-m[7:8,6] <- c(9, 13)
-m[8,7] <- 8
+# using the matrix from Saitou and Nei (1987)
+m <- matrix(0, 8, 8) # only the lower triangle is used
+m[2:8, 1] <- c(7, 8, 11, 13, 16, 13, 17)
+m[3:8, 2] <- c(5, 8, 10, 13, 10, 14)
+m[4:8, 3] <- c(5, 7, 10, 7, 11)
+m[5:8, 4] <- c(8, 11, 8, 12)
+m[6:8, 5] <- c(5, 6, 10)
+m[7:8, 6] <- c(9, 13)
+m[8, 7] <- 8
 
 # returns an object of class "dendrogram"
 tree <- Treeline(myDistMatrix=m, cutoff=10, method="NJ", showPlot=TRUE)
@@ -194,8 +196,8 @@ d <- DistanceMatrix(dna, type="dist") # returns an object of class 'dist'
 complete <- Treeline(myDistMatrix=d, method="complete", cutoff=0.05, showPlot=TRUE)
 
 # example of minimum evolution (ME) tree optimization (the default)
-treeME <- Treeline(dna, processors=1L) # the recommended way to build trees
-plot(treeME)
+treeME <- Treeline(dna, processors=1) # the recommended way to build trees
+plot(treeME, leaflab="none")
 
 # compare the distance matrix to the cophenetic (patristic) distance matrix
 plot(d, Cophenetic(treeME),
@@ -258,11 +260,11 @@ tree2 <- reorder(tree2, unlist(tree2))
 layout(matrix(1:2, nrow=1))
 par(mai=c(0.5, 0, 0.5, 0.5)) # add space on right
 plot(tree1,
-	main="First tree",
+	main="First tree (ME)",
 	horiz=TRUE, leaflab="none")
 par(mai=c(0.5, 0.5, 0.5, 0)) # add space on left
 plot(tree2,
-	main="Second tree",
+	main="Second tree (MP)",
 	horiz=TRUE, leaflab="none",
 	xlim=c(0, attr(tree2, "height")))
 segments(par("usr")[1] - 1.05*diff(grconvertX(0:1, 'inches', 'user')),
@@ -278,6 +280,7 @@ costs <- outer(codons,
 	codons,
 	function(x, y)
 		mapply(function(x, y) mean(adist(x, y)), x, y))
+diag(costs) <- 0 # zero cost for no change
 costs # minimum number of nucleotide changes to switch amino acids
 treeMP_AA1 <- Treeline(aa, method="MP", costMatrix=costs, maxTime=0.001)
 plot(Cophenetic(treeMP_AA1), Cophenetic(treeMP))

@@ -46,10 +46,11 @@ CalculateEfficiencyPCR   Predict Amplification Efficiency of Primer Sequences
 Clusterize               Cluster Sequences By Distance
 Codec                    Compression/Decompression of Character Vectors
 ConsensusSequence        Create a Consensus Sequence
-Cophenetic               Compute cophenetic distances on dendrogram objects
+Cophenetic               Compute Cophenetic Distances on Dendrogram Objects
 CorrectFrameshifts       Corrects Frameshift Errors In Protein Coding
                          Sequences
 CreateChimeras           Create Artificial Chimeras
+DateTree                 Time Calibrate a Dendrogram
 DB2Seqs                  Export Database Sequences to a FASTA or FASTQ File
 deltaGrules              Free Energy of Hybridization of Probe/Target
                          Quadruplets

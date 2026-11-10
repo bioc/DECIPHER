@@ -107,11 +107,11 @@ If \code{type} is \code{"structures"}, then the output is a list with one elemen
 When \code{type} is \code{"search"} the results are similar to \code{"structures"}, but an attempt is made to find additional secondary structure beyond positions exhibiting covariation.  First, anchors are identified as pairs of covarying positions with their score above \code{threshold}.  Next, the regions between anchors are searched for previously unidentified stem loops.  Finally, any helices are assigned a score according to their length, i.e. one minus the probability of finding that many consecutive pairs within the anchor boundaries by chance.  Hence, output \code{type} \code{"search"} will find secondary structure outside of the consensus structure shared by most sequences, and can identify secondary structure in conserved alignment regions.
 }
 \references{
-Buslje, C., et al. (2009). Correction for phylogeny, small number of observations and data redundancy improves the identification of coevolving amino acid pairs using mutual information. Bioinformatics, \bold{25(9)}, 1125-1131.
+Buslje, C., \emph{et al.} (2009). Correction for phylogeny, small number of observations and data redundancy improves the identification of coevolving amino acid pairs using mutual information. Bioinformatics, \bold{25(9)}, 1125-1131.
 
-Freyhult, E., et al. (2005). Predicting RNA Structure Using Mutual Information. Applied Bioinformatics, \bold{4(1)}, 53-59.
+Freyhult, E., \emph{et al.} (2005). Predicting RNA Structure Using Mutual Information. Applied Bioinformatics, \bold{4(1)}, 53-59.
 
-Venkatachalam, B., et al. (2014). Faster algorithms for RNA-folding using the Four-Russians method. Algorithms for Molecular Biology : AMB, \bold{9(1)}, 1-12.
+Venkatachalam, B., \emph{et al.} (2014). Faster algorithms for RNA-folding using the Four-Russians method. Algorithms for Molecular Biology : AMB, \bold{9(1)}, 1-12.
 
 Wright, E. S. (2020). RNAconTest: comparing tools for noncoding RNA multiple sequence alignment based on structural consistency. RNA 2020, 26, 531-540.
 }

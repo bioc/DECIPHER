@@ -11,11 +11,11 @@ Models of sequence evolution that are supported.
 MODELS
 }
 \details{
-\code{MODELS} is a list of two elements: a character vector of (eight) nucleotide models and a character vector of (37) protein models.  All \code{MODELS} are time reversible.
+\code{MODELS} is a list of two elements: a character vector of (eight) nucleotide models and a character vector of (41) protein models.  All \code{MODELS} are time reversible.
 
 Nucleotide models are described in order of increasing number of parameters as follows:
 
-\bold{JC69 (Jukes and Cantor, 1969)}
+\bold{JC69} (Jukes and Cantor, 1969)
 The simplest substitution model that assumes equal base frequencies (1/4) and equal mutation rates.
 
 \bold{K80} (Kimura, 1980)
@@ -65,6 +65,10 @@ Protein models are described in the following publications, which include both a
 
 \bold{HIVb} (Nickle, 2007) [Human immunodeficiency virus]
 
+\bold{HIVin} (Del Amparo and Arenas, 2022) [Human immunodeficiency virus integrase]
+
+\bold{HIVpr} (Del Amparo and Arenas, 2022) [Human immunodeficiency virus protease]
+
 \bold{HIVw} (Nickle, 2007) [Human immunodeficiency virus]
 
 \bold{JTT} (Jones, 1992) [General]
@@ -91,6 +95,8 @@ Protein models are described in the following publications, which include both a
 
 \bold{PMB} (Veerassamy, 2003) [General]
 
+\bold{Poisson} [General]
+
 \bold{Q.bird} (Minh, 2021) [Birds]
 
 \bold{Q.insect} (Minh, 2021) [Insects]
@@ -109,6 +115,10 @@ Protein models are described in the following publications, which include both a
 
 \bold{stmtREV} (Liu, 2014) [Land plant mitochrondrion]
 
+\bold{VIRin} (Del Amparo and Arenas, 2022) [Virus integrase]
+
+\bold{VIRpr} (Del Amparo and Arenas, 2022) [Virus protease]
+
 \bold{VT} (Muller, 2000) [General]
 
 \bold{WAG} (Whelan, 2001) [General]
@@ -119,7 +129,7 @@ Protein models are described in the following publications, which include both a
 Specifying any model+G# adds a single parameter to any of the above models to relax the assumption of equal rates among sites in the sequence.  The single parameter specifies the shape of the Gamma distribution, which is represented with 2-10 discrete rates and their respective probabilities.  For example, specifying a model+G8 would represent the continuous Gamma Distribution with eight rates and their associated probabilities.
 
 \bold{+F}
-Specifying any model+F uses fixed empirical frequencies rather than optimized state frequencies.  This is only applicable for models having state frequencies with free parameters.
+Specifying any model+F uses fixed empirical frequencies rather than optimized or model-specific state frequencies.  Note, the Poisson model is the amino acid analog of the JC69 model for nucleotides, and the Poisson+F model is the analog of F81+F.
 
 \bold{+Indels}
 Specifying any model+Indels adds an additional state for gaps (``-'' and ``.'' characters) and parameters for the frequency of gaps and the transition rate from non-gaps to gaps.
@@ -138,6 +148,8 @@ Cox, C. and Foster, P. (2013) Molecular Phylogenetics and Evolution, \bold{68}, 
 Dang, C., Le, S., Gascuel, O., and Le, V. (2010) BMC Evolutionary Biology, \bold{10}, 99. 
 
 Dayhoff, M., Schwartz, R., and Orcutt, B. (1978) Atlas of Protein Sequence and Structure, National Biomedical Research Foundation, Washington DC, \bold{5}, 345-352.
+
+Del Amparo, R. and Arenas, M. (2022) HIV Protease and Integrase Empirical Substitution Models of Evolution: Protein-Specific Models Outperform Generalist Models. Genes, \bold{13(1):61}.
 
 Dimmic, M., Rest, J., Mindell, D., and Goldstein, R. (2002) Journal of Molecular Evolution, \bold{55}, 65-73.
 

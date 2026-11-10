@@ -43,7 +43,7 @@ Logical determining whether to unroot \code{x} if possible.
 }
 }
 \details{
-\code{WriteDendrogram} will write a dendrogram object to a \code{file} in standard Newick format.  Note that special characters (commas, square brackets, colons, semi-colons, and parentheses) present in leaf labels will likely cause a broken Newick file unless \code{quote} is a single or double quotation mark (the default).
+\code{WriteDendrogram} will write a dendrogram object to a \code{file} in standard Newick format.  Note that special characters (commas, square brackets, colons, semi-colons, and parentheses) present in leaf labels will likely cause a broken Newick file unless \code{quote} is a single (the default) or double quotation mark.
 }
 \value{
 \code{NULL}.
