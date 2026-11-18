@@ -98,7 +98,9 @@ dna <- RemoveGaps(dna)
 alignedDNA <- AlignSeqs(dna)
 BrowseSeqs(alignedDNA, highlight=1)
 
+\dontrun{
 # use secondary structure with RNA sequences
 alignedRNA <- AlignSeqs(RNAStringSet(dna))
 BrowseSeqs(alignedRNA, highlight=1)
+}
 }

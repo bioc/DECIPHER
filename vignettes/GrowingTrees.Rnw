@@ -414,12 +414,11 @@ for (i in seq_len(reps)) {
 	# generate bootstrapped alignment
 	at <- IRanges(r, width=1)
 	seqs2 <- extractAt(seqs, at)
-	seqs2 <- lapply(seqs2, unlist)
-	seqs2 <- as(seqs2, class(seqs))
+	seqs2 <- unstrsplit(seqs2)
 	
 	# recompute tree and record partitions
 	temp <- Treeline(seqs2,
-		minIterations=5,
+		minIterations=5, # faster and likely sufficient
 		maxIterations=5,
 		verbose=FALSE)
 	m <- match(unlist(partitions(temp)), names(counts))
@@ -738,7 +737,7 @@ legend("topleft",
 
 \clearpage
 
-With any luck we can further investigate the concordance vectors by extracting them from each internal branch of the summary tree and plotting observed quantities against each other (Fig. \ref{f12}).  In doing so, it's apparent that the two minor frequencies ($DF1$ and $DF2$) are correlated.  The concordant frequency ($CF$) is related to the branch length, although this trend is most apparent for splits because quartets have lower counts.  The number of decisive trees is high for most internal branches, implying many gene trees disagreed with species tree.
+With any luck we can further investigate the concordance vectors by extracting them from each internal branch of the summary tree and plotting observed quantities against each other (Fig. \ref{f12}).  In doing so, it's apparent that the two minor frequencies ($DF1$ and $DF2$) are correlated.  The concordant frequency ($CF$) is related to the branch length, although this trend is most apparent for splits because quartets have lower counts.  For most internal branches, the number of total decisive trees is much higher than concordant plus discordant topologies, implying many gene trees disagreed with species tree (i.e., were paraphyletic).
 
 \begin{centerfig}
 <<expr27,eval=TRUE,echo=TRUE,fig=TRUE,height=6,width=6>>=

@@ -27,6 +27,8 @@ Numeric giving the minimum assumed branch length, since branch lengths must be n
 }
 }
 \details{
+Temporally resolved phylogenies offer significant advantages for some analyses, because time trees provide date estimates for evolutionary events that can be linked to external knowledge.  There are two main types of trees supported by \code{DateTree}:  (1) the root is ancient relative to the tips, so all tips (i.e., leaves) are presumed to occur at the same time; or (2) the root date is unknown, but the sampling dates of two or more tips are known.
+
 The relative rate framework (Miura \emph{et al.}, 2020) is used to date the input phylogenetic tree (\code{x}) given the known \code{time} of the root (i.e., node dating) or leaves (i.e., tip dating).  If one value is provided for \code{time}, then the root of the output dendrogram will be at zero height and all the leaves are assumed to occur at \code{time}.  If multiple (named) \code{time} values are provided, then the corresponding leaves are at these heights and the root height is inferred with linear regression.
 
 A single \code{time} can be provided when all leaves are sampled at effectively the same time relative to the (presumably much older) root.  This is useful for dating phylogenetic trees over long evolutionary timescales, where only the root age is known and all tips are assumed to be at approximately the same age.  The default value (i.e., \code{time = 1}) will calibrate the tree into units of relative time (i.e., unit time from zero to one).

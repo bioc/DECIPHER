@@ -89,32 +89,34 @@ plot(species_tree, main="Species tree under default settings")
 species_tree <- Zipline(trees, distance="edges")
 plot(species_tree, main="Species tree from interedge distances")
 
-# normalizing bootstrap supports from 0% to 100%
+# normalizing branch supports from 0% to 100%
 trees <- lapply(trees,
 	dendrapply,
 	function(x) {
 		b <- as.numeric(attr(x, "edgetext"))
 		if (length(b) == 0) { # leaf
-			attr(x, "bootstrap") <- 1
+			attr(x, "support") <- 1
 		} else {
-			attr(x, "bootstrap") <- b/100
+			attr(x, "support") <- b/100
 		}
 		x
 	})
 
 # using branch supports as distance
-species_tree <- Zipline(trees, distance="bootstrap")
-plot(species_tree, main="Species tree from bootstrap supports")
+species_tree <- Zipline(trees, distance="support")
+plot(species_tree, main="Species tree from branch supports")
 
 # using a hybrid of branch confidence times length
-species_tree <- Zipline(trees, distance=c("bootstrap", "length"))
+species_tree <- Zipline(trees, distance=c("support", "length"))
 plot(species_tree, main="Species tree from branch length*support")
 
+\dontrun{
 # calculating concordance vectors based on counts
 species_tree <- Zipline(trees, concordanceVectors=TRUE)
 attr(species_tree, "vector") # concordance vector at the top branch
 
-# calculating concordance vectors based branch support
-species_tree <- Zipline(trees, concordanceVectors="bootstrap")
+# calculating concordance vectors based on branch support
+species_tree <- Zipline(trees, concordanceVectors="support")
 attr(species_tree, "vector") # concordance vector at the top branch
+}
 }

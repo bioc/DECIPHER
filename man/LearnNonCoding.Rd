@@ -68,7 +68,8 @@ rna <- readRNAStringSet(fas_path)
 rna
 
 # align the sequences
-RNA <- AlignSeqs(rna)
+RNA <- AlignSeqs(rna,
+	useStructures=FALSE) # sacrifice accuracy for speed in example
 RNA
 
 y <- LearnNonCoding(RNA)
